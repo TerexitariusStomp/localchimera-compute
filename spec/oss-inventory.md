@@ -60,7 +60,7 @@ Machine resources are the product; ~12k lines of custom code concentrate here.
 | Transport | **iroh / libp2p / arti** (+Reticulum opt-in ⚠) | MIT/Apache-2.0 | netlayer glue |
 | Canonical JSON | **RFC 8785 JCS impl** | MIT | — |
 | Job envelope / receipt / repro-spec | — **custom** | AGPL-3.0 (ours) | ~1.5k — the spec's contract |
-| `^compute-registry` + dispatch lifecycle | — **custom** | ours | ~1.5k — commons-dispatch semantics |
+| `^machine-registry` + dispatch lifecycle | — **custom** | ours | ~1.5k — commons-dispatch semantics |
 | Compute governance doors | — **custom** | ours | ~2.5k — capability-door model |
 | Seam/door machinery | — **custom** (over Goblins, Apache-2.0) | ours | ~4k — the ocapn substrate contract |
 | Dispatch matcher (lane+class+headroom) | — **custom** | ours | ~0.3k |

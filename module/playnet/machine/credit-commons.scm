@@ -1,4 +1,4 @@
-;;; module/playnet/compute/credit-commons.scm — the mutual-credit rail:
+;;; module/playnet/machine/credit-commons.scm — the mutual-credit rail:
 ;;; Credit Commons cc-node (GPL-3.0) is the adopted ledger for commons
 ;;; credit settlement; this is the wire shape a settled statement becomes
 ;;; and the seam its transport plugs into.
@@ -18,10 +18,10 @@
 ;;;   • post-settlement! — (statement treasury-acct #:key post) → the
 ;;;     transaction refs the node answered, or 'unavailable.
 
-(define-module (playnet compute credit-commons)
+(define-module (playnet machine credit-commons)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
-  #:use-module (playnet compute settlement)
+  #:use-module (playnet machine settlement)
   #:export (settlement->ledger-rows post-settlement! %cc-unavailable))
 
 

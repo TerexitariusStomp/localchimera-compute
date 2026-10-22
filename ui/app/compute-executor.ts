@@ -1,9 +1,9 @@
-// app/compute-executor.ts — the browser IS the node.
+// app/machine-executor.ts — the browser IS the node.
 //
 // A job envelope arrives as the fetch door returns it
 // ({bridgeJobId, image, entrypoint, inputHash, caps, network}); runEnvelope
 // runs the entrypoint inside a Worker it cannot escape, meters the wall-clock,
-// and returns the receipt wire body — the object session/compute-receipt
+// and returns the receipt wire body — the object session/machine-receipt
 // accepts. The digest is computed over the same canonical bytes the Scheme
 // verifier recomputes (tests/compute/test-receipt.scm carries the vectors):
 // sha256("naoms-compute-receipt/v1" + NUL + canonical JSON), field order IS
@@ -183,9 +183,9 @@ const wasmBytes = async (env: JobEnvelope): Promise<Uint8Array> => {
     return b64ToBytes(b64);
   }
   if (!(env.network === true && (env.caps || []).includes("fetch")))
-    throw new Error("compute-executor: wasm image ref needs the fetch cap");
+    throw new Error("machine-executor: wasm image ref needs the fetch cap");
   const res = await fetch(ref);
-  if (!res.ok) throw new Error(`compute-executor: wasm fetch ${res.status}`);
+  if (!res.ok) throw new Error(`machine-executor: wasm fetch ${res.status}`);
   return new Uint8Array(await res.arrayBuffer());
 };
 
@@ -210,17 +210,17 @@ export const runEnvelope = async (
     const started = Date.now();
     const timer = setTimeout(() => {
       w.terminate(); URL.revokeObjectURL(url);
-      reject(new Error(`compute-executor: timeout after ${timeoutMs}ms`));
+      reject(new Error(`machine-executor: timeout after ${timeoutMs}ms`));
     }, timeoutMs);
     w.onerror = (e) => {
       clearTimeout(timer); w.terminate(); URL.revokeObjectURL(url);
-      reject(new Error(`compute-executor: ${e.message || "worker error"}`));
+      reject(new Error(`machine-executor: ${e.message || "worker error"}`));
     };
     w.onmessage = (e) => {
       clearTimeout(timer); w.terminate(); URL.revokeObjectURL(url);
       const seconds = (Date.now() - started) / 1000;
       if (e.data && e.data.ok) resolve({ result: e.data.out, seconds });
-      else reject(new Error(`compute-executor: ${e.data && e.data.err || "failed"}`));
+      else reject(new Error(`machine-executor: ${e.data && e.data.err || "failed"}`));
     };
     if (isWasm) {
       const buf = bytes!.buffer;
@@ -234,7 +234,7 @@ export const runEnvelope = async (
 };
 
 // ── the receipt ───────────────────────────────────────────────────────────
-// The body compute-receipt verifies: digest recomputed here matches what the
+// The body machine-receipt verifies: digest recomputed here matches what the
 // door recomputes there, or the receipt is refused. Unsigned — 'unverifiable
 // is an honest verdict, 'bad would not be.
 
@@ -269,14 +269,14 @@ export const emitReceipt = async (args: {
 
 // ── the loop, one claim at a time ─────────────────────────────────────────
 // fetch the envelope → run it → land the receipt. SEAM is the browser's
-// session bridge (computeFetchEnvelope, computeReceipt). The claim's
+// session bridge (machineFetchEnvelope, machineReceipt). The claim's
 // deadline is the timeout — no countersigned receipt by the deadline means
 // no payment; the registry's expiry already knows that.
 
 export const runClaim = async (
   seam: {
-    computeFetchEnvelope?: (commune: string, claimId: string) => Promise<unknown>;
-    computeReceipt?: (commune: string, wireJson: string) => Promise<unknown>;
+    machineFetchEnvelope?: (commune: string, claimId: string) => Promise<unknown>;
+    machineReceipt?: (commune: string, wireJson: string) => Promise<unknown>;
   },
   commune: string,
   claimId: string,
@@ -284,16 +284,16 @@ export const runClaim = async (
   input: unknown,
   opts: { timeoutMs?: number; reproMode?: string; seed?: number } = {},
 ): Promise<unknown> => {
-  const raw = await seam.computeFetchEnvelope!(commune, claimId);
+  const raw = await seam.machineFetchEnvelope!(commune, claimId);
   if (typeof raw === "string" && raw.startsWith("err:"))
-    throw new Error(`compute-executor: ${raw}`);
+    throw new Error(`machine-executor: ${raw}`);
   const env = (typeof raw === "string" ? JSON.parse(raw) : raw) as JobEnvelope;
   const { result, seconds } = await runEnvelope(env, input, opts);
   const receipt = await emitReceipt({
     env, lenderDid, input, result, seconds,
     reproMode: opts.reproMode, seed: opts.seed,
   });
-  return seam.computeReceipt!(commune, JSON.stringify(receipt));
+  return seam.machineReceipt!(commune, JSON.stringify(receipt));
 };
 
 // ── the poll loop ─────────────────────────────────────────────────────────
@@ -311,9 +311,9 @@ export interface ClaimRow {
 
 export const lendLoop = (
   seam: {
-    computeClaims?: (commune: string) => Promise<unknown>;
-    computeFetchEnvelope?: (commune: string, claimId: string) => Promise<unknown>;
-    computeReceipt?: (commune: string, wireJson: string) => Promise<unknown>;
+    machineClaims?: (commune: string) => Promise<unknown>;
+    machineFetchEnvelope?: (commune: string, claimId: string) => Promise<unknown>;
+    machineReceipt?: (commune: string, wireJson: string) => Promise<unknown>;
   },
   commune: string,
   lenderDid: string,
@@ -324,10 +324,10 @@ export const lendLoop = (
   const attempted = new Set<string>();
   let stopped = false;
   const tick = async () => {
-    if (stopped || !seam.computeClaims) return;
+    if (stopped || !seam.machineClaims) return;
     let rows: ClaimRow[] = [];
     try {
-      const raw = await seam.computeClaims(commune);
+      const raw = await seam.machineClaims(commune);
       const v = typeof raw === "string" ? JSON.parse(raw) : raw;
       rows = (Array.isArray(v) ? v
              : (v && Array.isArray((v as { ok?: unknown }).ok)

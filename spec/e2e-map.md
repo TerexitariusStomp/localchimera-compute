@@ -18,10 +18,10 @@ names must leave the baseline).
 | Scenario | Suite | Status |
 |---|---|---|
 | bind → offer → submit → match → claim → accept → envelope → receipt → verify → replay → settle → payout | `tests/e2e/compute-lifecycle.scm` | this pass |
-| non-delivery dispute (deadline past, no receipt → no payment) | `tests/e2e/compute-dispute-flows.scm` | this pass |
-| wrong-result dispute (replay → counterHash → sortition 2-of-3 → verdict → settlement hold) | `tests/e2e/compute-dispute-flows.scm` | this pass |
-| reproduced replay → dispute refused at raise (premise fails on the prover's own answer) | `tests/e2e/compute-dispute-flows.scm` | this pass |
-| browser executor (js:/wasm: sandbox, cap denial, deterministic WASI, canonical digest) | `tests/browser/compute-executor-test.mjs` | this pass |
+| non-delivery dispute (deadline past, no receipt → no payment) | `tests/e2e/machine-dispute-flows.scm` | this pass |
+| wrong-result dispute (replay → counterHash → sortition 2-of-3 → verdict → settlement hold) | `tests/e2e/machine-dispute-flows.scm` | this pass |
+| reproduced replay → dispute refused at raise (premise fails on the prover's own answer) | `tests/e2e/machine-dispute-flows.scm` | this pass |
+| browser executor (js:/wasm: sandbox, cap denial, deterministic WASI, canonical digest) | `tests/browser/machine-executor-test.mjs` | this pass |
 | lend face drives a tab as a compute node | `tests/ux/lend-ux.mjs` | authored; runs where repl.wasm builds |
 | live adopted stack answers through call sites | `tests/e2e/stack-integration.scm` | this pass |
 
@@ -30,7 +30,7 @@ names must leave the baseline).
 | Seam | Call site | Parity suite | Live leg |
 |---|---|---|---|
 | ntfy | `interface/adapters/ntfy.scm` → notify router | `notify-ntfy.scm` | ✅ green |
-| OPA | doors/compute commune acts (`#:authz` consult) | `doors-opa.scm` | ✅ green |
+| OPA | doors/machine commune acts (`#:authz` consult) | `doors-opa.scm` | ✅ green |
 | Jena/SPARQL | knowledge corpus door | `knowledge-sparql.scm` | ✅ green |
 | Radicale/CalDAV | calendar door | `calendar-radicale.scm` | ✅ green |
 | CP-SAT | solve/solver discrete leg | `solve-cpsat.scm` | ✅ green |
@@ -41,7 +41,7 @@ names must leave the baseline).
 | ActivityPub | comms outbox | `federation-activitypub.scm` | pending server |
 | Bacalhau | compute/executors | *none* | **suite missing** |
 | Cedar | alternate door engine | *none* | **suite missing** |
-| Temporal | compute-clock durable timers | *none* | **suite missing** |
+| Temporal | machine-clock durable timers | *none* | **suite missing** |
 
 ## The debt ledger (baseline, 2026-10-22)
 

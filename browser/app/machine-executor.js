@@ -1,9 +1,9 @@
-// app/compute-executor.ts — the browser IS the node.
+// app/machine-executor.ts — the browser IS the node.
 //
 // A job envelope arrives as the fetch door returns it
 // ({bridgeJobId, image, entrypoint, inputHash, caps, network}); runEnvelope
 // runs the entrypoint inside a Worker it cannot escape, meters the wall-clock,
-// and returns the receipt wire body — the object session/compute-receipt
+// and returns the receipt wire body — the object session/machine-receipt
 // accepts. The digest is computed over the same canonical bytes the Scheme
 // verifier recomputes (tests/compute/test-receipt.scm carries the vectors):
 // sha256("naoms-compute-receipt/v1" + NUL + canonical JSON), field order IS
@@ -148,10 +148,10 @@ const wasmBytes = async (env) => {
         return b64ToBytes(b64);
     }
     if (!(env.network === true && (env.caps || []).includes("fetch")))
-        throw new Error("compute-executor: wasm image ref needs the fetch cap");
+        throw new Error("machine-executor: wasm image ref needs the fetch cap");
     const res = await fetch(ref);
     if (!res.ok)
-        throw new Error(`compute-executor: wasm fetch ${res.status}`);
+        throw new Error(`machine-executor: wasm fetch ${res.status}`);
     return new Uint8Array(await res.arrayBuffer());
 };
 export const runEnvelope = async (env, input, opts = {}) => {
@@ -170,13 +170,13 @@ export const runEnvelope = async (env, input, opts = {}) => {
         const timer = setTimeout(() => {
             w.terminate();
             URL.revokeObjectURL(url);
-            reject(new Error(`compute-executor: timeout after ${timeoutMs}ms`));
+            reject(new Error(`machine-executor: timeout after ${timeoutMs}ms`));
         }, timeoutMs);
         w.onerror = (e) => {
             clearTimeout(timer);
             w.terminate();
             URL.revokeObjectURL(url);
-            reject(new Error(`compute-executor: ${e.message || "worker error"}`));
+            reject(new Error(`machine-executor: ${e.message || "worker error"}`));
         };
         w.onmessage = (e) => {
             clearTimeout(timer);
@@ -186,7 +186,7 @@ export const runEnvelope = async (env, input, opts = {}) => {
             if (e.data && e.data.ok)
                 resolve({ result: e.data.out, seconds });
             else
-                reject(new Error(`compute-executor: ${e.data && e.data.err || "failed"}`));
+                reject(new Error(`machine-executor: ${e.data && e.data.err || "failed"}`));
         };
         if (isWasm) {
             const buf = bytes.buffer;
@@ -199,7 +199,7 @@ export const runEnvelope = async (env, input, opts = {}) => {
     });
 };
 // ── the receipt ───────────────────────────────────────────────────────────
-// The body compute-receipt verifies: digest recomputed here matches what the
+// The body machine-receipt verifies: digest recomputed here matches what the
 // door recomputes there, or the receipt is refused. Unsigned — 'unverifiable
 // is an honest verdict, 'bad would not be.
 export const emitReceipt = async (args) => {
@@ -226,13 +226,13 @@ export const emitReceipt = async (args) => {
 };
 // ── the loop, one claim at a time ─────────────────────────────────────────
 // fetch the envelope → run it → land the receipt. SEAM is the browser's
-// session bridge (computeFetchEnvelope, computeReceipt). The claim's
+// session bridge (machineFetchEnvelope, machineReceipt). The claim's
 // deadline is the timeout — no countersigned receipt by the deadline means
 // no payment; the registry's expiry already knows that.
 export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = {}) => {
-    const raw = await seam.computeFetchEnvelope(commune, claimId);
+    const raw = await seam.machineFetchEnvelope(commune, claimId);
     if (typeof raw === "string" && raw.startsWith("err:"))
-        throw new Error(`compute-executor: ${raw}`);
+        throw new Error(`machine-executor: ${raw}`);
     const env = (typeof raw === "string" ? JSON.parse(raw) : raw);
     const { result, seconds } = await runEnvelope(env, input, opts);
     const receipt = await emitReceipt({
@@ -240,17 +240,17 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
         bridgeJobId: claimId,
         reproMode: opts.reproMode, seed: opts.seed,
     });
-    return seam.computeReceipt(commune, JSON.stringify(receipt));
+    return seam.machineReceipt(commune, JSON.stringify(receipt));
 };
 export const lendLoop = (seam, commune, lenderDid, input, opts = {}) => {
     const attempted = new Set();
     let stopped = false;
     const tick = async () => {
-        if (stopped || !seam.computeClaims)
+        if (stopped || !seam.machineClaims)
             return;
         let rows = [];
         try {
-            const raw = await seam.computeClaims(commune);
+            const raw = await seam.machineClaims(commune);
             const v = typeof raw === "string" ? JSON.parse(raw) : raw;
             rows = (Array.isArray(v) ? v
                 : (v && Array.isArray(v.ok)

@@ -5,10 +5,10 @@
 ;;; the prose between checks is half the point. These helpers keep each
 ;;; suite to the same shape: a door call that unwraps or fails loudly, a
 ;;; scenario step that narrates, and a controllable clock over
-;;; *compute-clock* so timelines that take days compress into a test.
+;;; *machine-clock* so timelines that take days compress into a test.
 ;;;
 ;;;   (define clock (make-fake-clock 1_700_000_000))
-;;;   (parameterize ((*compute-clock* (car clock))) …)
+;;;   (parameterize ((*machine-clock* (car clock))) …)
 ;;;   ((cdr clock) 3600)    ;; advance one hour
 
 (define-module (playnet test e2e)
@@ -34,9 +34,9 @@
   (format #t "~%── ~a ──~%" label))
 
 (define (make-fake-clock start-seconds)
-  "→ ((getter) . (advance! seconds)). Bind *compute-clock* to the getter;
+  "→ ((getter) . (advance! seconds)). Bind *machine-clock* to the getter;
    advance! moves the doors' 'now' forward. The getter is a thunk because
-   the parameter is called — ((*compute-clock*)) — not dereferenced."
+   the parameter is called — ((*machine-clock*)) — not dereferenced."
   (let ((now start-seconds))
     (cons (lambda () now)
           (lambda (secs) (set! now (+ now secs)) now))))

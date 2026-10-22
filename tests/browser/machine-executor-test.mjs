@@ -1,6 +1,6 @@
-// tests/browser/compute-executor-test.mjs — the browser node, tested.
+// tests/browser/machine-executor-test.mjs — the browser node, tested.
 //
-// compute-executor.js is the "browser tab IS the compute node" claim:
+// machine-executor.js is the "browser tab IS the compute node" claim:
 // runEnvelope sandboxes the entrypoint in a Worker, meters it, and
 // emitReceipt produces the digest the Scheme verifier recomputes.
 //
@@ -18,12 +18,12 @@
 //   • wasm: — a hand-encoded WASI module writes "hi" through the
 //     deterministic preview1 shim; a second export returns its scalar.
 //
-// Run: node tests/browser/compute-executor-test.mjs
+// Run: node tests/browser/machine-executor-test.mjs
 
 import { Worker as NodeWorker } from "node:worker_threads";
 import { Blob as NodeBlob } from "node:buffer";
 
-const L = await import("../../browser/app/compute-executor.js");
+const L = await import("../../browser/app/machine-executor.js");
 
 let pass = 0, fail = 0;
 const check = (label, ok, extra = "") => {

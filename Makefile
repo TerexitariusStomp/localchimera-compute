@@ -1119,10 +1119,10 @@ test-parity:
 # tests/e2e/*.scm walk whole stories through the door layer (not one act —
 # the chain). test-e2e keeps to in-vat suites so it runs in the dev loop;
 # test-e2e-stack is the adopted-stack leg (see tests/e2e/run-stack.sh).
-.PHONY: test-e2e-compute test-e2e-scenarios check-e2e-coverage test-e2e-stack
+.PHONY: test-e2e-machine test-e2e-scenarios check-e2e-coverage test-e2e-stack
 
 test-e2e-scenarios:
-	@for t in tests/e2e/compute-*.scm; do \
+	@for t in tests/e2e/machine-*.scm; do \
 	  echo "== $$t"; $(GUILE_TEST_DEV) -L module -L tests $$t || exit 1; done
 
 # The completeness gate: every declared door named in a test, every dispatch
@@ -1283,10 +1283,10 @@ test-vault:
 	node tests/browser/vault-test.mjs
 
 # The browser executor — the sandbox, the cap denial, the timeout, and the
-# canonical digest the Scheme verifier recomputes (ui/app/compute-executor.ts).
-.PHONY: test-compute-executor
-test-compute-executor:
-	node tests/browser/compute-executor-test.mjs
+# canonical digest the Scheme verifier recomputes (ui/app/machine-executor.ts).
+.PHONY: test-machine-executor
+test-machine-executor:
+	node tests/browser/machine-executor-test.mjs
 
 # The IndexedDB keystore + legacy migration (browser/lib/keystore.js). Real
 # WebCrypto Ed25519 with in-memory localStorage/IndexedDB mocks. Pins that a
@@ -2532,7 +2532,7 @@ test-deployed-ux:
 
 # The lend face e2e — a browser tab as a compute node: two identities on a
 # real gateway, offer/submit/claim through the session, the shipped
-# compute-executor runs the envelope, the receipt lands on the book.
+# machine-executor runs the envelope, the receipt lands on the book.
 # PLAYNET_SEED_DEMO seeds the commune both join.
 .PHONY: test-lend-ux
 test-lend-ux: browser/repl.wasm

@@ -1,4 +1,4 @@
-;;; module/playnet/compute/hrea.scm — the ValueFlows landing pad for a
+;;; module/playnet/machine/hrea.scm — the ValueFlows landing pad for a
 ;;; compute receipt: hREA (Apache-2.0) is the adopted VF backend; this is
 ;;; the wire shape a receipt becomes when it lands there, plus the seam
 ;;; the transport plugs into.
@@ -21,11 +21,11 @@
 ;;; Nothing here runs accounting — hREA owns that. This module's whole
 ;;; job is that the wire it lands is the wire a hREA instance reads.
 
-(define-module (playnet compute hrea)
+(define-module (playnet machine hrea)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
-  #:use-module (playnet compute receipt)
-  #:use-module (playnet compute registry)
+  #:use-module (playnet machine receipt)
+  #:use-module (playnet machine registry)
   #:export (receipt->economic-event record-receipt! %hrea-unavailable))
 
 

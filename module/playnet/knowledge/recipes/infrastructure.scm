@@ -16,11 +16,11 @@
   #:use-module ((playnet utils units) #:select (%count-unit %effort-unit))
   #:use-module (playnet vf schemas)
   #:use-module (goblins)
-  #:export (infra-compute-spec infra-memory-spec infra-storage-spec
+  #:export (infra-machine-spec infra-memory-spec infra-storage-spec
             infra-bandwidth-spec infra-transcript-spec infra-dataset-spec
             infrastructure-specs seed-infrastructure-recipes))
 
-(define infra-compute-spec
+(define infra-machine-spec
   (make-resource-specification
     #:id "spec:compute" #:name "CPU Hours"
     #:resource-classified-as '("infrastructure" "compute") #:default-unit-of-resource "cpu-hours"))
@@ -52,7 +52,7 @@
     #:resource-classified-as '("digital" "data") #:default-unit-of-resource %count-unit))
 
 (define infrastructure-specs
-  (list infra-compute-spec infra-memory-spec infra-storage-spec
+  (list infra-machine-spec infra-memory-spec infra-storage-spec
         infra-bandwidth-spec infra-transcript-spec infra-dataset-spec))
 
 ;; ─── Seed function ──────────────────────────────────────────────────────────

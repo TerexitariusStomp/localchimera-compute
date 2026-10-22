@@ -12,7 +12,7 @@ at the outside an anonymous market that settles against a treasury Safe.
 
 The compute vocabulary lives in [`spec/playnet-compute.md`](spec/playnet-compute.md)
 (vendored from `commons-spec`) and its code in
-[`module/playnet/compute/`](module/playnet/compute/): `specs.scm` carries
+[`module/playnet/machine/`](module/playnet/machine/): `specs.scm` carries
 compute `ResourceSpecification`s (model class, lane, `reproMode ∈
 exact|deterministic|none`), `receipt.scm` the `SignedReceipt` wire record
 whose canonical digest is byte-identical to the poi-compute TypeScript
@@ -34,7 +34,7 @@ History is ported — `git log` reaches back through the playnet tree.
 
 ## Layout
 
-- `module/playnet/compute/` — compute specs + signed receipts
+- `module/playnet/machine/` — compute specs + signed receipts
 - `module/playnet/fleet/` — declarative host fleet: records, reconciler,
   providers, keeper
 - `module/playnet/gateway/` — mesh mailbox, presence, HTTP door server

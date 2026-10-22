@@ -518,86 +518,86 @@
    ;; this AID as the member the act belongs to: the lender on offer,
    ;; claim and preempt; the borrower on submit, withdraw and accept.
    ;; Reads are open.
-   ((compute-offer commune-aid lane classes headroom repro . opts)
-    (apply <- governance-svc 'compute-offer
+   ((machine-offer commune-aid lane classes headroom repro . opts)
+    (apply <- governance-svc 'machine-offer
            aid-prefix commune-aid lane classes headroom repro opts))
 
-   ((compute-retract commune-aid offer-id)
-    (<- governance-svc 'compute-retract aid-prefix commune-aid offer-id))
+   ((machine-retract commune-aid offer-id)
+    (<- governance-svc 'machine-retract aid-prefix commune-aid offer-id))
 
-   ((compute-offers commune-aid)
-    (<- governance-svc 'compute-offers commune-aid))
+   ((machine-offers commune-aid)
+    (<- governance-svc 'machine-offers commune-aid))
 
-   ((compute-submit commune-aid task-class lane repro input-hash . opts)
-    (apply <- governance-svc 'compute-submit
+   ((machine-submit commune-aid task-class lane repro input-hash . opts)
+    (apply <- governance-svc 'machine-submit
            aid-prefix commune-aid task-class lane repro input-hash opts))
 
-   ((compute-withdraw commune-aid job-id)
-    (<- governance-svc 'compute-withdraw aid-prefix commune-aid job-id))
+   ((machine-withdraw commune-aid job-id)
+    (<- governance-svc 'machine-withdraw aid-prefix commune-aid job-id))
 
-   ((compute-jobs commune-aid)
-    (<- governance-svc 'compute-jobs commune-aid))
+   ((machine-jobs commune-aid)
+    (<- governance-svc 'machine-jobs commune-aid))
 
-   ((compute-match commune-aid job-id)
-    (<- governance-svc 'compute-match commune-aid job-id))
+   ((machine-match commune-aid job-id)
+    (<- governance-svc 'machine-match commune-aid job-id))
 
-   ((compute-claim commune-aid job-id offer-id . opts)
-    (apply <- governance-svc 'compute-claim
+   ((machine-claim commune-aid job-id offer-id . opts)
+    (apply <- governance-svc 'machine-claim
            aid-prefix commune-aid job-id offer-id opts))
 
-   ((compute-accept commune-aid claim-id)
-    (<- governance-svc 'compute-accept aid-prefix commune-aid claim-id))
+   ((machine-accept commune-aid claim-id)
+    (<- governance-svc 'machine-accept aid-prefix commune-aid claim-id))
 
-   ((compute-preempt commune-aid claim-id)
-    (<- governance-svc 'compute-preempt aid-prefix commune-aid claim-id))
+   ((machine-preempt commune-aid claim-id)
+    (<- governance-svc 'machine-preempt aid-prefix commune-aid claim-id))
 
-   ((compute-claims commune-aid)
-    (<- governance-svc 'compute-claims commune-aid))
+   ((machine-claims commune-aid)
+    (<- governance-svc 'machine-claims commune-aid))
 
-   ((compute-receipt commune-aid w)
-    (<- governance-svc 'compute-receipt aid-prefix commune-aid w))
+   ((machine-receipt commune-aid w)
+    (<- governance-svc 'machine-receipt aid-prefix commune-aid w))
 
-   ((compute-verify w)
-    (<- governance-svc 'compute-verify w))
+   ((machine-verify w)
+    (<- governance-svc 'machine-verify w))
 
-   ((compute-settle commune-aid w)
-    (<- governance-svc 'compute-settle aid-prefix commune-aid w))
+   ((machine-settle commune-aid w)
+    (<- governance-svc 'machine-settle aid-prefix commune-aid w))
 
-   ((compute-statements commune-aid)
-    (<- governance-svc 'compute-statements commune-aid))
+   ((machine-statements commune-aid)
+    (<- governance-svc 'machine-statements commune-aid))
 
-   ((compute-envelope w)
-    (<- governance-svc 'compute-envelope w))
+   ((machine-envelope w)
+    (<- governance-svc 'machine-envelope w))
 
-   ((compute-fetch-envelope commune-aid claim-id)
-    (<- governance-svc 'compute-fetch-envelope aid-prefix commune-aid claim-id))
+   ((machine-fetch-envelope commune-aid claim-id)
+    (<- governance-svc 'machine-fetch-envelope aid-prefix commune-aid claim-id))
 
-   ((compute-replay commune-aid claim-id)
-    (<- governance-svc 'compute-replay aid-prefix commune-aid claim-id))
+   ((machine-replay commune-aid claim-id)
+    (<- governance-svc 'machine-replay aid-prefix commune-aid claim-id))
 
-   ((compute-dispute commune-aid claim-id kind)
-    (<- governance-svc 'compute-dispute aid-prefix commune-aid claim-id kind))
+   ((machine-dispute commune-aid claim-id kind)
+    (<- governance-svc 'machine-dispute aid-prefix commune-aid claim-id kind))
 
-   ((compute-dispute-verdict commune-aid dispute-id verdict)
-    (<- governance-svc 'compute-dispute-verdict aid-prefix commune-aid dispute-id verdict))
+   ((machine-dispute-verdict commune-aid dispute-id verdict)
+    (<- governance-svc 'machine-dispute-verdict aid-prefix commune-aid dispute-id verdict))
 
-   ((compute-disputes commune-aid)
-    (<- governance-svc 'compute-disputes aid-prefix commune-aid))
+   ((machine-disputes commune-aid)
+    (<- governance-svc 'machine-disputes aid-prefix commune-aid))
 
-   ((compute-dispute-close commune-aid dispute-id)
-    (<- governance-svc 'compute-dispute-close aid-prefix commune-aid dispute-id))
+   ((machine-dispute-close commune-aid dispute-id)
+    (<- governance-svc 'machine-dispute-close aid-prefix commune-aid dispute-id))
 
-   ((compute-bind commune-aid w)
-    (<- governance-svc 'compute-bind aid-prefix commune-aid w))
+   ((machine-bind commune-aid w)
+    (<- governance-svc 'machine-bind aid-prefix commune-aid w))
 
-   ((compute-unbind commune-aid key side)
-    (<- governance-svc 'compute-unbind aid-prefix commune-aid key side))
+   ((machine-unbind commune-aid key side)
+    (<- governance-svc 'machine-unbind aid-prefix commune-aid key side))
 
-   ((compute-bindings commune-aid)
-    (<- governance-svc 'compute-bindings aid-prefix commune-aid))
+   ((machine-bindings commune-aid)
+    (<- governance-svc 'machine-bindings aid-prefix commune-aid))
 
-   ((compute-payout commune-aid w)
-    (<- governance-svc 'compute-payout aid-prefix commune-aid w))
+   ((machine-payout commune-aid w)
+    (<- governance-svc 'machine-payout aid-prefix commune-aid w))
 
    ;; ── Cards ── how to reach this person, handed to one contact. The
    ;; content is sealed to the receiver in the giver's browser; the commune

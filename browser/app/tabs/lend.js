@@ -18,7 +18,7 @@ import { html, render } from '../template.js';
 import { signal, effect } from '../reactive.js';
 import { scopeSig } from '../scope.js';
 import { identity } from './social/id.js';
-import { lendLoop } from '../compute-executor.js';
+import { lendLoop } from '../machine-executor.js';
 const offers = signal(null);
 const jobs = signal(null);
 const claims = signal(null);
@@ -52,10 +52,10 @@ async function refresh() {
         disputes.set(null);
         return;
     }
-    offers.set(await askJSON(() => HANDLERS.computeOffers?.(c), []));
-    jobs.set(await askJSON(() => HANDLERS.computeJobs?.(c), []));
-    claims.set(await askJSON(() => HANDLERS.computeClaims?.(c), []));
-    disputes.set(await askJSON(() => HANDLERS.computeDisputes?.(c), []));
+    offers.set(await askJSON(() => HANDLERS.machineOffers?.(c), []));
+    jobs.set(await askJSON(() => HANDLERS.machineJobs?.(c), []));
+    claims.set(await askJSON(() => HANDLERS.machineClaims?.(c), []));
+    disputes.set(await askJSON(() => HANDLERS.machineDisputes?.(c), []));
 }
 function arm(on) {
     const c = scopeSig(), aid = me();
@@ -100,9 +100,9 @@ export function initLend() {
             const f = e.target;
             const d = new FormData(f);
             const c = scopeSig();
-            if (!c || !seam().computeOffer)
+            if (!c || !seam().machineOffer)
                 return;
-            void seam().computeOffer(c, String(d.get("lane") || "member"), String(d.get("classes") || "compute"), Number(d.get("headroom") || 1), "exact", "").then(refresh);
+            void seam().machineOffer(c, String(d.get("lane") || "member"), String(d.get("classes") || "compute"), Number(d.get("headroom") || 1), "exact", "").then(refresh);
         }}>
             <input name="lane" placeholder="lane — member | browser | gpu" value="member" />
             <input name="classes" placeholder="task classes — compute,inference" value="compute" />
@@ -113,8 +113,8 @@ export function initLend() {
             <div class="ln-row">
               <b>${of.lane}</b> · ${(of.taskClasses || []).join(", ")} ·
               ${of.headroom} slot${of.headroom === 1 ? "" : "s"} · ${of.reproMode}
-              <button onclick=${() => scopeSig() && seam().computeRetract &&
-            void seam().computeRetract(scopeSig(), of.id).then(refresh)}>retract</button>
+              <button onclick=${() => scopeSig() && seam().machineRetract &&
+            void seam().machineRetract(scopeSig(), of.id).then(refresh)}>retract</button>
             </div>`)}
           ${o.length === 0 ? html `<p class="ln-note">no lanes offered yet.</p>` : ""}
         </section>
@@ -125,8 +125,8 @@ export function initLend() {
               <b>${job.taskClass}</b> · ${job.lane} · ${job.reproMode} ·
               <span class="ln-hash">${job.inputHash}</span>
               ${o.map(of => of.lane === job.lane ? html `
-                <button onclick=${() => scopeSig() && seam().computeClaim &&
-            void seam().computeClaim(scopeSig(), job.id, of.id, "").then(refresh)}
+                <button onclick=${() => scopeSig() && seam().machineClaim &&
+            void seam().machineClaim(scopeSig(), job.id, of.id, "").then(refresh)}
                 >claim → ${of.id.slice(0, 12)}…</button>` : null)}
             </div>`)}
           ${j.length === 0 ? html `<p class="ln-note">nothing asked on your lanes.</p>` : ""}
@@ -147,12 +147,12 @@ export function initLend() {
               <b>${c2.state}</b>${b[cid] ? html ` · ${b[cid]}` : ""}
               ${open.length ? html ` · <span class="ln-flag">disputed</span>` : html `
                 <button title="the countersign deadline passed with no receipt"
-                  onclick=${() => scopeSig() && seam().computeDispute &&
-                void seam().computeDispute(scopeSig(), cid, "non-delivery").then(refresh)}
+                  onclick=${() => scopeSig() && seam().machineDispute &&
+                void seam().machineDispute(scopeSig(), cid, "non-delivery").then(refresh)}
                 >dispute · no receipt</button>
                 <button title="the receipt doesn't reproduce — PoI replay decides"
-                  onclick=${() => scopeSig() && seam().computeDispute &&
-                void seam().computeDispute(scopeSig(), cid, "wrong-result").then(refresh)}
+                  onclick=${() => scopeSig() && seam().machineDispute &&
+                void seam().machineDispute(scopeSig(), cid, "wrong-result").then(refresh)}
                 >dispute · wrong result</button>`}
             </div>`;
         })}
@@ -169,14 +169,14 @@ export function initLend() {
               ${verdictCount(d)}/3 votes
               ${d.challenge ? html ` · replay: ${d.challenge.reproduced ? "reproduced" : "mismatch"}` : ""}
               ${reviewing ? html `
-                <button onclick=${() => scopeSig() && seam().computeDisputeVerdict &&
-                void seam().computeDisputeVerdict(scopeSig(), d.id, "upheld").then(refresh)}>uphold</button>
-                <button onclick=${() => scopeSig() && seam().computeDisputeVerdict &&
-                void seam().computeDisputeVerdict(scopeSig(), d.id, "dismissed").then(refresh)}>dismiss</button>` : ""}
+                <button onclick=${() => scopeSig() && seam().machineDisputeVerdict &&
+                void seam().machineDisputeVerdict(scopeSig(), d.id, "upheld").then(refresh)}>uphold</button>
+                <button onclick=${() => scopeSig() && seam().machineDisputeVerdict &&
+                void seam().machineDisputeVerdict(scopeSig(), d.id, "dismissed").then(refresh)}>dismiss</button>` : ""}
               ${d.state === "review" || d.state === "open" ? html `
                 <button title="prod the clock — a review past its window lapses"
-                  onclick=${() => scopeSig() && seam().computeDisputeClose &&
-                void seam().computeDisputeClose(scopeSig(), d.id).then(refresh)}>close</button>` : ""}
+                  onclick=${() => scopeSig() && seam().machineDisputeClose &&
+                void seam().machineDisputeClose(scopeSig(), d.id).then(refresh)}>close</button>` : ""}
             </div>`;
         })}
           ${ds.length === 0 ? html `<p class="ln-note">no disputes touch your claims.</p>` : ""}

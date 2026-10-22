@@ -21,9 +21,9 @@
 ;;; bearing and the vectors pin it). A preempted outcome is a receipt with
 ;;; state "preempted": recorded, unpaid, not a miss (naoms-compute.md §10).
 
-(define-module (playnet compute receipt)
+(define-module (playnet machine receipt)
   #:use-module (playnet vf schemas)
-  #:use-module (playnet compute specs)
+  #:use-module (playnet machine specs)
   #:use-module (gcrypt hash)
   #:use-module (gcrypt base16)
   #:use-module (rnrs bytevectors)

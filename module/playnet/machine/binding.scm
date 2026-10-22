@@ -1,4 +1,4 @@
-;;; module/playnet/compute/binding.scm — the AccountLink ceremony (spec §1).
+;;; module/playnet/machine/binding.scm — the AccountLink ceremony (spec §1).
 ;;;
 ;;; An AccountLink says three things: WHO the machine-side signer is (a
 ;;; did:key), WHICH accountable identity it stands behind (the scope's grant
@@ -29,12 +29,12 @@
 ;;;
 ;;; Verdicts: 'ok | 'bad-signature | 'expired | 'unlinked | 'unverifiable.
 
-(define-module (playnet compute binding)
+(define-module (playnet machine binding)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
-  #:use-module (playnet compute settlement)
+  #:use-module (playnet machine settlement)
   #:export (binding-statement keri-account?
             <account-binding> make-account-binding account-binding?
             account-binding-link account-binding-signer-sig

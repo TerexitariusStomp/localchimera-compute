@@ -1,4 +1,4 @@
-;;; module/playnet/compute/executors.scm — the executor registry: how a
+;;; module/playnet/machine/executors.scm — the executor registry: how a
 ;;; replay finds something that can actually run the job.
 ;;;
 ;;; replay-job's seam is a procedure (executor envelope repro-spec) →
@@ -6,7 +6,7 @@
 ;;; broker on this commune's edge, a wasmCloud host running the component,
 ;;; a local wasmtime for a node that IS the machine. The registry is the
 ;;; indirection — boot code or a service-facing door registers an executor
-;;; under a commune (or the wildcard 'any), compute-replay consults it,
+;;; under a commune (or the wildcard 'any), machine-replay consults it,
 ;;; and absent every entry the door still answers 'no-executor. Nothing
 ;;; here pretends an executor exists; the table is empty until one lands.
 ;;;
@@ -21,7 +21,7 @@
 ;;;     calling convention; the shape contract stays thin so each service's
 ;;;     adapter lives beside its own transport.
 
-(define-module (playnet compute executors)
+(define-module (playnet machine executors)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (ice-9 format)

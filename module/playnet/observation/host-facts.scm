@@ -279,7 +279,7 @@
         (rs     ($ scope 'recipe-store))
         (lr     ($ scope 'live-registry))
         (obs    (false-if-exception ($ scope 'observer))))
-    ($ rs 'add-resource-spec infra-compute-spec)
+    ($ rs 'add-resource-spec infra-machine-spec)
     ($ rs 'add-resource-spec infra-memory-spec)
     (map (lambda (kind spec unit)
            (let* ((entry (assq-ref ledger kind))

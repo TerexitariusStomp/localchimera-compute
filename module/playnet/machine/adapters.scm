@@ -1,4 +1,4 @@
-;;; module/playnet/compute/adapters.scm — the executor adapters: how a
+;;; module/playnet/machine/adapters.scm — the executor adapters: how a
 ;;; registered replay executor actually reaches a service.
 ;;;
 ;;; executors.scm is the table; THIS file is the transport half of two of
@@ -24,17 +24,17 @@
 ;;; run the receipt claims. Where the wire can't carry them the field
 ;;; rides through verbatim for the service to honor or refuse.
 
-(define-module (playnet compute adapters)
+(define-module (playnet machine adapters)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
   #:use-module (gcrypt hash)
   #:use-module (gcrypt base16)
   #:use-module (rnrs bytevectors)
-  #:use-module (playnet compute specs)
-  #:use-module (playnet compute envelope)
-  #:use-module (playnet compute receipt)
-  #:use-module (playnet compute executors)
+  #:use-module (playnet machine specs)
+  #:use-module (playnet machine envelope)
+  #:use-module (playnet machine receipt)
+  #:use-module (playnet machine executors)
   #:export (wasimoff-task make-wasimoff-executor
             wasmcloud-invocation make-wasmcloud-executor
             %transport-unavailable))

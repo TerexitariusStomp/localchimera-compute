@@ -8,8 +8,8 @@
 ;;; red here and red over there, in the same direction.
 
 (use-modules (playnet test harness)
-             (playnet compute specs)
-             (playnet compute receipt)
+             (playnet machine specs)
+             (playnet machine receipt)
              (playnet vf schemas)
              (srfi srfi-1))
 
@@ -117,10 +117,10 @@
 
 (display "\n── 4. specs — tags in, tags out ──\n")
 
-(let ((s (make-compute-spec "spec:infer-small" "small inference, member machines"
+(let ((s (make-machine-spec "spec:infer-small" "small inference, member machines"
                             #:task-class 'inference #:lane "member"
                             #:repro-mode 'deterministic #:usage-unit "tokens")))
-  (check "it is a compute spec"  (compute-spec? s))
+  (check "it is a compute spec"  (machine-spec? s))
   (check "the class reads back"  (spec-task-class s) 'inference)
   (check "the lane reads back"   (spec-lane s) "member")
   (check "the mode reads back"   (spec-repro-mode s) 'deterministic)
@@ -133,14 +133,14 @@
          '("compute" "inference" "lane:member" "repro:deterministic")))
 
 (check "an ordinary spec is not a compute spec"
-       (not (compute-spec?
+       (not (machine-spec?
               (make-resource-specification #:id "x" #:name "x"
                                            #:resource-classified-as '("tool")))))
 (check-error "a nonsense class is rejected"
-             (lambda () (make-compute-spec "s" "s" #:task-class 'alchemy
+             (lambda () (make-machine-spec "s" "s" #:task-class 'alchemy
                                            #:lane "l" #:repro-mode 'none)))
 (check-error "a nonsense mode is rejected"
-             (lambda () (make-compute-spec "s" "s" #:task-class 'fetch
+             (lambda () (make-machine-spec "s" "s" #:task-class 'fetch
                                            #:lane "l" #:repro-mode 'vibes)))
 
 (test-summary!)

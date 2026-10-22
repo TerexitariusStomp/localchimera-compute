@@ -141,83 +141,83 @@ export interface SeamHandlers {
   // doors: lobby/corpus-search
   corpusSearch?(domain: string, query: string, limit: number): Promise<unknown>;
   /** Offer this person's machines to a commune: LANE the lane name, CLASSES a comma list of task classes, HEADROOM units kept for inner-ring work, REPRO the replay claim. OPTS-JSON may carry {"usageUnit":"seconds"}. → "ok:<offer-id>" | "err:…". */
-  // doors: session/compute-offer
-  computeOffer?(commune: string, lane: string, classes: string, headroom: number, repro: string, optsJson?: string): Promise<unknown>;
+  // doors: session/machine-offer
+  machineOffer?(commune: string, lane: string, classes: string, headroom: number, repro: string, optsJson?: string): Promise<unknown>;
   /** Retract one of the caller's offers. "ok" | "err:…". */
-  // doors: session/compute-retract
-  computeRetract?(commune: string, offerId: string): Promise<unknown>;
+  // doors: session/machine-retract
+  machineRetract?(commune: string, offerId: string): Promise<unknown>;
   /** The commune's standing compute offers, as a JSON array. */
-  // doors: session/compute-offers
-  computeOffers?(commune: string): Promise<unknown>;
+  // doors: session/machine-offers
+  machineOffers?(commune: string): Promise<unknown>;
   /** Submit a compute job — the borrower's intent enters at ring 1 and walks outward only by preemption. OPTS-JSON may carry {"envelopeHash","ring","specId"}. → "ok:<job-id>" | "err:…". */
-  // doors: session/compute-submit
-  computeSubmit?(commune: string, taskClass: string, lane: string, repro: string, inputHash: string, optsJson?: string): Promise<unknown>;
+  // doors: session/machine-submit
+  machineSubmit?(commune: string, taskClass: string, lane: string, repro: string, inputHash: string, optsJson?: string): Promise<unknown>;
   /** Withdraw an open job of the caller's. "ok" | "err:…". */
-  // doors: session/compute-withdraw
-  computeWithdraw?(commune: string, jobId: string): Promise<unknown>;
+  // doors: session/machine-withdraw
+  machineWithdraw?(commune: string, jobId: string): Promise<unknown>;
   /** The commune's jobs, as a JSON array. */
-  // doors: session/compute-jobs
-  computeJobs?(commune: string): Promise<unknown>;
+  // doors: session/machine-jobs
+  machineJobs?(commune: string): Promise<unknown>;
   /** Offers answering JOB-ID at the ring it sits on, as a JSON array. */
-  // doors: session/compute-match
-  computeMatch?(commune: string, jobId: string): Promise<unknown>;
+  // doors: session/machine-match
+  machineMatch?(commune: string, jobId: string): Promise<unknown>;
   /** Take JOB-ID under OFFER-ID — OPTS-JSON may carry {"deadline":<epoch-ms>}, default 72h, the countersign-by the spec's no-receipt-no-payment rule reads. → "ok:<claim-id>" | "err:…". */
-  // doors: session/compute-claim
-  computeClaim?(commune: string, jobId: string, offerId: string, optsJson?: string): Promise<unknown>;
+  // doors: session/machine-claim
+  machineClaim?(commune: string, jobId: string, offerId: string, optsJson?: string): Promise<unknown>;
   /** The borrower confirms the dispatch. "ok" | "err:…". */
-  // doors: session/compute-accept
-  computeAccept?(commune: string, claimId: string): Promise<unknown>;
+  // doors: session/machine-accept
+  machineAccept?(commune: string, claimId: string): Promise<unknown>;
   /** Preempt a claim — lender, borrower or governor; never a miss, the job reopens one ring outward. "ok" | "err:…". */
-  // doors: session/compute-preempt
-  computePreempt?(commune: string, claimId: string): Promise<unknown>;
+  // doors: session/machine-preempt
+  machinePreempt?(commune: string, claimId: string): Promise<unknown>;
   /** The commune's dispatch claims, as a JSON array. */
-  // doors: session/compute-claims
-  computeClaims?(commune: string): Promise<unknown>;
+  // doors: session/machine-claims
+  machineClaims?(commune: string): Promise<unknown>;
   /** The claim's lender fetches the job envelope it's meant to run — borrower and strangers refused. → envelope JSON | "err:…". */
-  // doors: session/compute-fetch-envelope
-  computeFetchEnvelope?(commune: string, claimId: string): Promise<unknown>;
+  // doors: session/machine-fetch-envelope
+  machineFetchEnvelope?(commune: string, claimId: string): Promise<unknown>;
   /** PoI replay is authoritative — either party of the claim re-runs the envelope and the reply carries the challenge fields {receiptDigest, reproduced, attestationHash, counterHash} | "err:…". */
-  // doors: session/compute-replay
-  computeReplay?(commune: string, claimId: string): Promise<unknown>;
+  // doors: session/machine-replay
+  machineReplay?(commune: string, claimId: string): Promise<unknown>;
   /** Raise a dispute on a claim — `kind` is "non-delivery" (deadline past, no receipt) or "wrong-result" (PoI replay runs and carries the challenge as evidence). Parties only; a reproduced verdict refuses. → dispute row | "err:…". */
-  // doors: session/compute-dispute
-  computeDispute?(commune: string, claimId: string, kind: string): Promise<unknown>;
+  // doors: session/machine-dispute
+  machineDispute?(commune: string, claimId: string, kind: string): Promise<unknown>;
   /** A sortition-selected reviewer's verdict — "upheld" or "dismissed"; two-of-three decides and closes. → dispute row | "err:…". */
-  // doors: session/compute-dispute-verdict
-  computeDisputeVerdict?(commune: string, disputeId: string, verdict: string): Promise<unknown>;
+  // doors: session/machine-dispute-verdict
+  machineDisputeVerdict?(commune: string, disputeId: string, verdict: string): Promise<unknown>;
   /** The commune's dispute rows — id, claimId, kind, state, reviewers, verdicts, outcome, challenge. → row JSON list | "[]". */
-  // doors: session/compute-disputes
-  computeDisputes?(commune: string): Promise<unknown>;
+  // doors: session/machine-disputes
+  machineDisputes?(commune: string): Promise<unknown>;
   /** Prod the clock: a review past its closure window lapses closed. → dispute row | "err:…". */
-  // doors: session/compute-dispute-close
-  computeDisputeClose?(commune: string, disputeId: string): Promise<unknown>;
+  // doors: session/machine-dispute-close
+  machineDisputeClose?(commune: string, disputeId: string): Promise<unknown>;
   /** Bind a did:key to an account — a CAIP-10 payout address, or `keri:<aid>` (the AID↔did:key link; binds the caller's own AID only). Dual-signed over the statement; the verdict rides the reply. → {key, verdict} | "err:…". */
-  // doors: session/compute-bind
-  computeBind?(commune: string, wireJson: string): Promise<unknown>;
+  // doors: session/machine-bind
+  machineBind?(commune: string, wireJson: string): Promise<unknown>;
   /** Either side unlinks — `side` is "signer" (the did:key) or "account" (the EOA/AID); the record stays, its status naming who ended it. → status | "err:…". */
-  // doors: session/compute-unbind
-  computeUnbind?(commune: string, key: string, side: string): Promise<unknown>;
+  // doors: session/machine-unbind
+  machineUnbind?(commune: string, key: string, side: string): Promise<unknown>;
   /** The commune's AccountLinks — didKey, account, purpose, status per row. → row JSON list | "[]". */
-  // doors: session/compute-bindings
-  computeBindings?(commune: string): Promise<unknown>;
+  // doors: session/machine-bindings
+  machineBindings?(commune: string): Promise<unknown>;
   /** The commune's act, governor-gated: a SettlementStatement's sends, all to the bound treasury Safe — the rail is injected and refuses when absent. → payout rows | "err:…". */
-  // doors: session/compute-payout
-  computePayout?(commune: string, wireJson: string): Promise<unknown>;
+  // doors: session/machine-payout
+  machinePayout?(commune: string, wireJson: string): Promise<unknown>;
   /** Land a receipt wire (JSON: the body the lender's node emitted): digest recomputed and matched, lender signature checked where resolvable, recorded, folded into the commune's observer as a use event. → {digest, verdict} JSON | "err:…". */
-  // doors: session/compute-receipt
-  computeReceipt?(commune: string, wireJson: string): Promise<unknown>;
+  // doors: session/machine-receipt
+  machineReceipt?(commune: string, wireJson: string): Promise<unknown>;
   /** Dry-run a receipt wire: → {digestOk, verdict} JSON | "err:…". */
-  // doors: session/compute-verify
-  computeVerify?(wireJson: string): Promise<unknown>;
+  // doors: session/machine-verify
+  machineVerify?(wireJson: string): Promise<unknown>;
   /** A bridge's settlement statement as JSON — gov-cap gated, reconciles entries against recorded receipts. → {matched, missing, claimed, paid} JSON | "err:…". */
-  // doors: session/compute-settle
-  computeSettle?(commune: string, wireJson: string): Promise<unknown>;
+  // doors: session/machine-settle
+  machineSettle?(commune: string, wireJson: string): Promise<unknown>;
   /** The commune's recorded settlement statements, as a JSON array. */
-  // doors: session/compute-statements
-  computeStatements?(commune: string): Promise<unknown>;
+  // doors: session/machine-statements
+  machineStatements?(commune: string): Promise<unknown>;
   /** Validate a job envelope (JSON) — refuses any envelope carrying a price key. → "ok:<bridgeJobId>" | "err:…". */
-  // doors: session/compute-envelope
-  computeEnvelope?(wireJson: string): Promise<unknown>;
+  // doors: session/machine-envelope
+  machineEnvelope?(wireJson: string): Promise<unknown>;
   // doors: session/declare-means
   declareMeans?(spec: string, qty: number, unit: string, where: string, arcs: string, note: string, emoji: string, name: string, cats: string, criteria?: string): Promise<unknown>;
   /** As one of SCOPE's governors, declare the scope's willingness to host pools of SPEC up to CEILING unit-hours a day (the consent a foreign span into this scope's places needs, and the ceiling the means consensus binds); `until` is an ISO date or absent for open-ended. Replies "ok" or "err:…". */

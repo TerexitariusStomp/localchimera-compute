@@ -1,4 +1,4 @@
-;;; module/playnet/compute/safe.scm — the Safe send rail: Safe{Wallet}
+;;; module/playnet/machine/safe.scm — the Safe send rail: Safe{Wallet}
 ;;; (LGPL-3.0) is the adopted treasury execution; this adapter turns a
 ;;; payout-plan row into the transaction-service proposal wire and is the
 ;;; `send` closure execute-payout consumes.
@@ -19,7 +19,7 @@
 ;;;     (to amount asset) → tx-hash, the send execute-payout wants.
 ;;;   • %safe-unavailable — the fail-closed transport.
 
-(define-module (playnet compute safe)
+(define-module (playnet machine safe)
   #:use-module (srfi srfi-1)
   #:use-module (ice-9 format)
   #:export (safe-proposal make-safe-send %safe-unavailable))

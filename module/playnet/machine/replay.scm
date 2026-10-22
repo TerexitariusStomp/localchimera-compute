@@ -1,4 +1,4 @@
-;;; module/playnet/compute/replay.scm — the prover side of the receipt.
+;;; module/playnet/machine/replay.scm — the prover side of the receipt.
 ;;;
 ;;; A receipt is a claim; replay is the check. The registry remembers what
 ;;; the lender said happened; this module decides what happens when a
@@ -28,14 +28,14 @@
 ;;; claimed output hash, and the counter-hash the replay produced —
 ;;; the same fields the dispute path carries.
 
-(define-module (playnet compute replay)
+(define-module (playnet machine replay)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-13)
   #:use-module (ice-9 match)
   #:use-module (ice-9 format)
-  #:use-module (playnet compute envelope)
-  #:use-module (playnet compute receipt)
+  #:use-module (playnet machine envelope)
+  #:use-module (playnet machine receipt)
   #:export (replay-job replay-verdict
             %replay-unavailable
             make-challenge

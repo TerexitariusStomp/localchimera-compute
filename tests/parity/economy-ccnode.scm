@@ -6,8 +6,8 @@
 (use-modules (playnet test harness)
              (playnet test parity)
              (playnet delegates)
-             (playnet compute settlement)
-             (playnet compute credit-commons)
+             (playnet machine settlement)
+             (playnet machine credit-commons)
              (srfi srfi-1))
 
 (define fixture-statement

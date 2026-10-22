@@ -9,7 +9,7 @@
 ;;; an envelope that says what it pays is not an envelope, it is a leak
 ;;; of the settlement layer into the execution layer.
 
-(define-module (playnet compute envelope)
+(define-module (playnet machine envelope)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (ice-9 match)

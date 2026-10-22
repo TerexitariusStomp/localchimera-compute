@@ -29,7 +29,7 @@
   #:use-module (rnrs bytevectors)
   #:use-module (ice-9 textual-ports)
   #:use-module (json)
-  #:use-module (playnet compute adapters)
+  #:use-module (playnet machine adapters)
   #:export (%env-transport %json-http-transport wire->json
             sparql-request make-sparql-delegate
             opa-decision make-opa-delegate

@@ -3,7 +3,7 @@
 /// The headline e2e: two identities, two pages, one gateway. Alice signs
 /// up, seats herself in a commune, offers a compute lane; Bob signs up,
 /// submits an enveloped job, and claims it; Alice's page — through the
-/// REAL compute-executor.js running in the REAL browser — fetches the
+/// REAL machine-executor.js running in the REAL browser — fetches the
 /// envelope, runs it in its Worker sandbox, and countersigns the receipt.
 /// The registry marks the claim complete, and the lend face shows it.
 ///
@@ -76,7 +76,7 @@ try {
   if (bScope === 'ok') await offerHours(bob);
 
   // ── the book: alice offers a lane, bob submits a job ────────────────────
-  const offerRes = await H(alice, 'computeOffer', commune, 'member', 'inference', 2, 'deterministic', '');
+  const offerRes = await H(alice, 'machineOffer', commune, 'member', 'inference', 2, 'deterministic', '');
   const offerId = String(offerRes).replace(/^ok:/, '');
   h.rec('alice offers an inference lane',
         typeof offerRes === 'string' && offerRes.startsWith('ok:'),
@@ -85,7 +85,7 @@ try {
   const env = { bridgeJobId: 'bj-ux-1', image: 'js:work',
                 entrypoint: '(input) => input * 2', inputHash: 'in:ux1',
                 caps: [], network: false };
-  const jobRes = await H(bob, 'computeSubmit', commune, 'inference', 'member',
+  const jobRes = await H(bob, 'machineSubmit', commune, 'inference', 'member',
                          'deterministic', 'in:ux1',
                          JSON.stringify({ envelope: env, envelopeHash: 'eh:ux1' }));
   const jobId = String(jobRes).replace(/^ok:/, '');
@@ -96,18 +96,18 @@ try {
   // alice — the LENDER — claims bob's job under her offer; the door binds
   // the claim's lender side to the caller, so a claim from the borrower is
   // rightly refused
-  const offers = await H(alice, 'computeOffers', commune);
-  const jobRows = await H(bob, 'computeJobs', commune);
-  const claimRes = await H(alice, 'computeClaim', commune, jobId, offerId, '');
+  const offers = await H(alice, 'machineOffers', commune);
+  const jobRows = await H(bob, 'machineJobs', commune);
+  const claimRes = await H(alice, 'machineClaim', commune, jobId, offerId, '');
   const claimId = String(claimRes).replace(/^ok:/, '');
   h.rec('the claim binds bob\'s job to alice\'s offer',
         typeof claimRes === 'string' && claimRes.startsWith('ok:'),
         JSON.stringify(claimRes));
   // the borrower accepts — the borrower-side door
-  await H(bob, 'computeAccept', commune, claimId);
+  await H(bob, 'machineAccept', commune, claimId);
 
   // ── the node: alice's page runs the envelope for real ───────────────────
-  const fetched = await H(alice, 'computeFetchEnvelope', commune, claimId);
+  const fetched = await H(alice, 'machineFetchEnvelope', commune, claimId);
   let envBack = fetched;
   try { envBack = typeof fetched === 'string' ? JSON.parse(fetched) : fetched; }
   catch { envBack = { __raw: fetched }; }
@@ -117,24 +117,24 @@ try {
     h.logs.filter(l => /fetch-env|day-boot/.test(l)).slice(-8)));
 
   const run = await alice.evaluate(async ({ env }) => {
-    const ex = await import('/app/compute-executor.js');
+    const ex = await import('/app/machine-executor.js');
     return ex.runEnvelope(env, 21);
   }, { env: envBack });
   h.rec('the browser executor ran the job', run?.result === 42,
         JSON.stringify(run));
 
-  // countersign: emitReceipt + computeReceipt through the session
+  // countersign: emitReceipt + machineReceipt through the session
   const rcpt = await alice.evaluate(async ({ env, run, lender, claimId }) => {
-    const ex = await import('/app/compute-executor.js');
+    const ex = await import('/app/machine-executor.js');
     return ex.emitReceipt({ env, lenderDid: lender, result: run.result,
                             seconds: run.seconds, bridgeJobId: claimId,
                             reproMode: 'deterministic', seed: 0 });
   }, { env: envBack, run, lender: aliceAid, claimId });
-  const rcptRes = await H(bob, 'computeReceipt', commune, JSON.stringify(rcpt));
+  const rcptRes = await H(bob, 'machineReceipt', commune, JSON.stringify(rcpt));
   h.rec('the receipt lands', !String(rcptRes).startsWith('err:'), String(rcptRes).slice(0, 120));
 
   // ── the book reflects it ────────────────────────────────────────────────
-  const claims = await H(bob, 'computeClaims', commune);
+  const claims = await H(bob, 'machineClaims', commune);
   let rows = claims;
   try { rows = typeof claims === 'string' ? JSON.parse(claims) : claims; }
   catch { rows = [{ __raw: claims }]; }

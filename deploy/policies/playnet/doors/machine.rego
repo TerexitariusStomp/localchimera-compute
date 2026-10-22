@@ -1,8 +1,8 @@
-# playnet/doors/compute — the OPA policy the compute doors consult.
+# playnet/doors/machine — the OPA policy the compute doors consult.
 #
-# The delegate posts /v1/data/playnet/doors/compute with:
+# The delegate posts /v1/data/playnet/doors/machine with:
 #   input.citizen — the actor's did:key / keri AID
-#   input.door    — the door name (compute-offer, compute-claim, …)
+#   input.door    — the door name (machine-offer, machine-claim, …)
 #   input.commune — the commune's AID the door's scope lives under
 #   input.action  — create | read | update | delete | administer
 #

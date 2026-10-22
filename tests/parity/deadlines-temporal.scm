@@ -9,13 +9,13 @@
              (srfi srfi-1))
 
 (let ((w (temporal-start-wire "dispute-d1" "dispute-deadline"
-                              "compute-doors" '(72))))
+                              "machine-doors" '(72))))
   (check "temporal start wire posts the workflow to /workflows/<id>"
          (and (equal? (cdr (assoc "method" w)) "POST")
               (equal? (cdr (assoc "path" w)) "/workflows/dispute-d1")
               (let ((b (cdr (assoc "body" w))))
                 (and (equal? (cdr (assoc "workflowType" b)) "dispute-deadline")
-                     (equal? (cdr (assoc "taskQueue" b)) "compute-doors"))))
+                     (equal? (cdr (assoc "taskQueue" b)) "machine-doors"))))
          #t))
 
 (let ((w (temporal-signal-wire "dispute-d1" "receipt-landed"

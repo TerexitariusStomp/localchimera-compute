@@ -1,4 +1,4 @@
-;;; module/playnet/compute/binding-verifiers.scm — the real signature
+;;; module/playnet/machine/binding-verifiers.scm — the real signature
 ;;; checks the AccountLink ceremony needs.
 ;;;
 ;;; binding.scm's verify-binding is the seam; THIS file is what fills it
@@ -19,7 +19,7 @@
 ;;; 'unverifiable through verify-binding's catch — a binding the crypto
 ;;; can't read is a binding that doesn't settle, not one that pretends.
 
-(define-module (playnet compute binding-verifiers)
+(define-module (playnet machine binding-verifiers)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
   #:use-module (rnrs bytevectors)

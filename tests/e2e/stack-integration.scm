@@ -10,7 +10,7 @@
 ;;; Skips loudly without PLAYNET_OPA_URL — run via tools/dev/run-stack.sh.
 
 (use-modules (playnet test harness)
-             (playnet doors compute)
+             (playnet doors machine)
              (playnet delegates)
              (ice-9 textual-ports)
              (srfi srfi-1))
@@ -34,7 +34,7 @@
 
 ;; the shipped policy, verbatim — what a deployed OPA actually serves
 (define rego
-  (call-with-input-file "deploy/policies/playnet/doors/compute.rego"
+  (call-with-input-file "deploy/policies/playnet/doors/machine.rego"
     get-string-all))
 
 ;; 1. the deployed OPA serves the shipped policy (mounted from
@@ -55,7 +55,7 @@
        (< (car members) 300) #t)
 
 ;; 2. the door's own consult, three verdicts
-(parameterize ((*compute-authz* (make-opa-delegate transport)))
+(parameterize ((*machine-authz* (make-opa-delegate transport)))
   (check "a member-admin may administer — the engine's allow governs"
          (commune-act-allowed? "alice" "commune-x" "administer") #t)
   (check "a plain member is denied administer"
@@ -67,7 +67,7 @@
 
 ;; 3. policy-less path is fail closed — no policy named, the engine
 ;; answers nothing usable and the consult denies
-(parameterize ((*compute-authz* (make-opa-delegate transport)))
+(parameterize ((*machine-authz* (make-opa-delegate transport)))
   (check "a policy that doesn't exist answers deny, not allow"
          (let ((a ((make-opa-delegate transport)
                    "playnet/doors/nonexistent"

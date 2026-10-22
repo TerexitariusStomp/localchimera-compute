@@ -530,7 +530,7 @@
                plan-tag signal->intent *non-consuming-actions-sne*
                build-sne-index/actor compute-recipe-sne/actor
                compute-sne-for-recipe direct-sne-for-spec seed-dev-knowledge!
-               infra-bandwidth-spec infra-compute-spec infra-dataset-spec
+               infra-bandwidth-spec infra-machine-spec infra-dataset-spec
                infra-memory-spec infra-storage-spec infra-transcript-spec
                infrastructure-specs seed-infrastructure-recipes
                *dwelling-specs* seed-dwelling-recipe seed-dwelling-specs
@@ -573,7 +573,7 @@
                ^buffer-zone-store buffer-zone->list buffer-zone-store-env
                list->buffer-zone portrait->zones-hashmap
                zones-hashmap->portrait derive-communal-demand
-               derive-dependent-demand compute-claim-capacities
+               derive-dependent-demand machine-claim-capacities
                compute-collective-metrics compute-communal-satisfaction-ratio
                compute-dollar-balance compute-dollar-wage-phase-out-factor
                compute-dollar-wages-per-worker

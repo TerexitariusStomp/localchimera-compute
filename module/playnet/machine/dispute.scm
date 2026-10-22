@@ -1,4 +1,4 @@
-;;; module/playnet/compute/dispute.scm — the dispute lifecycle (spec §5).
+;;; module/playnet/machine/dispute.scm — the dispute lifecycle (spec §5).
 ;;;
 ;;; A receipt is a claim about work; a dispute is what happens when a party
 ;;; says the claim is false. Two kinds, per the spec's bridge model:
@@ -32,7 +32,7 @@
 ;;; The store (^dispute-store, registry.scm) is a shelf beside the
 ;;; registry — the doors hold the policy.
 
-(define-module (playnet compute dispute)
+(define-module (playnet machine dispute)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-13)
@@ -40,7 +40,7 @@
   #:use-module (gcrypt hash)
   #:use-module (gcrypt base16)
   #:use-module (rnrs bytevectors)
-  #:use-module (playnet compute replay)
+  #:use-module (playnet machine replay)
   #:export (<dispute> make-dispute dispute?
             dispute-id dispute-claim-id dispute-challenger dispute-kind
             dispute-challenge dispute-raised-at dispute-state

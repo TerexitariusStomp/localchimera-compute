@@ -1312,60 +1312,60 @@ function boot() {
     // the commons' machine book: offers and jobs name the commune, member
     // acts carry the session's AID server-side. Reads answer JSON arrays;
     // mutations "ok" or "ok:<id>"; verify/receipt/settle answer JSON.
-    HANDLERS.computeOffer = (commune, lane, classes, headroom, repro, optsJson) =>
-      new Promise(res => schemeHandlers.computeOffer
-        ? schemeHandlers.computeOffer(commune || "", lane || "", classes || "", headroom || 0, repro || "none", optsJson || "", res)
+    HANDLERS.machineOffer = (commune, lane, classes, headroom, repro, optsJson) =>
+      new Promise(res => schemeHandlers.machineOffer
+        ? schemeHandlers.machineOffer(commune || "", lane || "", classes || "", headroom || 0, repro || "none", optsJson || "", res)
         : res("err:offline"));
-    HANDLERS.computeRetract    = bridge("computeRetract", 2);
-    HANDLERS.computeOffers     = (commune) =>
-      new Promise(res => schemeHandlers.computeOffers ? schemeHandlers.computeOffers(commune || "", res) : res("[]"));
-    HANDLERS.computeSubmit     = (commune, taskClass, lane, repro, inputHash, optsJson) =>
-      new Promise(res => schemeHandlers.computeSubmit
-        ? schemeHandlers.computeSubmit(commune || "", taskClass || "", lane || "", repro || "none", inputHash || "", optsJson || "", res)
+    HANDLERS.machineRetract    = bridge("machineRetract", 2);
+    HANDLERS.machineOffers     = (commune) =>
+      new Promise(res => schemeHandlers.machineOffers ? schemeHandlers.machineOffers(commune || "", res) : res("[]"));
+    HANDLERS.machineSubmit     = (commune, taskClass, lane, repro, inputHash, optsJson) =>
+      new Promise(res => schemeHandlers.machineSubmit
+        ? schemeHandlers.machineSubmit(commune || "", taskClass || "", lane || "", repro || "none", inputHash || "", optsJson || "", res)
         : res("err:offline"));
-    HANDLERS.computeWithdraw   = bridge("computeWithdraw", 2);
-    HANDLERS.computeJobs       = (commune) =>
-      new Promise(res => schemeHandlers.computeJobs ? schemeHandlers.computeJobs(commune || "", res) : res("[]"));
-    HANDLERS.computeMatch      = (commune, jobId) =>
-      new Promise(res => schemeHandlers.computeMatch ? schemeHandlers.computeMatch(commune || "", jobId || "", res) : res("[]"));
-    HANDLERS.computeClaim      = (commune, jobId, offerId, optsJson) =>
-      new Promise(res => schemeHandlers.computeClaim
-        ? schemeHandlers.computeClaim(commune || "", jobId || "", offerId || "", optsJson || "", res)
+    HANDLERS.machineWithdraw   = bridge("machineWithdraw", 2);
+    HANDLERS.machineJobs       = (commune) =>
+      new Promise(res => schemeHandlers.machineJobs ? schemeHandlers.machineJobs(commune || "", res) : res("[]"));
+    HANDLERS.machineMatch      = (commune, jobId) =>
+      new Promise(res => schemeHandlers.machineMatch ? schemeHandlers.machineMatch(commune || "", jobId || "", res) : res("[]"));
+    HANDLERS.machineClaim      = (commune, jobId, offerId, optsJson) =>
+      new Promise(res => schemeHandlers.machineClaim
+        ? schemeHandlers.machineClaim(commune || "", jobId || "", offerId || "", optsJson || "", res)
         : res("err:offline"));
-    HANDLERS.computeAccept     = bridge("computeAccept", 2);
-    HANDLERS.computePreempt    = bridge("computePreempt", 2);
-    HANDLERS.computeClaims     = (commune) =>
-      new Promise(res => schemeHandlers.computeClaims ? schemeHandlers.computeClaims(commune || "", res) : res("[]"));
-    HANDLERS.computeFetchEnvelope = (commune, claimId) =>
-      new Promise(res => schemeHandlers.computeFetchEnvelope ? schemeHandlers.computeFetchEnvelope(commune || "", claimId || "", res) : res("err:offline"));
-    HANDLERS.computeReplay = (commune, claimId) =>
-      new Promise(res => schemeHandlers.computeReplay ? schemeHandlers.computeReplay(commune || "", claimId || "", res) : res("err:offline"));
-    HANDLERS.computeDispute = (commune, claimId, kind) =>
-      new Promise(res => schemeHandlers.computeDispute ? schemeHandlers.computeDispute(commune || "", claimId || "", kind || "", res) : res("err:offline"));
-    HANDLERS.computeDisputeVerdict = (commune, disputeId, verdict) =>
-      new Promise(res => schemeHandlers.computeDisputeVerdict ? schemeHandlers.computeDisputeVerdict(commune || "", disputeId || "", verdict || "", res) : res("err:offline"));
-    HANDLERS.computeDisputes = (commune) =>
-      new Promise(res => schemeHandlers.computeDisputes ? schemeHandlers.computeDisputes(commune || "", res) : res("err:offline"));
-    HANDLERS.computeDisputeClose = (commune, disputeId) =>
-      new Promise(res => schemeHandlers.computeDisputeClose ? schemeHandlers.computeDisputeClose(commune || "", disputeId || "", res) : res("err:offline"));
-    HANDLERS.computeBind = (commune, wireJson) =>
-      new Promise(res => schemeHandlers.computeBind ? schemeHandlers.computeBind(commune || "", wireJson || "{}", res) : res("err:offline"));
-    HANDLERS.computeUnbind = (commune, key, side) =>
-      new Promise(res => schemeHandlers.computeUnbind ? schemeHandlers.computeUnbind(commune || "", key || "", side || "", res) : res("err:offline"));
-    HANDLERS.computeBindings = (commune) =>
-      new Promise(res => schemeHandlers.computeBindings ? schemeHandlers.computeBindings(commune || "", res) : res("[]"));
-    HANDLERS.computePayout = (commune, wireJson) =>
-      new Promise(res => schemeHandlers.computePayout ? schemeHandlers.computePayout(commune || "", wireJson || "{}", res) : res("err:offline"));
-    HANDLERS.computeReceipt    = (commune, wireJson) =>
-      new Promise(res => schemeHandlers.computeReceipt ? schemeHandlers.computeReceipt(commune || "", wireJson || "{}", res) : res("err:offline"));
-    HANDLERS.computeVerify     = (wireJson) =>
-      new Promise(res => schemeHandlers.computeVerify ? schemeHandlers.computeVerify(wireJson || "{}", res) : res("err:offline"));
-    HANDLERS.computeSettle     = (commune, wireJson) =>
-      new Promise(res => schemeHandlers.computeSettle ? schemeHandlers.computeSettle(commune || "", wireJson || "{}", res) : res("err:offline"));
-    HANDLERS.computeStatements = (commune) =>
-      new Promise(res => schemeHandlers.computeStatements ? schemeHandlers.computeStatements(commune || "", res) : res("[]"));
-    HANDLERS.computeEnvelope   = (wireJson) =>
-      new Promise(res => schemeHandlers.computeEnvelope ? schemeHandlers.computeEnvelope(wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.machineAccept     = bridge("machineAccept", 2);
+    HANDLERS.machinePreempt    = bridge("machinePreempt", 2);
+    HANDLERS.machineClaims     = (commune) =>
+      new Promise(res => schemeHandlers.machineClaims ? schemeHandlers.machineClaims(commune || "", res) : res("[]"));
+    HANDLERS.machineFetchEnvelope = (commune, claimId) =>
+      new Promise(res => schemeHandlers.machineFetchEnvelope ? schemeHandlers.machineFetchEnvelope(commune || "", claimId || "", res) : res("err:offline"));
+    HANDLERS.machineReplay = (commune, claimId) =>
+      new Promise(res => schemeHandlers.machineReplay ? schemeHandlers.machineReplay(commune || "", claimId || "", res) : res("err:offline"));
+    HANDLERS.machineDispute = (commune, claimId, kind) =>
+      new Promise(res => schemeHandlers.machineDispute ? schemeHandlers.machineDispute(commune || "", claimId || "", kind || "", res) : res("err:offline"));
+    HANDLERS.machineDisputeVerdict = (commune, disputeId, verdict) =>
+      new Promise(res => schemeHandlers.machineDisputeVerdict ? schemeHandlers.machineDisputeVerdict(commune || "", disputeId || "", verdict || "", res) : res("err:offline"));
+    HANDLERS.machineDisputes = (commune) =>
+      new Promise(res => schemeHandlers.machineDisputes ? schemeHandlers.machineDisputes(commune || "", res) : res("err:offline"));
+    HANDLERS.machineDisputeClose = (commune, disputeId) =>
+      new Promise(res => schemeHandlers.machineDisputeClose ? schemeHandlers.machineDisputeClose(commune || "", disputeId || "", res) : res("err:offline"));
+    HANDLERS.machineBind = (commune, wireJson) =>
+      new Promise(res => schemeHandlers.machineBind ? schemeHandlers.machineBind(commune || "", wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.machineUnbind = (commune, key, side) =>
+      new Promise(res => schemeHandlers.machineUnbind ? schemeHandlers.machineUnbind(commune || "", key || "", side || "", res) : res("err:offline"));
+    HANDLERS.machineBindings = (commune) =>
+      new Promise(res => schemeHandlers.machineBindings ? schemeHandlers.machineBindings(commune || "", res) : res("[]"));
+    HANDLERS.machinePayout = (commune, wireJson) =>
+      new Promise(res => schemeHandlers.machinePayout ? schemeHandlers.machinePayout(commune || "", wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.machineReceipt    = (commune, wireJson) =>
+      new Promise(res => schemeHandlers.machineReceipt ? schemeHandlers.machineReceipt(commune || "", wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.machineVerify     = (wireJson) =>
+      new Promise(res => schemeHandlers.machineVerify ? schemeHandlers.machineVerify(wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.machineSettle     = (commune, wireJson) =>
+      new Promise(res => schemeHandlers.machineSettle ? schemeHandlers.machineSettle(commune || "", wireJson || "{}", res) : res("err:offline"));
+    HANDLERS.machineStatements = (commune) =>
+      new Promise(res => schemeHandlers.machineStatements ? schemeHandlers.machineStatements(commune || "", res) : res("[]"));
+    HANDLERS.machineEnvelope   = (wireJson) =>
+      new Promise(res => schemeHandlers.machineEnvelope ? schemeHandlers.machineEnvelope(wireJson || "{}", res) : res("err:offline"));
 
     // ── Governance seam ──────────────────────────────────────────────────
     // app/tabs/governance.js drives the decisions tab through these, and

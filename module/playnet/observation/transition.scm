@@ -9,7 +9,7 @@
   #:use-module (playnet vf schemas)
   #:export (compute-flow-fractions extract-worker-hours compute-wage-rate-normalized
             compute-dollar-wages-per-worker compute-validated-hours
-            compute-claim-capacities compute-effective-net-market-wage
+            machine-claim-capacities compute-effective-net-market-wage
             compute-real-wages compute-substitution-ratio
             compute-dollar-wage-phase-out-factor compute-total-social-value
             compute-communal-satisfaction-ratio compute-dollar-balance
@@ -87,7 +87,7 @@
   (map (lambda (h) (cons (car h) (* confirmed-output-fraction (cdr h))))
        hours-worked))
 
-(define (compute-claim-capacities validated-hours available-claimable-pool
+(define (machine-claim-capacities validated-hours available-claimable-pool
                                    total-social-svc solidarity-supplements)
   "claim[i] = validated_hours[i] * (pool / total_svc) + solidarity[i].
    solidarity-supplements: alist (agent . amount).
@@ -185,7 +185,7 @@
                          (or (assq-ref config 'total-dollar-wages) 0)
                          hours norm-rates))
          (validated (compute-validated-hours hours (assq-ref ff 'confirmed)))
-         (claims (compute-claim-capacities
+         (claims (machine-claim-capacities
                    validated
                    (or (assq-ref config 'available-claimable-pool) 0)
                    (or (assq-ref config 'total-social-svc) 0)

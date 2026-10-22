@@ -1,68 +1,68 @@
-;;; module/playnet/doors/compute.scm — the compute doors of the governance
+;;; module/playnet/doors/machine.scm — the machine doors of the governance
 ;;; service: lane offers, job intents, dispatch claims, receipts, and the
 ;;; settlement statements a ring-3 bridge lands.
 ;;;
 ;;; A fragment of the governance service (playnet doors governance): a
 ;;; procedure from the actor's context to the doors it serves, composed in
 ;;; by (playnet boot governance). `with-governance-ctx` binds the actor's
-;;; cells and helpers; the commune's ^compute-registry is spawned lazily
+;;; cells and helpers; the commune's ^machine-registry is spawned lazily
 ;;; per commune and memoized in this closure (matching half of
 ;;; spec/playnet-compute.md — the solver is not in this path).
 ;;;
 ;;; WHOSE ACT. Offers, jobs, claims, preemptions and withdrawals are member
 ;;; acts: IDENTITY-KEY is the caller's AID, the session forwards it, and
 ;;; the registry checks the record's own field — only the lender retracts
-;;; an offer, only the borrower accepts a dispatch. compute-settle is a
+;;; an offer, only the borrower accepts a dispatch. machine-settle is a
 ;;; COMMUNE act — a bridge lands a statement through the commune's own
 ;;; governance, gov-cap gated like accept-reimbursement.
 
-(define-module (playnet doors compute)
+(define-module (playnet doors machine)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
   #:use-module (goblins)
   #:use-module (goblins abstract-types)
   #:use-module (goblins utils hashmap)
-  #:use-module (playnet compute specs)
-  #:use-module (playnet compute receipt)
-  #:use-module (playnet compute registry)
-  #:use-module (playnet compute settlement)
-  #:use-module (playnet compute envelope)
-  #:use-module (playnet compute replay)
-  #:use-module (playnet compute dispute)
-  #:use-module (playnet compute binding)
-  #:use-module (playnet compute binding-verifiers)
-  #:use-module (playnet compute payout)
-  #:use-module (playnet compute executors)
+  #:use-module (playnet machine specs)
+  #:use-module (playnet machine receipt)
+  #:use-module (playnet machine registry)
+  #:use-module (playnet machine settlement)
+  #:use-module (playnet machine envelope)
+  #:use-module (playnet machine replay)
+  #:use-module (playnet machine dispute)
+  #:use-module (playnet machine binding)
+  #:use-module (playnet machine binding-verifiers)
+  #:use-module (playnet machine payout)
+  #:use-module (playnet machine executors)
   #:use-module (playnet doors governance)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
   #:use-module ((playnet utils time) #:select (current-epoch-seconds))
   #:use-module ((playnet delegates) #:select (make-opa-delegate))
   #:use-module (json)
-  #:export (governance-compute-doors *compute-clock* *compute-send-rail*
-            *compute-authz* commune-act-allowed?))
+  #:export (governance-machine-doors *machine-clock* *machine-send-rail*
+            *machine-authz* commune-act-allowed?))
 
 
-;;; *compute-clock* — the "now" the compute doors read, as a parameter so a
+;;; *machine-clock* — the "now" the compute doors read, as a parameter so a
 ;;; test can walk a dispute timeline without waiting days. Defaults to the
 ;;; wall clock; nothing outside a test rebinds it.
-(define *compute-clock* (make-parameter current-epoch-seconds))
+(define *machine-clock* (make-parameter current-epoch-seconds))
 
-;;; *compute-send-rail* — the treasury payout rail, parameterized like the
+;;; *machine-send-rail* — the treasury payout rail, parameterized like the
 ;;; clock. Production reads %payout-unavailable (fail closed — a commune
 ;;; without a Safe rail answers an error, never a phantom payment); a test
 ;;; injects its (lambda (to amount asset) → tx-hash).
-(define *compute-send-rail* (make-parameter %payout-unavailable))
+(define *machine-send-rail* (make-parameter %payout-unavailable))
 
-;;; *compute-authz* — the commune-act policy engine, an OPA delegate or #f.
-;;; When set, compute-settle/compute-payout consult
-;;; playnet/doors/compute: an answered allow:#f refuses even after the
+;;; *machine-authz* — the commune-act policy engine, an OPA delegate or #f.
+;;; When set, machine-settle/machine-payout consult
+;;; playnet/doors/machine: an answered allow:#f refuses even after the
 ;;; local gov-cap check passes; 'unavailable falls through to the local
 ;;; gate (a commune runs its doors without a policy engine — OPA is an
 ;;; augmentation, not a dependency). Deployed by
 ;;; (make-opa-delegate (%env-transport "PLAYNET_OPA_URL")).
-(define *compute-authz* (make-parameter #f))
+(define *machine-authz* (make-parameter #f))
 
 (define (json-ref parsed key)
   "KEY lookup in a guile-json alist, string and symbol keys both."
@@ -71,16 +71,16 @@
         (else #f)))
 
 (define (commune-act-allowed? identity-key commune-aid action)
-  "Consult *compute-authz* for ACTION on COMMUNE-AID by IDENTITY-KEY.
+  "Consult *machine-authz* for ACTION on COMMUNE-AID by IDENTITY-KEY.
    #t when unset or the engine is 'unavailable; the engine's own allow
    field decides otherwise."
-  (let ((d (*compute-authz*)))
+  (let ((d (*machine-authz*)))
     (or (not d)
-        (let ((a (d "playnet/doors/compute"
+        (let ((a (d "playnet/doors/machine"
                     `(("citizen" . ,identity-key)
                       ("action" . ,action)
                       ("commune" . ,commune-aid)
-                      ("door" . "compute-treasury")))))
+                      ("door" . "machine-treasury")))))
           (if (eq? a 'unavailable)
               #t
               (let* ((body (and (pair? a) (cdr a)))
@@ -93,14 +93,14 @@
                      (json-ref result "allow")
                      #t)))))))
 
-(define (governance-compute-doors ctx)
-  ;; one ^compute-registry per commune, spawned on first touch
+(define (governance-machine-doors ctx)
+  ;; one ^machine-registry per commune, spawned on first touch
   (let ((registries (make-hash-table)))
     (with-governance-ctx ctx
 
       (define (registry-for commune-aid)
         (or (hash-ref registries commune-aid)
-            (let ((r (spawn ^compute-registry (hashmap) (hashmap)
+            (let ((r (spawn ^machine-registry (hashmap) (hashmap)
                             (hashmap) '())))
               (hash-set! registries commune-aid r)
               r)))
@@ -191,17 +191,17 @@
           ("usageUnit" . ,(lane-offer-usage-unit o))))
 
       (define (job-row j)
-        `(("id" . ,(compute-job-id j))
-          ("borrower" . ,(compute-job-borrower-did j))
-          ("commune" . ,(compute-job-commune-aid j))
-          ("taskClass" . ,(symbol->string (compute-job-task-class j)))
-          ("lane" . ,(compute-job-lane j))
-          ("reproMode" . ,(symbol->string (compute-job-repro-mode j)))
-          ("inputHash" . ,(compute-job-input-hash j))
-          ("envelopeHash" . ,(compute-job-envelope-hash j))
-          ("ring" . ,(compute-job-ring j))
-          ("state" . ,(symbol->string (compute-job-state j)))
-          ("specId" . ,(compute-job-spec-id j))))
+        `(("id" . ,(machine-job-id j))
+          ("borrower" . ,(machine-job-borrower-did j))
+          ("commune" . ,(machine-job-commune-aid j))
+          ("taskClass" . ,(symbol->string (machine-job-task-class j)))
+          ("lane" . ,(machine-job-lane j))
+          ("reproMode" . ,(symbol->string (machine-job-repro-mode j)))
+          ("inputHash" . ,(machine-job-input-hash j))
+          ("envelopeHash" . ,(machine-job-envelope-hash j))
+          ("ring" . ,(machine-job-ring j))
+          ("state" . ,(symbol->string (machine-job-state j)))
+          ("specId" . ,(machine-job-spec-id j))))
 
       (define (claim-row c)
         `(("id" . ,(dispatch-claim-id c))
@@ -279,7 +279,7 @@
         ;; IDENTITY-KEY offers its machines: LANE the lane name, CLASSES a
         ;; comma list of task classes over the wire, HEADROOM units/second
         ;; kept for inner-ring work, REPRO the lender's own replay claim.
-        ((compute-offer identity-key commune-aid lane classes headroom repro . opts)
+        ((machine-offer identity-key commune-aid lane classes headroom repro . opts)
          (let ((classes (filter-map (lambda (s)
                                      (let ((sym (string->symbol (string-trim-both s))))
                                        (and (task-class? sym) sym)))
@@ -291,27 +291,27 @@
            (catch #t
              (lambda ()
                (when (null? classes)
-                 (error "compute-offer: no valid task classes"))
+                 (error "machine-offer: no valid task classes"))
                (cons 'ok ($ (registry-for commune-aid) 'offer
                             identity-key commune-aid lane classes
                             headroom repro-sym usage-unit)))
-             (lambda (k . a) (list 'error (format #f "compute-offer: ~a" a))))))
+             (lambda (k . a) (list 'error (format #f "machine-offer: ~a" a))))))
 
-        ((compute-retract identity-key commune-aid offer-id)
+        ((machine-retract identity-key commune-aid offer-id)
          (catch #t
            (lambda ()
              ($ (registry-for commune-aid) 'retract offer-id identity-key)
              (cons 'ok #t))
-           (lambda (k . a) (list 'error (format #f "compute-retract: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-retract: ~a" a)))))
 
-        ((compute-offers commune-aid)
+        ((machine-offers commune-aid)
          (cons 'ok (map offer-row
                         ($ (registry-for commune-aid) 'offers commune-aid))))
 
         ;; ── jobs ────────────────────────────────────────────────────────
         ;; IDENTITY-KEY submits: the intent side. RING defaults 1 — the job
         ;; enters at its own commune and walks outward only by preemption.
-        ((compute-submit identity-key commune-aid task-class lane repro input-hash . opts)
+        ((machine-submit identity-key commune-aid task-class lane repro input-hash . opts)
          (catch #t
            (lambda ()
              ;; an 'envelope opt means the wire is carrying the body — the
@@ -329,20 +329,20 @@
                (when parsed
                  ($ (shelf-for commune-aid) 'put! job-id parsed))
                (cons 'ok job-id)))
-           (lambda (k . a) (list 'error (format #f "compute-submit: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-submit: ~a" a)))))
 
-        ((compute-withdraw identity-key commune-aid job-id)
+        ((machine-withdraw identity-key commune-aid job-id)
          (catch #t
            (lambda ()
              ($ (registry-for commune-aid) 'withdraw job-id identity-key)
              (cons 'ok #t))
-           (lambda (k . a) (list 'error (format #f "compute-withdraw: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-withdraw: ~a" a)))))
 
-        ((compute-jobs commune-aid)
+        ((machine-jobs commune-aid)
          (cons 'ok (map job-row
                         ($ (registry-for commune-aid) 'jobs commune-aid))))
 
-        ((compute-match commune-aid job-id)
+        ((machine-match commune-aid job-id)
          (cons 'ok (map offer-row
                         ($ (registry-for commune-aid) 'match job-id))))
 
@@ -350,63 +350,63 @@
         ;; IDENTITY-KEY (a lender) takes the job under its own offer;
         ;; DEADLINE-MS is the countersign-by time — the spec's no-receipt-
         ;; no-payment window. Default 72h, the challenge window's length.
-        ((compute-claim identity-key commune-aid job-id offer-id . opts)
+        ((machine-claim identity-key commune-aid job-id offer-id . opts)
          (catch #t
            (lambda ()
              (let ((deadline (or (opt-ref opts 'deadline #f)
-                                 (* (+ ((*compute-clock*))
+                                 (* (+ ((*machine-clock*))
                                        (* 72 3600)) 1000))))
                (cons 'ok ($ (registry-for commune-aid) 'claim
                             identity-key job-id offer-id deadline))))
-           (lambda (k . a) (list 'error (format #f "compute-claim: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-claim: ~a" a)))))
 
-        ((compute-accept identity-key commune-aid claim-id)
+        ((machine-accept identity-key commune-aid claim-id)
          (catch #t
            (lambda ()
              ($ (registry-for commune-aid) 'accept claim-id identity-key)
              (cons 'ok #t))
-           (lambda (k . a) (list 'error (format #f "compute-accept: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-accept: ~a" a)))))
 
-        ((compute-preempt identity-key commune-aid claim-id)
+        ((machine-preempt identity-key commune-aid claim-id)
          (catch #t
            (lambda ()
              (let ((c ($ (registry-for commune-aid) 'claim-of claim-id)))
                (cond
-                ((not c) (error "compute-preempt: no such claim"))
+                ((not c) (error "machine-preempt: no such claim"))
                 ;; the lender preempts its own claim; a commune governor
                 ;; preempts any (inner work reclaiming capacity)
                 ((not (or (equal? identity-key (dispatch-claim-lender-did c))
                           (equal? identity-key (dispatch-claim-borrower-did c))
                           (governor? identity-key)))
-                 (error "compute-preempt: lender, borrower or governor only"))
+                 (error "machine-preempt: lender, borrower or governor only"))
                 (else ($ (registry-for commune-aid) 'preempt claim-id)
                       (cons 'ok #t)))))
-           (lambda (k . a) (list 'error (format #f "compute-preempt: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-preempt: ~a" a)))))
 
-        ((compute-claims commune-aid)
+        ((machine-claims commune-aid)
          (cons 'ok (map claim-row
                         ($ (registry-for commune-aid) 'claims commune-aid))))
 
         ;; IDENTITY-KEY (the claim's lender) fetches the envelope it's meant
         ;; to run. Borrowers already have their own envelope; anyone else
         ;; gets refused — the envelope is the job's payload, not a broadcast.
-        ((compute-fetch-envelope identity-key commune-aid claim-id)
+        ((machine-fetch-envelope identity-key commune-aid claim-id)
          (catch #t
            (lambda ()
              (let ((c ($ (registry-for commune-aid) 'claim-of claim-id)))
                (cond
-                ((not c) (list 'error "compute-fetch-envelope: no such claim"))
+                ((not c) (list 'error "machine-fetch-envelope: no such claim"))
                 ((not (equal? identity-key (dispatch-claim-lender-did c)))
-                 (list 'error "compute-fetch-envelope: the claim's lender only"))
+                 (list 'error "machine-fetch-envelope: the claim's lender only"))
                 ((not (memq (dispatch-claim-state c) '(claimed accepted)))
-                 (list 'error "compute-fetch-envelope: claim no longer live"))
+                 (list 'error "machine-fetch-envelope: claim no longer live"))
                 (else
                  (let ((env ($ (shelf-for commune-aid) 'get
                                (dispatch-claim-job-id c))))
                    (if env
                        (cons 'ok (job-envelope->alist env))
-                       (list 'error "compute-fetch-envelope: not on the shelf")))))))
-           (lambda (k . a) (list 'error (format #f "compute-fetch-envelope: ~a" a)))))
+                       (list 'error "machine-fetch-envelope: not on the shelf")))))))
+           (lambda (k . a) (list 'error (format #f "machine-fetch-envelope: ~a" a)))))
 
         ;; ── replay ───────────────────────────────────────────────────────
         ;; PoI replay is authoritative: the borrower, the lender, or the
@@ -416,18 +416,18 @@
         ;; 'none job answers 'unverifiable (never a verdict against the
         ;; lender). The reply carries the challenge fields: receipt digest,
         ;; reproduced, the claimed attestation hash, the replay's counter.
-        ((compute-replay identity-key commune-aid claim-id)
+        ((machine-replay identity-key commune-aid claim-id)
          (catch #t
            (lambda ()
              (let* ((reg (registry-for commune-aid))
                     (c ($ reg 'claim-of claim-id)))
                (cond
-                ((not c) (list 'error "compute-replay: no such claim"))
+                ((not c) (list 'error "machine-replay: no such claim"))
                 ((not (dispatch-claim-receipt c))
-                 (list 'error "compute-replay: claim has no receipt yet"))
+                 (list 'error "machine-replay: claim has no receipt yet"))
                 ((not (or (equal? identity-key (dispatch-claim-lender-did c))
                           (equal? identity-key (dispatch-claim-borrower-did c))))
-                 (list 'error "compute-replay: the claim's parties only"))
+                 (list 'error "machine-replay: the claim's parties only"))
                 (else
                  (let* ((r (dispatch-claim-receipt c))
                         (env ($ (shelf-for commune-aid) 'get
@@ -435,9 +435,9 @@
                         (repro (receipt-repro r)))
                    (cond
                     ((not env)
-                     (list 'error "compute-replay: envelope not on the shelf"))
+                     (list 'error "machine-replay: envelope not on the shelf"))
                     ((not repro)
-                     (list 'error "compute-replay: receipt has no repro spec"))
+                     (list 'error "machine-replay: receipt has no repro spec"))
                     (else
                      (let* ((x (executor-for commune-aid))
                             (result (replay-job env repro
@@ -454,7 +454,7 @@
                                    ("reproduced"     . ,(challenge-reproduced ch))
                                    ("attestationHash" . ,(challenge-attestation-hash ch))
                                    ("counterHash"    . ,(challenge-counter-hash ch))))))))))))
-           (lambda (k . a) (list 'error (format #f "compute-replay: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-replay: ~a" a)))))
 
         ;; ── disputes ─────────────────────────────────────────────────────
         ;; Spec §5: two kinds. 'non-delivery — the countersign deadline
@@ -466,7 +466,7 @@
         ;; attestation, counter-hash) as the evidence. Either party may
         ;; raise; three sortition-selected citizens review — the hive
         ;; weighs the prover's answer, it never replaces the prover.
-        ((compute-dispute identity-key commune-aid claim-id kind-str)
+        ((machine-dispute identity-key commune-aid claim-id kind-str)
          (catch #t
            (lambda ()
              (ensure-citizen identity-key)
@@ -474,29 +474,29 @@
                     (c ($ reg 'claim-of claim-id))
                     (kind (and kind-str (string->symbol kind-str))))
                (cond
-                ((not c) (list 'error "compute-dispute: no such claim"))
+                ((not c) (list 'error "machine-dispute: no such claim"))
                 ((not (or (equal? identity-key (dispatch-claim-lender-did c))
                           (equal? identity-key (dispatch-claim-borrower-did c))))
-                 (list 'error "compute-dispute: the claim's parties only"))
+                 (list 'error "machine-dispute: the claim's parties only"))
                 ((not (memq kind '(non-delivery wrong-result)))
-                 (list 'error "compute-dispute: kind is non-delivery or wrong-result"))
+                 (list 'error "machine-dispute: kind is non-delivery or wrong-result"))
                 ;; one dispute per claim — reopening is a new claim's story
                 ((not (null? ($ (disputes-for commune-aid) 'by-claim claim-id)))
-                 (list 'error "compute-dispute: claim already disputed"))
+                 (list 'error "machine-dispute: claim already disputed"))
                 ((and (eq? kind 'non-delivery)
                       (or (dispatch-claim-receipt c)
-                          (<= (* ((*compute-clock*)) 1000)
+                          (<= (* ((*machine-clock*)) 1000)
                               (dispatch-claim-deadline c))))
-                 (list 'error "compute-dispute: receipt landed or deadline still open"))
+                 (list 'error "machine-dispute: receipt landed or deadline still open"))
                 ((eq? kind 'wrong-result)
                  (let* ((r (dispatch-claim-receipt c))
                         (env ($ (shelf-for commune-aid) 'get
                                 (dispatch-claim-job-id c)))
                         (repro (and r (receipt-repro r))))
                    (cond
-                    ((not r) (list 'error "compute-dispute: no receipt to contest"))
-                    ((not env) (list 'error "compute-dispute: envelope not on the shelf"))
-                    ((not repro) (list 'error "compute-dispute: receipt has no repro spec"))
+                    ((not r) (list 'error "machine-dispute: no receipt to contest"))
+                    ((not env) (list 'error "machine-dispute: envelope not on the shelf"))
+                    ((not repro) (list 'error "machine-dispute: receipt has no repro spec"))
                     (else
                      (let* ((x (executor-for commune-aid))
                             (result (replay-job env repro
@@ -512,7 +512,7 @@
                        ;; a reproduced verdict fails the dispute's premise —
                        ;; the prover says the receipt stands
                        (if (eq? (replay-verdict result) 'reproduced)
-                           (list 'error "compute-dispute: replay reproduced the receipt")
+                           (list 'error "machine-dispute: replay reproduced the receipt")
                            (let ((d* (dispute-open->review
                                       (make-dispute
                                        #:id (format #f "dispute-~a-~a" claim-id
@@ -520,7 +520,7 @@
                                        #:claim-id claim-id
                                        #:challenger identity-key
                                        #:kind kind #:challenge ch
-                                       #:raised-at ((*compute-clock*)))
+                                       #:raised-at ((*machine-clock*)))
                                       (review-pool
                                        (list identity-key
                                              (dispatch-claim-lender-did c)
@@ -541,7 +541,7 @@
                              #:claim-id claim-id
                              #:challenger identity-key
                              #:kind kind #:challenge #f
-                             #:raised-at ((*compute-clock*)))
+                             #:raised-at ((*machine-clock*)))
                             (review-pool
                              (list identity-key
                                    (dispatch-claim-lender-did c)
@@ -552,49 +552,49 @@
                                   (dispatch-claim-borrower-did c)))))
                    ($ (disputes-for commune-aid) 'put! (dispute-id d*) d*)
                    (cons 'ok (dispute->wire d*)))))))
-           (lambda (k . a) (list 'error (format #f "compute-dispute: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-dispute: ~a" a)))))
 
-        ((compute-dispute-verdict identity-key commune-aid dispute-id verdict-str)
+        ((machine-dispute-verdict identity-key commune-aid dispute-id verdict-str)
          (catch #t
            (lambda ()
              (ensure-citizen identity-key)
              (let* ((d ($ (disputes-for commune-aid) 'get dispute-id))
                     (verdict (and verdict-str (string->symbol verdict-str))))
                (cond
-                ((not d) (list 'error "compute-dispute-verdict: no such dispute"))
+                ((not d) (list 'error "machine-dispute-verdict: no such dispute"))
                 (else
                  (let ((d* (dispute-vote d identity-key verdict)))
                    ($ (disputes-for commune-aid) 'put! dispute-id d*)
                    (cons 'ok (dispute->wire d*)))))))
            (lambda (k . a)
-             (list 'error (format #f "compute-dispute-verdict: ~a" a)))))
+             (list 'error (format #f "machine-dispute-verdict: ~a" a)))))
 
-        ((compute-disputes identity-key commune-aid)
+        ((machine-disputes identity-key commune-aid)
          (catch #t
            (lambda ()
              (ensure-citizen identity-key)
              (cons 'ok (map dispute->wire
                            ($ (disputes-for commune-aid) 'all))))
-           (lambda (k . a) (list 'error (format #f "compute-disputes: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-disputes: ~a" a)))))
 
         ;; anyone may prod the clock: a review past the closure window
         ;; lapses closed. The outcome is arithmetic, not authority.
-        ((compute-dispute-close identity-key commune-aid dispute-id)
+        ((machine-dispute-close identity-key commune-aid dispute-id)
          (catch #t
            (lambda ()
              (ensure-citizen identity-key)
              (let ((d ($ (disputes-for commune-aid) 'get dispute-id)))
                (cond
-                ((not d) (list 'error "compute-dispute-close: no such dispute"))
+                ((not d) (list 'error "machine-dispute-close: no such dispute"))
                 (else
-                 (let ((d* (dispute-close d #:current-time (*compute-clock*))))
+                 (let ((d* (dispute-close d #:current-time (*machine-clock*))))
                    (cond
                     ((eq? (dispute-state d*) 'closed)
                      ($ (disputes-for commune-aid) 'put! dispute-id d*)
                      (cons 'ok (dispute->wire d*)))
-                    (else (list 'error "compute-dispute-close: still within its window"))))))))
+                    (else (list 'error "machine-dispute-close: still within its window"))))))))
            (lambda (k . a)
-             (list 'error (format #f "compute-dispute-close: ~a" a)))))
+             (list 'error (format #f "machine-dispute-close: ~a" a)))))
 
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —
@@ -606,7 +606,7 @@
         ;; the session is already that identity's signature; foreign
         ;; accounts verify through the signature seam (payout re-verifies
         ;; before it pays), and the verdict rides the reply.
-        ((compute-bind identity-key commune-aid w)
+        ((machine-bind identity-key commune-aid w)
          (catch #t
            (lambda ()
              (let* ((w (wire-normalize w))
@@ -615,12 +615,12 @@
                     (account (assq-ref w 'account)))
                (cond
                 ((not (assq-ref w 'didKey))
-                 (list 'error "compute-bind: a didKey is required"))
+                 (list 'error "machine-bind: a didKey is required"))
                 ((not account)
-                 (list 'error "compute-bind: an account is required"))
+                 (list 'error "machine-bind: an account is required"))
                 ((and (keri-account? account)
                       (not (equal? account (string-append "keri:" identity-key))))
-                 (list 'error "compute-bind: a keri: binding is your own AID only"))
+                 (list 'error "machine-bind: a keri: binding is your own AID only"))
                 (else
                  (let* ((link (make-account-link
                                #:did-key (assq-ref w 'didKey)
@@ -646,34 +646,34 @@
                                       %sig-unverified))))
                    ($ (binds-for commune-aid) 'put! key b)
                    (cons 'ok `(("key" . ,key) ("verdict" . ,verdict))))))))
-           (lambda (k . a) (list 'error (format #f "compute-bind: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-bind: ~a" a)))))
 
         ;; Either side unlinks. The caller may end their own keri:-account
         ;; bindings (the session is the account side); signer-side unlink
         ;; arrives with the did:key's signature over the statement — the
         ;; injected verifier speaks, %sig-unverified refuses.
-        ((compute-unbind identity-key commune-aid key side)
+        ((machine-unbind identity-key commune-aid key side)
          (catch #t
            (lambda ()
              (let* ((b ($ (binds-for commune-aid) 'get key))
                     (side-sym (and side (string->symbol side))))
                (cond
-                ((not b) (list 'error "compute-unbind: no such binding"))
+                ((not b) (list 'error "machine-unbind: no such binding"))
                 ((not (memq side-sym '(signer account)))
-                 (list 'error "compute-unbind: side is signer or account"))
+                 (list 'error "machine-unbind: side is signer or account"))
                 ((and (eq? side-sym 'account)
                       (keri-account?
                        (account-link-account (account-binding-link b)))
                       (not (equal? (account-link-account (account-binding-link b))
                                    (string-append "keri:" identity-key))))
-                 (list 'error "compute-unbind: not your binding"))
+                 (list 'error "machine-unbind: not your binding"))
                 (else
                  (let ((b2 (binding-unlink b side-sym)))
                    ($ (binds-for commune-aid) 'put! key b2)
                    (cons 'ok (symbol->string (account-binding-status b2))))))))
-           (lambda (k . a) (list 'error (format #f "compute-unbind: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-unbind: ~a" a)))))
 
-        ((compute-bindings identity-key commune-aid)
+        ((machine-bindings identity-key commune-aid)
          (catch #t
            (lambda ()
              (cons 'ok
@@ -686,18 +686,18 @@
                           ("expiry" . ,(account-link-expiry l))
                           ("status" . ,(symbol->string (account-binding-status b))))))
                     ($ (binds-for commune-aid) 'all))))
-           (lambda (k . a) (list 'error (format #f "compute-bindings: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-bindings: ~a" a)))))
 
         ;; ── ring-3 payout ────────────────────────────────────────────────
-        ;; The commune's act, gov-cap gated like compute-settle: a
+        ;; The commune's act, gov-cap gated like machine-settle: a
         ;; SettlementStatement's sends, all to the bound treasury Safe and
         ;; nowhere else. The send rail is injected — %payout-unavailable
         ;; refuses, so a commune without a Safe rail answers an error, never
         ;; a phantom payment. W is {statement, bindingKey}.
-        ((compute-payout identity-key commune-aid w)
+        ((machine-payout identity-key commune-aid w)
          (let ((sc (scope-for commune-aid)))
            (if (not sc)
-               (list 'error "compute-payout: no scope reachable here for that commune")
+               (list 'error "machine-payout: no scope reachable here for that commune")
                (catch #t
                  (lambda ()
                    ($ sc 'mint-gov-cap identity-key)   ; refuses non-governors
@@ -708,12 +708,12 @@
                      (cond
                       ((not (commune-act-allowed?
                              identity-key commune-aid "administer"))
-                       (list 'error "compute-payout: denied by policy"))
+                       (list 'error "machine-payout: denied by policy"))
                       ((not s-wire)
-                       (list 'error "compute-payout: a statement is required"))
-                      ((not b) (list 'error "compute-payout: no such binding"))
+                       (list 'error "machine-payout: a statement is required"))
+                      ((not b) (list 'error "machine-payout: no such binding"))
                       ((not (binding-live? b))
-                       (list 'error "compute-payout: binding is not live"))
+                       (list 'error "machine-payout: binding is not live"))
                       (else
                        (let* ((sw (wire-normalize s-wire))
                               (st (make-settlement-statement
@@ -721,7 +721,7 @@
                                     #:entries (or (assq-ref sw 'entries) '())
                                     #:payments (or (assq-ref sw 'payments) '())
                                     #:bridge-sig (assq-ref sw 'bridgeSig)))
-                              (rows (execute-payout st b #:send (*compute-send-rail*))))
+                              (rows (execute-payout st b #:send (*machine-send-rail*))))
                          (cons 'ok (map (lambda (r)
                                           `(("txHash" . ,(payout-row-tx-hash r))
                                             ("asset" . ,(payout-row-asset r))
@@ -729,7 +729,7 @@
                                             ("to" . ,(payout-row-to r))))
                                         rows)))))))
                  (lambda (k . a)
-                   (list 'error (format #f "compute-payout: ~a" a)))))))
+                   (list 'error (format #f "machine-payout: ~a" a)))))))
 
         ;; ── receipts ────────────────────────────────────────────────────
         ;; W is the wire alist the lender's node emitted. The door rebuilds
@@ -737,7 +737,7 @@
         ;; the body), checks the lender's signature where resolvable, then
         ;; records — and folds the event into the scope's observer as a
         ;; `use` event, the VF truth of the borrow.
-        ((compute-receipt identity-key commune-aid w)
+        ((machine-receipt identity-key commune-aid w)
          (catch #t
            (lambda ()
              (let* ((r (wire->receipt w))
@@ -745,9 +745,9 @@
                     (verdict (sig-verdict r)))
                (cond
                 ((not (receipt-digest-ok? r))
-                 (list 'error "compute-receipt: digest does not match the body"))
+                 (list 'error "machine-receipt: digest does not match the body"))
                 ((eq? verdict 'bad)
-                 (list 'error "compute-receipt: lender signature does not verify"))
+                 (list 'error "machine-receipt: lender signature does not verify"))
                 (else
                  (let* ((reg (registry-for commune-aid))
                         (claim ($ reg 'claim-of claim-id))
@@ -762,7 +762,7 @@
                               (receipt->event r
                                  #:scope-id commune-aid
                                  #:spec-id (and claim
-                                                (compute-job-spec-id
+                                                (machine-job-spec-id
                                                   ($ reg 'job-of
                                                      (dispatch-claim-job-id claim))))
                                  #:commitment-id claim-id
@@ -770,15 +770,15 @@
                                                   (dispatch-claim-job-id claim)))))
                          (lambda _ #t))))
                    (cons 'ok (list digest verdict)))))))
-           (lambda (k . a) (list 'error (format #f "compute-receipt: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-receipt: ~a" a)))))
 
         ;; dry-run: what would this receipt answer — digest ok, sig verdict
-        ((compute-verify w)
+        ((machine-verify w)
          (catch #t
            (lambda ()
              (let ((r (wire->receipt w)))
                (cons 'ok (list (receipt-digest-ok? r) (sig-verdict r)))))
-           (lambda (k . a) (list 'error (format #f "compute-verify: ~a" a)))))
+           (lambda (k . a) (list 'error (format #f "machine-verify: ~a" a)))))
 
         ;; ── settlement — a commune act, gov-cap gated ────────────────────
         ;; W is the bridge's statement as an alist: period, entries,
@@ -787,16 +787,16 @@
         ;; missing held claimed paid): a matched entry whose claim sits
         ;; under a live or upheld dispute is HELD — money does not move
         ;; on a contested receipt; a dismissed dispute releases it.
-        ((compute-settle identity-key commune-aid w)
+        ((machine-settle identity-key commune-aid w)
          (let ((sc (scope-for commune-aid)))
            (if (not sc)
-               (list 'error "compute-settle: no scope reachable here for that commune")
+               (list 'error "machine-settle: no scope reachable here for that commune")
                (catch #t
                  (lambda ()
                    ($ sc 'mint-gov-cap identity-key)   ; refuses non-governors
                    (if (not (commune-act-allowed?
                              identity-key commune-aid "administer"))
-                       (list 'error "compute-settle: denied by policy")
+                       (list 'error "machine-settle: denied by policy")
                    (let* ((w (wire-normalize w))
                           (stmt (make-settlement-statement
                                   #:period (assq-ref w 'period)
@@ -829,16 +829,16 @@
                                                 held claimed paid))))
                             result))))
                  (lambda (k . a)
-                   (list 'error (format #f "compute-settle: ~a" a)))))))
+                   (list 'error (format #f "machine-settle: ~a" a)))))))
 
-        ((compute-statements commune-aid)
+        ((machine-statements commune-aid)
          (cons 'ok ($ (registry-for commune-aid) 'statements)))
 
         ;; the envelope contract — validates a job envelope a node would
         ;; run; refuses any envelope carrying a price key
-        ((compute-envelope w)
+        ((machine-envelope w)
          (catch #t
            (lambda ()
              (let ((e (alist->job-envelope (wire-normalize w))))
                (cons 'ok (job-envelope-bridge-job-id e))))
-           (lambda (k . a) (list 'error (format #f "compute-envelope: ~a" a)))))))))
+           (lambda (k . a) (list 'error (format #f "machine-envelope: ~a" a)))))))))

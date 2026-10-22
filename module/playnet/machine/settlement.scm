@@ -17,7 +17,7 @@
 ;;; by digest through the caller's resolver — the settlement module never
 ;;; holds the registry, it is given the answer.
 
-(define-module (playnet compute settlement)
+(define-module (playnet machine settlement)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:export (<settlement-statement> make-settlement-statement

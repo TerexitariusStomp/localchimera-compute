@@ -30,16 +30,16 @@
 ;;; A lender that cannot run deterministically commits `none` and takes the
 ;;; weaker challenge scope — the mode is the lender's claim, not our hope.
 
-(define-module (playnet compute specs)
+(define-module (playnet machine specs)
   #:use-module (playnet vf schemas)
   #:use-module (srfi srfi-1)
   #:export (repro-mode?
             task-class?
-            *compute-task-classes*
+            *machine-task-classes*
             lane-tag
             repro-tag
-            make-compute-spec
-            compute-spec?
+            make-machine-spec
+            machine-spec?
             spec-task-class
             spec-lane
             spec-repro-mode))
@@ -47,12 +47,12 @@
 
 ;;; ── the vocabularies ────────────────────────────────────────────────────
 
-(define *compute-task-classes*
+(define *machine-task-classes*
   '(inference storage bandwidth compute research fetch jury canary
     swarm-infer build-verify))
 
 (define (task-class? x)
-  (and (memq x *compute-task-classes*) #t))
+  (and (memq x *machine-task-classes*) #t))
 
 (define (repro-mode? x)
   (and (memq x '(exact deterministic none)) #t))
@@ -63,19 +63,19 @@
 
 ;;; ── the spec ────────────────────────────────────────────────────────────
 
-;;; (make-compute-spec id name #:task-class #:lane #:repro-mode
+;;; (make-machine-spec id name #:task-class #:lane #:repro-mode
 ;;;                    #:usage-unit ["seconds"] #:substitutable [#t])
 ;;;
 ;;; usage-unit is the unit a `use` event meters in — "tokens" or "seconds"
 ;;; (the UsageMeter of the receipt spec). Effort is always "seconds"; the
 ;;; two units stay distinct because a token-metered job still took time.
-(define* (make-compute-spec id name #:key task-class lane repro-mode
+(define* (make-machine-spec id name #:key task-class lane repro-mode
                             (usage-unit "seconds")
                             (substitutable #t))
   (unless (task-class? task-class)
-    (error "compute-spec: not a task class" task-class))
+    (error "machine-spec: not a task class" task-class))
   (unless (repro-mode? repro-mode)
-    (error "compute-spec: not a repro mode" repro-mode))
+    (error "machine-spec: not a repro mode" repro-mode))
   (make-resource-specification
     #:id id
     #:name name
@@ -90,13 +90,13 @@
 
 ;;; ── reading the tags back ───────────────────────────────────────────────
 
-(define (compute-spec? spec)
+(define (machine-spec? spec)
   (let ((cls (resource-specification-resource-classified-as spec)))
     (and (pair? cls) (equal? "compute" (car cls)))))
 
 (define (spec-task-class spec)
   (let ((cls (resource-specification-resource-classified-as spec)))
-    (and (compute-spec? spec) (pair? (cdr cls))
+    (and (machine-spec? spec) (pair? (cdr cls))
          (string->symbol (cadr cls)))))
 
 (define (spec-lane spec)

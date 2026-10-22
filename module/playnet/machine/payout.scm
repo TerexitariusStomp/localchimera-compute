@@ -1,4 +1,4 @@
-;;; module/playnet/compute/payout.scm — ring-3 settlement pays the treasury,
+;;; module/playnet/machine/payout.scm — ring-3 settlement pays the treasury,
 ;;; only the treasury, and only through a live payout binding (spec §2).
 ;;;
 ;;; A SettlementStatement says what the bridge owes for a period; the
@@ -24,12 +24,12 @@
 ;;; this module is the bridge edge — it produces the sends and records the
 ;;; tx-hashes the reconciler matches on-chain.
 
-(define-module (playnet compute payout)
+(define-module (playnet machine payout)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (ice-9 format)
-  #:use-module (playnet compute settlement)
-  #:use-module (playnet compute binding)
+  #:use-module (playnet machine settlement)
+  #:use-module (playnet machine binding)
   #:export (payout-binding payout-plan execute-payout %payout-unavailable
             payout-row-tx-hash payout-row-asset payout-row-amount payout-row-to))
 

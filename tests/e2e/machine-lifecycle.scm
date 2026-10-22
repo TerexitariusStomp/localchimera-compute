@@ -11,17 +11,17 @@
 
 (use-modules (playnet test harness)
              (playnet test e2e)
-             (playnet compute specs)
-             (playnet compute receipt)
-             (playnet compute registry)
-             (playnet compute settlement)
-             (playnet compute envelope)
-             (playnet compute replay)
-             (playnet compute binding)
-             (playnet compute binding-verifiers)
-             (playnet compute payout)
-             (playnet compute executors)
-             (playnet doors compute)
+             (playnet machine specs)
+             (playnet machine receipt)
+             (playnet machine registry)
+             (playnet machine settlement)
+             (playnet machine envelope)
+             (playnet machine replay)
+             (playnet machine binding)
+             (playnet machine binding-verifiers)
+             (playnet machine payout)
+             (playnet machine executors)
+             (playnet doors machine)
              (playnet delegates)
              (playnet boot governance)
              (playnet keri signify-portable)
@@ -78,15 +78,15 @@
       (purpose . "node") (nonce . "e2e-n1") (expiry . 9999999999)
       (signerSig . ,(sig-of (binding-statement link) node-kp))
       (accountSig . ,(sig-of (binding-statement link) alice-kp))))
-  (define bind-res ($ gov 'compute-bind ALICE HOME bind-wire))
-  (check "compute-bind: the dual-signed link verifies"
+  (define bind-res ($ gov 'machine-bind ALICE HOME bind-wire))
+  (check "machine-bind: the dual-signed link verifies"
          (cdr (assoc "verdict" (cdr bind-res))) 'ok)
   (define bind-key (cdr (assoc "key" (cdr bind-res))))
 
   (scenario "lending — offer, submit, match, claim, accept")
 
   (define offer-id
-    (door-call gov ALICE 'compute-offer HOME "member" "inference,fetch"
+    (door-call gov ALICE 'machine-offer HOME "member" "inference,fetch"
                4 "deterministic"))
   (check "the lane offer lands" (string? offer-id) #t)
 
@@ -94,24 +94,24 @@
     `((bridgeJobId . "bj-e2e") (image . "js:solve.js") (entrypoint . "run")
       (inputHash . "in:e2e") (caps . ()) (network . #f)))
   (define job-id
-    (door-call gov BOB 'compute-submit HOME "inference" "member"
+    (door-call gov BOB 'machine-submit HOME "inference" "member"
                "deterministic" "in:e2e" 'envelope env-wire
                'envelopeHash "eh:e2e"))
   (check "the job lands with its envelope" (string? job-id) #t)
 
   (check "the offer answers the job"
-         (length (cdr ($ gov 'compute-match HOME job-id))) 1)
+         (length (cdr ($ gov 'machine-match HOME job-id))) 1)
 
   (define claim-id
-    (door-call gov ALICE 'compute-claim HOME job-id offer-id))
+    (door-call gov ALICE 'machine-claim HOME job-id offer-id))
   (check "the claim binds offer to job" (string? claim-id) #t)
   (check "the borrower accepts"
-         (car ($ gov 'compute-accept BOB HOME claim-id)) 'ok)
+         (car ($ gov 'machine-accept BOB HOME claim-id)) 'ok)
 
   (scenario "execution — fetch, run, countersign, verify")
 
   (define fetched
-    (cdr ($ gov 'compute-fetch-envelope ALICE HOME claim-id)))
+    (cdr ($ gov 'machine-fetch-envelope ALICE HOME claim-id)))
   (check "the lender fetches the envelope it runs"
          (cdr (assoc "image" fetched)) "js:solve.js")
   (check "the envelope carries no amount"
@@ -133,14 +133,14 @@
       (executedAt . 1761000002000)
       (digest . ,(receipt-digest rcpt))))
 
-  (define v-res (cdr ($ gov 'compute-verify rcpt-wire)))
-  (check "compute-verify: the receipt body is consistent"
+  (define v-res (cdr ($ gov 'machine-verify rcpt-wire)))
+  (check "machine-verify: the receipt body is consistent"
          (car v-res) #t)
 
-  (check "compute-receipt lands — the claim completes"
-         (car ($ gov 'compute-receipt BOB HOME rcpt-wire)) 'ok)
+  (check "machine-receipt lands — the claim completes"
+         (car ($ gov 'machine-receipt BOB HOME rcpt-wire)) 'ok)
   (check "the claim is complete on the book"
-         (cdr (assoc "state" (car (cdr ($ gov 'compute-claims HOME)))))
+         (cdr (assoc "state" (car (cdr ($ gov 'machine-claims HOME)))))
          "complete")
 
   (scenario "proof — a registered executor replays the work")
@@ -148,7 +148,7 @@
   (register-executor! HOME
     (make-replay-executor #:kind 'wasmcloud #:name "host-1"
                           #:run (lambda (env repro) "out:e2e")))
-  (define replay-res (cdr ($ gov 'compute-replay ALICE HOME claim-id)))
+  (define replay-res (cdr ($ gov 'machine-replay ALICE HOME claim-id)))
   (check "replay reproduces the output"
          (cdr (assoc "reproduced" replay-res)) 'reproduced)
   (check "the challenge carries the receipt digest"
@@ -165,11 +165,11 @@
                    (asset . "eip155:1/slip44:60"))))
       (payments . ())
       (bridgeSig . "e2e-bridge-sig")))
-  (define settle-res (cdr ($ gov 'compute-settle ALICE HOME stmt-wire)))
+  (define settle-res (cdr ($ gov 'machine-settle ALICE HOME stmt-wire)))
   (check "the statement reconciles: one matched, none held"
          (car settle-res) 1)
   (check "the statement lands on the book"
-         (length (cdr ($ gov 'compute-statements HOME))) 1)
+         (length (cdr ($ gov 'machine-statements HOME))) 1)
 
   (scenario "payout — the send rail reaches the bound treasury only")
 
@@ -188,7 +188,7 @@
       (purpose . "payout") (nonce . "e2e-p1") (expiry . 9999999999)
       (signerSig . ,(sig-of (binding-statement pay-link) node-kp))
       (accountSig . "0xdeadbeef")))
-  (define pay-res ($ gov 'compute-bind ALICE HOME pay-wire))
+  (define pay-res ($ gov 'machine-bind ALICE HOME pay-wire))
   (check "the treasury binding lands — signer verified, eoa unread"
          (and (member (cdr (assoc "verdict" (cdr pay-res)))
                       '(bad-signature ok)) #t) #t)
@@ -197,11 +197,11 @@
   ;; the payout: inject a send rail, watch every send land at the Safe
   (define sends '())
   (define pay-out
-    (parameterize ((*compute-send-rail*
+    (parameterize ((*machine-send-rail*
                     (lambda (to amt asset)
                       (set! sends (cons (list to amt asset) sends))
                       "0xTxE2E")))
-      ($ gov 'compute-payout ALICE HOME
+      ($ gov 'machine-payout ALICE HOME
          `((statement . ((period . ("2026-10-01" . "2026-10-31"))
                          (entries . (((bridgeJobId . ,claim-id)
                                       (receiptDigest . ,(receipt-digest rcpt))
@@ -210,13 +210,13 @@
                          (payments . ())
                          (bridgeSig . "e2e-bridge-sig")))
            (bindingKey . ,pay-key)))))
-  (check "compute-payout answers tx rows"
+  (check "machine-payout answers tx rows"
          (car pay-out) 'ok)
   (check "every send lands at the bound treasury Safe"
          (every (lambda (s) (equal? (car s) "eip155:1:0xSafeTreasuryE2E"))
                 sends) #t)
   (check "without the rail the payout refuses, not pretends"
-         (car ($ gov 'compute-payout ALICE HOME
+         (car ($ gov 'machine-payout ALICE HOME
                  `((statement . ((period . "w")
                                  (entries . (((bridgeJobId . ,claim-id)
                                               (receiptDigest . ,(receipt-digest rcpt))
@@ -233,22 +233,22 @@
     (make-opa-delegate (lambda (m p b) (cons 200 answer))))
   (define settle-call
     (lambda ()
-      ($ gov 'compute-settle ALICE HOME
+      ($ gov 'machine-settle ALICE HOME
          `((period . ("2026-11-01" . "2026-11-30"))
            (entries . ()) (payments . ()) (bridgeSig . "x")))))
 
   (check "OPA deny refuses a governor — the engine's answer governs"
-         (car (parameterize ((*compute-authz*
+         (car (parameterize ((*machine-authz*
                               (opa-stub "{\"result\":{\"allow\":false}}")))
                 (settle-call)))
          'error)
   (check "OPA allow lets the settled governor through"
-         (car (parameterize ((*compute-authz*
+         (car (parameterize ((*machine-authz*
                               (opa-stub "{\"result\":{\"allow\":true}}")))
                 (settle-call)))
          'ok)
   (check "OPA unavailable falls through to the local gate"
-         (car (parameterize ((*compute-authz*
+         (car (parameterize ((*machine-authz*
                               (make-opa-delegate
                                (lambda (m p b)
                                  (throw 'unreachable)))))

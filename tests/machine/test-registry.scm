@@ -8,16 +8,16 @@
 ;;; Run: guile --no-auto-compile -q -L module tests/compute/test-registry.scm
 
 (use-modules (playnet test harness)
-             (playnet compute specs)
-             (playnet compute receipt)
-             (playnet compute registry)
-             (playnet compute settlement)
-             (playnet compute envelope)
-             (playnet compute replay)
-             (playnet compute binding)
-             (playnet compute binding-verifiers)
-             (playnet compute payout)
-             (playnet compute executors)
+             (playnet machine specs)
+             (playnet machine receipt)
+             (playnet machine registry)
+             (playnet machine settlement)
+             (playnet machine envelope)
+             (playnet machine replay)
+             (playnet machine binding)
+             (playnet machine binding-verifiers)
+             (playnet machine payout)
+             (playnet machine executors)
              (playnet utils store-utils)
              (playnet boot governance)
              (goblins) (goblins vat)
@@ -26,7 +26,7 @@
              (rnrs bytevectors)
              (srfi srfi-1))
 
-(define vat (spawn-vat #:name "compute-registry-test"))
+(define vat (spawn-vat #:name "machine-registry-test"))
 
 (define ALICE "did:key:z6MkAlice")
 (define BOB   "did:key:z6MkBob")
@@ -34,7 +34,7 @@
 (define HOME  "did:keri:EHomeCommune")
 
 (with-vat vat
-  (define reg (spawn ^compute-registry (hashmap) (hashmap) (hashmap) '()))
+  (define reg (spawn ^machine-registry (hashmap) (hashmap) (hashmap) '()))
 
   ;; ── offers ─────────────────────────────────────────────────────────────
   (display "\n── offers — a lender keeps its headroom on the book ──\n")
@@ -68,8 +68,8 @@
     ($ reg 'submit BOB HOME 'inference "member" 'deterministic "in:hash:1"))
   (check "job lands with an id" (string? job-id))
   (check "the job is open at ring 1"
-         (list (compute-job-state ($ reg 'job-of job-id))
-               (compute-job-ring ($ reg 'job-of job-id)))
+         (list (machine-job-state ($ reg 'job-of job-id))
+               (machine-job-ring ($ reg 'job-of job-id)))
          '(open 1))
 
   (check-error "only the borrower withdraws"
@@ -89,7 +89,7 @@
 
   (define claim-id ($ reg 'claim ALICE job-id offer-id-2 (+ 1761000000000 259200000)))
   (check "claim binds offer to job" (string? claim-id))
-  (check "the job is claimed" (compute-job-state ($ reg 'job-of job-id)) 'claimed)
+  (check "the job is claimed" (machine-job-state ($ reg 'job-of job-id)) 'claimed)
   (check "the claim awaits acceptance"
          (dispatch-claim-state ($ reg 'claim-of claim-id)) 'claimed)
 
@@ -100,18 +100,18 @@
   (check "the claim is preempted — never a miss"
          (dispatch-claim-state ($ reg 'claim-of claim-id)) 'preempted)
   (check "the job reopens one ring outward"
-         (list (compute-job-state ($ reg 'job-of job-id))
-               (compute-job-ring ($ reg 'job-of job-id)))
+         (list (machine-job-state ($ reg 'job-of job-id))
+               (machine-job-ring ($ reg 'job-of job-id)))
          '(open 2))
 
   ;; ring escalation caps at 3 — two more preempts then no further
   (define claim-2 ($ reg 'claim ALICE job-id offer-id-2 (+ 1761000000000 259200000)))
   ($ reg 'preempt claim-2)
   (check "second preempt → ring 3"
-         (compute-job-ring ($ reg 'job-of job-id)) 3)
+         (machine-job-ring ($ reg 'job-of job-id)) 3)
   (define claim-3 ($ reg 'claim ALICE job-id offer-id-2 (+ 1761000000000 259200000)))
   ($ reg 'preempt claim-3)
-  (check "ring is capped at 3" (compute-job-ring ($ reg 'job-of job-id)) 3)
+  (check "ring is capped at 3" (machine-job-ring ($ reg 'job-of job-id)) 3)
 
   ;; ── claim → accept → receipt ───────────────────────────────────────────
   (display "\n── accept, receipt — the event the settlement reconciles ──\n")
@@ -134,7 +134,7 @@
   (check "the claim completes"
          (dispatch-claim-state ($ reg 'claim-of claim-live)) 'complete)
   (check "the job settles"
-         (compute-job-state ($ reg 'job-of job-id)) 'settled)
+         (machine-job-state ($ reg 'job-of job-id)) 'settled)
   (check "the claim remembers its receipt"
          (receipt-digest (dispatch-claim-receipt ($ reg 'claim-of claim-live)))
          digest)
@@ -208,39 +208,39 @@
 (with-vat vat
   (define gov (spawn-governance-service '() #f))
 
-  (define o-wire ($ gov 'compute-offer ALICE HOME "member" "inference,fetch" 4
+  (define o-wire ($ gov 'machine-offer ALICE HOME "member" "inference,fetch" 4
                     "deterministic"))
-  (check "compute-offer answers ok + an id" (car o-wire) 'ok)
+  (check "machine-offer answers ok + an id" (car o-wire) 'ok)
   (define o-id (cdr o-wire))
-  (check "compute-offers lists the offer as a wire row"
-         (let ((rows (cdr ($ gov 'compute-offers HOME))))
+  (check "machine-offers lists the offer as a wire row"
+         (let ((rows (cdr ($ gov 'machine-offers HOME))))
            (and (pair? rows) (cdr (assoc "lender" (car rows))))) ALICE)
 
   (check "a nonsense class is refused at the door"
-         (car ($ gov 'compute-offer ALICE HOME "member" "alchemy" 4 "exact"))
+         (car ($ gov 'machine-offer ALICE HOME "member" "alchemy" 4 "exact"))
          'error)
 
-  (define j-wire ($ gov 'compute-submit BOB HOME "inference" "member"
+  (define j-wire ($ gov 'machine-submit BOB HOME "inference" "member"
                     "deterministic" "in:wire"))
-  (check "compute-submit answers ok + an id" (car j-wire) 'ok)
+  (check "machine-submit answers ok + an id" (car j-wire) 'ok)
   (define j-id (cdr j-wire))
-  (check "compute-jobs lists the open job"
-         (let ((rows (cdr ($ gov 'compute-jobs HOME))))
+  (check "machine-jobs lists the open job"
+         (let ((rows (cdr ($ gov 'machine-jobs HOME))))
            (and (pair? rows) (cdr (assoc "state" (car rows))))) "open")
-  (check "compute-match answers the offer"
-         (length (cdr ($ gov 'compute-match HOME j-id))) 1)
+  (check "machine-match answers the offer"
+         (length (cdr ($ gov 'machine-match HOME j-id))) 1)
 
-  (define c-wire ($ gov 'compute-claim ALICE HOME j-id o-id))
-  (check "compute-claim answers ok + an id" (car c-wire) 'ok)
+  (define c-wire ($ gov 'machine-claim ALICE HOME j-id o-id))
+  (check "machine-claim answers ok + an id" (car c-wire) 'ok)
   (define c-id (cdr c-wire))
-  (check "compute-claims lists the claim"
-         (let ((rows (cdr ($ gov 'compute-claims HOME))))
+  (check "machine-claims lists the claim"
+         (let ((rows (cdr ($ gov 'machine-claims HOME))))
            (and (pair? rows) (cdr (assoc "state" (car rows))))) "claimed")
 
   (check "a stranger cannot accept the borrower's dispatch"
-         (car ($ gov 'compute-accept CAROL HOME c-id)) 'error)
+         (car ($ gov 'machine-accept CAROL HOME c-id)) 'error)
   (check "the borrower accepts"
-         (car ($ gov 'compute-accept BOB HOME c-id)) 'ok)
+         (car ($ gov 'machine-accept BOB HOME c-id)) 'ok)
 
   ;; a receipt wire row: the body the lender's node emitted
   (define rcpt-wire
@@ -255,29 +255,29 @@
                                  #:usage (make-usage-meter #:unit "seconds" #:amount 7)
                                  #:repro (make-repro-spec #:mode 'deterministic #:seed 3)
                                  #:executed-at 1761000002000)))))
-  (define v-wire ($ gov 'compute-verify rcpt-wire))
-  (check "compute-verify: digest ok, sig unverifiable (no resolver here)"
+  (define v-wire ($ gov 'machine-verify rcpt-wire))
+  (check "machine-verify: digest ok, sig unverifiable (no resolver here)"
          (cdr v-wire) '(#t unverifiable))
 
-  (define r-wire ($ gov 'compute-receipt BOB HOME rcpt-wire))
-  (check "compute-receipt records"
+  (define r-wire ($ gov 'machine-receipt BOB HOME rcpt-wire))
+  (check "machine-receipt records"
          (car r-wire) 'ok)
   (check "the claim completes through the door"
-         (let ((rows (cdr ($ gov 'compute-claims HOME))))
+         (let ((rows (cdr ($ gov 'machine-claims HOME))))
            (cdr (assoc "state" (car rows)))) "complete")
 
   (check "a tampered digest is refused"
-         (car ($ gov 'compute-receipt BOB HOME
+         (car ($ gov 'machine-receipt BOB HOME
                  (map (lambda (p) (if (eq? (car p) 'digest)
                                       (cons 'digest "tampered") p))
                       rcpt-wire))) 'error)
 
-  (check "compute-envelope validates a clean envelope"
-         (car ($ gov 'compute-envelope
+  (check "machine-envelope validates a clean envelope"
+         (car ($ gov 'machine-envelope
                  '((bridgeJobId . "bj-x") (image . "i") (entrypoint . "r")
                    (inputHash . "h") (caps . ()) (network . #f)))) 'ok)
-  (check "compute-envelope refuses a priced one"
-         (car ($ gov 'compute-envelope
+  (check "machine-envelope refuses a priced one"
+         (car ($ gov 'machine-envelope
                  '((bridgeJobId . "bj-y") (image . "i") (entrypoint . "r")
                    (inputHash . "h") (caps . ()) (network . #f)
                    (amount . 5)))) 'error)
@@ -286,32 +286,32 @@
   (define env-wire
     '((bridgeJobId . "bj-shelf") (image . "js:work.js") (entrypoint . "run")
       (inputHash . "in:shelf") (caps . ()) (network . #f)))
-  (define shelf-job (cdr ($ gov 'compute-submit BOB HOME "inference" "member"
+  (define shelf-job (cdr ($ gov 'machine-submit BOB HOME "inference" "member"
                             "deterministic" "in:shelf"
                             'envelope env-wire 'envelopeHash "eh:shelf")))
   (check "submit with an envelope lands the job" (string? shelf-job) #t)
   (check "a priced envelope is refused at submit"
-         (car ($ gov 'compute-submit BOB HOME "inference" "member"
+         (car ($ gov 'machine-submit BOB HOME "inference" "member"
                  "deterministic" "in:shelf2"
                  'envelope (cons '(amount . 9) env-wire))) 'error)
   (define shelf-claim
-    (cdr ($ gov 'compute-claim ALICE HOME shelf-job o-id)))
+    (cdr ($ gov 'machine-claim ALICE HOME shelf-job o-id)))
   (check "the lender fetches the envelope it is meant to run"
-         (let ((r ($ gov 'compute-fetch-envelope ALICE HOME shelf-claim)))
+         (let ((r ($ gov 'machine-fetch-envelope ALICE HOME shelf-claim)))
            (and (eq? (car r) 'ok)
                 (equal? (cdr (assoc "image" (cdr r))) "js:work.js"))) #t)
   (check "the borrower cannot fetch the envelope back"
-         (car ($ gov 'compute-fetch-envelope BOB HOME shelf-claim)) 'error)
+         (car ($ gov 'machine-fetch-envelope BOB HOME shelf-claim)) 'error)
   (check "a stranger cannot fetch the envelope"
-         (car ($ gov 'compute-fetch-envelope CAROL HOME shelf-claim)) 'error)
+         (car ($ gov 'machine-fetch-envelope CAROL HOME shelf-claim)) 'error)
   (check "no envelope on the shelf is an error, not a crash"
-         (let* ((j2 (cdr ($ gov 'compute-submit BOB HOME "fetch" "member"
+         (let* ((j2 (cdr ($ gov 'machine-submit BOB HOME "fetch" "member"
                             "none" "in:bare")))
-                (c2 (cdr ($ gov 'compute-claim ALICE HOME j2 o-id))))
-           (car ($ gov 'compute-fetch-envelope ALICE HOME c2))) 'error)
+                (c2 (cdr ($ gov 'machine-claim ALICE HOME j2 o-id))))
+           (car ($ gov 'machine-fetch-envelope ALICE HOME c2))) 'error)
 
-  (check "compute-settle refuses when the commune is unreachable here"
-         (car ($ gov 'compute-settle ALICE "did:keri:ENowhere"
+  (check "machine-settle refuses when the commune is unreachable here"
+         (car ($ gov 'machine-settle ALICE "did:keri:ENowhere"
                  '((period . ("2026-10-01" . "2026-10-31")) (entries . ())
                    (payments . ()) (bridgeSig . "sig")))) 'error)
 
@@ -348,7 +348,7 @@
 
   ;; the door: shelf-claim has an envelope; accept, receipt, then replay
   (check "the borrower accepts the shelf dispatch"
-         (car ($ gov 'compute-accept BOB HOME shelf-claim)) 'ok)
+         (car ($ gov 'machine-accept BOB HOME shelf-claim)) 'ok)
   (define shelf-rcpt
     `((bridgeJobId . ,shelf-claim) (lenderDid . ,ALICE)
       (inputHash . "in:shelf") (outputHash . "out:shelf")
@@ -362,20 +362,20 @@
                                  #:repro (make-repro-spec #:mode 'deterministic #:seed 7)
                                  #:executed-at 1761000003000)))))
   (check "receipt on the shelf claim records"
-         (car ($ gov 'compute-receipt BOB HOME shelf-rcpt)) 'ok)
-  (check "compute-replay without an executor answers no-executor, fail-closed"
-         (let ((r ($ gov 'compute-replay BOB HOME shelf-claim)))
+         (car ($ gov 'machine-receipt BOB HOME shelf-rcpt)) 'ok)
+  (check "machine-replay without an executor answers no-executor, fail-closed"
+         (let ((r ($ gov 'machine-replay BOB HOME shelf-claim)))
            (and (eq? (car r) 'ok)
                 (eq? (cdr (assoc "reproduced" (cdr r))) 'no-executor)
                 (equal? (cdr (assoc "attestationHash" (cdr r))) "out:shelf")
                 (eq? (cdr (assoc "counterHash" (cdr r))) #f))) #t)
   (check "a stranger cannot replay the claim"
-         (car ($ gov 'compute-replay CAROL HOME shelf-claim)) 'error)
+         (car ($ gov 'machine-replay CAROL HOME shelf-claim)) 'error)
   (check "replaying a claim with no receipt is an error"
-         (let* ((j3 (cdr ($ gov 'compute-submit BOB HOME "fetch" "member"
+         (let* ((j3 (cdr ($ gov 'machine-submit BOB HOME "fetch" "member"
                             "none" "in:bare2")))
-                (c3 (cdr ($ gov 'compute-claim ALICE HOME j3 o-id))))
-           (car ($ gov 'compute-replay ALICE HOME c3))) 'error)
+                (c3 (cdr ($ gov 'machine-claim ALICE HOME j3 o-id))))
+           (car ($ gov 'machine-replay ALICE HOME c3))) 'error)
 
   ;; ── bindings — the AccountLink ceremony (spec §1) ──────────────────────
   (define link-x
@@ -463,14 +463,14 @@
                 (lambda (k . a) #t)) #t)
 
   ;; ── the binding/payout doors ────────────────────────────────────────────
-  (check "compute-bind: a keri: binding is the caller's own AID only"
-         (car ($ gov 'compute-bind ALICE HOME
+  (check "machine-bind: a keri: binding is the caller's own AID only"
+         (car ($ gov 'machine-bind ALICE HOME
                  '((didKey . "did:key:z6MksAlice") (account . "keri:did:keri:EAlice")
                    (purpose . "node") (nonce . "n1") (expiry . 9999999999)
                    (signerSig . "sS") (accountSig . "sA"))))
          'error)
-  (check "compute-bind: a keri: self-binding lands"
-         (car ($ gov 'compute-bind ALICE HOME
+  (check "machine-bind: a keri: self-binding lands"
+         (car ($ gov 'machine-bind ALICE HOME
                  (list (cons 'didKey "did:key:z6MksAlice")
                        (cons 'account (string-append "keri:" ALICE))
                        '(purpose . "node") '(nonce . "n1") '(expiry . 9999999999)
@@ -479,8 +479,8 @@
   ;; the verifiers are real now: a readable form with a garbage sig is
   ;; bad-signature, not unverifiable — 'unverifiable rides only on the
   ;; account forms this build can't read at all.
-  (check "compute-bind: a CAIP-10 link with a bad sig answers bad-signature"
-         (let ((r ($ gov 'compute-bind ALICE HOME
+  (check "machine-bind: a CAIP-10 link with a bad sig answers bad-signature"
+         (let ((r ($ gov 'machine-bind ALICE HOME
                      '((didKey . "did:key:z6MksAlice") (account . "eip155:1:0xAliceSafe")
                        (purpose . "payout") (nonce . "n2") (expiry . 9999999999)
                        (signerSig . "sS") (accountSig . "sA")))))
@@ -488,8 +488,8 @@
                 (eq? (cdr (assoc "verdict" (cdr r))) 'bad-signature))) #t)
   ;; a bad signer sig dominates the verdict regardless of the account's
   ;; form — the did:key's countersignature is checked first
-  (check "compute-bind: an unreadable form still answers the signer's verdict"
-         (let ((r ($ gov 'compute-bind ALICE HOME
+  (check "machine-bind: an unreadable form still answers the signer's verdict"
+         (let ((r ($ gov 'machine-bind ALICE HOME
                      '((didKey . "did:key:z6MksAlice") (account . "rgb:xyz")
                        (purpose . "payout") (nonce . "n3") (expiry . 9999999999)
                        (signerSig . "sS") (accountSig . "sA")))))
@@ -503,21 +503,21 @@
          (and (not (did-key->ed25519-pubkey "did:key:z6MkShort"))
               (not (did-key->ed25519-pubkey "not-a-did"))
               (not (did-key->ed25519-pubkey #f))) #t)
-  (check "compute-bindings lists what was bound"
-         (let* ((rows (cdr ($ gov 'compute-bindings ALICE HOME)))
+  (check "machine-bindings lists what was bound"
+         (let* ((rows (cdr ($ gov 'machine-bindings ALICE HOME)))
                 (hit (find (lambda (r)
                              (equal? (cdr (assoc "account" r)) "eip155:1:0xAliceSafe"))
                            rows)))
            (and hit (equal? (cdr (assoc "purpose" hit)) "payout")
                 (equal? (cdr (assoc "status" hit)) "live"))) #t)
-  (check "compute-unbind: the account side ends it"
+  (check "machine-unbind: the account side ends it"
          (let* ((key (binding-key "did:key:z6MksAlice" "eip155:1:0xAliceSafe"))
-                (r ($ gov 'compute-unbind ALICE HOME key "account")))
+                (r ($ gov 'machine-unbind ALICE HOME key "account")))
            (and (eq? (car r) 'ok) (equal? (cdr r) "unlinked-by-account"))) #t)
-  (check "compute-unbind: a nonsense side is refused"
-         (car ($ gov 'compute-unbind ALICE HOME "k" "sideways")) 'error)
-  (check "compute-payout: an unreachable commune is refused"
-         (car ($ gov 'compute-payout ALICE "did:keri:ENowhere"
+  (check "machine-unbind: a nonsense side is refused"
+         (car ($ gov 'machine-unbind ALICE HOME "k" "sideways")) 'error)
+  (check "machine-payout: an unreachable commune is refused"
+         (car ($ gov 'machine-payout ALICE "did:keri:ENowhere"
                  '((statement . ((period . "w") (entries . ()) (payments . ())
                                  (bridgeSig . "s")))
                    (bindingKey . "k")))) 'error)
@@ -529,7 +529,7 @@
     (make-replay-executor #:kind 'wasmcloud #:name "host-1"
                           #:run (lambda (env repro) "out:shelf")))
   (check "a registered executor reproduces through the door"
-         (let ((r ($ gov 'compute-replay BOB HOME shelf-claim)))
+         (let ((r ($ gov 'machine-replay BOB HOME shelf-claim)))
            (and (eq? (car r) 'ok)
                 (eq? (cdr (assoc "reproduced" (cdr r))) 'reproduced)
                 (equal? (cdr (assoc "counterHash" (cdr r))) "out:shelf"))) #t)
@@ -539,11 +539,11 @@
            (register-executor! HOME
              (make-replay-executor #:kind 'wasimoff #:name "broker-1"
                                    #:run (lambda (env repro) "out:WRONG")))
-           (let ((r ($ gov 'compute-replay ALICE HOME shelf-claim)))
+           (let ((r ($ gov 'machine-replay ALICE HOME shelf-claim)))
              (eq? (cdr (assoc "reproduced" (cdr r))) 'mismatch))) #t)
   (unregister-executor! HOME)
   (check "no executor again → fail closed"
-         (let ((r ($ gov 'compute-replay BOB HOME shelf-claim)))
+         (let ((r ($ gov 'machine-replay BOB HOME shelf-claim)))
            (eq? (cdr (assoc "reproduced" (cdr r))) 'no-executor)) #t)
   (check "executors-list reports the registered rows"
          (begin
@@ -564,49 +564,49 @@
   ;; here so sortition has names beyond the claim's parties.
   (define DAVE "did:key:z6MkDave")
   (define ERIN "did:key:z6MkErin")
-  (for-each (lambda (who) ($ gov 'compute-disputes who HOME))
+  (for-each (lambda (who) ($ gov 'machine-disputes who HOME))
             (list CAROL DAVE ERIN))
 
   ;; fresh jobs for the dispute claims — a job accepts one claim, and
   ;; o-id's headroom is spent by now; a second offer carries these.
   (define o-id-2
-    (cdr ($ gov 'compute-offer ALICE HOME "member" "inference" 8
+    (cdr ($ gov 'machine-offer ALICE HOME "member" "inference" 8
             "deterministic")))
   (define dead-job
-    (cdr ($ gov 'compute-submit BOB HOME "inference" "member"
+    (cdr ($ gov 'machine-submit BOB HOME "inference" "member"
             "deterministic" "in:dead")))
   (define dead-claim
-    (cdr ($ gov 'compute-claim ALICE HOME dead-job o-id-2 'deadline 1000)))
+    (cdr ($ gov 'machine-claim ALICE HOME dead-job o-id-2 'deadline 1000)))
   (check "the deadline-past claim exists for the non-delivery dispute"
          (string? dead-claim) #t)
   ;; …and a live one, deadline still open
   (define live-job-2
-    (cdr ($ gov 'compute-submit BOB HOME "inference" "member"
+    (cdr ($ gov 'machine-submit BOB HOME "inference" "member"
             "deterministic" "in:live")))
   (define live-claim-2
-    (cdr ($ gov 'compute-claim ALICE HOME live-job-2 o-id-2)))
+    (cdr ($ gov 'machine-claim ALICE HOME live-job-2 o-id-2)))
 
-  (check "compute-dispute: a stranger may not raise"
-         (car ($ gov 'compute-dispute CAROL HOME shelf-claim "wrong-result"))
+  (check "machine-dispute: a stranger may not raise"
+         (car ($ gov 'machine-dispute CAROL HOME shelf-claim "wrong-result"))
          'error)
-  (check "compute-dispute: a nonsense kind is refused"
-         (car ($ gov 'compute-dispute BOB HOME shelf-claim "spite")) 'error)
+  (check "machine-dispute: a nonsense kind is refused"
+         (car ($ gov 'machine-dispute BOB HOME shelf-claim "spite")) 'error)
 
   ;; wrong-result with a matching executor: the prover reproduces — the
   ;; dispute's premise fails and the door refuses to record it
   (register-executor! HOME
     (make-replay-executor #:kind 'wasmcloud #:name "host-2"
                           #:run (lambda (env repro) "out:shelf")))
-  (check "compute-dispute: a reproduced receipt cannot be disputed"
-         (car ($ gov 'compute-dispute BOB HOME shelf-claim "wrong-result"))
+  (check "machine-dispute: a reproduced receipt cannot be disputed"
+         (car ($ gov 'machine-dispute BOB HOME shelf-claim "wrong-result"))
          'error)
 
   ;; now the executor disagrees — the dispute lands with its challenge
   (register-executor! HOME
     (make-replay-executor #:kind 'wasimoff #:name "broker-2"
                           #:run (lambda (env repro) "out:DIFFERENT")))
-  (define wr ($ gov 'compute-dispute BOB HOME shelf-claim "wrong-result"))
-  (check "compute-dispute: a wrong-result dispute lands, challenge attached"
+  (define wr ($ gov 'machine-dispute BOB HOME shelf-claim "wrong-result"))
+  (check "machine-dispute: a wrong-result dispute lands, challenge attached"
          (let* ((d (cdr wr))
                 (ch (cdr (assoc "challenge" d))))
            (and (eq? (car wr) 'ok)
@@ -619,16 +619,16 @@
   (define wr-reviewers
     (vector->list (cdr (assoc "reviewers" (cdr wr)))))
 
-  (check "compute-dispute: one dispute per claim"
-         (car ($ gov 'compute-dispute ALICE HOME shelf-claim "wrong-result"))
+  (check "machine-dispute: one dispute per claim"
+         (car ($ gov 'machine-dispute ALICE HOME shelf-claim "wrong-result"))
          'error)
-  (check "compute-dispute-verdict: a non-reviewer may not vote"
-         (car ($ gov 'compute-dispute-verdict "did:key:z6MkNobody" HOME wr-id
+  (check "machine-dispute-verdict: a non-reviewer may not vote"
+         (car ($ gov 'machine-dispute-verdict "did:key:z6MkNobody" HOME wr-id
                  "upheld")) 'error)
-  (check "compute-dispute-verdict: two uphelds close the review"
-         (let* ((r1 ($ gov 'compute-dispute-verdict (car wr-reviewers) HOME
+  (check "machine-dispute-verdict: two uphelds close the review"
+         (let* ((r1 ($ gov 'machine-dispute-verdict (car wr-reviewers) HOME
                        wr-id "upheld"))
-                (r2 ($ gov 'compute-dispute-verdict (cadr wr-reviewers) HOME
+                (r2 ($ gov 'machine-dispute-verdict (cadr wr-reviewers) HOME
                        wr-id "upheld")))
            (and (eq? (car r1) 'ok)
                 (equal? (cdr (assoc "outcome" (cdr r2))) "upheld")
@@ -636,24 +636,24 @@
 
   ;; non-delivery: the deadline passed, no receipt — the absence is the
   ;; evidence, no challenge rides the record
-  (define nd ($ gov 'compute-dispute BOB HOME dead-claim "non-delivery"))
-  (check "compute-dispute: non-delivery lands with no challenge"
+  (define nd ($ gov 'machine-dispute BOB HOME dead-claim "non-delivery"))
+  (check "machine-dispute: non-delivery lands with no challenge"
          (let ((d (cdr nd)))
            (and (eq? (car nd) 'ok)
                 (equal? (cdr (assoc "kind" d)) "non-delivery")
                 (not (cdr (assoc "challenge" d))))) #t)
-  (check "compute-dispute: non-delivery before the deadline is refused"
-         (car ($ gov 'compute-dispute BOB HOME live-claim-2 "non-delivery"))
+  (check "machine-dispute: non-delivery before the deadline is refused"
+         (car ($ gov 'machine-dispute BOB HOME live-claim-2 "non-delivery"))
          'error)
-  (check "compute-dispute-close: within the window the clock refuses"
-         (car ($ gov 'compute-dispute-close BOB HOME
+  (check "machine-dispute-close: within the window the clock refuses"
+         (car ($ gov 'machine-dispute-close BOB HOME
                  (cdr (assoc "id" (cdr nd))))) 'error)
-  (check "compute-disputes lists both disputes"
-         (length (cdr ($ gov 'compute-disputes CAROL HOME))) 2)
+  (check "machine-disputes lists both disputes"
+         (length (cdr ($ gov 'machine-disputes CAROL HOME))) 2)
 
   ;; a matched entry under a live dispute is held — the statement counts
   ;; it but money does not move on a contested receipt. gov2 carries a
-  ;; stub scope so compute-settle's gov-cap gate is reachable.
+  ;; stub scope so machine-settle's gov-cap gate is reachable.
   (define fake-scope
     (spawn (lambda (bcom)
              (methods ((mint-gov-cap aid) 'cap)
@@ -662,24 +662,24 @@
     (spawn-governance-service '() #f #:scope-of (lambda (aid) fake-scope)))
   (define nd-id (cdr (assoc "id" (cdr nd))))
   ;; rebuild the disputed claim on gov2's own registry
-  ($ gov2 'compute-disputes CAROL HOME)
+  ($ gov2 'machine-disputes CAROL HOME)
   (define d2-job
-    (cdr ($ gov2 'compute-submit BOB HOME "inference" "member"
+    (cdr ($ gov2 'machine-submit BOB HOME "inference" "member"
             "deterministic" "in:d2")))
   (define d2-o
-    (cdr ($ gov2 'compute-offer ALICE HOME "member" "inference" 8
+    (cdr ($ gov2 'machine-offer ALICE HOME "member" "inference" 8
             "deterministic")))
   (define d2-claim
-    (cdr ($ gov2 'compute-claim ALICE HOME d2-job d2-o 'deadline 1000)))
+    (cdr ($ gov2 'machine-claim ALICE HOME d2-job d2-o 'deadline 1000)))
   (define d2-disp
-    (cdr ($ gov2 'compute-dispute BOB HOME d2-claim "non-delivery")))
+    (cdr ($ gov2 'machine-dispute BOB HOME d2-claim "non-delivery")))
   (define stmt-wire
     `((period . "test-period") (bridgeSig . "sig")
       (entries . (((bridgeJobId . ,d2-claim) (receiptDigest . "d1")
                    (amount . 5) (asset . "XMR"))))
       (payments . ())))
-  (check "compute-settle reports a disputed entry as held"
-         (let ((r ($ gov2 'compute-settle ALICE HOME stmt-wire)))
+  (check "machine-settle reports a disputed entry as held"
+         (let ((r ($ gov2 'machine-settle ALICE HOME stmt-wire)))
            ;; (ok matched missing held claimed paid)
            (and (eq? (car r) 'ok)
                 (= (list-ref (cdr r) 2) 1))) #t)
