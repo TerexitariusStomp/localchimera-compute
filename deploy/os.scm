@@ -78,11 +78,7 @@
              (playnet-gateway-service)
              (playnet-static-service)
              (playnet-valhalla-service)
-             (playnet-qgis-service)
-             (playnet-telegram-bridge-service)
-             (playnet-matrix-bridge-service)
-              (live-watch-service)
-              (sms-wall-service))
+              (live-watch-service))
 
 (define %this-dir
   (dirname (or (current-filename)
@@ -1292,57 +1288,9 @@
                 (threads 2)
                 (user "playnet")))
 
-      ;; Headless QGIS batch worker — `qgis_process` over a job spool at
-      ;; /var/lib/playnet/qgis/{jobs,done,failed,data,out}. Drop a job dir
-      ;; holding job.scm into jobs/ (mv, atomically) and the runner execs
-      ;; the algorithm offscreen (QT_QPA_PLATFORM=offscreen), logs to
-      ;; <job>/log, and moves the dir to done/ or failed/. No listening
-      ;; socket; the stock Guix qgis package is referenced by store path, so
-      ;; nothing builds at service start. See server/qgis-runner.scm.
-      (service playnet-qgis-service-type
-               (playnet-qgis-configuration
-                (qgis-dir "/var/lib/playnet/qgis")
-                (user "playnet")))
-
-      ;; Telegram bot bridge — long-polls the Bot API and routes messages
-      ;; through the gateway's meeting-scope (via the OCapN sturdyref the
-      ;; gateway writes to /var/lib/playnet/telegram-backend-sref.txt).
-      ;;
-      ;; Operator setup BEFORE first deploy:
-      ;;   1. Create bot via @BotFather on Telegram, copy the token.
-      ;;   2. Write token to /run/secrets/telegram-bot-token (mode 0400,
-      ;;      owned by playnet user). Single line, no trailing newline.
-      ;;   3. `guix deploy`. Service starts; tail the log:
-      ;;      /var/log/playnet/telegram-bridge.log
-      ;;
-      ;; The service is harmless if the token file is absent — Shepherd
-      ;; will fail to start it and respawn-loop. To disable entirely,
-      ;; comment this block out.
-      (service playnet-telegram-bridge-service-type
-               (playnet-telegram-bridge-configuration
-                (package %playnet-package)
-                (token-file "/run/secrets/telegram-bot-token")
-                (scope-sref-file "/var/lib/playnet/telegram-backend-sref.txt")
-                (tor? #f)))
-
-      ;; Matrix bridge — Client-Server API /sync long-poll. Commented out
-      ;; until the operator provisions:
-      ;;   - a Matrix account on a homeserver they trust
-      ;;   - an access_token (via /login or admin), written to
-      ;;     /run/secrets/matrix-access-token (mode 0400, owned by playnet)
-      ;;   - the bot's MXID below
-      ;;
-      ;; The bridge speaks plain CS-API. For E2EE rooms, run pantalaimon
-      ;; on this host and point `homeserver` at its loopback URL.
-      ;;
-      ;; (service playnet-matrix-bridge-service-type
-      ;;          (playnet-matrix-bridge-configuration
-      ;;           (package %playnet-package)
-      ;;           (homeserver "https://matrix.example.org")
-      ;;           (mxid "@playnet-bot:example.org")
-      ;;           (token-file "/run/secrets/matrix-access-token")
-      ;;           (scope-sref-file "/var/lib/playnet/telegram-backend-sref.txt")
-      ;;           (tor? #f)))
+      ;; (Bridges to external chat networks and the headless QGIS worker
+      ;; lived here; the compute-only repo carries none of them — see the
+      ;; playnet archive for the matrix/telegram/qgis service modules.)
 
       ;; Dev REPL — Guile on a Unix socket, runs as playnet user.
       ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/playnet/repl.sock
@@ -1419,38 +1367,8 @@
                              (respawn? #t))))
 
       ;; Dev bridge — MQTT subscriber that launches Claude Code on deficit signals.
-      ;; The VF planner emits development deficit signals; this bridge acts on them.
-      ;; Manual start only: herd start dev-bridge
-      (simple-service 'dev-bridge
-                      shepherd-root-service-type
-                      (list (shepherd-service
-                             (provision '(dev-bridge))
-                             (documentation "MQTT → Claude Code development bridge")
-                             (requirement '(networking mosquitto))
-                             (start #~(make-forkexec-constructor
-                                       (list #$(file-append guile-3.0 "/bin/guile")
-                                             "--no-auto-compile"
-                                             "-L" "/home/playnet/playnet-repo/module"
-                                             "-s" "/home/playnet/playnet-repo/server/dev-bridge.scm")
-                                       #:user "playnet"
-                                       #:group "users"
-                                       #:log-file "/var/log/dev-bridge.log"
-                                       #:environment-variables
-                                       (list (string-append "GUILE_LOAD_PATH="
-                                              "/run/current-system/profile/share/guile/site/3.0:"
-                                              "/home/playnet/playnet-repo/module")
-                                             "HOME=/home/playnet"
-                                             "DEV_CHECKOUT_DIR=/home/playnet/dev-checkout"
-                                             ;; opencode is the installed agent CLI on this
-                                             ;; box (claude isn't); model/provider come from
-                                             ;; playnet's own opencode auth/config, not here
-                                             "AGENT_CLI=opencode"
-                                             (string-append "PATH="
-                                              "/run/current-system/profile/bin:"
-                                              "/home/playnet/.local/bin:"
-                                              "/run/current-system/profile/sbin"))))
-                             (stop #~(make-kill-destructor))
-                             (respawn? #t))))
+      ;; (The dev-bridge one-shot lived here — it ran server/dev-bridge.scm,
+      ;; which the compute-only repo does not carry; see the playnet archive.)
 
       ;; Radicle P2P seed node — decentralized git hosting.
       ;; Listens on 0.0.0.0:8776 so the Tor hidden-service mapping
@@ -1882,14 +1800,8 @@ COMMIT
                     ()       ; allowlist: populated at runtime by reconciler
                     "playnet production budget"))))
 
-       ;; SMS Wall automation — WALLS.RIP temporary phone numbers for
-       ;; anonymous account verification on Telegram, Signal, WhatsApp.
-       ;; One-shot service: use `herd invoke sms-wall` to trigger.
-       ;; Payments are made via the playnet Monero wallet.
-       (service sms-wall-service-type
-                (sms-wall-configuration
-                 (monero-wallet-password-file
-                  "/var/lib/playnet/monero/rpc-login.txt")))
+       ;; (The SMS-wall one-shot lived here; it rode the sms module the
+       ;; compute-only repo does not carry — see the playnet archive.)
 
        ;; Activation: materialize /run/secrets/* from the encrypted
       ;; secrets blob (deploy/secrets.scm.age, baked into the system
