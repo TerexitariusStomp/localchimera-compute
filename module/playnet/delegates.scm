@@ -40,7 +40,7 @@
             ap-activity make-ap-delegate
             decidim-ballot-wire make-decidim-delegate
             litellm-chat-wire make-litellm-delegate
-            odoo-call-wire make-odoo-delegate
+            odoo-auth-wire odoo-call-wire make-odoo-delegate
             bacalhau-job-wire make-bacalhau-delegate
             cpsat-wire make-cpsat-delegate))
 
@@ -243,23 +243,49 @@
 
 
 ;;; ── Odoo OCA — DDMRP inventory ───────────────────────────────────────────
-;;; /jsonrpc object-execute: the wire is the standard service/method/args
-;;; triple; the adapter is this thin because Odoo's own RPC is the contract.
+;;; /jsonrpc object-execute. Odoo's real flow is two calls: authenticate
+;;; against service 'common for a uid, then execute_kw carries
+;;; (db uid password model method args). The delegate holds the creds and
+;;; memoizes the uid; a caller that cannot authenticate gets 'unavailable.
 
-(define* (odoo-call-wire model method args)
+(define* (odoo-auth-wire db user password)
+  `(("jsonrpc" . "2.0")
+    ("method" . "call")
+    ("params" . (("service" . "common")
+                 ("method" . "authenticate")
+                 ("args" . (,db ,user ,password ()))))))
+
+(define* (odoo-call-wire db uid password model method args)
   `(("jsonrpc" . "2.0")
     ("method" . "call")
     ("params" . (("service" . "object")
                  ("method" . "execute_kw")
-                 ("args" . (,model ,method ,args))))))
+                 ("args" . (,db ,uid ,password ,model ,method ,args))))))
 
-(define* (make-odoo-delegate #:optional (transport %transport-unavailable))
-  "() → (lambda (model method args) → result | 'unavailable)."
-  (lambda (model method args)
-    (catch #t
-      (lambda ()
-        (transport "POST" "/jsonrpc" (odoo-call-wire model method args)))
-      (lambda _ 'unavailable))))
+(define* (make-odoo-delegate #:optional (transport %transport-unavailable)
+                                    (db (getenv "PLAYNET_ODOO_DB"))
+                                    (user (getenv "PLAYNET_ODOO_USER"))
+                                    (password (getenv "PLAYNET_ODOO_PASSWORD")))
+  "() → (lambda (model method args) → result | 'unavailable).
+   Reads PLAYNET_ODOO_DB/USER/PASSWORD; without all three the delegate is
+   'unavailable, not silently anonymous."
+  (let ((uid #f))
+    (lambda (model method args)
+      (catch #t
+        (lambda ()
+          (if (not (and db user password))
+              'unavailable
+              (begin
+                (unless uid
+                  (let* ((res (transport "POST" "/jsonrpc"
+                                         (odoo-auth-wire db user password)))
+                         (u (assoc "result" res)))
+                    (if (and u (number? (cdr u)))
+                        (set! uid (cdr u))
+                        (throw 'odoo-auth-failed res))))
+                (transport "POST" "/jsonrpc"
+                           (odoo-call-wire db uid password model method args)))))
+        (lambda _ 'unavailable)))))
 
 
 ;;; ── Bacalhau — ring-3 compute-over-data orchestration ────────────────────

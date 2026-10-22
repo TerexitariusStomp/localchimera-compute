@@ -1,0 +1,26 @@
+# litellm/config.yaml — the key-pool config the LiteLLM delegate fronts.
+# The compute doors' ask-ai calls land here; each entry is one lane's
+# upstream. Keys come from the environment — nothing secret in this file.
+model_list:
+  # the default lane: a local model through an OpenAI-compatible endpoint
+  # (Ollama, llama.cpp server, vLLM — point LITELLM_LOCAL_BASE at it)
+  - model_name: llama-local
+    litellm_params:
+      model: openai/llama3.2
+      api_base: ${LITELLM_LOCAL_BASE}
+      api_key: "unused"
+
+  # a remote lane, only when OPENAI_API_KEY is set in the stack env
+  - model_name: gpt-fallback
+    litellm_params:
+      model: gpt-4o-mini
+      api_key: ${OPENAI_API_KEY}
+
+litellm_settings:
+  # the pool's fairness rule: least-busy lane first, per-lane rpm caps
+  routing_strategy: least-busy
+  num_retries: 1
+  fallbacks: [{"llama-local": ["gpt-fallback"]}]
+
+general_settings:
+  master_key: ${LITELLM_MASTER_KEY}

@@ -28,7 +28,9 @@
 (check "litellm delegate without a transport answers unavailable"
        ((make-litellm-delegate) "llama" '()) 'unavailable)
 (check "odoo delegate without a transport answers unavailable"
-       ((make-odoo-delegate) "stock.buffer" "read" '()) 'unavailable)
+       ((make-odoo-delegate (lambda _ (throw 'no-transport)) "db" "u" "p") "stock.buffer" "read" '()) 'unavailable)
+(check "odoo delegate without credentials answers unavailable"
+       ((make-odoo-delegate (lambda _ 'ignored) #f #f #f) "stock.buffer" "read" '()) 'unavailable)
 (check "bacalhau delegate without a transport answers unavailable"
        ((make-bacalhau-delegate) '(("Engine" . "wasm"))) 'unavailable)
 (check "cpsat delegate without a transport answers unavailable"
@@ -79,13 +81,23 @@
            (and (equal? (cadr call) "/v1/chat/completions")
                 (equal? (cdr (assoc "model" body)) "llama-3.2"))) #t))
 
-(let* ((cap (capture '(("result" . 42))))
-       (d (make-odoo-delegate (car cap)))
+(let* ((cap (capture '(("result" . 7))))
+       ;; transport answers authenticate (uid 7) for every call — the first
+       ;; call IS the authenticate; the second is the execute_kw itself
+       (d (make-odoo-delegate (car cap) "db" "u" "p"))
        (ans (d "stock.buffer" "search_read" '((("id" . 1))))))
-  (check "odoo delegate wraps the call in JSON-RPC execute_kw"
-         (let* ((call (car ((cdr cap))))
-                (body (caddr call)))
-           (equal? (cdr (assoc "method" body)) "call")) #t))
+  (check "odoo delegate authenticates then executes with (db uid pass model m args)"
+         (let* ((calls ((cdr cap)))
+                (auth (caddr (car calls)))
+                (call (caddr (cadr calls)))
+                (aargs (cdr (assoc "args" (cdr (assoc "params" call))))))
+           (and (equal? (cdr (assoc "method" (cdr (assoc "params" auth))))
+                        "authenticate")
+                (equal? (cdr (assoc "method" (cdr (assoc "params" call))))
+                        "execute_kw")
+                (equal? (car aargs) "db")
+                (equal? (cadr aargs) 7)
+                (equal? (cadddr aargs) "stock.buffer"))) #t))
 
 (let* ((cap (capture '(("jobID" . "j-9"))))
        (d (make-bacalhau-delegate (car cap)))

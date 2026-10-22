@@ -24,13 +24,14 @@
          (buffer-zone->list z) fixture-portrait))
 
 ;; the odoo wire for a stock.buffer read of the same zone
-(let ((w (odoo-call-wire "stock.buffer" "search_read" '((("id" . 1))))))
+(let ((w (odoo-call-wire "db" 7 "pass" "stock.buffer" "search_read" '((("id" . 1))))))
   (check "odoo wire is JSON-RPC execute_kw over stock.buffer"
          (and (equal? (cdr (assoc "jsonrpc" w)) "2.0")
               (equal? (cdr (assoc "method" w)) "call")) #t))
 
 (parity-live-delegate "PLAYNET_ODOO_URL"
   "odoo execute_kw answers a stock.buffer read"
+  ;; env creds: PLAYNET_ODOO_DB/USER/PASSWORD — unset → delegate unavailable → skip
   (lambda (t) (make-odoo-delegate t))
   (lambda (d) (d "stock.buffer" "search_read" '((("id" . 1)))))
   (lambda (a) (and (pair? a) (< (car a) 300))))
