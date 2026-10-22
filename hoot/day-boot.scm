@@ -3163,6 +3163,31 @@
       (planner-call cb (<- *session* 'compute-replay commune claim-id)
         (lambda (v) (reply! cb (scm->json-canonical v))))))
 
+;; the dispute lifecycle — spec §5: a party raises 'non-delivery or
+;; 'wrong-result; three sortition-selected citizens review; the record
+;; closes on two-of-three or lapses past its window. PoI replay stays
+;; authoritative — the hive weighs the prover's answer.
+(define (handle-compute-dispute commune claim-id kind cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-dispute commune claim-id kind)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-compute-dispute-verdict commune dispute-id verdict cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-dispute-verdict commune
+                        dispute-id verdict)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-compute-disputes commune cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-disputes commune)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-compute-dispute-close commune dispute-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-dispute-close commune dispute-id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
 ;; the AccountLink ceremony — a did:key binds an account, dual-signed;
 ;; keri:<aid> binds the caller's own AID. Either side unlinks.
 (define (handle-compute-bind commune wire-json cb)
@@ -4082,6 +4107,10 @@
             ("computeClaims"     . ,handle-compute-claims)
             ("computeFetchEnvelope" . ,handle-compute-fetch-envelope)
             ("computeReplay"        . ,handle-compute-replay)
+            ("computeDispute"       . ,handle-compute-dispute)
+            ("computeDisputeVerdict" . ,handle-compute-dispute-verdict)
+            ("computeDisputes"      . ,handle-compute-disputes)
+            ("computeDisputeClose"  . ,handle-compute-dispute-close)
             ("computeBind"          . ,handle-compute-bind)
             ("computeUnbind"        . ,handle-compute-unbind)
             ("computeBindings"      . ,handle-compute-bindings)

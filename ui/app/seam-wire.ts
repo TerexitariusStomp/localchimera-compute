@@ -179,6 +179,18 @@ export interface SeamHandlers {
   /** PoI replay is authoritative — either party of the claim re-runs the envelope and the reply carries the challenge fields {receiptDigest, reproduced, attestationHash, counterHash} | "err:…". */
   // doors: session/compute-replay
   computeReplay?(commune: string, claimId: string): Promise<unknown>;
+  /** Raise a dispute on a claim — `kind` is "non-delivery" (deadline past, no receipt) or "wrong-result" (PoI replay runs and carries the challenge as evidence). Parties only; a reproduced verdict refuses. → dispute row | "err:…". */
+  // doors: session/compute-dispute
+  computeDispute?(commune: string, claimId: string, kind: string): Promise<unknown>;
+  /** A sortition-selected reviewer's verdict — "upheld" or "dismissed"; two-of-three decides and closes. → dispute row | "err:…". */
+  // doors: session/compute-dispute-verdict
+  computeDisputeVerdict?(commune: string, disputeId: string, verdict: string): Promise<unknown>;
+  /** The commune's dispute rows — id, claimId, kind, state, reviewers, verdicts, outcome, challenge. → row JSON list | "[]". */
+  // doors: session/compute-disputes
+  computeDisputes?(commune: string): Promise<unknown>;
+  /** Prod the clock: a review past its closure window lapses closed. → dispute row | "err:…". */
+  // doors: session/compute-dispute-close
+  computeDisputeClose?(commune: string, disputeId: string): Promise<unknown>;
   /** Bind a did:key to an account — a CAIP-10 payout address, or `keri:<aid>` (the AID↔did:key link; binds the caller's own AID only). Dual-signed over the statement; the verdict rides the reply. → {key, verdict} | "err:…". */
   // doors: session/compute-bind
   computeBind?(commune: string, wireJson: string): Promise<unknown>;
