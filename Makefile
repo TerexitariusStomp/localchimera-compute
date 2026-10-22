@@ -1251,7 +1251,7 @@ test-browser: test-app-ux
 test-e2e: test-keri-signup-ux test-credential-sync-ux test-recovery-ux \
           test-signup-live-ux test-room-join-live-ux test-enroll-live-ux test-cast-ux \
           test-device-live-ux test-identity-portability-live-ux test-passcode-change-live-ux \
-          test-calendar-ux test-browser-ux
+          test-calendar-ux test-browser-ux test-lend-ux
 
 # The repl's general UX pass (drives index.html against a live gateway).
 .PHONY: test-browser-ux
@@ -2498,6 +2498,14 @@ test-responsive-engines-ux: browser/day-boot.wasm
 .PHONY: test-willingness-ux
 test-willingness-ux: browser/repl.wasm
 	bash tests/ux/ux-full.sh tests/ux/willingness-ux.mjs
+
+# The lend face e2e — a browser tab as a compute node: two identities on a
+# real gateway, offer/submit/claim through the session, the shipped
+# compute-executor runs the envelope, the receipt lands on the book.
+# PLAYNET_SEED_DEMO seeds the commune both join.
+.PHONY: test-lend-ux
+test-lend-ux: browser/repl.wasm
+	PLAYNET_SEED_DEMO=1 bash tests/ux/ux-full.sh tests/ux/lend-ux.mjs
 
 # KERI signup e2e: real repl.wasm creates an identity in Chromium, ships
 # icp + OKEA endpoint replies to a live gateway, and the REAL /oobi route
