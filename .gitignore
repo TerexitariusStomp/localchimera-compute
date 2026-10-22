@@ -369,6 +369,9 @@ LICENSE.md
 # negation wins over the rule above it)
 !browser/vendor/basemaps/LICENSE.md
 README.md
+# the compute repo carries its own root README — the ignore above stays for
+# the generated/legal-pack copies elsewhere in the tree
+!/README.md
 SECURITY.md
 THIRD-PARTY-NOTICES.md
 deploy/DEPLOY-GUIDE.md
