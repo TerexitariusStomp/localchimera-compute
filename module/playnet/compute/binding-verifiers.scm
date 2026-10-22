@@ -29,7 +29,8 @@
   #:use-module ((playnet keri crypto-primitives)
                 #:select (keri-crypto-ed25519-verify))
   #:use-module ((playnet ai tee-crypto) #:select (tee-verify-ecdsa))
-  #:export (base58-decode did-key->ed25519-pubkey
+  #:export (base58-decode base58-encode did-key->ed25519-pubkey
+            ed25519-pubkey->did-key
             verify-did-key-sig verify-caip10-sig verify-keri-account-sig
             account-verifier-for))
 
@@ -67,6 +68,45 @@
                   (mul (cdr xs) (quotient v 256)
                        (cons (remainder v 256) res)))))))))
 
+
+(define (base58-encode bv)
+  "bytevector → base58btc. The inverse of base58-decode: leading zero
+   bytes are '1's; digits accumulate LSB-first, each byte a
+   multiply-by-256 carry pass."
+  (let* ((n (bytevector-length bv))
+         (lead (let lp ((i 0)) (if (and (< i n) (zero? (bytevector-u8-ref bv i)))
+                                   (lp (+ i 1)) i))))
+    (if (= n 0) ""
+        (let lp ((i lead) (digits '()))
+          (if (= i n)
+              ;; digits is LSB-first — reverse for print order
+              (list->string
+               (append (make-list lead #\1)
+                       (map (lambda (d) (string-ref *base58-alphabet* d))
+                            (reverse digits))))
+              ;; multiply the digit list by 256, add the byte: walk LSB
+              ;; first, each remainder cons'd on — res ends MSB-first
+              (let mul ((ds digits) (carry (bytevector-u8-ref bv i)) (res '()))
+                (if (null? ds)
+                    ;; carry overflow is MORE significant — cons its
+                    ;; base-58 digits onto res's head
+                    (let flush ((c carry) (res res))
+                      (if (zero? c)
+                          (lp (+ i 1) (reverse res))
+                          (flush (quotient c 58)
+                                 (cons (remainder c 58) res))))
+                    (let ((v (+ (* (car ds) 256) carry)))
+                      (mul (cdr ds) (quotient v 58)
+                           (cons (remainder v 58) res))))))))))
+
+(define (ed25519-pubkey->did-key pub-bv)
+  "did:key:z… for a 32-byte Ed25519 pubkey — the multicodec tag 0xed01
+   then base58btc. Inverse of did-key->ed25519-pubkey."
+  (unless (and (bytevector? pub-bv) (= 32 (bytevector-length pub-bv)))
+    (error "ed25519-pubkey->did-key: need a 32-byte key"))
+  (string-append "did:key:z"
+                 (base58-encode (u8-list->bytevector
+                                 (cons #xed (cons #x01 (bytevector->u8-list pub-bv)))))))
 
 ;;; ── did:key → the Ed25519 pubkey ─────────────────────────────────────────
 ;;; "did:key:z" + base58btc(0xed 0x01 ∥ 32-byte pubkey). ed25519-pub's

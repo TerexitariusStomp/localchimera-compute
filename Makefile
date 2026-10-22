@@ -1269,6 +1269,12 @@ test-calendar-ux: browser/repl.wasm
 test-vault:
 	node tests/browser/vault-test.mjs
 
+# The browser executor — the sandbox, the cap denial, the timeout, and the
+# canonical digest the Scheme verifier recomputes (ui/app/compute-executor.ts).
+.PHONY: test-compute-executor
+test-compute-executor:
+	node tests/browser/compute-executor-test.mjs
+
 # The IndexedDB keystore + legacy migration (browser/lib/keystore.js). Real
 # WebCrypto Ed25519 with in-memory localStorage/IndexedDB mocks. Pins that a
 # failed migration never destroys the only copy of a signing key.

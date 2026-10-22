@@ -37,13 +37,19 @@
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
   #:use-module ((playnet utils time) #:select (current-epoch-seconds))
-  #:export (governance-compute-doors *compute-clock*))
+  #:export (governance-compute-doors *compute-clock* *compute-send-rail*))
 
 
 ;;; *compute-clock* — the "now" the compute doors read, as a parameter so a
 ;;; test can walk a dispute timeline without waiting days. Defaults to the
 ;;; wall clock; nothing outside a test rebinds it.
 (define *compute-clock* (make-parameter current-epoch-seconds))
+
+;;; *compute-send-rail* — the treasury payout rail, parameterized like the
+;;; clock. Production reads %payout-unavailable (fail closed — a commune
+;;; without a Safe rail answers an error, never a phantom payment); a test
+;;; injects its (lambda (to amount asset) → tx-hash).
+(define *compute-send-rail* (make-parameter %payout-unavailable))
 
 (define (governance-compute-doors ctx)
   ;; one ^compute-registry per commune, spawned on first touch
@@ -659,7 +665,7 @@
                                     #:entries (or (assq-ref sw 'entries) '())
                                     #:payments (or (assq-ref sw 'payments) '())
                                     #:bridge-sig (assq-ref sw 'bridgeSig)))
-                              (rows (execute-payout st b #:send %payout-unavailable)))
+                              (rows (execute-payout st b #:send (*compute-send-rail*))))
                          (cons 'ok (map (lambda (r)
                                           `(("txHash" . ,(payout-row-tx-hash r))
                                             ("asset" . ,(payout-row-asset r))
