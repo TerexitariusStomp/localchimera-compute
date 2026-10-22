@@ -52,13 +52,13 @@ export const [devMode, setDevMode] = pref("devMode", false);
 // reader who never opens the corpus never has to read past it. A face stays
 // reachable by URL and by voice whether or not its tab shows; the face you are
 // on is always named, so nothing you can stand on is ever nameless.
-export const DEFAULT_TABS = ["map", "cal", "forum"];
+export const DEFAULT_TABS = ["map", "shop", "forum"];
 export const [tabsOn, setTabsOn] = pref<string[]>("tabsOn", DEFAULT_TABS);
 
 // Where the page lands when the URL names no face. A setting of its own, apart
 // from which tabs show: the home face is what you want FIRST, and the strip is
 // what you want within reach — the calendar by default.
-export const [homeFace, setHomeFace] = pref<string>("homeFace", "cal");
+export const [homeFace, setHomeFace] = pref<string>("homeFace", "map");
 
 // The currency an hour of credit is read in (app/money.ts). Empty means "not
 // chosen": the reader is then shown the currency the device's zone or locale
