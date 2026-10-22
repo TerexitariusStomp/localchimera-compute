@@ -15,6 +15,7 @@
              (playnet compute envelope)
              (playnet compute replay)
              (playnet compute binding)
+             (playnet compute binding-verifiers)
              (playnet compute payout)
              (playnet compute executors)
              (playnet utils store-utils)
@@ -22,6 +23,7 @@
              (goblins) (goblins vat)
              (goblins actor-lib methods)
              (goblins utils hashmap)
+             (rnrs bytevectors)
              (srfi srfi-1))
 
 (define vat (spawn-vat #:name "compute-registry-test"))
@@ -474,13 +476,33 @@
                        '(purpose . "node") '(nonce . "n1") '(expiry . 9999999999)
                        '(signerSig . "sS") '(accountSig . "sA"))))
          'ok)
-  (check "compute-bind: a CAIP-10 link lands, verdict unverifiable (no rail)"
+  ;; the verifiers are real now: a readable form with a garbage sig is
+  ;; bad-signature, not unverifiable — 'unverifiable rides only on the
+  ;; account forms this build can't read at all.
+  (check "compute-bind: a CAIP-10 link with a bad sig answers bad-signature"
          (let ((r ($ gov 'compute-bind ALICE HOME
                      '((didKey . "did:key:z6MksAlice") (account . "eip155:1:0xAliceSafe")
                        (purpose . "payout") (nonce . "n2") (expiry . 9999999999)
                        (signerSig . "sS") (accountSig . "sA")))))
            (and (eq? (car r) 'ok)
-                (eq? (cdr (assoc "verdict" (cdr r))) 'unverifiable))) #t)
+                (eq? (cdr (assoc "verdict" (cdr r))) 'bad-signature))) #t)
+  ;; a bad signer sig dominates the verdict regardless of the account's
+  ;; form — the did:key's countersignature is checked first
+  (check "compute-bind: an unreadable form still answers the signer's verdict"
+         (let ((r ($ gov 'compute-bind ALICE HOME
+                     '((didKey . "did:key:z6MksAlice") (account . "rgb:xyz")
+                       (purpose . "payout") (nonce . "n3") (expiry . 9999999999)
+                       (signerSig . "sS") (accountSig . "sA")))))
+           (and (eq? (car r) 'ok)
+                (eq? (cdr (assoc "verdict" (cdr r))) 'bad-signature))) #t)
+  (check "did:key decodes to a 32-byte ed25519 pubkey"
+         (let ((pub (did-key->ed25519-pubkey
+                     "did:key:z6Mkfriq1MqLBoPWecGoDLjguo1sB9brj6wT3qZ5BxkKqrDA")))
+           (and pub (= (bytevector-length pub) 32))) #t)
+  (check "a non-ed25519 or malformed did:key answers #f, not a crash"
+         (and (not (did-key->ed25519-pubkey "did:key:z6MkShort"))
+              (not (did-key->ed25519-pubkey "not-a-did"))
+              (not (did-key->ed25519-pubkey #f))) #t)
   (check "compute-bindings lists what was bound"
          (let* ((rows (cdr ($ gov 'compute-bindings ALICE HOME)))
                 (hit (find (lambda (r)

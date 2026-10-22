@@ -30,6 +30,7 @@
   #:use-module (playnet compute replay)
   #:use-module (playnet compute dispute)
   #:use-module (playnet compute binding)
+  #:use-module (playnet compute binding-verifiers)
   #:use-module (playnet compute payout)
   #:use-module (playnet compute executors)
   #:use-module (playnet doors governance)
@@ -568,7 +569,17 @@
                              (or (assq-ref w 'signerSig) "")
                              (or (assq-ref w 'accountSig) "")))
                         (key (binding-key (account-link-did-key link) account))
-                        (verdict (verify-binding b)))
+                        ;; the verifiers are real: did:key decodes to its
+                        ;; own Ed25519 pubkey; keri: rides the session
+                        ;; signature path; eip155 is ECDSA recovery. An
+                        ;; unreadable account form stays 'unverifiable —
+                        ;; the binding we can't read is the binding that
+                        ;; doesn't settle.
+                        (verdict (verify-binding
+                                  b #:verify-signer verify-did-key-sig
+                                  #:verify-account
+                                  (or (account-verifier-for account)
+                                      %sig-unverified))))
                    ($ (binds-for commune-aid) 'put! key b)
                    (cons 'ok `(("key" . ,key) ("verdict" . ,verdict))))))))
            (lambda (k . a) (list 'error (format #f "compute-bind: ~a" a)))))
