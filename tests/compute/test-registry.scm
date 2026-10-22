@@ -275,6 +275,34 @@
                    (inputHash . "h") (caps . ()) (network . #f)
                    (amount . 5)))) 'error)
 
+  ;; ── the envelope shelf — submit carries the body, the lender fetches ──
+  (define env-wire
+    '((bridgeJobId . "bj-shelf") (image . "js:work.js") (entrypoint . "run")
+      (inputHash . "in:shelf") (caps . ()) (network . #f)))
+  (define shelf-job (cdr ($ gov 'compute-submit BOB HOME "inference" "member"
+                            "deterministic" "in:shelf"
+                            'envelope env-wire 'envelopeHash "eh:shelf")))
+  (check "submit with an envelope lands the job" (string? shelf-job) #t)
+  (check "a priced envelope is refused at submit"
+         (car ($ gov 'compute-submit BOB HOME "inference" "member"
+                 "deterministic" "in:shelf2"
+                 'envelope (cons '(amount . 9) env-wire))) 'error)
+  (define shelf-claim
+    (cdr ($ gov 'compute-claim ALICE HOME shelf-job o-id)))
+  (check "the lender fetches the envelope it is meant to run"
+         (let ((r ($ gov 'compute-fetch-envelope ALICE HOME shelf-claim)))
+           (and (eq? (car r) 'ok)
+                (equal? (cdr (assoc "image" (cdr r))) "js:work.js"))) #t)
+  (check "the borrower cannot fetch the envelope back"
+         (car ($ gov 'compute-fetch-envelope BOB HOME shelf-claim)) 'error)
+  (check "a stranger cannot fetch the envelope"
+         (car ($ gov 'compute-fetch-envelope CAROL HOME shelf-claim)) 'error)
+  (check "no envelope on the shelf is an error, not a crash"
+         (let* ((j2 (cdr ($ gov 'compute-submit BOB HOME "fetch" "member"
+                            "none" "in:bare")))
+                (c2 (cdr ($ gov 'compute-claim ALICE HOME j2 o-id))))
+           (car ($ gov 'compute-fetch-envelope ALICE HOME c2))) 'error)
+
   (check "compute-settle refuses when the commune is unreachable here"
          (car ($ gov 'compute-settle ALICE "did:keri:ENowhere"
                  '((period . ("2026-10-01" . "2026-10-31")) (entries . ())

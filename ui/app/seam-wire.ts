@@ -173,6 +173,9 @@ export interface SeamHandlers {
   /** The commune's dispatch claims, as a JSON array. */
   // doors: session/compute-claims
   computeClaims?(commune: string): Promise<unknown>;
+  /** The claim's lender fetches the job envelope it's meant to run — borrower and strangers refused. → envelope JSON | "err:…". */
+  // doors: session/compute-fetch-envelope
+  computeFetchEnvelope?(commune: string, claimId: string): Promise<unknown>;
   /** Land a receipt wire (JSON: the body the lender's node emitted): digest recomputed and matched, lender signature checked where resolvable, recorded, folded into the commune's observer as a use event. → {digest, verdict} JSON | "err:…". */
   // doors: session/compute-receipt
   computeReceipt?(commune: string, wireJson: string): Promise<unknown>;

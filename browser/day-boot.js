@@ -1313,6 +1313,8 @@ function boot() {
     HANDLERS.computePreempt    = bridge("computePreempt", 2);
     HANDLERS.computeClaims     = (commune) =>
       new Promise(res => schemeHandlers.computeClaims ? schemeHandlers.computeClaims(commune || "", res) : res("[]"));
+    HANDLERS.computeFetchEnvelope = (commune, claimId) =>
+      new Promise(res => schemeHandlers.computeFetchEnvelope ? schemeHandlers.computeFetchEnvelope(commune || "", claimId || "", res) : res("err:offline"));
     HANDLERS.computeReceipt    = (commune, wireJson) =>
       new Promise(res => schemeHandlers.computeReceipt ? schemeHandlers.computeReceipt(commune || "", wireJson || "{}", res) : res("err:offline"));
     HANDLERS.computeVerify     = (wireJson) =>

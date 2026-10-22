@@ -3148,6 +3148,13 @@
         (planner-call cb (<- *session* 'compute-claims commune)
         (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
 
+;; the claim's lender fetches the envelope it's meant to run — the door
+;; gates on the session's identity; a refusal arrives as an err: reply.
+(define (handle-compute-fetch-envelope commune claim-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'compute-fetch-envelope commune claim-id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
 ;; the wire receipt as JSON — the body the lender's node emitted. v is
 ;; (digest verdict): the digest it landed under, verified|unverifiable|bad.
 (define (handle-compute-receipt commune wire-json cb)
@@ -4039,6 +4046,7 @@
             ("computeAccept"     . ,handle-compute-accept)
             ("computePreempt"    . ,handle-compute-preempt)
             ("computeClaims"     . ,handle-compute-claims)
+            ("computeFetchEnvelope" . ,handle-compute-fetch-envelope)
             ("computeReceipt"    . ,handle-compute-receipt)
             ("computeVerify"     . ,handle-compute-verify)
             ("computeSettle"     . ,handle-compute-settle)

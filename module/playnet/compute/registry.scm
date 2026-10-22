@@ -45,7 +45,8 @@
             dispatch-claim-state dispatch-claim-deadline dispatch-claim-receipt
             dispatch-claim->list list->dispatch-claim
             lane-offer-answers?
-            ^compute-registry compute-registry-env))
+            ^compute-registry compute-registry-env
+            ^envelope-store spawn-envelope-store))
 
 
 ;;; ── the records ─────────────────────────────────────────────────────────
@@ -467,8 +468,28 @@
     ((statements) statements)))
 
 
+;;; ── the envelope shelf ──────────────────────────────────────────────────
+;;; Job envelopes ride beside the registry, not inside it: the job record
+;;; only commits to the envelope's hash. The shelf is a dumb map — the doors
+;;; decide who may put and who may fetch; it holds no policy of its own.
+
+(define (^envelope-store bcom envelopes)
+  (methods
+    ((put! job-id envelope)
+     (bcom (^envelope-store bcom (hashmap-set envelopes job-id envelope))))
+    ((get job-id)
+     (hashmap-ref envelopes job-id #f))
+    ((of job-id)
+     (hashmap-ref envelopes job-id #f))
+    ((portrait) (list 'envelope-store (serialize-hashmap envelopes (lambda (x) x))))))
+
+(define (spawn-envelope-store)
+  (spawn ^envelope-store (hashmap)))
+
+
 ;;; ── persistence ─────────────────────────────────────────────────────────
 
 (define compute-registry-env
   (make-persistence-env
-    `((((playnet compute registry) ^compute-registry) ,^compute-registry))))
+    `((((playnet compute registry) ^compute-registry) ,^compute-registry)
+      (((playnet compute registry) ^envelope-store) ,^envelope-store))))

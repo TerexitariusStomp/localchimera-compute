@@ -46,11 +46,39 @@
               (hash-set! registries commune-aid r)
               r)))
 
+      ;; the envelope shelf beside the registry — same laziness, same map,
+      ;; a distinct key so one never shadows the other
+      (define (shelf-for commune-aid)
+        (let ((k (string-append "envelope:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-envelope-store)))
+                (hash-set! registries k s)
+                s))))
+
       ;; a door's `. opts` arrive as a symbol-pair list ('key value …);
       ;; one local lookup keeps the fragment self-contained
       (define (opt-ref opts key default)
         (let ((m (memq key opts)))
           (if (and m (pair? (cdr m))) (cadr m) default)))
+
+      ;; the wire arrives as JSON (json-read-ordered): objects are lists of
+      ;; ("key" . val) entries, arrays are vectors. Everything below reads
+      ;; symbol keys and Scheme lists — normalize at the boundary so no
+      ;; reader downstream carries the distinction (a JSON "amount" must
+      ;; hit the envelope's priced-key refusal exactly like 'amount does).
+      ;; A list whose every element is a string-keyed pair is an object;
+      ;; any other list is just a list.
+      (define (wire-normalize v)
+        (cond
+         ((vector? v) (map wire-normalize (vector->list v)))
+         ((and (list? v) (not (null? v))
+               (every (lambda (e) (and (pair? e) (string? (car e)))) v))
+          (map (lambda (e) (cons (string->symbol (car e))
+                                 (wire-normalize (cdr e))))
+               v))
+         ((list? v) (map wire-normalize v))
+         ((pair? v) (cons (car v) (wire-normalize (cdr v))))
+         (else v)))
 
       ;; ── wire shapes ───────────────────────────────────────────────────
       ;; alist rows out — self-describing over the seam, the same shape the
@@ -92,7 +120,8 @@
       ;; a receipt over the wire is the JSON object the lender's node
       ;; produced — symbol-keyed alist here, the same field names the
       ;; canonical digest hashes. usage/repro are alist sub-objects.
-      (define (wire->receipt w)
+      (define (wire->receipt w0)
+        (define w (wire-normalize w0))
         (define (ref k) (assq-ref w k))
         (define (usage-of u)
           (and u (make-usage-meter #:unit (assq-ref u 'unit)
@@ -168,14 +197,21 @@
         ((compute-submit identity-key commune-aid task-class lane repro input-hash . opts)
          (catch #t
            (lambda ()
-             (cons 'ok
-               ($ (registry-for commune-aid) 'submit
-                  identity-key commune-aid
-                  (string->symbol task-class) lane (string->symbol repro)
-                  input-hash
-                  (opt-ref opts 'envelopeHash #f)
-                  (opt-ref opts 'ring 1)
-                  (opt-ref opts 'specId #f))))
+             ;; an 'envelope opt means the wire is carrying the body — the
+             ;; shelf keeps it for the claim's lender. It must be a clean
+             ;; job envelope: alist->job-envelope refuses priced ones.
+             (let* ((env (opt-ref opts 'envelope #f))
+                    (parsed (and env (alist->job-envelope (wire-normalize env))))
+                    (job-id ($ (registry-for commune-aid) 'submit
+                               identity-key commune-aid
+                               (string->symbol task-class) lane
+                               (string->symbol repro) input-hash
+                               (opt-ref opts 'envelopeHash #f)
+                               (opt-ref opts 'ring 1)
+                               (opt-ref opts 'specId #f))))
+               (when parsed
+                 ($ (shelf-for commune-aid) 'put! job-id parsed))
+               (cons 'ok job-id)))
            (lambda (k . a) (list 'error (format #f "compute-submit: ~a" a)))))
 
         ((compute-withdraw identity-key commune-aid job-id)
@@ -233,6 +269,27 @@
         ((compute-claims commune-aid)
          (cons 'ok (map claim-row
                         ($ (registry-for commune-aid) 'claims commune-aid))))
+
+        ;; IDENTITY-KEY (the claim's lender) fetches the envelope it's meant
+        ;; to run. Borrowers already have their own envelope; anyone else
+        ;; gets refused — the envelope is the job's payload, not a broadcast.
+        ((compute-fetch-envelope identity-key commune-aid claim-id)
+         (catch #t
+           (lambda ()
+             (let ((c ($ (registry-for commune-aid) 'claim-of claim-id)))
+               (cond
+                ((not c) (list 'error "compute-fetch-envelope: no such claim"))
+                ((not (equal? identity-key (dispatch-claim-lender-did c)))
+                 (list 'error "compute-fetch-envelope: the claim's lender only"))
+                ((not (memq (dispatch-claim-state c) '(claimed accepted)))
+                 (list 'error "compute-fetch-envelope: claim no longer live"))
+                (else
+                 (let ((env ($ (shelf-for commune-aid) 'get
+                               (dispatch-claim-job-id c))))
+                   (if env
+                       (cons 'ok (job-envelope->alist env))
+                       (list 'error "compute-fetch-envelope: not on the shelf")))))))
+           (lambda (k . a) (list 'error (format #f "compute-fetch-envelope: ~a" a)))))
 
         ;; ── receipts ────────────────────────────────────────────────────
         ;; W is the wire alist the lender's node emitted. The door rebuilds
@@ -295,7 +352,8 @@
                (catch #t
                  (lambda ()
                    ($ sc 'mint-gov-cap identity-key)   ; refuses non-governors
-                   (let* ((stmt (make-settlement-statement
+                   (let* ((w (wire-normalize w))
+                          (stmt (make-settlement-statement
                                   #:period (assq-ref w 'period)
                                   #:entries (or (assq-ref w 'entries) '())
                                   #:payments (or (assq-ref w 'payments) '())
@@ -319,6 +377,6 @@
         ((compute-envelope w)
          (catch #t
            (lambda ()
-             (let ((e (alist->job-envelope w)))
+             (let ((e (alist->job-envelope (wire-normalize w))))
                (cons 'ok (job-envelope-bridge-job-id e))))
            (lambda (k . a) (list 'error (format #f "compute-envelope: ~a" a)))))))))
