@@ -22,6 +22,7 @@
              (playnet compute payout)
              (playnet compute executors)
              (playnet doors compute)
+             (playnet delegates)
              (playnet boot governance)
              (playnet keri signify-portable)
              (playnet keri crypto-primitives)
@@ -222,6 +223,36 @@
                                               (amount . 1)
                                               (asset . "eip155:1/slip44:60"))))
                                  (payments . ())))
-                   (bindingKey . ,pay-key)))) 'error))
+                   (bindingKey . ,pay-key)))) 'error)
+
+  (scenario "policy — OPA consults on the commune acts")
+
+  ;; an OPA delegate over a stub transport: deny → refuse, allow → pass,
+  ;; 'unavailable → the local gate alone decides (gov-cap already held).
+  (define (opa-stub answer)
+    (make-opa-delegate (lambda (m p b) (cons 200 answer))))
+  (define settle-call
+    (lambda ()
+      ($ gov 'compute-settle ALICE HOME
+         `((period . ("2026-11-01" . "2026-11-30"))
+           (entries . ()) (payments . ()) (bridgeSig . "x")))))
+
+  (check "OPA deny refuses a governor — the engine's answer governs"
+         (car (parameterize ((*compute-authz*
+                              (opa-stub "{\"result\":{\"allow\":false}}")))
+                (settle-call)))
+         'error)
+  (check "OPA allow lets the settled governor through"
+         (car (parameterize ((*compute-authz*
+                              (opa-stub "{\"result\":{\"allow\":true}}")))
+                (settle-call)))
+         'ok)
+  (check "OPA unavailable falls through to the local gate"
+         (car (parameterize ((*compute-authz*
+                              (make-opa-delegate
+                               (lambda (m p b)
+                                 (throw 'unreachable)))))
+                (settle-call)))
+         'ok))
 
 (test-summary!)

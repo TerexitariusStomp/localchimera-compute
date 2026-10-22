@@ -20,7 +20,8 @@
   #:use-module ((playnet doors delegation) #:select (governance-delegation-doors))
   #:use-module ((playnet doors voice) #:select (governance-voice-doors))
   #:use-module ((playnet doors contests) #:select (governance-contests-doors))
-  #:use-module ((playnet doors compute) #:select (governance-compute-doors))
+  #:use-module ((playnet doors compute) #:select (governance-compute-doors *compute-authz*))
+  #:use-module ((playnet delegates) #:select (make-opa-delegate %env-transport))
   #:use-module ((playnet doors economy) #:select (governance-economy-doors))
   #:use-module ((playnet doors federation) #:select (governance-federation-doors))
   #:re-export (fp-wire->cred ^governance-service spawn-governance-service
@@ -45,6 +46,13 @@ credit fold and MEETING-SCOPE's ballot store, the founders as governors, the
 scope graph as its scope-of, the oobi-host directory as where a carried key
 log lands, STORE as its credential store. Its home scope arrives once the
 founding commune stands (boot/communes)."
+  ;; the policy engine for the commune acts: PLAYNET_OPA_URL names a
+  ;; deployed OPA, the compute doors consult playnet/doors/compute on every
+  ;; settle/payout — an answered deny refuses even a governor. Unset, the
+  ;; local gov-cap gate alone decides.
+  (let ((opa-t (%env-transport "PLAYNET_OPA_URL")))
+    (when opa-t
+      (*compute-authz* (make-opa-delegate opa-t))))
   (let ((governance-svc
          (with-vat planner-vat
            (let ((bs ($ meeting-scope 'ballot-store)))

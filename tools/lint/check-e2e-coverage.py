@@ -41,8 +41,14 @@ def declared_doors():
     """Door names = ((sym …) clauses in doors/*.scm that are 'sym-called."""
     candidates = set()
     clause = re.compile(r"^\s*\(\(([a-z][a-z0-9-]*)[\s)]", re.M)
+    # a ((sym form can also open an ordinary call — (assoc …), (lambda …)
+    # are never doors even when 'sym appears in some corpus string
+    never_doors = {"assoc", "assq", "assv", "lambda", "let", "let*", "and",
+                   "or", "not", "if", "when", "unless", "list", "cons",
+                   "car", "cdr", "map", "filter", "apply", "member"}
     for _, text in read_all("module/playnet/doors/*.scm"):
         candidates.update(clause.findall(text))
+    candidates -= never_doors
 
     # a candidate counts only when the codebase invokes it as a symbol —
     # this drops let-bindings, record fields and syntax noise the clause

@@ -373,7 +373,9 @@
                                           '((charset . "utf-8")))
                         #:streaming? #t))
       (lambda (response port)
-        (let ((text (get-string-all port)))
+        ;; a 204/headless answer hands no port — the body is the empty
+        ;; string, not an error
+        (let ((text (if port (get-string-all port) "")))
           (cons (response-code response) text))))))
 
 (define (%env-transport env-name)

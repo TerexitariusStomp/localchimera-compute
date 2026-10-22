@@ -37,7 +37,10 @@
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
   #:use-module ((playnet utils time) #:select (current-epoch-seconds))
-  #:export (governance-compute-doors *compute-clock* *compute-send-rail*))
+  #:use-module ((playnet delegates) #:select (make-opa-delegate))
+  #:use-module (json)
+  #:export (governance-compute-doors *compute-clock* *compute-send-rail*
+            *compute-authz* commune-act-allowed?))
 
 
 ;;; *compute-clock* — the "now" the compute doors read, as a parameter so a
@@ -50,6 +53,44 @@
 ;;; without a Safe rail answers an error, never a phantom payment); a test
 ;;; injects its (lambda (to amount asset) → tx-hash).
 (define *compute-send-rail* (make-parameter %payout-unavailable))
+
+;;; *compute-authz* — the commune-act policy engine, an OPA delegate or #f.
+;;; When set, compute-settle/compute-payout consult
+;;; playnet/doors/compute: an answered allow:#f refuses even after the
+;;; local gov-cap check passes; 'unavailable falls through to the local
+;;; gate (a commune runs its doors without a policy engine — OPA is an
+;;; augmentation, not a dependency). Deployed by
+;;; (make-opa-delegate (%env-transport "PLAYNET_OPA_URL")).
+(define *compute-authz* (make-parameter #f))
+
+(define (json-ref parsed key)
+  "KEY lookup in a guile-json alist, string and symbol keys both."
+  (cond ((assoc key parsed) => cdr)
+        ((assoc (string->symbol key) parsed) => cdr)
+        (else #f)))
+
+(define (commune-act-allowed? identity-key commune-aid action)
+  "Consult *compute-authz* for ACTION on COMMUNE-AID by IDENTITY-KEY.
+   #t when unset or the engine is 'unavailable; the engine's own allow
+   field decides otherwise."
+  (let ((d (*compute-authz*)))
+    (or (not d)
+        (let ((a (d "playnet/doors/compute"
+                    `(("citizen" . ,identity-key)
+                      ("action" . ,action)
+                      ("commune" . ,commune-aid)
+                      ("door" . "compute-treasury")))))
+          (if (eq? a 'unavailable)
+              #t
+              (let* ((body (and (pair? a) (cdr a)))
+                     (parsed (and (string? body)
+                                  (catch #t
+                                    (lambda () (json-string->scm body))
+                                    (lambda _ #f))))
+                     (result (and parsed (json-ref parsed "result"))))
+                (and (pair? result)
+                     (json-ref result "allow")
+                     #t)))))))
 
 (define (governance-compute-doors ctx)
   ;; one ^compute-registry per commune, spawned on first touch
@@ -653,6 +694,9 @@
                           (bkey (assq-ref w 'bindingKey))
                           (b (and bkey ($ (binds-for commune-aid) 'get bkey))))
                      (cond
+                      ((not (commune-act-allowed?
+                             identity-key commune-aid "administer"))
+                       (list 'error "compute-payout: denied by policy"))
                       ((not s-wire)
                        (list 'error "compute-payout: a statement is required"))
                       ((not b) (list 'error "compute-payout: no such binding"))
@@ -738,6 +782,9 @@
                (catch #t
                  (lambda ()
                    ($ sc 'mint-gov-cap identity-key)   ; refuses non-governors
+                   (if (not (commune-act-allowed?
+                             identity-key commune-aid "administer"))
+                       (list 'error "compute-settle: denied by policy")
                    (let* ((w (wire-normalize w))
                           (stmt (make-settlement-statement
                                   #:period (assq-ref w 'period)
@@ -768,7 +815,7 @@
                                 (cons 'ok (list (- (length matched) held-m)
                                                 (- (length missing) held-x)
                                                 held claimed paid))))
-                            result)))
+                            result))))
                  (lambda (k . a)
                    (list 'error (format #f "compute-settle: ~a" a)))))))
 

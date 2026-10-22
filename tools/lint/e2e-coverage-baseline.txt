@@ -1,14 +1,10 @@
 # e2e coverage debt — names with no test naming them.
 # The gate fails on any uncovered name NOT listed here;
 # remove a line when its name gains coverage.
-delegate:make-bacalhau-delegate
-delegate:make-cedar-delegate
-delegate:make-temporal-delegate
 door:admit-body
 door:adopt-lens
 door:compute-preempt
 door:compute-retract
-door:compute-statements
 door:compute-withdraw
 door:corpus-domains
 door:corpus-search
@@ -56,29 +52,20 @@ handler:attesters
 handler:cardGive
 handler:cardWithdraw
 handler:claimRegime
-handler:computeAccept
 handler:computeBind
 handler:computeBindings
-handler:computeClaim
-handler:computeClaims
 handler:computeDispute
 handler:computeDisputeClose
 handler:computeDisputeVerdict
 handler:computeDisputes
 handler:computeEnvelope
-handler:computeFetchEnvelope
-handler:computeJobs
 handler:computeMatch
-handler:computeOffer
-handler:computeOffers
 handler:computePayout
 handler:computePreempt
-handler:computeReceipt
 handler:computeReplay
 handler:computeRetract
 handler:computeSettle
 handler:computeStatements
-handler:computeSubmit
 handler:computeUnbind
 handler:computeVerify
 handler:computeWithdraw
