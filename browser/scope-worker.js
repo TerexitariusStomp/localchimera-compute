@@ -13,9 +13,24 @@
 
 importScripts("reflect.js");
 
+// scope.wasm outweighs the Pages per-file cap (~25MiB): where the static tier
+// cannot carry it the gateway's own static server does (serve-static's
+// work-dir is this same directory). Resolve the gateway origin from the
+// baked discovery doc and fetch the bytes from there.
+async function scopeBytes() {
+  const res = await fetch("scope.wasm");
+  if (res.ok) return res.arrayBuffer();
+  const ep = await (await fetch("entry-points.json")).json();
+  const link = ep && (ep.discoveryUrl || (ep.gateway && ep.gateway[0] && ep.gateway[0].url));
+  if (!link) throw new Error("scope.wasm: HTTP " + res.status);
+  const alt = await fetch(new URL("/scope.wasm", new URL(link, self.location.href).origin).href);
+  if (!alt.ok) throw new Error("scope.wasm: HTTP " + alt.status);
+  return alt.arrayBuffer();
+}
+
 let ready = null;
 const boot = () => ready || (ready = import("./lib/scope-boot.js")
-  .then((m) => m.bootScope(Scheme, "scope.wasm")));
+  .then(async (m) => m.bootScope(Scheme, await scopeBytes())));
 
 self.onmessage = async ({ data: { id, door, args } }) => {
   try {

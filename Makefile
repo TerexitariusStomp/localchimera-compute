@@ -125,8 +125,21 @@ SCOPE_WASM_EXTRA = \
   module/playnet/vf/facts/validity.scm
 SCOPE_WASM_DEPS = $(SCOPE_WASM_CLOSURE) $(SCOPE_WASM_EXTRA)
 
+# scope.wasm outweighs the Pages per-file cap (~25 MiB) straight off hoot, so
+# the recipe runs wasm-opt (binaryen) when it is on PATH — WASM_OPT= to skip.
+# Feature flags are the minimum the hoot output needs; --all-features must NOT
+# be used (it lets passes emit stringref ops today's engines don't take).
+WASM_OPT ?= wasm-opt
+WASM_OPT_FEATURES = --enable-gc --enable-exception-handling --enable-tail-call \
+  --enable-reference-types --enable-bulk-memory --enable-multivalue \
+  --enable-sign-ext --enable-mutable-globals
+
 browser/scope.wasm: hoot/scope-worker.scm $(SCOPE_WASM_DEPS) $(HOOT_SCOPE_SRC)/playnet/scope/live.scm $(HOOT_TOOLCHAIN_STAMP)
 	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o browser/scope.wasm hoot/scope-worker.scm'
+	@if command -v $(WASM_OPT) >/dev/null 2>&1; then \
+	  $(WASM_OPT) -O2 --strip-debug $(WASM_OPT_FEATURES) browser/scope.wasm -o browser/scope.wasm.opt \
+	    && mv browser/scope.wasm.opt browser/scope.wasm; \
+	else echo "note: wasm-opt not on PATH — scope.wasm left unoptimized (may exceed the Pages 25MiB cap)"; fi
 # boots browser/scope.wasm under node, through the page's own boot module, and
 # asks its doors what the planner service answers of the same acts
 .PHONY: check-scope-worker

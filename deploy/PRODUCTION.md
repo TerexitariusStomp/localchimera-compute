@@ -99,7 +99,7 @@ retryable/missing-sref condition until the new one lands).
 |------|--------|
 | `browser/day-boot.wasm` | required — built via hoot 0.9.0 + 4 flonum patches + `hoot-src` shims |
 | `browser/repl.wasm` | required |
-| `browser/scope.wasm` | **known-blocked** — hoot serializes flonum constants via a target-only `%inline-wasm` primitive at expansion time (`write-flonum` on e.g. `0.15`); fails under both `hoot compile` and `guild compile-wasm`. Tracked against upstream spritely/hoot; page reports scope solving UNAVAILABLE and degrades to recorded answers by design |
+| `browser/scope.wasm` | built + shipped — the dev-container build needed a correct `length+` in `.hoot-compat/srfi/srfi-1.scm` (Floyd's: hare one ahead, `eq?` = cycle). Raw output is ~25.3 MiB, over the Pages cap; the recipe runs `wasm-opt -O2 --strip-debug` (binaryen ≥133, pinned feature flags — NOT `--all-features`, it emits stringref today's engines reject) → ~23 MiB. `scope-worker.js` also falls back to the gateway's static server when the page origin 404s |
 | `browser/rns_wasm.js` | optional — Rust crate `rns-wasm` isn't vendored in this checkout (deploy-time Guix/Rust artifact); mesh identity degrades gracefully without it |
 | `browser/universal-commune.json` | optional — baked demo seed |
 
