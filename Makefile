@@ -1102,6 +1102,27 @@ test-parity:
 	@for t in tests/parity/*.scm; do \
 	  echo "== $$t"; $(GUILE_TEST_DEV) -L module $$t || exit 1; done
 
+# ── e2e: scenario suites + the coverage gate + the live-stack run ─────────
+# tests/e2e/*.scm walk whole stories through the door layer (not one act —
+# the chain). test-e2e keeps to in-vat suites so it runs in the dev loop;
+# test-e2e-stack is the adopted-stack leg (see tests/e2e/run-stack.sh).
+.PHONY: test-e2e-compute test-e2e-scenarios check-e2e-coverage test-e2e-stack
+
+test-e2e-scenarios:
+	@for t in tests/e2e/compute-*.scm; do \
+	  echo "== $$t"; $(GUILE_TEST_DEV) -L module -L tests $$t || exit 1; done
+
+# The completeness gate: every declared door named in a test, every dispatch
+# handler named in a browser/ux test, every delegate wire+parity-covered.
+# Ratchet style — baseline holds the known debt, new gaps fail.
+check-e2e-coverage:
+	@python3 tools/lint/check-e2e-coverage.py
+
+# The adopted stack, end to end: bring services up (or find them running),
+# export PLAYNET_*_URL, run the parity suites plus stack-integration.scm.
+test-e2e-stack:
+	@bash tests/e2e/run-stack.sh
+
 # Places inside places, the code a thing is known by, a container that moves
 # with what is in it, and the lot's date (docs/observation/capture.md §6).
 test-labels-containers:

@@ -37,8 +37,13 @@
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
   #:use-module ((playnet utils time) #:select (current-epoch-seconds))
-  #:export (governance-compute-doors))
+  #:export (governance-compute-doors *compute-clock*))
 
+
+;;; *compute-clock* — the "now" the compute doors read, as a parameter so a
+;;; test can walk a dispute timeline without waiting days. Defaults to the
+;;; wall clock; nothing outside a test rebinds it.
+(define *compute-clock* (make-parameter current-epoch-seconds))
 
 (define (governance-compute-doors ctx)
   ;; one ^compute-registry per commune, spawned on first touch
@@ -290,7 +295,7 @@
          (catch #t
            (lambda ()
              (let ((deadline (or (opt-ref opts 'deadline #f)
-                                 (* (+ (current-epoch-seconds)
+                                 (* (+ ((*compute-clock*))
                                        (* 72 3600)) 1000))))
                (cons 'ok ($ (registry-for commune-aid) 'claim
                             identity-key job-id offer-id deadline))))
@@ -421,7 +426,7 @@
                  (list 'error "compute-dispute: claim already disputed"))
                 ((and (eq? kind 'non-delivery)
                       (or (dispatch-claim-receipt c)
-                          (<= (* (current-epoch-seconds) 1000)
+                          (<= (* ((*compute-clock*)) 1000)
                               (dispatch-claim-deadline c))))
                  (list 'error "compute-dispute: receipt landed or deadline still open"))
                 ((eq? kind 'wrong-result)
@@ -456,7 +461,7 @@
                                        #:claim-id claim-id
                                        #:challenger identity-key
                                        #:kind kind #:challenge ch
-                                       #:raised-at (current-epoch-seconds))
+                                       #:raised-at ((*compute-clock*)))
                                       (review-pool
                                        (list identity-key
                                              (dispatch-claim-lender-did c)
@@ -477,7 +482,7 @@
                              #:claim-id claim-id
                              #:challenger identity-key
                              #:kind kind #:challenge #f
-                             #:raised-at (current-epoch-seconds))
+                             #:raised-at ((*compute-clock*)))
                             (review-pool
                              (list identity-key
                                    (dispatch-claim-lender-did c)
@@ -523,7 +528,7 @@
                (cond
                 ((not d) (list 'error "compute-dispute-close: no such dispute"))
                 (else
-                 (let ((d* (dispute-close d #:current-time current-epoch-seconds)))
+                 (let ((d* (dispute-close d #:current-time (*compute-clock*))))
                    (cond
                     ((eq? (dispute-state d*) 'closed)
                      ($ (disputes-for commune-aid) 'put! dispute-id d*)
