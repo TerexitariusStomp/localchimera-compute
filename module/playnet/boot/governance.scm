@@ -20,6 +20,7 @@
   #:use-module ((playnet doors delegation) #:select (governance-delegation-doors))
   #:use-module ((playnet doors voice) #:select (governance-voice-doors))
   #:use-module ((playnet doors contests) #:select (governance-contests-doors))
+  #:use-module ((playnet doors compute) #:select (governance-compute-doors))
   #:use-module ((playnet doors economy) #:select (governance-economy-doors))
   #:use-module ((playnet doors federation) #:select (governance-federation-doors))
   #:re-export (fp-wire->cred ^governance-service spawn-governance-service
@@ -29,7 +30,8 @@
 
 (set-governance-fragments!
  (list governance-personhood-doors governance-delegation-doors governance-voice-doors
-       governance-contests-doors governance-economy-doors governance-federation-doors))
+       governance-contests-doors governance-economy-doors governance-federation-doors
+       governance-compute-doors))
 
 ;; ── The gateway's spawn ────────────────────────────────────────
 ;; Lives in the planner vat (same vat as scope-root and ballot-store).

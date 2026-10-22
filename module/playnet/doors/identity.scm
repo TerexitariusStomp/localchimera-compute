@@ -514,6 +514,61 @@
     (<- governance-svc 'relationships aid-prefix scope-id
         (filter-map contact-aid (own-book))))
 
+   ;; ── compute ── the commons' machine book. Identity-bound doors pass
+   ;; this AID as the member the act belongs to: the lender on offer,
+   ;; claim and preempt; the borrower on submit, withdraw and accept.
+   ;; Reads are open.
+   ((compute-offer commune-aid lane classes headroom repro . opts)
+    (apply <- governance-svc 'compute-offer
+           aid-prefix commune-aid lane classes headroom repro opts))
+
+   ((compute-retract commune-aid offer-id)
+    (<- governance-svc 'compute-retract aid-prefix commune-aid offer-id))
+
+   ((compute-offers commune-aid)
+    (<- governance-svc 'compute-offers commune-aid))
+
+   ((compute-submit commune-aid task-class lane repro input-hash . opts)
+    (apply <- governance-svc 'compute-submit
+           aid-prefix commune-aid task-class lane repro input-hash opts))
+
+   ((compute-withdraw commune-aid job-id)
+    (<- governance-svc 'compute-withdraw aid-prefix commune-aid job-id))
+
+   ((compute-jobs commune-aid)
+    (<- governance-svc 'compute-jobs commune-aid))
+
+   ((compute-match commune-aid job-id)
+    (<- governance-svc 'compute-match commune-aid job-id))
+
+   ((compute-claim commune-aid job-id offer-id . opts)
+    (apply <- governance-svc 'compute-claim
+           aid-prefix commune-aid job-id offer-id opts))
+
+   ((compute-accept commune-aid claim-id)
+    (<- governance-svc 'compute-accept aid-prefix commune-aid claim-id))
+
+   ((compute-preempt commune-aid claim-id)
+    (<- governance-svc 'compute-preempt aid-prefix commune-aid claim-id))
+
+   ((compute-claims commune-aid)
+    (<- governance-svc 'compute-claims commune-aid))
+
+   ((compute-receipt commune-aid w)
+    (<- governance-svc 'compute-receipt aid-prefix commune-aid w))
+
+   ((compute-verify w)
+    (<- governance-svc 'compute-verify w))
+
+   ((compute-settle commune-aid w)
+    (<- governance-svc 'compute-settle aid-prefix commune-aid w))
+
+   ((compute-statements commune-aid)
+    (<- governance-svc 'compute-statements commune-aid))
+
+   ((compute-envelope w)
+    (<- governance-svc 'compute-envelope w))
+
    ;; ── Cards ── how to reach this person, handed to one contact. The
    ;; content is sealed to the receiver in the giver's browser; the commune
    ;; keeps ciphertext it can tell is the giver's, one card per pair, and a
