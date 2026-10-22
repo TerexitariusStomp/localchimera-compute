@@ -295,3 +295,58 @@ export const runClaim = async (
   });
   return seam.computeReceipt!(commune, JSON.stringify(receipt));
 };
+
+// ── the poll loop ─────────────────────────────────────────────────────────
+// A lender that stays in the tab: poll the commune's claims, take every live
+// one that is mine, run it through runClaim, land the receipt. A claim id is
+// attempted ONCE per loop session — a failed run does not spin (the dispute
+// path, not the executor, answers a job that cannot run). Returns the stop.
+// `onRow` sees each claim row attempted, so the lend face can say what ran.
+
+export interface ClaimRow {
+  id?: string; claimId?: string;
+  lender?: string; lenderDid?: string; state?: string;
+  [key: string]: unknown;
+}
+
+export const lendLoop = (
+  seam: {
+    computeClaims?: (commune: string) => Promise<unknown>;
+    computeFetchEnvelope?: (commune: string, claimId: string) => Promise<unknown>;
+    computeReceipt?: (commune: string, wireJson: string) => Promise<unknown>;
+  },
+  commune: string,
+  lenderDid: string,
+  input: unknown,
+  opts: { intervalMs?: number; timeoutMs?: number; reproMode?: string; seed?: number;
+          onRow?: (claimId: string, state: string) => void } = {},
+): () => void => {
+  const attempted = new Set<string>();
+  let stopped = false;
+  const tick = async () => {
+    if (stopped || !seam.computeClaims) return;
+    let rows: ClaimRow[] = [];
+    try {
+      const raw = await seam.computeClaims(commune);
+      const v = typeof raw === "string" ? JSON.parse(raw) : raw;
+      rows = (Array.isArray(v) ? v
+             : (v && Array.isArray((v as { ok?: unknown }).ok)
+                ? (v as { ok: ClaimRow[] }).ok : [])) as ClaimRow[];
+    } catch { return; }
+    for (const r of rows) {
+      const claimId = String(r.claimId ?? r.id ?? "");
+      const state = String(r.state ?? "");
+      if (!claimId || attempted.has(claimId)) continue;
+      if (String(r.lender ?? r.lenderDid ?? "") !== lenderDid) continue;
+      if (state !== "claimed" && state !== "accepted") continue;
+      attempted.add(claimId);
+      opts.onRow?.(claimId, "running");
+      runClaim(seam, commune, claimId, lenderDid, input, opts)
+        .then(() => opts.onRow?.(claimId, "done"))
+        .catch((e) => opts.onRow?.(claimId, `err:${e instanceof Error ? e.message : e}`));
+    }
+  };
+  const t = setInterval(tick, opts.intervalMs ?? 30_000);
+  void tick();
+  return () => { stopped = true; clearInterval(t); };
+};

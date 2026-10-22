@@ -57,6 +57,7 @@ import { initCorpus } from './tabs/corpus.js';
 import { initPlan } from './tabs/plan.js';
 import { initLog } from './tabs/social/log.js';
 import { initMatch } from './tabs/match.js';
+import { initLend } from './tabs/lend.js';
 import { initTaxonomy } from './tabs/taxonomy.js';
 import { initFamily } from './tabs/family.js';
 import { initOnboard } from './tabs/onboard.js';
@@ -149,6 +150,7 @@ const FACES: Record<string, Face> = {
   eco:      { rail: "ecoSecs",      overlay: "ecoface",      flat: true, mount: initEcology, railShut: true },
   shop:     { rail: "shopSecs",     overlay: "shopface",     flat: true, mount: initShop, railShut: true },   // the actions live inline on the stage; the rail is a note
   store:    { rail: "storeSecs",    overlay: "storeface",    flat: true, mount: initStore, railShut: true },   // what is held: the tree on the left, the desk on the right
+  lend:     { rail: "lendSecs",     overlay: "lendface",     flat: true, mount: initLend, railShut: true },    // the tab IS the compute node: offer lanes, claim, run
   recipes:  { rail: "recipesSecs",  overlay: "recipesface",  flat: true, mount: initRecipes, railShut: true },
   web:      { rail: "webSecs",      overlay: "webface",      flat: true, mount: initWeb, refit: refitWeb, railShut: true },   // the same recipes as one graph, loops kept
   corpus:   { rail: "corpusSecs",   overlay: "corpusface",   flat: true, mount: initCorpus,  railShut: true },

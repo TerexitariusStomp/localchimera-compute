@@ -239,3 +239,40 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
     });
     return seam.computeReceipt(commune, JSON.stringify(receipt));
 };
+export const lendLoop = (seam, commune, lenderDid, input, opts = {}) => {
+    const attempted = new Set();
+    let stopped = false;
+    const tick = async () => {
+        if (stopped || !seam.computeClaims)
+            return;
+        let rows = [];
+        try {
+            const raw = await seam.computeClaims(commune);
+            const v = typeof raw === "string" ? JSON.parse(raw) : raw;
+            rows = (Array.isArray(v) ? v
+                : (v && Array.isArray(v.ok)
+                    ? v.ok : []));
+        }
+        catch {
+            return;
+        }
+        for (const r of rows) {
+            const claimId = String(r.claimId ?? r.id ?? "");
+            const state = String(r.state ?? "");
+            if (!claimId || attempted.has(claimId))
+                continue;
+            if (String(r.lender ?? r.lenderDid ?? "") !== lenderDid)
+                continue;
+            if (state !== "claimed" && state !== "accepted")
+                continue;
+            attempted.add(claimId);
+            opts.onRow?.(claimId, "running");
+            runClaim(seam, commune, claimId, lenderDid, input, opts)
+                .then(() => opts.onRow?.(claimId, "done"))
+                .catch((e) => opts.onRow?.(claimId, `err:${e instanceof Error ? e.message : e}`));
+        }
+    };
+    const t = setInterval(tick, opts.intervalMs ?? 30_000);
+    void tick();
+    return () => { stopped = true; clearInterval(t); };
+};
