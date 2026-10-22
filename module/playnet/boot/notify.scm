@@ -14,6 +14,7 @@
   #:use-module ((playnet identity contact-points) #:select (make-contact-point-desk))
   #:use-module ((playnet interface adapters browser) #:select (^browser-adapter))
   #:use-module ((playnet interface adapters email) #:select (^email-adapter email-transport?))
+  #:use-module ((playnet interface adapters ntfy) #:select (^ntfy-adapter ntfy-transport?))
   #:use-module ((playnet interface backends router) #:select (make-scope-router))
   #:use-module ((playnet interface backends scope) #:select (make-scope-handler))
   #:use-module ((playnet interface org-stub) #:select (^org-stub))
@@ -149,12 +150,19 @@ through it. The <notify> record of what the lobby and the sessions reach."
   (define email-adapter
     (and (email-transport?) (with-vat gateway-vat (spawn ^email-adapter))))
 
+  ;; ntfy is a channel the same way email is: PLAYNET_NTFY_URL names the
+  ;; server, ntfy-transport? is the honest answer the gateway reads, and
+  ;; the binding kind is 'ntfy with the topic as its ctx.
+  (define ntfy-adapter
+    (and (ntfy-transport?) (with-vat gateway-vat (spawn ^ntfy-adapter))))
+
   (define notify-router
     (with-vat gateway-vat
       (spawn ^notify-router recipient-registry
              `((browser . ,browser-adapter)
                (push    . ,push-adapter)
-               ,@(if email-adapter `((email . ,email-adapter)) '()))
+               ,@(if email-adapter `((email . ,email-adapter)) '())
+               ,@(if ntfy-adapter `((ntfy . ,ntfy-adapter)) '()))
              '()
              alert-sink)))   ; legacy sink = fallback for unbound recipients
 
@@ -163,11 +171,17 @@ through it. The <notify> record of what the lobby and the sessions reach."
   ;; are the durable kinds this commune delivers on.
   (define contact-desk
     (make-contact-point-desk
-     (if email-adapter
-         `((email . ,(lambda (ctx title body)
-                       (<-np email-adapter 'deliver ctx
+     (append
+      (if email-adapter
+          `((email . ,(lambda (ctx title body)
+                        (<-np email-adapter 'deliver ctx
+                              (rendered-notification 'info title body "confirm-contact-point")))))
+          '())
+      (if ntfy-adapter
+          `((ntfy . ,(lambda (ctx title body)
+                       (<-np ntfy-adapter 'deliver ctx
                              (rendered-notification 'info title body "confirm-contact-point")))))
-         '())))
+          '()))))
   (log! "  [gateway] contact points: delivers on ~a~%" (contact-desk 'delivers))
 
   ;; Wire IPEX notification callback → router (per-recipient) → dumb

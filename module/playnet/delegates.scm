@@ -22,8 +22,15 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
   #:use-module (ice-9 format)
+  #:use-module (web client)
+  #:use-module (web request)
+  #:use-module (web response)
+  #:use-module (web uri)
+  #:use-module (rnrs bytevectors)
+  #:use-module (ice-9 textual-ports)
   #:use-module (playnet compute adapters)
-  #:export (sparql-request make-sparql-delegate
+  #:export (%env-transport %json-http-transport
+            sparql-request make-sparql-delegate
             opa-decision make-opa-delegate
             cedar-request make-cedar-delegate
             temporal-start-wire temporal-signal-wire make-temporal-delegate
@@ -291,3 +298,38 @@
       (lambda ()
         (transport "POST" "/solve" (cpsat-wire model-proto)))
       (lambda _ 'unavailable))))
+
+
+;;; ── the shared concrete transports ───────────────────────────────────────
+;;; Every delegate's transport is (method path body) → response — one HTTP
+;;; shape serves them all. %json-http-transport is the concrete client over
+;;; Guile's web stack: JSON in, status out. %env-transport builds it from
+;;; the box's own setting so a delegate can deploy by configuration alone —
+;;; PLAYNET_<SERVICE>_URL names the endpoint, and unset still means
+;;; 'unavailable: the seam never lies about a service that isn't there.
+
+(define (%json-http-transport base-url)
+  "(base-url) → (method path body) → (status . body) | raises.
+   BODY is posted verbatim when a string/bytevector, printed otherwise."
+  (lambda (method path body)
+    (call-with-values
+        (lambda ()
+          (http-request (string->uri (string-append base-url path))
+                        #:method (string->symbol method)
+                        #:body (cond ((string? body) (string->utf8 body))
+                                     ((bytevector? body) body)
+                                     (else (string->utf8 (format #f "~s" body))))
+                        #:headers '((content-type . (application/json))
+                                    (charset . "utf-8"))
+                        #:streaming? #t))
+      (lambda (response port)
+        (let ((text (get-string-all port)))
+          (cons (response-code response) text))))))
+
+(define (%env-transport env-name)
+  "The %json-http-transport for the endpoint ENV-NAME names, or #f when
+   the environment doesn't set it — callers pass the #f through to the
+   fail-closed default."
+  (let ((base (getenv env-name)))
+    (and base (not (string-null? base))
+         (%json-http-transport base))))

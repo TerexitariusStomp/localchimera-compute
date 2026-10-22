@@ -61,7 +61,7 @@
 
 ;;; ── Channel taxonomy ───────────────────────────────────────────────
 
-(define %durable-kinds '(email telegram matrix lxmf))
+(define %durable-kinds '(email telegram matrix lxmf ntfy))
 (define %live-kinds    '(browser push))
 
 (define (durable-kind? k) (and (memq k %durable-kinds) #t))

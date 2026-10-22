@@ -128,6 +128,16 @@
            (and (equal? (cadr call) "/actors/alice/outbox")
                 (equal? (cdr (assoc "type" (caddr call))) "Create"))) #t))
 
+;; %env-transport — a deployable delegate: the environment names the
+;; endpoint, unset still fails closed.
+(check "%env-transport answers #f when the env is silent"
+       (%env-transport "PLAYNET_TEST_UNSET_URL") #f)
+(begin
+  (setenv "PLAYNET_TEST_SET_URL" "http://upstream:9")
+  (check "%env-transport builds a live transport when the env names one"
+         (procedure? (%env-transport "PLAYNET_TEST_SET_URL")) #t)
+  (unsetenv "PLAYNET_TEST_SET_URL"))
+
 (let* ((cap (capture '(("multistatus" . ()))))
        (d (make-radicale-delegate (car cap)))
        (ans (d "/cal/alice/" 1 "<c:calendar-query/>")))
