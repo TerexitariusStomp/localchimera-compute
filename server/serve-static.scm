@@ -1801,8 +1801,12 @@ list and the offline-pack chooser."
 (define* (run-static-server #:key
                             (work-dir "browser")
                             (oobi-dir "data/oobi-host")
+                            ;; HOST is the bind address — loopback by default;
+                            ;; "0.0.0.0" behind a container port-map or an
+                            ;; origin that proxies /entry-points.json + /ws.
+                            (host "127.0.0.1")
                             (port 8080))
-  (format #t "Serving ~a on http://127.0.0.1:~a~%" work-dir port)
+  (format #t "Serving ~a on http://~a:~a~%" work-dir host port)
   (format #t "  /oobi/{aid}                   → CESR KEL stream (KERI spec)~%")
   (format #t "  /oobi/{aid}.json              → JSON debug view~%")
   (format #t "  /.well-known/keri/oobi/{aid}  → CESR KEL stream (well-known)~%")
@@ -1832,7 +1836,7 @@ list and the offline-pack chooser."
   (run-server (lambda (request body)
                 (handle-request work-dir oobi-dir request body))
               (server-impl)
-              `(#:port ,port #:addr ,INADDR_LOOPBACK)))
+              `(#:port ,port #:addr ,(inet-pton AF_INET host))))
 
 ;; Prefer the fibers backend so a slow handler — a Valhalla POST, a tile read
 ;; off a cold disk — runs on its own fiber instead of freezing the single

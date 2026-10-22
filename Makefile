@@ -2525,6 +2525,14 @@ test-deployed-ux:
 test-lend-ux: browser/repl.wasm
 	PLAYNET_SEED_DEMO=1 bash tests/ux/ux-full.sh tests/ux/lend-ux.mjs
 
+# Same flow against the deployed site: the page discovers the gateway via
+# entry-points.json/discoveryUrl, so the live sref must be reachable through
+# DEPLOYED_BASE's discovery chain.
+.PHONY: test-lend-ux-deployed
+test-lend-ux-deployed:
+	NODE_PATH=$${NODE_PATH:-node_modules} \
+	node tests/ux/lend-ux.mjs $${DEPLOYED_BASE:-https://chimera-playnet.pages.dev}
+
 # KERI signup e2e: real repl.wasm creates an identity in Chromium, ships
 # icp + OKEA endpoint replies to a live gateway, and the REAL /oobi route
 # (serve-static against the gateway's oobi-host dir) must serve

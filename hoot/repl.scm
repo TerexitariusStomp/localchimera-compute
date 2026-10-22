@@ -4799,8 +4799,8 @@
   (when *planner-cap*
     (with-vat *ocapn-vat*
       (on (<- *planner-cap* 'scope-list)
-          (lambda (scopes)
-            (set! *scope-list* (or scopes '()))
+          (lambda (scopes-raw)
+            (set! *scope-list* (or (denormalize-syrup scopes-raw) '()))
             (when (and (not *active-scope*) (pair? *scope-list*))
               (set! *active-scope* (alist-ref (car *scope-list*) 'id #f)))
             (refresh-scope-snapshot!))
@@ -4826,10 +4826,11 @@
      (set! *scope-refresh-inflight?* #t)
      (with-vat *ocapn-vat*
        (on (<- *planner-cap* 'scope-snapshot *active-scope* *active-plan*)
-           (lambda (snap)
+           (lambda (snap-raw)
              (set! *scope-refresh-inflight?* #f)
-             (set! *scope-snapshot* snap)
-             (ingest-snapshot! snap)
+             (let ((snap (denormalize-syrup snap-raw)))
+               (set! *scope-snapshot* snap)
+               (ingest-snapshot! snap))
              (refresh!))
            #:catch
            (lambda (err)
@@ -4867,9 +4868,9 @@
      (set! *inv-refresh-inflight?* #t)
      (with-vat *ocapn-vat*
        (on (<- *planner-cap* 'inventory-snapshot *active-scope* *active-plan*)
-           (lambda (snap)
+           (lambda (snap-raw)
              (set! *inv-refresh-inflight?* #f)
-             (set! *inv-snapshot* snap)
+             (set! *inv-snapshot* (denormalize-syrup snap-raw))
              (set! *inv-detail-cache* '())
              (refresh!))
            #:catch
@@ -4989,11 +4990,12 @@
              (not (assoc rid *inv-detail-cache*)))
     (with-vat *ocapn-vat*
       (on (<- *planner-cap* 'resource-detail *active-scope* rid)
-          (lambda (detail)
-            (when detail
-              (set! *inv-detail-cache*
-                    (cons (cons rid detail) *inv-detail-cache*))
-              (refresh!)))
+          (lambda (detail-raw)
+            (let ((detail (denormalize-syrup detail-raw)))
+              (when detail
+                (set! *inv-detail-cache*
+                      (cons (cons rid detail) *inv-detail-cache*))
+                (refresh!))))
           #:catch (lambda (err) #f)))))
 
 (define (planner-fetch-process-context! proc-id)
@@ -5003,11 +5005,12 @@
              (not (assoc proc-id *cal-process-context*)))
     (with-vat *ocapn-vat*
       (on (<- *planner-cap* 'process-context *active-scope* proc-id)
-          (lambda (ctx)
-            (when ctx
-              (set! *cal-process-context*
-                    (cons (cons proc-id ctx) *cal-process-context*))
-              (refresh!)))
+          (lambda (ctx-raw)
+            (let ((ctx (denormalize-syrup ctx-raw)))
+              (when ctx
+                (set! *cal-process-context*
+                      (cons (cons proc-id ctx) *cal-process-context*))
+                (refresh!))))
           #:catch (lambda (err) #f)))))
 
 (define (planner-accept! iid)
@@ -7575,10 +7578,11 @@
   (when (and topic *planner-cap* *active-scope*)
     (with-vat *ocapn-vat*
       (on (<- *planner-cap* 'chat-history *active-scope* topic)
-          (lambda (res)
-            (when (and (pair? res) (eq? 'ok (car res)) (vector? (cdr res)))
-              (set! *chat-msgs* (vector->list (cdr res)))
-              (refresh!)))
+          (lambda (res-raw)
+            (let ((res (denormalize-syrup res-raw)))
+              (when (and (pair? res) (eq? 'ok (car res)) (vector? (cdr res)))
+                (set! *chat-msgs* (vector->list (cdr res)))
+                (refresh!))))
           #:catch (lambda errs #f))
       ;; live: the gateway <-np's our inbox on every post to this topic
       (when *user-inbox*
@@ -7781,14 +7785,15 @@
         (with-vat *ocapn-vat*
           (on (<- *planner-cap* 'journey-begin *active-scope* agent
                   (car places) (cdr places) mode)
-              (lambda (res)
-                (when (and (pair? res) (eq? (car res) 'ok))
-                  (set! *journey*
-                        (cons (cons 'commitment (alist-ref (cdr res) 'commitment #f))
-                              *journey*))
-                  (chat-open! (alist-ref (cdr res) 'commitment #f))
+              (lambda (res-raw)
+                (let ((res (denormalize-syrup res-raw)))
+                  (when (and (pair? res) (eq? (car res) 'ok))
+                    (set! *journey*
+                          (cons (cons 'commitment (alist-ref (cdr res) 'commitment #f))
+                                *journey*))
+                    (chat-open! (alist-ref (cdr res) 'commitment #f))
                   (%routing-trace-start)
-                  (refresh!)))
+                  (refresh!))))
               #:catch (lambda errs #f)))))))
 
 (define (journey-divergence-line)
@@ -7806,10 +7811,11 @@
         (with-vat *ocapn-vat*
           (on (<- *planner-cap* 'journey-end *active-scope* agent cid
                   (car places) (cdr places) mode)
-              (lambda (res)
-                (when (and (pair? res) (eq? (car res) 'ok))
-                  (set! *journey*
-                        (cons '(done . #t)
+              (lambda (res-raw)
+                (let ((res (denormalize-syrup res-raw)))
+                  (when (and (pair? res) (eq? (car res) 'ok))
+                    (set! *journey*
+                          (cons '(done . #t)
                               (cons (cons 'divergence (journey-divergence-line))
                                     *journey*)))
                   ;; map-match the collected trace: the road actually taken,
@@ -7823,7 +7829,7 @@
                                  *map-instance*)
                         (%map-draw-route *map-instance* "trace" json "#ffb454" 4))
                       (refresh!))))
-                  (refresh!)))
+                  (refresh!))))
               #:catch (lambda errs #f)))))))
 
 ;;; ── Clock view ──────────────────────────────────────────────────────────────

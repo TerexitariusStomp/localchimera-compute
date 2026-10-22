@@ -70,7 +70,19 @@ async function discoverGateway() {
   try {
     const resp = await fetch("/entry-points.json");
     if (resp.ok) {
-      const data = await resp.json();
+      let data = await resp.json();
+      // discoveryUrl names the gateway's own live /entry-points.json — fetch
+      // it for the sref the RUNNING gateway just wrote (static hosts carry a
+      // snapshot that dies on every restart); the doc's own origin is where
+      // /ws lives, so the self entry derives from it, not this page's.
+      let docOrigin = null;
+      const disc = (typeof data.discoveryUrl === "string" && data.discoveryUrl) || null;
+      if (disc) {
+        try {
+          const r2 = await fetch(disc);
+          if (r2.ok) { data = await r2.json(); docOrigin = new URL(disc).origin; }
+        } catch (_) { /* discovery host down — fall back to the baked doc */ }
+      }
       sref = data.sref || "";
 
       // The server may name the ws outright (same contract as
@@ -88,10 +100,12 @@ async function discoverGateway() {
       // gets a working WebSocket URL without per-host config in
       // entry-points.json. Only useful when we're loaded over http(s).
       const eps = (data.gateway || []).slice();
-      if (window.location.protocol === "http:" ||
-          window.location.protocol === "https:") {
-        const wsProto = (window.location.protocol === "https:") ? "wss:" : "ws:";
-        const selfWs = `${wsProto}//${window.location.host}/ws`;
+      const selfOrigin = docOrigin ||
+        ((window.location.protocol === "http:" ||
+          window.location.protocol === "https:") ? window.location.origin : null);
+      if (selfOrigin) {
+        const wsProto = selfOrigin.startsWith("https:") ? "wss:" : "ws:";
+        const selfWs = `${wsProto}//${selfOrigin.slice(selfOrigin.indexOf("://") + 3)}/ws`;
         eps.unshift({ name: "self", kind: "origin", ws: selfWs });
       }
       // Pick the first entry — no probe. Probing by opening + closing a

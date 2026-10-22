@@ -263,17 +263,40 @@ function boot() {
   async function discoverGateway() {
     const param = new URLSearchParams(window.location.search).get("gateway");
     if (param) { trace("gw: raw param=" + JSON.stringify(param)); return { sref: param, ws: "" }; }
+    // A baked entry-points.json may carry `discoveryUrl` — the gateway's own
+    // serve-static /entry-points.json, generated per request from the live
+    // gateway-sref.txt. On a static host (Pages) this is the difference
+    // between an sref that dies with every gateway restart and one that is
+    // always current; the reconnect path re-asks, so restarts self-heal.
+    async function fetchDoc(url) {
+      const resp = await fetch(url);
+      if (resp.status === 503) return { booting: true };
+      if (!resp.ok) return null;
+      return await resp.json();
+    }
     for (const url of ["entry-points.json", "/entry-points.json"]) {
       try {
-        const resp = await fetch(url);
-        // 503 is serve-static's "sref not yet written": a gateway exists here
-        // and is booting (it drops the previous process's address at start
-        // and writes its own at the end, ~3 minutes in). That is an address
-        // to come back for — the reconnect path re-asks — where a 404 is a
-        // page served with no gateway at all.
-        if (resp.status === 503) return { sref: "", ws: "", booting: true };
-        if (!resp.ok) continue;
-        const data = await resp.json();
+        let data = await fetchDoc(url);
+        if (data && data.booting) return { sref: "", ws: "", booting: true };
+        if (!data) continue;
+        let docOrigin = null;
+        if (typeof data.discoveryUrl === "string" && data.discoveryUrl) {
+          try {
+            const fresh = await fetchDoc(data.discoveryUrl);
+            if (fresh && fresh.booting) return { sref: "", ws: "", booting: true };
+            if (fresh) {
+              docOrigin = new URL(data.discoveryUrl).origin;
+              trace("gw: live doc from " + data.discoveryUrl);
+              data = fresh;
+            }
+          } catch (_) { /* discovery host down — fall back to the baked doc */ }
+        }
+        // The "self" entry derives from the origin that served the doc: in
+        // production the page, the doc and /ws share one origin; served via
+        // discoveryUrl the doc's origin is the gateway face and /ws lives
+        // there — never on the static host's.
+        const selfOrigin = docOrigin ||
+          (/^https?:$/.test(window.location.protocol) ? window.location.origin : null);
         const sref = data.sref || "";
         const eps = (data.gateway || []).slice();
         // The server may name the ws outright. It does that when this page was
@@ -285,9 +308,9 @@ function boot() {
           trace("gw: server named the ws directly: " + data.directWs);
           return { sref, ws: data.directWs };
         }
-        if (/^https?:$/.test(window.location.protocol)) {
-          const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
-          eps.unshift({ name: "self", ws: `${wsProto}//${window.location.host}/ws` });
+        if (selfOrigin) {
+          const wsProto = selfOrigin.startsWith("https:") ? "wss:" : "ws:";
+          eps.unshift({ name: "self", ws: `${wsProto}//${selfOrigin.slice(selfOrigin.indexOf("://") + 3)}/ws` });
         }
         if (sref && eps.length) return { sref, ws: eps[0].ws };
         return { sref, ws: "" };
