@@ -49,14 +49,14 @@ Machine resources are the product; ~12k lines of custom code concentrate here.
 
 | Function | OSS adopted | License | Custom residue |
 |---|---|---|---|
-| Browser executor | **Wasimoff** webprovider + broker | MIT | envelope↔task adapter |
-| Server execution + replay | **wasmCloud** + Wasmtime | Apache-2.0 | claim↔component adapter |
+| Browser executor | **Wasimoff** webprovider + broker | MIT | `compute/adapters.scm` ✓ written |
+| Server execution + replay | **wasmCloud** + Wasmtime | Apache-2.0 | `compute/adapters.scm` ✓ written |
 | Claim lifecycle/deadlines | **Temporal** | MIT | workflow glue |
 | Ring-3 orchestration | **Bacalhau** + **Golem yagna** (supplier) | Apache-2.0 / GPL-3.0 | envelope adapters + §8 privacy gate |
 | Inference lanes | **llama.cpp / ollama** + **LiteLLM** ⚠ | MIT | key-pool adapter |
 | TEE evidence tier | **dcap-qvl / Intel DCAP / NVIDIA NRAS** | Apache-2.0 / BSD-3 | fills `verify-quote` seam |
 | Fleet provisioning | **OpenTofu** + providers | MPL-2.0 | reconciler adapter |
-| Treasury | **Safe + protocol-kit** | LGPL-3.0 / MIT | settlement adapter |
+| Treasury | **Safe + protocol-kit** | LGPL-3.0 / MIT | `compute/safe.scm` ✓ written |
 | Transport | **iroh / libp2p / arti** (+Reticulum opt-in ⚠) | MIT/Apache-2.0 | netlayer glue |
 | Canonical JSON | **RFC 8785 JCS impl** | MIT | — |
 | Job envelope / receipt / repro-spec | — **custom** | AGPL-3.0 (ours) | ~1.5k — the spec's contract |
@@ -72,8 +72,8 @@ Machine resources are the product; ~12k lines of custom code concentrate here.
 | Function | OSS host | License | Our residue |
 |---|---|---|---|
 | Planning (`solve/`, `plan/`, `matching/`, `algorithms/`) | **OR-Tools CP-SAT** (alt: SCIP, HiGHS) | Apache-2.0 / MIT | constraint-model builder ~1k |
-| VF accounting (`vf/`, `observation/`, `scope/`, `pools/`) | **hREA** ⚠ CAL substrate | Apache-2.0 | event adapter ~0.5k |
-| Mutual credit + federation (`economy/`, `federation/`) | **Credit Commons cc-node** + ActivityPub | GPL-3.0 | ledger adapter ~0.5k |
+| VF accounting (`vf/`, `observation/`, `scope/`, `pools/`) | **hREA** ⚠ CAL substrate | Apache-2.0 | `compute/hrea.scm` ✓ written (compute leg) |
+| Mutual credit + federation (`economy/`, `federation/`) | **Credit Commons cc-node** + ActivityPub | GPL-3.0 | `compute/credit-commons.scm` ✓ written (compute leg) |
 | Ballots/sortition (`voice/`) | **Decidim** (sortitions component) | AGPL-3.0 | governance adapter ~0.3k |
 | Identity (`keri/`, `keys/`, `credentials/`) | **keria + signify-ts** | Apache-2.0 | binding-ACDC adapter ~0.5k |
 | Knowledge corpus (`knowledge/`) | corpus stays **data**; queries → **Apache Jena** | Apache-2.0 | SPARQL adapter ~0.3k |
