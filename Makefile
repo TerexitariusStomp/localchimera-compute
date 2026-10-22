@@ -1095,6 +1095,13 @@ test-counts:
 test-delegates:
 	$(GUILE_TEST_DEV) -L module tests/test-delegates.scm
 
+# The parity suites — every Tier-2 module's PARITY marker names one
+# (tools/lint/check-parity.sh). The invariant leg always runs; the live
+# leg runs when PLAYNET_<SERVICE>_URL names the upstream.
+test-parity:
+	@for t in tests/parity/*.scm; do \
+	  echo "== $$t"; $(GUILE_TEST_DEV) -L module $$t || exit 1; done
+
 # Places inside places, the code a thing is known by, a container that moves
 # with what is in it, and the lot's date (docs/observation/capture.md §6).
 test-labels-containers:
