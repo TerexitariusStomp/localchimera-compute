@@ -9,15 +9,16 @@
 ;;;
 ;;; module/playnet/knowledge/law/product.scm's `attribution` notice is
 ;;; already the one source for ui/app/legal-product.ts (tools/emit/emit-product-law.scm).
-;;; Two more places quote the RID that string carries, verbatim or bare, and
-;;; were hand-edited until now: LICENSE-ADDITIONAL-TERMS.md (the full quoted
-;;; sentence Section 7b asks every deployment to preserve) and the footer of
-;;; browser/info/index.html (the bare token alone). The app itself shows the
-;;; sentence through ui/app/legal-product.ts, which is the first emitter's. This
-;;; touches only the `rad:<id>` TOKEN in each — never the prose around it —
-;;; so it rewrites cleanly regardless of how each file phrases its own
-;;; sentence, including across a Radicle RID transition (the reason this
-;;; exists: see docs/planning/*.local.md, "what depends on the current RID").
+;;; One more place quotes the RID that string carries, verbatim:
+;;; browser/.well-known/security.txt (the contact line). The earlier
+;;; targets — LICENSE-ADDITIONAL-TERMS.md and browser/info/index.html —
+;;; were removed when the browser tree was stripped to the node page.
+;;; This touches only the `rad:<id>` TOKEN in each — never the prose
+;;; around it — so it rewrites cleanly regardless of how the file phrases
+;;; its own sentence, including across a Radicle RID transition (the
+;;; reason this exists: see docs/planning/*.local.md, "what depends on the
+;;; current RID"). Deploy scripts that pin the same RID are managed by
+;;; their own channel tooling, not this emitter.
 ;;;
 ;;; `make check-attribution-fresh` is in test-fast; `make attribution-emit`
 ;;; writes. Silent regen is deliberate here, unlike a from-scratch generated
@@ -34,7 +35,7 @@
     (unless m (error "attribution notice carries no rad:<id> token"))
     (match:substring m)))
 
-(define TARGETS '("LICENSE-ADDITIONAL-TERMS.md" "browser/info/index.html"))
+(define TARGETS '("browser/.well-known/security.txt"))
 
 (define (slurp path)
   (call-with-input-file path get-string-all))

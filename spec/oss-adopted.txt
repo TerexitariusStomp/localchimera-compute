@@ -13,6 +13,9 @@ tor | BSD-3-Clause | https://gitlab.torproject.org/tpo/core/tor | in-use
 radicle-heartwood | MIT Apache-2.0 | https://app.radicle.xyz/nodes/seed.radicle.xyz/rad:z3gqcJUoA1n9HaHKufZs5FCSGazvFd | in-use
 guix-system | GPL-3.0 | https://git.savannah.gnu.org/git/guix.git | in-use
 shepherd | GPL-3.0 | https://git.savannah.gnu.org/git/shepherd.git | in-use
+noble | MIT | https://github.com/paulmillr/noble-curves | in-use
+transformers-js | Apache-2.0 | https://github.com/huggingface/transformers.js | in-use
+swagger-ui | Apache-2.0 | https://github.com/swagger-api/swagger-ui | in-use
 
 wasimoff | MIT | https://github.com/wasimoff/wasimoff | adopted
 wasmcloud | Apache-2.0 | https://github.com/wasmCloud/wasmCloud | adopted
@@ -20,10 +23,13 @@ wasmtime | Apache-2.0 | https://github.com/bytecodealliance/wasmtime | adopted
 temporal | MIT | https://github.com/temporalio/temporal | adopted
 bacalhau | Apache-2.0 | https://github.com/bacalhau-project/bacalhau | adopted
 golem-yagna | GPL-3.0 | https://github.com/golemfactory/yagna | adopted
+helia | MIT Apache-2.0 | https://github.com/ipfs/helia | adopted
 litellm | MIT | https://github.com/BerriAI/litellm | flagged
 llama-cpp | MIT | https://github.com/ggml-org/llama.cpp | adopted
 ollama | MIT | https://github.com/ollama/ollama | adopted
 onnxruntime-web | MIT | https://github.com/microsoft/onnxruntime | adopted
+mysterium | GPL-3.0 | https://github.com/mysteriumnetwork/node | adopted
+storj | AGPL-3.0 | https://github.com/storj/storj | adopted
 dcap-qvl | Apache-2.0 | https://github.com/Phala-Network/dcap-qvl | adopted
 opentofu | MPL-2.0 | https://github.com/opentofu/opentofu | adopted
 safe-smart-account | LGPL-3.0 | https://github.com/safe-global/safe-smart-account | adopted

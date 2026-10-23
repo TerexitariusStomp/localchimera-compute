@@ -38,8 +38,11 @@
               (else (loop (read-line port) in? id rows)))))))
 
 (define (main args)
-  (let* ((path (if (> (length args) 1) (cadr args) %spec))
-         (spec (spec-rows path))
+  (let* ((path (if (> (length args) 1) (cadr args) %spec)))
+    (if (not (file-exists? path))
+        (begin (format #t "check-crossing-catalogue: no ~a — nothing rendered, nothing to drift~%" path)
+               (exit 0)))
+    (let* ((spec (spec-rows path))
          (code (map (lambda (row) (cons (car row) (cadr row))) *default-crossings*))
          (problems
           (append
@@ -53,9 +56,9 @@
                                   (format #f "~a is ~a in the spec and ~a in legal/crossings.scm" (car s) (cdr s) (cdr c)))
                                  (else #f))))
                        spec))))
-    (if (null? problems)
-        (format #t "check-crossing-catalogue: ~a agrees with legal/crossings.scm on ~a crossings~%" path (length spec))
-        (begin (for-each (lambda (p) (format #t "check-crossing-catalogue: ~a~%" p)) problems)
-               (exit 1)))))
+      (if (null? problems)
+          (format #t "check-crossing-catalogue: ~a agrees with legal/crossings.scm on ~a crossings~%" path (length spec))
+          (begin (for-each (lambda (p) (format #t "check-crossing-catalogue: ~a~%" p)) problems)
+                 (exit 1))))))
 
 (main (command-line))

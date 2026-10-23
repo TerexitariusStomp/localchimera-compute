@@ -73,6 +73,20 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
   with `packages/hive-bridge` tests so all commons verify one format.
 - `SubmitOutcome` ∈ `accepted|preempted`; `preempted` is a recorded fact, no
   pay, no miss — the job requeues to the outer ring.
+- `params.swarm` marks an envelope as one shard of a task no single node
+  runs: `{group, shards, shard-index, role, link?, quorum?}` — `group` is
+  the borrower-opened swarm record's id (the registry shelf binds the
+  shard jobs; index in its `job-ids` IS `shard-index`), `role` must fit
+  the kind: `stage|map|merge` on `exec` (pipeline link, data-parallel
+  slice, quorum assembly), `stripe` on `store` (one stripe per claim,
+  challenged like any store claim), `hop` on `relay` (one link of a
+  chained DataChannel path; `link` names the adjacent pair it joins),
+  `fleet` on `sense` (a sampling fleet whose readings a merge leg
+  aggregates). One job still mints one claim — the swarm is coordination
+  over claims, never a billing entity; a shard's receipt is its own.
+  The swarm's rendezvous is the signal shelf keyed `swarm:<id>`, member-
+  gated the door's way: the borrower plus lenders holding live shard
+  claims — a settled shard's holder has no more to say.
 
 ## §4 Capacity and headroom
 
@@ -85,6 +99,16 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
 - Playnet communes and peer-scope relationships ARE rings 0–2; PoI's pool is
   ring 3. Dispatch uses playnet's affinity + feasibility matching, not a ported
   site→project→global cascade.
+- Ring 3's concrete legs are **provider networks** — golem for `exec`/`bundle`,
+  mysterium for `relay` egress, storj for `store` — reached through
+  `machine-bridge-submit`: the borrower alone routes its own job, only a job
+  submitted `ring:3` may cross (INTERNAL/SECRET never carries one), only
+  while it stays `open`, and only when `match` returns no inner offer —
+  **own capacity always wins; the provider is fallback, never preferred**.
+  Provider calls ride injected transports and fail closed when unwired;
+  the attempts ledger (`^bridge-store`) records job, network, ref and
+  result hash — the rows a settlement statement's `payments` name. The
+  provider sees envelope refs and caps, never credentials, never a price.
 
 ## §5 Credit and settlement
 
@@ -125,6 +149,12 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
 - TEE attestation (playnet's sensitive-AI posture) and redundancy+canaries
   (PoI's) compose rather than merge: `TEE/` model slugs never route to pool
   workers; pool results never carry enclave claims they did not earn.
+- **Member-first**: the node's owner always outranks the work it lends.
+  `policyHold` gates claims before they start; the governor keeps the same
+  eyes mid-run — a landing hold or a claim that left the live states
+  aborts the worker and lands `machine-preempt` ('preempted, unpaid, not
+  a miss, the job requeues outward). `maxClaims` bounds how much of the
+  machine lending may hold at once. No abort ever mints a receipt.
 
 ## §7 Transport
 
@@ -173,6 +203,9 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
 | auditor/attestation folds | canary + prover + `HonestyReport` |
 | ^lobby sturdyrefs | job-submit/result/capabilities doors |
 | personhood ceremonies | witnessed-work attestations |
+| (no single-node ceiling) | swarm — `params.swarm` shards over claims |
+| ring-3 pool adapters | `providers.scm` + `machine-bridge-submit` |
+| member's own load | governor — `watchRun` → abort → `machine-preempt` |
 
 ## Appendix B — open questions, answered where the code already answered them
 

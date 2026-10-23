@@ -64,6 +64,13 @@ Nothing paid, nothing source-available (no BUSL, SSPL, Elastic).
 | Claim lifecycle/deadlines | **Temporal** | MIT | `delegates.scm` temporal seam + claim loop |
 | Ring-3 orchestration | **Bacalhau** + **Golem yagna** (supplier) | Apache-2.0 / GPL-3.0 | `delegates.scm` bacalhau seam + spec §8 privacy gate |
 | Inference lanes | **llama.cpp / ollama** + **LiteLLM** ⚠ | MIT | `delegates.scm` litellm seam + key-pool adapter |
+| In-browser ML runtime | **transformers.js + ONNX Runtime Web** (vendored `browser/vendor/transformers`) | Apache-2.0 / MIT | `params.model` descriptor + executor staging only |
+| Browser crypto | **noble curves/hashes** (vendored `browser/vendor/noble`) + WebCrypto | MIT / platform | — |
+| Content-addressed fetch | **helia** (lazy `browser/app/helia.js` seam) | MIT / Apache-2.0 | `machine-store.js` fetch leg only |
+| Swarm coordination | — **custom glue** over claims + signal shelf | ours | `machine/swarm.scm` (~90) + `browser/app/machine-swarm.js` (~200): the heavy legs are the kind runners already counted |
+| Ring-3 provider legs | **Golem yagna / Mysterium node / Storj** | GPL-3.0 / AGPL-3.0 | `machine/providers.scm` (~190) + `machine-bridge-submit` door — transports injected, fail-closed |
+| Member-first governor | — **custom** | ours | `browser/app/machine-governor.js` (~70) over the executor's own abort surface |
+| API surface docs | **swagger-ui** (vendored) | Apache-2.0 | — |
 | TEE evidence tier | **dcap-qvl / Intel DCAP / NVIDIA NRAS** | Apache-2.0 / BSD-3 | fills `verify-quote` seam |
 | Fleet provisioning | **OpenTofu** + providers | MPL-2.0 | `fleet/reconciler.scm` + provider seams |
 | Treasury | **Safe + protocol-kit** | LGPL-3.0 / MIT | `machine/safe.scm`, `machine/payout.scm` |

@@ -16,3 +16,5 @@
 2026-10-23T04:54:29Z	250671 → 250717	lenderSig: machine-sig lib, did:key door verdict, signed-receipt e2e, spec decisions
 2026-10-23T05:15:55Z	250717 → 252012	license: AGPL-3.0-or-later SPDX headers across first-party code
 2026-10-23T18:51:47Z	252012 → 252970	chimera-parity phases: model-inference/egress/availability/sense envelope profiles + opt-in payout partition, rate-statement, e2e+unit suites — Tier-1 machine resources
+2026-10-23T21:03:43Z	252970 → 253882	swarm megaplan: params.swarm descriptor + swarm shelf + 4 bus doors + shard runner (map/stage/merge/stripe/hop/fleet) + provider bridge (golem/mysterium/storj legs, attempts ledger) + governor (watchRun, abort→preempt, maxClaims) + e2e/unit suites
+2026-10-23T21:08:02Z	253882 → 253886	attribution emitter retarget to surviving surface + crossing-catalogue absent-spec tolerance (post-strip gate repair)
