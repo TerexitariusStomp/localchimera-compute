@@ -75,6 +75,8 @@
       <div class="row">
         <label style="flex:0 0 auto; margin-top:12px"><input type="checkbox" id="lendLoopOn" class="check" style="width:auto"> lend loop: run claimed envelopes here</label>
       </div>
+      <label>max claims — the capacity lending may hold at once (blank = unbounded); a landing hold or a lost claim aborts the worker and records machine-preempt, not a miss</label>
+      <input id="maxClaims" placeholder="e.g. 2" inputmode="numeric">
       <label>lender did:key (as it appears on offers)</label>
       <input id="lenderDid" placeholder="did:key:z… (blank = this AID)">
     </section>
@@ -299,8 +301,13 @@ $("lendLoopOn").addEventListener("change", async (e) => {
     stopLoop = lendLoop(H, commune(), lenderDid(), input, {
       signer,
       // the node declines work it can't honestly deliver: a hidden tab, a
-      // metered connection, or a battery under a fifth unplugged
+      // metered connection, or a battery under a fifth unplugged — and the
+      // governor keeps the same eyes on a running claim: a landing hold or
+      // a claim that left the live states aborts the worker into an honest
+      // machine-preempt (unpaid, not a miss; the job requeues outward)
       policy: { pauseWhenHidden: true, pauseOnSaveData: true, minBatteryLevel: 0.2 },
+      // member-first: lending never crowds out more than this many claims
+      ...(Number($("maxClaims").value) > 0 ? { maxClaims: Number($("maxClaims").value) } : {}),
       onPolicy: (why) => log(why ? `lend held: ${why}` : "lend resumed", why ? "" : "ok"),
       onRow: (id, st) => log(`claim ${String(id).slice(0, 12)}… → ${st}`, st.startsWith("err") ? "err" : "ok"),
     });

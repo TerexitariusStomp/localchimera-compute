@@ -252,6 +252,10 @@ export const runEnvelope = async (env, input, opts = {}) => {
     // transferred in as opaque bytes the sandbox reads only through the
     // deterministic host fns (or ctx.model for a js image)
     const mBytes = env.params?.model ? await modelBytes(env) : null;
+    // an already-aborted signal refuses before a worker spawns —
+    // the member's machine was theirs before the claim ever ran
+    if (opts.signal?.aborted)
+        throw new Error("machine-executor: aborted");
     return new Promise((resolve, reject) => {
         const timeoutMs = opts.timeoutMs ?? 5 * 60 * 1000;
         const blob = new Blob([`self.__caps = ${JSON.stringify(env.caps || [])};`,
@@ -260,26 +264,29 @@ export const runEnvelope = async (env, input, opts = {}) => {
         const url = URL.createObjectURL(blob);
         const w = new Worker(url);
         const started = Date.now();
-        const timer = setTimeout(() => {
+        const done = (fn, v) => {
+            clearTimeout(timer);
+            opts.signal?.removeEventListener?.("abort", onAbort);
             w.terminate();
             URL.revokeObjectURL(url);
-            reject(new Error(`machine-executor: timeout after ${timeoutMs}ms`));
+            fn(v);
+        };
+        // a member-first abort kills the worker like the timeout does —
+        // no receipt for a run the node's owner reclaimed
+        const onAbort = () => done(reject, new Error("machine-executor: aborted"));
+        opts.signal?.addEventListener?.("abort", onAbort, { once: true });
+        const timer = setTimeout(() => {
+            done(reject, new Error(`machine-executor: timeout after ${timeoutMs}ms`));
         }, timeoutMs);
         w.onerror = (e) => {
-            clearTimeout(timer);
-            w.terminate();
-            URL.revokeObjectURL(url);
-            reject(new Error(`machine-executor: ${e.message || "worker error"}`));
+            done(reject, new Error(`machine-executor: ${e.message || "worker error"}`));
         };
         w.onmessage = (e) => {
-            clearTimeout(timer);
-            w.terminate();
-            URL.revokeObjectURL(url);
             const seconds = (Date.now() - started) / 1000;
             if (e.data && e.data.ok)
-                resolve({ result: e.data.out, seconds });
+                done(resolve, { result: e.data.out, seconds });
             else
-                reject(new Error(`machine-executor: ${e.data && e.data.err || "failed"}`));
+                done(reject, new Error(`machine-executor: ${e.data && e.data.err || "failed"}`));
         };
         const transfers = [];
         if (isWasm)
@@ -397,7 +404,7 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
 //   minBatteryLevel — unplugged below it, "headroom" is a lie the offer told
 // An API the platform can't answer is not a constraint — a desktop with no
 // battery API has no battery reason to hold.
-const policyHold = async (policy) => {
+export const policyHold = async (policy) => {
     if (!policy)
         return null;
     try {
@@ -421,6 +428,7 @@ export const lendLoop = (seam, commune, lenderDid, input, opts = {}) => {
     const attempted = new Set();
     let stopped = false;
     let lastHold = null;
+    let running = 0;
     const tick = async () => {
         if (stopped || !seam.machineClaims)
             return;
@@ -451,11 +459,22 @@ export const lendLoop = (seam, commune, lenderDid, input, opts = {}) => {
                 continue;
             if (state !== "claimed" && state !== "accepted")
                 continue;
+            // maxClaims — the member's own machine stays first: lending
+            // never crowds out more capacity than the node offered
+            if (opts.maxClaims !== undefined && running >= opts.maxClaims)
+                break;
             attempted.add(claimId);
+            running++;
             opts.onRow?.(claimId, "running");
-            runClaim(seam, commune, claimId, lenderDid, input, opts)
+            // every run is governed: a landing hold or a claim that left
+            // the live states aborts the worker and lands as preempt —
+            // honest eviction, unpaid, the job requeues outward
+            import("./machine-governor.js")
+                .then((g) => g.runClaimGoverned(seam, commune, claimId,
+                                                lenderDid, input, opts))
                 .then(() => opts.onRow?.(claimId, "done"))
-                .catch((e) => opts.onRow?.(claimId, `err:${e instanceof Error ? e.message : e}`));
+                .catch((e) => opts.onRow?.(claimId, `err:${e instanceof Error ? e.message : e}`))
+                .finally(() => { running--; });
         }
     };
     const t = setInterval(tick, opts.intervalMs ?? 30_000);
