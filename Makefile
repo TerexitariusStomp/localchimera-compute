@@ -1054,7 +1054,7 @@ check-ui-staged:
 # test-browser: the node page's JS suites — node, no gateway.
 .PHONY: test-browser
 test-browser: test-machine-executor test-machine-store test-machine-relay test-machine-sense test-store test-keys test-bytes \
-          test-idb test-keystore test-handler-bridge test-mesh-plan \
+          test-idb test-keystore test-handler-bridge test-handlers-contract test-mesh-plan \
           test-capabilities test-rns-identity test-reactive 
 
 # The browser executor — the sandbox, the cap denial, the timeout, and the
@@ -1100,6 +1100,13 @@ test-keystore:
 # unbridged handler is a silent no-op live — this pins the parity.
 test-handler-bridge:
 	node tests/browser/handler-bridge-test.mjs
+
+# The wrapper contract: the real HANDLERS.* bodies extracted from
+# browser/day-boot.js and called against fake schemeHandlers — every
+# wrapper must reach its Scheme twin or answer an honest offline
+# fallback, and the manifest pins the set so a dropped wrapper fails.
+test-handlers-contract:
+	node tests/browser/handlers-contract-test.mjs
 
 # The reactive core (browser/app/reactive.js). Twenty-one modules import it and
 # none could see it fail: batching, dependency RE-tracking and identity dedup are
