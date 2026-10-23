@@ -197,17 +197,21 @@
 ;;;   stripe — a store shard: content wider than one tab's quota, one
 ;;;            stripe per claim, challenged like any store claim
 ;;;   hop    — a relay shard: one link of a chained datachannel path;
-;;;            the last hop egresses
+;;;            the last hop egresses; params.swarm.link names which
+;;;            adjacent pair of shards this claim's channel joins
+;;;   fleet  — a sense shard: one member of a sampling fleet whose
+;;;            readings the merge leg aggregates to a quorum answer
 ;;;
 ;;; One job still mints one claim — the claim stays the accounting atom;
 ;;; the swarm is coordination over claims, never a new billing entity.
 
-(define *swarm-roles* '(stage map merge stripe hop))
+(define *swarm-roles* '(stage map merge stripe hop fleet))
 
 (define (swarm-role-for-kind? role kind)
   (or (and (memq role '(stage map merge)) (eq? kind 'exec))
       (and (eq? role 'stripe) (eq? kind 'store))
-      (and (eq? role 'hop) (eq? kind 'relay))))
+      (and (eq? role 'hop) (eq? kind 'relay))
+      (and (eq? role 'fleet) (eq? kind 'sense))))
 
 (define (swarm-descriptor? s kind)
   "The params.swarm shape for KIND: group is the swarm's name (a string —
@@ -222,7 +226,9 @@
          (and (string? group)
               (integer? shards) (>= shards 2)
               (integer? index) (>= index 0) (< index shards)
-              (swarm-role-for-kind? role kind)))))
+              (swarm-role-for-kind? role kind)
+              (let ((link (params-ref s 'link)))
+                (or (not link) (string? link)))))))
 
 (define (envelope-swarm e)
   "The envelope's swarm descriptor, or #f."

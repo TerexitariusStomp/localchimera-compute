@@ -20,6 +20,7 @@
 
 import { Worker as NodeWorker } from "node:worker_threads";
 import { Blob as NodeBlob } from "node:buffer";
+import { fakeIndexedDB } from "./fakes.mjs";
 
 const L = await import("../../browser/app/machine-executor.js");
 const S = await import("../../browser/app/machine-swarm.js");
@@ -68,11 +69,61 @@ globalThis.Worker = class {
   terminate() { return this._ready.then(() => this._w && this._w.terminate()); }
 };
 
+// ── the device seams the legs need: IDB for the store kind, a          ──
+// navigator for the fleet's sensors, a FakePeer pair for the hop's RTC
+globalThis.indexedDB = fakeIndexedDB();
+Object.defineProperty(globalThis, "navigator", {
+  value: {
+    connection: { downlink: 42, rtt: 30, effectiveType: "4g", saveData: false },
+    hardwareConcurrency: 8,
+  },
+  configurable: true,
+});
+globalThis.document = { visibilityState: "visible", hasFocus: () => true };
+
+class FakeChannel {
+  constructor() { this.peer = null; this.sent = []; }
+  static pair(a, b) { a.peer = b; b.peer = a; }
+  open() { queueMicrotask(() => { this.onopen?.(); this.peer?.onopen?.(); }); }
+  send(d) { this.sent.push(d); queueMicrotask(() => this.peer?.onmessage?.({ data: d })); }
+  close() { this.onclose?.(); this.peer?.onclose?.(); }
+}
+class FakePeer {
+  static peers = [];
+  static reset() { FakePeer.peers = []; }
+  constructor() { FakePeer.peers.push(this); }
+  createDataChannel() { this.out = new FakeChannel(); return this.out; }
+  async createOffer() { return { type: "offer", sdp: `offer:${FakePeer.peers.indexOf(this)}` }; }
+  async createAnswer() { return { type: "answer", sdp: "answer" }; }
+  async setLocalDescription(d) {
+    if (d.type === "offer") this.offered = d.sdp;
+  }
+  async setRemoteDescription(d) {
+    if (d.type === "offer") {
+      this.peerPc = FakePeer.peers.find(p => p !== this && p.offered === d.sdp);
+      const ch = new FakeChannel();
+      if (this.peerPc?.out) FakeChannel.pair(this.peerPc.out, ch);
+      this.incoming = ch;
+      queueMicrotask(() => this.ondatachannel?.({ channel: ch }));
+    } else {
+      this.out?.open();
+      this.peerPc?.incoming?.open?.();
+    }
+  }
+  async addIceCandidate() {}
+  close() { this.closed = true; }
+}
+
+const sha256hexB = async (u8) =>
+  [...new Uint8Array(await crypto.subtle.digest("SHA-256", u8))]
+    .map(b => b.toString(16).padStart(2, "0")).join("");
+const b64 = (s) => Buffer.from(s, "utf8").toString("base64");
+
 // ── the seam double — the bus is the seq'd shelf the doors front ──────
-const mkSeam = (env, log, receipts) => ({
+const mkSeam = (env, log, receipts, did = "did:key:zNode") => ({
   machineFetchEnvelope: async () => env,
   machineSwarmSignal: async (_c, _g, body) => {
-    log.push({ seq: log.length + 1, from: "did:key:zNode", at: 1, body });
+    log.push({ seq: log.length + 1, from: did, at: 1, body });
     return log.length;
   },
   machineSwarmSignals: async (_c, _g, after = 0) =>
@@ -199,6 +250,89 @@ console.log("\n── merge — the siblings assemble in shard order ──");
         post?.body?.output === 0, `got ${post?.body?.output}`);
   check("every silent shard is named",
         JSON.stringify(post?.body?.partial) === "[0,1]", JSON.stringify(post?.body?.partial));
+}
+
+console.log("\n── stripe — a store shard announces 'held' on the bus ──");
+
+{
+  const log = [], receipts = [];
+  const stripe = new TextEncoder().encode("stripe-0-of-2");
+  const env = { bridgeJobId: "bj-st", kind: "store",
+                inputHash: await sha256hexB(stripe),
+                caps: [], network: false,
+                params: { contentB64: b64("stripe-0-of-2"), ttlSeconds: 0.05,
+                          swarm: { group: "sw-st", shards: 2, "shard-index": 0,
+                                   role: "stripe" } } };
+  await L.runClaim(mkSeam(env, log, receipts), "home", "claim-st0",
+                   "did:key:zStore", null, OPTS);
+  const post = log.find((r) => r.body?.type === "shard-output");
+  check("the stripe announced itself held", post?.body?.role === "stripe"
+        && post?.body?.contentHash === env.inputHash);
+  check("the stripe's own receipt still landed, byte-seconds metered",
+        receipts.length === 1 && receipts[0].usage?.unit === "byte-seconds",
+        JSON.stringify(receipts[0]?.usage));
+}
+
+console.log("\n── hop — the link's signaling rides the bus, not a claim log ──");
+
+{
+  FakePeer.reset();
+  const log = [], receipts = [];
+  const PAYLOAD = "hop-payload";
+  const base = { kind: "relay", inputHash: "in:hop", caps: [], network: false };
+  // the borrower names the shared link — shard 0 offers, shard 1 answers
+  const offerEnv = { ...base, bridgeJobId: "bj-h0",
+                     params: { channel: true, role: "offer", direction: "send",
+                               contentB64: b64(PAYLOAD),
+                               swarm: { group: "sw-h", shards: 2,
+                                        "shard-index": 0, role: "hop",
+                                        link: "hop:0" } } };
+  const answerEnv = { ...base, bridgeJobId: "bj-h1",
+                      params: { channel: true, role: "answer", direction: "recv",
+                                swarm: { group: "sw-h", shards: 2,
+                                         "shard-index": 1, role: "hop",
+                                         link: "hop:0" } } };
+  const s0 = mkSeam(offerEnv, log, receipts, "did:key:zH0");
+  const s1 = mkSeam(answerEnv, log, receipts, "did:key:zH1");
+  const RTC_OPTS = { ...OPTS, RTCPeerConnection: FakePeer, pollMs: 5,
+                     silenceMs: 200, timeoutMs: 3000 };
+  await Promise.all([
+    L.runClaim(s0, "home", "claim-h0", "did:key:zH0", null,
+               { ...RTC_OPTS, who: "did:key:zH0" }),
+    L.runClaim(s1, "home", "claim-h1", "did:key:zH1", null,
+               { ...RTC_OPTS, who: "did:key:zH1" }),
+  ]);
+  const sigs = log.filter((r) => r.body?.hopLink === "hop:0");
+  check("the offer rode the swarm bus under the link's tag",
+        sigs.some((r) => r.body?.type === "offer"));
+  check("the answer rode the same tagged link",
+        sigs.some((r) => r.body?.type === "answer"));
+  check("the carried bytes crossed the channel",
+        receipts.some((r) => r.usage?.unit === "bytes" && r.usage?.amount > 0),
+        JSON.stringify(receipts.map((r) => r.usage)));
+  const deliver = receipts.find((r) => r.outputHash);
+  check("the receiving hop's outputHash binds the delivered bytes",
+        deliver?.outputHash === await sha256hexB(new TextEncoder().encode(PAYLOAD)));
+}
+
+console.log("\n── fleet — a sense shard's readings post for the merge ──");
+
+{
+  const log = [], receipts = [];
+  const env = { bridgeJobId: "bj-fl", kind: "sense",
+                inputHash: "in:fl", caps: [], network: false,
+                params: { sources: ["network"], intervalMs: 250, count: 1,
+                          swarm: { group: "sw-fl", shards: 3, "shard-index": 0,
+                                   role: "fleet" } } };
+  await L.runClaim(mkSeam(env, log, receipts), "home", "claim-f0",
+                   "did:key:zSense", null, OPTS);
+  const post = log.find((r) => r.body?.type === "shard-output");
+  check("the fleet shard posted its readings hash",
+        post?.body?.role === "fleet" && typeof post?.body?.outputHash === "string",
+        JSON.stringify(post?.body));
+  check("the sense claim's own receipt still landed",
+        receipts.length === 1 && receipts[0].usage?.unit === "readings",
+        JSON.stringify(receipts[0]?.usage));
 }
 
 console.log("\n── dispatch — only a params.swarm envelope routes here ──");

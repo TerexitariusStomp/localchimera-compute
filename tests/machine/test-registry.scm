@@ -220,6 +220,60 @@
                                      '(params . ((sources . ("machine"))
                                                  (count . 0)))))))
 
+;;; the swarm descriptor — the role must fit the kind
+(let ((env (alist->job-envelope
+            (env-fields '(params . ((swarm . ((group . "sw-1") (shards . 4)
+                                             (shard-index . 2)
+                                             (role . map)))))))))
+  (check "an exec map shard parses" (job-envelope? env) #t)
+  (check "envelope-swarm answers the descriptor"
+         (assq-ref (envelope-swarm env) 'role) 'map))
+(let ((env (alist->job-envelope
+            (env-fields '(kind . "store")
+                        '(params . ((swarm . ((group . "sw-1") (shards . 3)
+                                              (shard-index . 0)
+                                              (role . stripe)))))))))
+  (check "a store stripe shard parses" (job-envelope? env) #t))
+(let ((env (alist->job-envelope
+            (env-fields '(kind . "relay")
+                        '(params . ((swarm . ((group . "sw-1") (shards . 2)
+                                              (shard-index . 0) (role . hop)
+                                              (link . "hop:0")))))))))
+  (check "a relay hop shard with a link parses" (job-envelope? env) #t))
+(let ((env (alist->job-envelope
+            (env-fields '(kind . "sense")
+                        '(params . ((sources . ("network")) (count . 1)
+                                    (swarm . ((group . "sw-1") (shards . 3)
+                                              (shard-index . 1)
+                                              (role . fleet)))))))))
+  (check "a sense fleet shard parses" (job-envelope? env) #t))
+(check-error "a one-shard swarm is a job, not a swarm"
+             (lambda () (alist->job-envelope
+                         (env-fields '(params . ((swarm . ((group . "sw-1")
+                                                          (shards . 1)
+                                                          (shard-index . 0)
+                                                          (role . map)))))))))
+(check-error "a shard-index outside the fan-out refuses"
+             (lambda () (alist->job-envelope
+                         (env-fields '(params . ((swarm . ((group . "sw-1")
+                                                          (shards . 2)
+                                                          (shard-index . 2)
+                                                          (role . map)))))))))
+(check-error "a stripe on exec refuses — the role must fit the kind"
+             (lambda () (alist->job-envelope
+                         (env-fields '(params . ((swarm . ((group . "sw-1")
+                                                          (shards . 2)
+                                                          (shard-index . 0)
+                                                          (role . stripe)))))))))
+(check-error "a hop link that isn't a string refuses"
+             (lambda () (alist->job-envelope
+                         (env-fields '(kind . "relay")
+                                     '(params . ((swarm . ((group . "sw-1")
+                                                           (shards . 2)
+                                                           (shard-index . 0)
+                                                           (role . hop)
+                                                           (link . 7)))))))))
+
 ;;; the inference profile — params.model commits the artifact
 (let* ((model '((uri . "https://models.example/f.gguf")
                 (sha256 . "0123456789abcdef") (format . gguf-wasm)

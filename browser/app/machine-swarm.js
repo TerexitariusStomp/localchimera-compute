@@ -116,6 +116,70 @@ export const runSwarmClaim = async (seam, commune, claimId, env, lenderDid,
     // camelCase descriptor reads the same — both name this claim's shard.
     const index = s["shard-index"] ?? s.shardIndex ?? 0;
 
+    // ── stripe — a store shard: the claim holds its stripe like any     ──
+    // store claim (the stripe's own inputHash commits it); what the swarm
+    // adds is announcing "held" on the bus so an assembler learns which
+    // stripes are actually standing. Challenges answer unchanged — the
+    // stripe IS this claim's content.
+    if (s.role === "stripe") {
+        const { runStoreClaim } = await import("./machine-store.js");
+        const onRow = opts.onRow;
+        return runStoreClaim(seam, commune, claimId, env, lenderDid, {
+            ...opts,
+            onRow: async (id, st) => {
+                if (st === "held")
+                    await bus.post({ type: "shard-output", shard: index,
+                                     of: s.shards, role: "stripe",
+                                     outputHash: env.inputHash,
+                                     contentHash: env.inputHash });
+                return onRow?.(id, st);
+            },
+        });
+    }
+
+    // ── hop — a relay shard: the channel leg unchanged, only the        ──
+    // rendezvous moves: the two ends of a hop are both lenders, so the
+    // offer/answer/candidate exchange rides the swarm bus tagged with
+    // params.swarm.link — which adjacent pair this channel joins. Other
+    // links' posts are filtered out; the claim's own log never sees them.
+    if (s.role === "hop") {
+        const link = s.link ?? `hop:${index}`;
+        const hopSeam = {
+            ...seam,
+            machineSignal: (_c, _id, body) =>
+                seam.machineSwarmSignal(commune, s.group, { hopLink: link, ...body }),
+            machineSignals: async (_c, _id, after = 0) =>
+                (await bus.read(after)).filter((r) => r.body?.hopLink === link),
+        };
+        const { runRelayClaim } = await import("./machine-relay.js");
+        const out = await runRelayClaim(hopSeam, commune, claimId, env,
+                                        lenderDid, opts);
+        await bus.post({ type: "shard-output", shard: index, of: s.shards,
+                         role: "hop", link });
+        return out;
+    }
+
+    // ── fleet — a sense shard: the sampling session unchanged; once     ──
+    // its receipt lands, the readings' hash posts to the bus so a merge
+    // leg can aggregate the fleet's quorum answer. The receipt carries
+    // the readings array's digest — the aggregate binds facts it names.
+    if (s.role === "fleet") {
+        const { runSenseClaim } = await import("./machine-sense.js");
+        const fleetSeam = {
+            ...seam,
+            machineReceipt: async (c, wire) => {
+                const r = await seam.machineReceipt(c, wire);
+                const rec = JSON.parse(wire);
+                await bus.post({ type: "shard-output", shard: index,
+                                 of: s.shards, role: "fleet",
+                                 outputHash: rec.outputHash ?? null,
+                                 readings: rec.readings ?? null });
+                return r;
+            },
+        };
+        return runSenseClaim(fleetSeam, commune, claimId, env, lenderDid, opts);
+    }
+
     // ── input resolution — the role says where this shard's bytes are ──
     let shardInput = input;
     if (s.role === "map")
