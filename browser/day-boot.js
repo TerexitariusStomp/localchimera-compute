@@ -1211,6 +1211,12 @@ function boot() {
       new Promise(res => schemeHandlers.machineSwarmSignal ? schemeHandlers.machineSwarmSignal(commune || "", swarmId || "", JSON.stringify(body ?? null), res) : res("err:offline"));
     HANDLERS.machineSwarmSignals = (commune, swarmId, after) =>
       new Promise(res => schemeHandlers.machineSwarmSignals ? schemeHandlers.machineSwarmSignals(commune || "", swarmId || "", after || 0, res) : res("[]"));
+    // ring 3's legs — the borrower sends an open, ring:3 job to a
+    // provider network only when the commune's own match came back empty
+    HANDLERS.machineBridgeSubmit = (commune, jobId, provider) =>
+      new Promise(res => schemeHandlers.machineBridgeSubmit ? schemeHandlers.machineBridgeSubmit(commune || "", jobId || "", provider || "", res) : res("err:offline"));
+    HANDLERS.machineBridgeAttempts = (commune, jobId) =>
+      new Promise(res => schemeHandlers.machineBridgeAttempts ? schemeHandlers.machineBridgeAttempts(commune || "", jobId || "", res) : res("[]"));
     HANDLERS.machineBind = (commune, wireJson) =>
       new Promise(res => schemeHandlers.machineBind ? schemeHandlers.machineBind(commune || "", wireJson || "{}", res) : res("err:offline"));
     HANDLERS.machineUnbind = (commune, key, side) =>

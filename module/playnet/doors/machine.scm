@@ -36,6 +36,7 @@
   #:use-module (playnet machine binding-verifiers)
   #:use-module (playnet machine payout)
   #:use-module (playnet machine swarm)
+  #:use-module (playnet machine providers)
   #:use-module (playnet machine executors)
   #:use-module (playnet doors governance)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
@@ -177,6 +178,15 @@
                           (memq (dispatch-claim-state c)
                                 '(claimed accepted))))
                    claims))))
+
+      ;; the bridge ledger — which jobs crossed to which provider network
+      ;; and what came back; the settlement edge's payments name rows here.
+      (define (bridges-for commune-aid)
+        (let ((k (string-append "bridge:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-bridge-store)))
+                (hash-set! registries k s)
+                s))))
 
       ;; the hive's review pool: every citizen the service has met, minus
       ;; the dispute's parties — sortition scores and picks from this list.
@@ -959,6 +969,70 @@
                            (or (opt-ref opts 'after 0) 0))))))))
            (lambda (k . a)
              (list 'error (format #f "machine-swarm-signals: ~a" a)))))
+
+        ;; ── the bridge — ring 3's legs ───────────────────────────────
+        ;; Only the job's borrower sends it out, only a job that declared
+        ;; ring:3 may cross (INTERNAL/SECRET work never carries one), only
+        ;; while it is still 'open — and only when the commune's own 'match
+        ;; returns nothing: OUR capacity always wins, the provider is the
+        ;; fallback, never the preferred route. The provider gets the
+        ;; envelope's refs and caps — credentials and prices never ride.
+        ((machine-bridge-submit identity-key commune-aid job-id provider-name)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((reg (registry-for commune-aid))
+                    (j ($ reg 'job-of job-id))
+                    (env (and j ($ (shelf-for commune-aid) 'get job-id))))
+               (cond
+                ((not j) (list 'error "machine-bridge-submit: no such job"))
+                ((not (equal? identity-key (machine-job-borrower-did j)))
+                 (list 'error "machine-bridge-submit: the borrower's job only"))
+                ((not (eq? (machine-job-state j) 'open))
+                 (list 'error "machine-bridge-submit: only an open job crosses"))
+                ((< (machine-job-ring j) 3)
+                 (list 'error "machine-bridge-submit: the job's ring forbids ring-3 routing"))
+                ((not env)
+                 (list 'error "machine-bridge-submit: envelope not on the shelf"))
+                ((not (provider-serves? provider-name (job-envelope-kind env)))
+                 (list 'error "machine-bridge-submit: provider doesn't serve this kind"))
+                ;; local-first: an inner offer is capacity we already own —
+                ;; claim it there rather than paying the outside for it
+                ((pair? ($ reg 'match job-id))
+                 (list 'error "machine-bridge-submit: inner rings have capacity"))
+                (else
+                 (let* ((t (or (provider-transport provider-name)
+                               %provider-unavailable))
+                        (result (provider-call provider-name t env))
+                        (a (make-bridge-attempt
+                            #:id (format #f "br-~a-~a" job-id (random 1000000))
+                            #:job-id job-id
+                            #:provider (if (symbol? provider-name) provider-name
+                                           (string->symbol provider-name))
+                            #:ref (assoc-ref result "ref")
+                            #:output-hash (assoc-ref result "outputHash")
+                            #:state 'answered
+                            #:at ((*machine-clock*)))))
+                   ($ (bridges-for commune-aid) 'put! a)
+                   (cons 'ok (bridge-attempt->list a)))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-bridge-submit: ~a" a)))))
+
+        ((machine-bridge-attempts identity-key commune-aid job-id)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((reg (registry-for commune-aid))
+                    (j ($ reg 'job-of job-id)))
+               (cond
+                ((not j) (list 'error "machine-bridge-attempts: no such job"))
+                ((not (equal? identity-key (machine-job-borrower-did j)))
+                 (list 'error "machine-bridge-attempts: the borrower's job only"))
+                (else
+                 (cons 'ok (map bridge-attempt->list
+                                ($ (bridges-for commune-aid) 'by-job job-id)))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-bridge-attempts: ~a" a)))))
 
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —

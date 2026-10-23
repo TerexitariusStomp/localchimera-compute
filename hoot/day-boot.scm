@@ -3353,6 +3353,20 @@
                                     (list 'after n) '()))
           (lambda (v) (reply! cb (scm->json-canonical (list->vector v))))))))
 
+;; ── the bridge — ring 3's legs ───────────────────────────────────────────
+;; bridge-submit routes an open, ring:3 job to a provider network when the
+;; commune's own match is empty; attempts reads the ledger back.
+(define (handle-machine-bridge-submit commune job-id provider cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-bridge-submit commune job-id
+                           provider)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-machine-bridge-attempts commune job-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-bridge-attempts commune job-id)
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
 ;;; ── governance: the decision inbox (governance-surface.md §Inbox) ─────────
 ;; list-proposals → [{id, status}]; the dial renders the open decisions.
 (define (handle-list-proposals cb)
@@ -4140,6 +4154,8 @@
             ("machineSwarmOf"          . ,handle-machine-swarm-of)
             ("machineSwarmSignal"      . ,handle-machine-swarm-signal)
             ("machineSwarmSignals"     . ,handle-machine-swarm-signals)
+            ("machineBridgeSubmit"     . ,handle-machine-bridge-submit)
+            ("machineBridgeAttempts"   . ,handle-machine-bridge-attempts)
             ("machineBind"          . ,handle-machine-bind)
             ("machineUnbind"        . ,handle-machine-unbind)
             ("machineBindings"      . ,handle-machine-bindings)

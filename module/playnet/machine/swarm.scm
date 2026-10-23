@@ -29,7 +29,8 @@
   #:use-module (goblins)
   #:use-module (goblins actor-lib methods)
   #:use-module (goblins utils hashmap)
-  #:use-module ((playnet utils store-utils) #:select (serialize-hashmap))
+  #:use-module ((playnet utils store-utils) #:select (serialize-hashmap
+                                                     hashmap-filter))
   #:export (<swarm> make-swarm swarm?
             swarm-id swarm-borrower-did swarm-commune-aid
             swarm-job-ids swarm-created-at
