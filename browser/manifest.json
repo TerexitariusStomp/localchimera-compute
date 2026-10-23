@@ -1,15 +1,19 @@
 {
   "id": "/",
-  "name": "playnet",
-  "short_name": "playnet",
-  "description": "The commons planner — your day, your needs and your community's plan on one dial",
-  "start_url": ".",
+  "name": "playnet machine node",
+  "short_name": "playnet node",
+  "description": "Lend and borrow machine resources \u2014 compute, inference, storage, bandwidth \u2014 from a browser tab, under KERI identity and mutual-credit settlement.",
+  "start_url": "node.html",
   "scope": ".",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#110e13",
   "theme_color": "#110e13",
-  "categories": ["productivity", "social", "lifestyle"],
+  "categories": [
+    "productivity",
+    "social",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "assets/icons/icon-192.png",

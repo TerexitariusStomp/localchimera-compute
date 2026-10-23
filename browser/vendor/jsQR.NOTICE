@@ -1,4 +1,0 @@
-jsQR 1.4.0 (https://github.com/cozmo/jsQR), Apache License 2.0 — see jsQR.LICENSE.
-Vendored unmodified from https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js
-sha256 bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859
-Loaded lazily by ui/app/scan.ts, only where the browser has no BarcodeDetector.

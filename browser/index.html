@@ -1,46 +1,5 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>playnet - programmable organizations</title>
-    <meta name="theme-color" content="#110e13" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="playnet" />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon-180.png" />
-    <script type="text/javascript" src="reflect.js"></script>
-    <script type="text/javascript" src="repl.js"></script>
-    <link rel="stylesheet" href="assets/css/repl.css" />
-    <link rel="stylesheet" href="assets/css/style.css" />
-    <link rel="stylesheet" href="assets/css/dashboard.css" />
-    <link rel="stylesheet" href="assets/css/calendar.css" />
-    <link rel="stylesheet" href="assets/css/demand.css" />
-    <link rel="stylesheet" href="assets/css/recipes.css" />
-    <link rel="stylesheet" href="vendor/xterm.css" />
-    <script src="vendor/xterm.js"></script>
-    <script src="vendor/xterm-addon-fit.js"></script>
-    <!-- MapLibre GL JS — TODO: vendor to browser/vendor/maplibre/ before onion deploy.
-         `defer` so a slow / unreachable CDN never blocks the rest of the app. -->
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css" />
-    <script defer src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
-    <!-- H3 — hex spatial indexing for availability/supply queries and map overlays.
-         TODO: vendor to browser/vendor/h3/ before onion deploy. -->
-    <script defer src="https://unpkg.com/h3-js@4.2.1/dist/h3-js.umd.js"></script>
-  </head>
-  <body>
-    <p id="wasm-error" hidden="true">
-      A browser with Wasm GC and tail call support is required for this demo. We
-      recommend using either Mozilla Firefox or Google Chrome.
-    </p>
-    <!-- Service worker registration through the one door (app/pwa.ts). The
-         REPL page holds no unsaved identity form, so it moves to a new build
-         as soon as one is installed. -->
-    <script type="module">
-      import { registerSW } from "./app/pwa.js";
-      registerSW();
-    </script>
-  </body>
-</html>
+<html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url=node.html">
+<title>playnet — machine node</title></head>
+<body><a href="node.html">the machine node</a></body></html>
