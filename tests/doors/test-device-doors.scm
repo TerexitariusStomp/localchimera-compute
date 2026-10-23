@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-device-doors.scm — a session answers only its device's doors
 ;;;
 ;;; What this pins:

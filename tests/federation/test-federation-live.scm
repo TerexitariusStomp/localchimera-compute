@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-live.scm — a SEEDED federation of real scope-roots, composed
 ;;; by the decomposition across vats, one pull per crossing good — the live path end to end.
 ;;;

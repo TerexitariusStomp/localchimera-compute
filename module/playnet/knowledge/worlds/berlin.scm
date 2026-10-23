@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; berlin.scm — the Berlin/Brandenburg bioregion as a first-class ecological agent,
 ;;; the THIRD real shed (after worlds/doon-shed.scm and cascadia.scm). A third bioregion on a
 ;;; third continent, with a CONTINENTAL summer-wet climate and — the point of this one —

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; manifest.scm — the silviculture corpus.
 ;;;
 ;;; Forestry is the first Phase 1 domain (docs/planning/food/natural-processes-research-plan.md)

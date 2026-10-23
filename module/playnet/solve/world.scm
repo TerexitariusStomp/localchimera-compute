@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/world.scm — the world the solve is given: one context, a value in hand.
 ;;;
 ;;; Every table the engine reads while it builds a program is a field of ONE

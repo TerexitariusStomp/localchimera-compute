@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-practiced.scm — observer earned-skills + practiced-hours (Stage 3)
 ;;;
 ;;; Skills are a DERIVED view over the work-event log: earned-skills = distinct

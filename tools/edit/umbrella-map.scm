@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; umbrella-map.scm — every name an umbrella module exports, and the module that defines it.
 ;;;
 ;;;   guile -L module tools/edit/umbrella-map.scm playnet boot prelude   →  NAME TAB (playnet boot prelude …)

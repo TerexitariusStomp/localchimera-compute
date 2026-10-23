@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; said.scm — SAID derivation on a native Guile: said-portable + libblake3
 ;;;
 ;;; (playnet keri said-portable) is the derivation itself and compiles under

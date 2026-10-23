@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-reproduction-diet.scm — the CONSTRAINT DIAL alone feeds everyone.
 ;;;
 ;;; Claim (docs/playnet.typ §possibility-tensions · social-material.typ, the

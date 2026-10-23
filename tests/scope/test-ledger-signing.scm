@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-ledger-signing.scm — the ledger's records carry a signature that binds
 ;;;
 ;;; install-credentialing! takes a #:signer, and the records the ledger mints

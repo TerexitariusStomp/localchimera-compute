@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal/filings.scm — a filing is a deterministic render PROCESS producing a document
 ;;; <economic-resource>, content-addressed (SAID); granting it yields the permit
 ;;; resource compliance.scm then sees as HELD. The whole lifecycle stays in VF.

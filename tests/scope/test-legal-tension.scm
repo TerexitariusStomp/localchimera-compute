@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-tension.scm — an uncertain prohibition BOUNDS a plan; it neither
 ;;; forbids it nor merely prices it.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/host.scm — a commune's peer on a real network: the door between
 ;;; the signed shell (federation/peer.scm) and the OCapN it travels over.
 ;;;

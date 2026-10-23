@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; events.scm — events and the pure observer fold, stated once for the suites.
 ;;;
 ;;; Every suite that pins the observer's accounting builds events the same way and

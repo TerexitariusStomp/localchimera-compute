@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-decomposition-invariance.scm — the PLAN does not depend on how the
 ;;; federation is CUT into scopes.
 ;;;

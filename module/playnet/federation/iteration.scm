@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/iteration.scm — Budget disclosure + counter-proposal loop.
 ;;;
 ;;; Each round: leaves submit rising Proposals → UC solves matching →

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/monero/test-donation-watch.scm — the gateway's donation watch
 ;;;
 ;;; The wallet runs in its own process, so the gateway asks its policy with

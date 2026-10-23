@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/vows.scm — vow-based variants of global-* aggregations + open-ballot
 ;;;
 ;;; Cross-vat federation is the use case: scope-roots may be far refs

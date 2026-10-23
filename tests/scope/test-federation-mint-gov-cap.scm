@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-mint-gov-cap.scm — federation-kind mint-gov-cap, self-
 ;;; governed via its own member communes.
 ;;;

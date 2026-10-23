@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; voice/ballot.scm — liquid-democracy ballot with frozen-snapshot tally
 ;;;
 ;;; A ^ballot freezes at open-time:

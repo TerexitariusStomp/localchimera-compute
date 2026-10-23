@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; schedule-book.scm — Per-entity schedule queries
 
 (define-module (playnet plan schedule-book)

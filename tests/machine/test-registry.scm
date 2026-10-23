@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-registry.scm — the dispatch book: offers, jobs, claims, receipts,
 ;;; statements.
 ;;;

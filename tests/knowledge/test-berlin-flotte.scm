@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-berlin-flotte.scm — the fLotte loan pool reaches a scope as held resources.
 ;;;
 ;;; flotte-berlin-resources called bt-cargo-bike-resource with a lender and a loan

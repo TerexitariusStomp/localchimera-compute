@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/dev.sh — the day dial, LIVE, on your own machine.
 #
 # Starts a real gateway (no KERIA — same shape as tests/ux/ux-full.sh) with

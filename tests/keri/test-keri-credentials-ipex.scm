@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-credentials-ipex.scm — IPEX flow + multi-sig + schema
 ;;;
 ;;; Complements test-keri-credentials.scm (push flow + verification) by

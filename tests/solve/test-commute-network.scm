@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-commute-network.scm — commute as provisioned movement on a SHARED network.
 ;;;
 ;;; Whole-worker, no fixed home. The worker stays ONE budget; we never disaggregate

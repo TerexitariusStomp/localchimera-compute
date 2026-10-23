@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-delegation-recovery-law.scm — the recovery law, held for delegation.
 ;;;
 ;;; recovery.scm's docstring states it: the live actor graph is a PROJECTION

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-feel-the-food.scm — the sensory check, costed; and what the
 ;;; Chargenvermutung actually assumes.
 ;;;

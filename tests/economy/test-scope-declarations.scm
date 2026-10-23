@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scope-declarations.scm — a scope's own word on the rail: span, hosting
 ;;; willingness, regime claim. Three self-declarations (issuer = holder = the
 ;;; scope) minted through the governance service by a governor, each read

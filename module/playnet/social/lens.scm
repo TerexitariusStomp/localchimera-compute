@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; social/lens.scm — a named neighbourhood of AIDs over the social graph.
 ;;;
 ;;; A LENS names WHOSE assertions count when a collaborative signal is weighted:

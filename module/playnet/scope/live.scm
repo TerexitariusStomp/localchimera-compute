@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; live.scm — the live observer → convex planner → VF commitments wiring.
 ;;;
 ;;; The deferred "step 3": close the loop on a RUNNING scope. The convex engine

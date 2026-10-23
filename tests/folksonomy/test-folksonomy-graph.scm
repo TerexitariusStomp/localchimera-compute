@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-folksonomy-graph.scm — the weighted-DAG core.
 ;;;
 ;;; Proves the folksonomy folds per-AID structure edge-sets exactly like the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/outbox.ts — what a person did with no gateway in reach, kept until one is.
 //
 // A person works the same way connected or not (docs/planning/faces/offline-outbox.md).

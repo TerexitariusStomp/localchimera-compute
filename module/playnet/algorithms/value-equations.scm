@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; value-equations.scm — Income distribution via contribution scoring
 ;;;
 ;;; A ValueEquation is a list of (weight . scorer) pairs.

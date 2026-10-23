@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-expression.scm — weighted distribution over per-scope per-domain targets
 
 (use-modules (playnet test harness))

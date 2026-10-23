@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/scope/membership.scm — the membership methods of a scope: the policies, the CCF, admission, exclusion and reinstatement.
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

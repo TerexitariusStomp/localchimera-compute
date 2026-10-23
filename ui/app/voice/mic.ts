@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/voice/mic.ts — the walkie's own outbound audio track, handed over.
 //
 // The live layer (day-boot.js) opens ONE mic track for push-to-talk and flips

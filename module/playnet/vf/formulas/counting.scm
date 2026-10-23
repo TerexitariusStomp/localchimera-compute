@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; counting.scm — the planned count: which stocks are counted, how often, and
 ;;; under which regime (docs/observation/capture.md §4).
 ;;;

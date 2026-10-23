@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; capacity.scm — a holding, read as the capacity it renders.
 ;;;
 ;;; ── FOUR THINGS, ONE WORD ────────────────────────────────────────────────────

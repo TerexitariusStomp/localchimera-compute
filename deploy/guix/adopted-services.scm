@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/adopted-services.scm — the Tier-2 adopted stack as OCI
 ;;; containers under Shepherd (spec/oss-inventory.md).
 ;;;

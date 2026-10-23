@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/mesh-plan-test.mjs — the mesh's video budget (app/voice/mesh-plan.ts).
 // Plain node over the emitted module. What it pins is a property of the whole range
 // of room sizes, not a table of numbers: the streams a person sends stay within the

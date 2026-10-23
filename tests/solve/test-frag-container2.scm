@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-container2.scm — container GRANULARITY and CASCADE-awareness.
 ;;;
 ;;; Two claims from the container work, here proven:

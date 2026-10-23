@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/compute/test-adapters.scm — the adopted-service seams: wire
 ;;; shapes are pinned, fail-closed defaults refuse, injected transports
 ;;; answer. Each adapter is thin by design — the test's job is that the

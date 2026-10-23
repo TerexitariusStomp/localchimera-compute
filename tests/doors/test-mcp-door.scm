@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-mcp-door.scm — the doors as an MCP server at POST /api/mcp
 ;;;
 ;;; What this pins:

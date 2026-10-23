@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/satellites.scm — the repos the core pins by commit + content hash
 ;;;
 ;;; The core repo's HEAD is the only input to the deployed system. Every other

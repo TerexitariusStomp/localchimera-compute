@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation.scm — recursive scope-of-scopes
 
 (use-modules (playnet test harness))

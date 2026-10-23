@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/lib/keystore.js — IndexedDB-backed store for org signing keypairs.
 //
 // Replaces the previous localStorage scheme, which held Ed25519 private

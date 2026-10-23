@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-property-voice-field.scm — the voice field's bound, on closed-form rows.
 ;;;
 ;;; The twin of docs/planning/voice/voice-in-lean.md, file 1 (VoiceField.lean):

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; pools/availability-pool.scm — Labour pool from agent availability.
 ;;;
 ;;; Availability lives on the agent, not in scopes. An agent has one

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/safe.scm — the Safe send rail: Safe{Wallet}
 ;;; (LGPL-3.0) is the adopted treasury execution; this adapter turns a
 ;;; payout-plan row into the transaction-service proposal wire and is the

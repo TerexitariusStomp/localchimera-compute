@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-decomp.scm — CROSS-VAT decomposition, primal (quantity) form.
 ;;;
 ;;; Two SOVEREIGN communes solve SEPARATELY (each its own LP = its own vat) and

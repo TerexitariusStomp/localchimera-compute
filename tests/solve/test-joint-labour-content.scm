@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-joint-labour-content.scm — the engine's value rollup under JOINT PRODUCTION.
 ;;;
 ;;; A recipe that yields wool AND mutton has ONE labour cost. `good-labour-content`

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/scope/test-certificate-wall.scm — THE CERTIFICATE IS A STOCK THE SOLVE RESPECTS.
 ;;;
 ;;; A citizen's drawable credit enters the solve as a bar over their claim

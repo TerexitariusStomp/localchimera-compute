@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; resource-flows.scm — Cash flow / resource flow timeline
 
 (define-module (playnet algorithms resource-flows)

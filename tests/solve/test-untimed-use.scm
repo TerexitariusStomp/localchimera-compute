@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-untimed-use.scm — a run occupies a means for as long as the run takes.
 ;;;
 ;;; A `use` states two things: how many are engaged, and for how long. When it omits

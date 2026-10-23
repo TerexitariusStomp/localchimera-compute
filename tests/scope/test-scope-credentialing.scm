@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scope-credentialing.scm — the substrate, wired into a LIVE scope
 ;;;
 ;;; Drives a real spawn-scope-root with install-credentialing!: planner events

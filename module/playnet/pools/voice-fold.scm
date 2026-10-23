@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; pools/voice-fold.scm — ^voice-pool: the scope fold of producer voice.
 ;;;
 ;;; docs/planning/voice/voice-follows-work.md ("Where the hand folds"): stances

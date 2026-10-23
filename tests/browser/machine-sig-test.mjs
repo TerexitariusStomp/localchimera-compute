@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/machine-sig-test.mjs — the lender's signature, end to end.
 //
 // The goldens below are the Scheme side's own answers for the same bytes:

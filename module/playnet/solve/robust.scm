@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/robust.scm — robust multi-scenario planning over the located solver.
 ;;;
 ;;; Design: docs/planning/solve/robust-multiscenario.md. Phase-1 (raw forms) proved the

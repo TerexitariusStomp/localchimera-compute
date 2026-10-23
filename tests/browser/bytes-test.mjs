@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/bytes-test.mjs — app/bytes.ts: bytes as text and back.
 //
 // Every form round-trips every byte value, base64url uses the URL alphabet

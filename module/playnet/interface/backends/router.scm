@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/backends/router.scm — Multi-scope router
 ;;;
 ;;; The *composite* of the backend taxonomy. A ^scope-router presents

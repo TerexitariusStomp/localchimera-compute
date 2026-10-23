@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/swap.scm — automated XMR→BTC swap via Tor
 ;;;
 ;;; Converts Monero to Bitcoin through no-KYC swap services, routed

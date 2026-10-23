@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; food-chain-seed.scm — ONE generic seeder for a food chain: reclaim → store →
 ;;; distribute, as VF records the convex planner solves directly.
 ;;;

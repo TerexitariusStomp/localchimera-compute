@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/beyond/lot.scm — the lot of a resource: its batch code and its expiry.
 ;;;
 ;;; ValueFlows carries `trackingIdentifier` on a resource and defines no class for

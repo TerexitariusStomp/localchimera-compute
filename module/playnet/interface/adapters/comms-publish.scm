@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/comms-publish.scm — the gated publish layer.
 ;;;
 ;;; Transport-agnostic publishing for the comms flow, with two safety rails so

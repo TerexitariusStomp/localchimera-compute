@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; skills/skill-catalogue.scm — the catalogue $\mathcal{K}$, whole.
 ;;;
 ;;; docs/playnet.typ's own theory names this: "the federation's stock of

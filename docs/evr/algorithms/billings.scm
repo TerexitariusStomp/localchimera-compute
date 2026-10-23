@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; billings.scm --- Billings reputation score (EVR arbitration)
 ;;;
 ;;; SPECIFICATION

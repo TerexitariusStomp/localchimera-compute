@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # publish-keri-lib.sh — cut the KERI + OpenVTC library out of core as its own repo.
 #
 # The library lives inside core (module/playnet/keri with its first-person/ profile,

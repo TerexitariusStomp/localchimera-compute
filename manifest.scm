@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; manifest.scm — one-shot dev shell for the playnet repo.
 ;;;
 ;;; Drop into a shell with everything needed to build, run, test, and

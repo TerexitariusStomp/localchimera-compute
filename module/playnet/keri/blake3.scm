@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/blake3.scm — Blake3-256 via FFI to libblake3.so
 ;;;
 ;;; KERI's SAIDs (Self-Addressing Identifiers, CESR code "E") are

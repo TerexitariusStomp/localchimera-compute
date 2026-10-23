@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/sporestack-provider.scm — SporeStack provider adapter
 ;;;
 ;;; Wraps the existing sporestack.scm API client into the provider

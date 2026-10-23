@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-labour-budget.scm — a body has one week.
 ;;;
 ;;; The labour roster holds an entry per (person, skill), each carrying the

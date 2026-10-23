@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-ewma-fold.scm — the arc-time table's pure folds, no solver, no network.
 ;;;
 ;;; ewma-fold: sₙ = α·xₙ + (1−α)·sₙ₋₁ seeded at x₀, per arc key, so the

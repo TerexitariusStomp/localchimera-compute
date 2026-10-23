@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # restore-opencode.sh
 # Run this after each Tails boot to restore OpenCode from Persistent storage.
 # You can add this to ~/.bashrc or call it manually.

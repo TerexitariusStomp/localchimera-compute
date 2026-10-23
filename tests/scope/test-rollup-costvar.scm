@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-rollup-costvar.scm — Standard/actual cost rollup and variance
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/rollup.test.ts

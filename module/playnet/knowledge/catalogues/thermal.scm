@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; knowledge/thermal.scm — a state is a form; holding it is a store recipe that leaks.
 ;;;
 ;;; docs/observation/readings-are-counts.md §1.5 facts 2 and 6: an excess of heat

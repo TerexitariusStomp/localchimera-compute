@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-accept-proposal.scm — proposal → agreement → commitments chain
 ;;;
 ;;; Exercises the fixed accept-proposal actor method:

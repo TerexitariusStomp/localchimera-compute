@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/notify/router.scm — the notification router.
 ;;;
 ;;; Phase 3 of the unified router (docs/notifications/UNIFIED-ROUTER.md).

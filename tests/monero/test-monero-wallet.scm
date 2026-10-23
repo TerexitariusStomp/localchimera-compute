@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/monero/test-monero-wallet.scm — end-to-end wallet actor test
 ;;;
 ;;; Spins up a tiny in-process HTTP server that speaks HTTP Digest auth

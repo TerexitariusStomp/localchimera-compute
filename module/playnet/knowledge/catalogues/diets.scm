@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; diets.scm — what a person will not eat, as a rule the eat recipe reads.
 ;;;
 ;;; A diet is a statement about which (person, food) pairs exist. The nutrient

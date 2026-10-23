@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; economy/debts.scm — the representation of "the commons owes this member back."
 ;;;
 ;;; A purchase's reimbursement: a member fronts their own money for something

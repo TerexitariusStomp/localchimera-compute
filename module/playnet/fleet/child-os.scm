@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/child-os.scm — one host's operating-system, from the one template
 ;;;
 ;;; deploy/fleet-child-os.scm.example is the operating-system of every fleet

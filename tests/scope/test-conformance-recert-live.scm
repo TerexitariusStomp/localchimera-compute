@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-conformance-recert-live.scm — the recert schedule, read off a LIVE plan.
 ;;;
 ;;; The live-wiring of the inspection work (docs/legal/inspection-in-plan.md): a real

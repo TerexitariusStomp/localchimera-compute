@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/signify-portable.scm — Hoot-portable Signify core
 ;;;
 ;;; The pure-Scheme subset of signify.scm: HKDF, bran→keypair derivation,

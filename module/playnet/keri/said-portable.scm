@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/said-portable.scm — Hoot-portable SAID derivation
 ;;;
 ;;; The credential SAID computation, extracted from governance/credentials.scm

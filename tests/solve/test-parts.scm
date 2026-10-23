@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-parts.scm — the one selector, on closed-form terms.
 ;;;
 ;;; What parts.scm claims and this suite holds (voice-in-lean.md, Parts.lean):

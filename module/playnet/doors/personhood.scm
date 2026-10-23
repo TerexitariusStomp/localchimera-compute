@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/personhood.scm — the personhood doors of the governance service: recognition, vouching, the ceremony, the bundle a person carries between gateways
 ;;;
 ;;; A fragment of the governance service (playnet doors governance): a procedure

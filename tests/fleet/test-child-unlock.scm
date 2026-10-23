@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-child-unlock.scm — this box as a fleet host's key-holder
 ;;;
 ;;; What has to hold:

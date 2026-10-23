@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; landing.scm — an act lands once: the books answer a repeat with what already stands.
 ;;;
 ;;; The observer's log is a set keyed by event id: told an event it already holds,

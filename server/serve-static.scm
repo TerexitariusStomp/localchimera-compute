@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; server/serve-static.scm — dev/IIW HTTP server with /oobi/{aid} route
 ;;;
 ;;; Wraps (hoot web-server)'s `serve` so that:

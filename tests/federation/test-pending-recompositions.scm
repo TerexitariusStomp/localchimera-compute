@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/federation/test-pending-recompositions.scm
 ;;;
 ;;; Unit coverage for the pending-recompositions registry. Doesn't

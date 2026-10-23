@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/playnet-iso.scm — bootable Guix System ISO for the confidential-VPS provider.
 ;;;
 ;;; Two modes, chosen at build time by PLAYNET_ISO_MODE:

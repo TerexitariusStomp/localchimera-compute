@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recipe-standing.scm — the response's live adapter, end to end.
 ;;;
 ;;; recipe-response-test pins the pure half — the curve, and what a future

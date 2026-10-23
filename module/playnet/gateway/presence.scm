@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/presence.scm — Presence tracking via OCapN
 ;;;
 ;;; Replaces the relay's *sessions* + *presence* hash tables with a

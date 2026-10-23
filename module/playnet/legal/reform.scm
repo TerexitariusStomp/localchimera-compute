@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; reform.scm — the reform program as the diff of legal / internal / desired specs.
 ;;; @defines reform
 ;;;

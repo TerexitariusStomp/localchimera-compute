@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-stock-ingest.scm — the planner reads the observer's stock by ONE identity.
 ;;;
 ;;; A holding is a lot of a specification, in a stage and a state, somewhere

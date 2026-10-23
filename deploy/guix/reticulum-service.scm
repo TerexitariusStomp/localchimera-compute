@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/reticulum-service.scm — Guix service for Reticulum OCapN bridge
 ;;;
 ;;; Provides a single Shepherd service:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-witness-relay-bundle.scm — a witness from another gateway.
 ;;;
 ;;; Bo asks to be recognised at commune A. Tia is recognised at commune B —

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; containment-cascade-test.scm — consuming a CONTAINER draws down its CONTENTS.
 ;;; A carrot resource holds nutrient resources (nitrogen, carbon) via contained-in.
 ;;; Consuming part of the carrot must consume that fraction of each nutrient, and

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recovery.scm — federation round-trip rebuild from ACDCs
 ;;;
 ;;; Spawn a federation, do meaningful mutations, snapshot the ACDC store,

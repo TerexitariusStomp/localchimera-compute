@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/emit/rest-emit.scm — ui/app/rest-catalogue.ts from the rest catalogue
 ;;;

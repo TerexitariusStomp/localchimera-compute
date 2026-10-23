@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/universal-commune.scm — Universal Commune actor
 ;;;
 ;;; Per docs/rules.md:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/protocol/context.scm — an actor's context: what its fragments share, as one record
 ;;;
 ;;; An actor composed of fragments (the scope, the governance service, the

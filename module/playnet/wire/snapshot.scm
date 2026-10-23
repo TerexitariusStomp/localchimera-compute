@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; wire/snapshot.scm — a scope's snapshot, as the page reads it.
 ;;;
 ;;; The planner answers `scope-snapshot` with alists in its own vocabulary; the

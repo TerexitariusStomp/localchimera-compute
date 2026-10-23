@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-enrollment-ceremony.scm — k-of-n witness co-signature for PHC issuance
 ;;;
 ;;; Covers:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; folksonomy/graph.scm — The classification folksonomy as a weighted DAG.
 ;;;
 ;;; The structural twin of pools/availability-pool.scm. Where the labour

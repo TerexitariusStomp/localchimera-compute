@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; culcus.scm --- Cuculus host-eligibility & NAC opportunity dynamics
 ;;;
 ;;; SPECIFICATION

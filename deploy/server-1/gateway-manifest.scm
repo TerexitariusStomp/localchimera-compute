@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/server-1/gateway-manifest.scm — runtime env for the OCapN gateway
 ;;;
 ;;; Consumed by user-shepherd on server-1 (Debian host, not Guix System).

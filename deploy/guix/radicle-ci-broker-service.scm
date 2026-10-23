@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/radicle-ci-broker-service.scm — Shepherd service for the
 ;;; full-native Radicle CI broker (cib) + native adapter.
 ;;;

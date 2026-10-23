@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recurrence.scm — Recurring schedule matching and occurrence tracking
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/recurrence.test.ts

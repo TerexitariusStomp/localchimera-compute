@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; event-log.scm — a portable, self-certifying log of the observer's events.
 ;;;
 ;;; The observer is event-sourced (observer.scm:<observer-state>.events), but

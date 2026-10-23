@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-compose.scm — effective-skills conformance closure (Stage 5b)
 ;;;
 ;;; Pure function: held ∪ transitive closure of satisfied-by clauses met at

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-live-metabolism.scm — the live planner re-solves on drift, warm-started.
 ;;;
 ;;; "Solved" sets targets; "metabolised" adapts them between solves. A ^live-planner

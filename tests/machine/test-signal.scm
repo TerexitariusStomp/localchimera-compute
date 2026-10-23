@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-signal.scm — the relay kind's rendezvous: the per-claim signal log.
 ;;;
 ;;; Browsers cannot listen; a relay pair negotiates its DataChannel through

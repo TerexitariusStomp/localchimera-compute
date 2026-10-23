@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; dev-plan.scm — the development scope's week, planned and read.
 ;;;
 ;;; The scope's open issues are wants, its people hold the skills and state

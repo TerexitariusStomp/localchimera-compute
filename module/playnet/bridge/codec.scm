@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; codec.scm — Pure JSON ↔ VF record translation for the MQTT bridge
 ;;;
 ;;; Converts between JSON alists (from guile-json's json-string->scm)

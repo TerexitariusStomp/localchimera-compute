@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; process-registry.scm — Goblins actor for shared process lifecycle
 ;;;
 ;;; Translated from src/lib/process-registry.ts

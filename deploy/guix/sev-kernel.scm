@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/sev-kernel.scm — linux-libre with AMD SEV-SNP guest support.
 ;;;
 ;;; WHY: stock guix linux-libre ships `# CONFIG_AMD_MEM_ENCRYPT is not set`,

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/constant-time.scm — timing-safe comparisons
 ;;;
 ;;; Guile's string=? and equal? use early-exit comparison: they return

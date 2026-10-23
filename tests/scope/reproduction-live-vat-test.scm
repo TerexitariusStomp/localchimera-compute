@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; reproduction-live-vat-test.scm — reproduction planning through the REAL live
 ;;; path (plan-scope over a scope-root vat), PER-PERSON and MULTI-PLACE.
 ;;;

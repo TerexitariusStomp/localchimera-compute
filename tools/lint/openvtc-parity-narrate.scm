@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile --no-auto-compile -e main -s
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; openvtc-parity-narrate.scm — tools/lint/openvtc-parity-check.sh, plus a plain-
 ;;; English summary of the flagged commits from our own AI infra.

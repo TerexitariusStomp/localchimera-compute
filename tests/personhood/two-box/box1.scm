@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/personhood/two-box/box1.scm — the WORKER's box.
 ;;;
 ;;; Own process, own PLAYNET_STATE_DIR, own static server. It waits for the

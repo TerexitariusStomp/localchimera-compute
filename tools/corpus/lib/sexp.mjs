@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Minimal s-expression reader.
 //
 // Corpus manifests and domain profiles are written in Scheme so that the

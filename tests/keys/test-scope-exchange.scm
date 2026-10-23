@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-scope-exchange.scm — pure-Scheme IPEX exns signed
 ;;;                                       under scope-owned keys
 ;;;

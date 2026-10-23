@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/delegation.scm — the delegation credential: a franchise handed from one person to another.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

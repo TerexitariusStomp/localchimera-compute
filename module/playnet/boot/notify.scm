@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/notify.scm — every way this commune reaches a person: the alert sink, presence, push, email, the router over them.
 ;;;
 ;;; The scope handler off meeting-scope is what the chat surfaces reach over

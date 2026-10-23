@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recipient-registry.scm — Phase 2 of the unified router: the
 ;;; AID → channels registry that makes the system multi-recipient.
 ;;;

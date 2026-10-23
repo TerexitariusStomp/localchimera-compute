@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/e2e/machine-dispute-flows.scm — every dispute branch, clock-walked.
 ;;;
 ;;; The spec's §5 lifecycle as scenarios, *machine-clock* rebound so the

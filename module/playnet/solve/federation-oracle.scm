@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/federation-oracle.scm — a commune's BOUNDARY ORACLE, and the consensus loop
 ;;; over oracles that answer from anywhere.
 ;;;

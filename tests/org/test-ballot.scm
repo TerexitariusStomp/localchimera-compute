@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-ballot.scm — Liquid democracy ballot mechanism
 ;;;
 ;;; Validates the cross-cutting override semantic: a citizen who casts

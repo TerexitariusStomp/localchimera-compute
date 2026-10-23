@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-lapse-window.scm — the silence rail of the Validation Gate.
 ;;;
 ;;; Directed work vests on the recipient's word, immediately. Diffuse work —

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-cost-share.scm — a cost of a lent thing, read off the records.
 ;;;
 ;;; docs/legal/structure.md §5: the commune may bear a lent thing's running

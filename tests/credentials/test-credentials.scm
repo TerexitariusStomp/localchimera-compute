@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-credentials.scm — ACDC constructors + mandate-spec compile
 
 (use-modules (playnet test harness))

@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/lint/check-bridge-arity.scm — the browser bridge takes as many arguments as the seam declares
 ;;;

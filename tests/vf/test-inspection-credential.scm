@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-inspection-credential.scm — close the credential loop (Slice 4).
 ;;;
 ;;; Slices 1–2 made inspection first-class INSIDE the plan: a labour-priced activity

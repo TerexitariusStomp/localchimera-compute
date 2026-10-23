@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/playnet-keys.scm — operator public keys (not secrets).
 ;;;
 ;;; Single source of truth for SSH pubkeys used across the deploy story:

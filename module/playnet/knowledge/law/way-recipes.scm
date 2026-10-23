@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; way-recipes.scm — what a way trips, read off the recipe that is it.
 ;;;
 ;;; A way of doing an activity (law/activities.scm) names a recipe, and the

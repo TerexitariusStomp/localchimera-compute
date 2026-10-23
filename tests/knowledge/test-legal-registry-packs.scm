@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-registry-packs.scm — "add a jurisdiction = drop a signed file."
 ;;;
 ;;; The engine is jurisdiction-blind; the CONTENT is per-country data. Because a

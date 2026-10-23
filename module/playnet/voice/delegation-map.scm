@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; voice/delegation-map.scm — per-citizen universal delegation with scope overrides
 ;;;                      and optional per-entry instructed mandates
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-closure-combinator.scm — the two table-driven closures, one door.
 ;;;
 ;;; Nutrients (a private good, produce flows) and elements (a shared coefficient

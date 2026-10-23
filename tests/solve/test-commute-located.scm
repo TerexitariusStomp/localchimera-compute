@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-commute-located.scm — commute is real budget-time (faux frais), not a free pass.
 ;;;
 ;;; Commute is the spatial transport of a person's own time: hours that leave home

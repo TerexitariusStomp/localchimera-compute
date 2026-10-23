@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-snapshot-hydration.scm — Full vat snapshot/hydrate persistence round-trip
 ;;;
 ;;; Verifies that all stores survive a complete persist → restore cycle:

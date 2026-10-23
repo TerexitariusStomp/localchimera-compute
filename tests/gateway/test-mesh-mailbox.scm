@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/gateway/test-mesh-mailbox.scm — ^mesh-mailbox: ciphertext custody
 ;;; for mesh deliveries to offline personas (LXMF step 3).
 ;;;

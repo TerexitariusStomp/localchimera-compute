@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/server-1/shepherd-init.scm — user-shepherd service definitions
 ;;;
 ;;; Loaded by the systemd user unit (shepherd.service). Lives in the user

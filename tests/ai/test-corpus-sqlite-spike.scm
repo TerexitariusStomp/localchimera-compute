@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-corpus-sqlite-spike.scm — phase 2 of docs/planning/faces/corpus-guile-native.md:
 ;;; does guile-sqlite3 actually round-trip a BLOB column and run an FTS5
 ;;; MATCH query, against a REAL corpus .db (not a synthetic fixture) —

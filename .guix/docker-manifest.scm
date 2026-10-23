@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; .guix/docker-manifest.scm — manifest for `guix pack --format=docker`
 ;;;
 ;;; Used by Radicle CI to produce a self-contained Docker image tarball

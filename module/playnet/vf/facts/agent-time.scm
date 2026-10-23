@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; agent-time.scm — what a person states of their time, and what the schedule reads.
 ;;;
 ;;; Two tags on the Agent take time out of the offer, each a fact about the body

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-granary-under-uncertainty.scm — the granary the plan sizes itself, from
 ;;; the probabilities, before it knows the weather.
 ;;;

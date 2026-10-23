@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; observation/states.scm — the states the books hold as records.
 ;;;
 ;;; Three shapes of a reading: how much of a commitment is fulfilled, how much

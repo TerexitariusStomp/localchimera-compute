@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-pin-seam.scm — #:pins: accepted commitments as hand-decided columns.
 ;;;
 ;;; docs/planning/solve/commitment-horizon.md: an accept is a col-fixed by a human

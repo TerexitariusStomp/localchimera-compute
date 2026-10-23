@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; reaction-network-test.scm — the unification: a reaction NETWORK is a PLAN.
 ;;; Two balanced reactions become recipe activities; the convex engine solves the
 ;;; FLUX distribution that meets a demand under conservation — flux-balance

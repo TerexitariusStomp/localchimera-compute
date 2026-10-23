@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-resource-flows.scm — Resource flow reports and value equations
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/resource-flows.test.ts

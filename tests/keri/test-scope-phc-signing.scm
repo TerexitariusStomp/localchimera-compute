@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scope-phc-signing.scm — a live scope signs the PHCs it issues
 ;;;
 ;;; In production a ^scope is an autonomous single-controller signer: its AID

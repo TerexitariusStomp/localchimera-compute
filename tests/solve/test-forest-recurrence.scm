@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-forest-recurrence.scm — a FOREST as a regenerating stock (item 4 of the
 ;;; raw→stock migration): the same recurrence as soil, on a second natural resource,
 ;;; retiring another "barriered-free draw" (cf. frag-cascade, where forest is a

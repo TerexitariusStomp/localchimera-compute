@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # radicle-ci-hook.sh — Radicle-native CI/CD for playnet
 #
 # Follows the Guix Cookbook §7.5 pattern: watches Radicle node events,

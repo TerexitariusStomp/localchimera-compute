@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-restoration-recipe.scm — recovery is LABOUR, and the plan schedules it.
 ;;;
 ;;; A bay whose reef is ALREADY past its tip: condition 60 where 100 is the wall.

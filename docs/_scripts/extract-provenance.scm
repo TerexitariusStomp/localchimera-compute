@@ -1,4 +1,5 @@
 #!/usr/bin/env guile
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; extract-provenance.scm — regenerate *provenance-facts* from greppable tags.
 ;;;

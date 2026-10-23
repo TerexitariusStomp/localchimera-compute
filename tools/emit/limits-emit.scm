@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/emit/limits-emit.scm — ui/app/limits-catalogue.ts from the gateway's limits
 ;;;

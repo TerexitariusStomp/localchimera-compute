@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; server/gateway.scm — OCapN gateway for playnet: the entry point.
 ;;;

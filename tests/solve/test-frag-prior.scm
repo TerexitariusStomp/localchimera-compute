@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-prior.scm — the observed baseline: the barrier reads where the WORLD already is.
 ;;;
 ;;; The planner curve is memoryless; the OBSERVER holds the world's current state and feeds it in

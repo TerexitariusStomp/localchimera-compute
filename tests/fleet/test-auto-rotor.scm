@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-auto-rotor.scm — 'auto provider routing through
 ;;; the reconciler
 ;;;

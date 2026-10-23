@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; wire/replies.scm — what the read doors answer, as the page reads it.
 ;;;
 ;;; A door of the planner answers an alist in its own vocabulary; the page reads

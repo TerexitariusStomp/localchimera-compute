@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-observer-boundary.scm — what the ledger admits at its door.
 ;;;
 ;;; The observer's fold is the project's accounting. Three things hold at its

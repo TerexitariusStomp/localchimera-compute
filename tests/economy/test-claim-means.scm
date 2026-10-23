@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/economy/test-claim-means.scm — WHAT A PROCESS USES, NO PERSON CLAIMS.
 ;;;
 ;;; The verb decides the rail. A citizen may ask for "oven~ada" the way she asks

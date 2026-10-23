@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-training-located.scm — skill dynamics through the REAL located engine.
 ;;;
 ;;; Exercises the build-located / solve-located path with a skill that declares

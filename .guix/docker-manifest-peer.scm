@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; .guix/docker-manifest-peer.scm — manifest for the self-updating
 ;;; "peer" Docker image.
 ;;;

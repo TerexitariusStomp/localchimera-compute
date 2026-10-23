@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; rollup.scm — Cost rollup in crystallized SNLT, and substance metabolism.
 ;;;
 ;;; Spec: docs/playnet.typ §"Inter-scope propagation" (the dual ledgers),

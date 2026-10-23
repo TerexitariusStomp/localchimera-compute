@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/keri-backend.scm — keri-backend factories for ^scope
 ;;;
 ;;; The unified ^scope actor accepts an optional `keri-backend` alist. When

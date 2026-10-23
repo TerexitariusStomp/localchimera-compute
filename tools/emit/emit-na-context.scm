@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; emit-na-context.scm — write the North American context packs: the United
 ;;; States, Mexico and Canada.
 ;;;

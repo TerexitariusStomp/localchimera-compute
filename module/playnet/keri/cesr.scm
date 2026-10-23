@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/cesr.scm — CESR qb64 codec helpers
 ;;;
 ;;; CESR (Composable Event Streaming Representation) encodes crypto

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/federation.scm — the federation doors of the governance service: a commune admitted, a scope's self-declarations, credentials issued and revoked
 ;;;
 ;;; A fragment of the governance service (playnet doors governance): a procedure

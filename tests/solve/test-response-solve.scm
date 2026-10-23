@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-response-solve.scm — the plan responds to a recipe's record, in proportion.
 ;;;
 ;;; Two ways to grow grain from one store of seed. `quick` makes half again as

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/personhood/witnessed-work.scm — work vouched for by its peers:
 ;;; the witness, quorum by command, the ceremony over a work event, and the
 ;;; pending inbox a browser reads to decide whether to co-sign.

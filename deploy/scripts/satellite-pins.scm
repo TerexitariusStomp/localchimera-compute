@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; deploy/scripts/satellite-pins.scm — verify and move the satellite pins
 ;;;

@@ -24,6 +24,12 @@ moves down until it reaches 5%.
 
 ## License rules
 
+**First-party code is AGPL-3.0-or-later** (`LICENSE` at the root; per-file
+`SPDX-License-Identifier` markers; `license:agpl3+` in `guix.scm`).
+Third-party files in the tree keep their own licenses — `browser/vendor/`,
+`.hoot-compat/` (LGPL-3.0-or-later), `deploy/typst-packages/`, Hoot's
+`browser/reflect.js` — and are excluded from the SPDX sweep.
+
 Adopted licenses must be free and commercially usable: MIT, Apache-2.0, BSD,
 MPL-2.0, LGPL, GPL, AGPL, EPL, public domain, CAL-1.0 (counsel note below).
 Nothing paid, nothing source-available (no BUSL, SSPL, Elastic).

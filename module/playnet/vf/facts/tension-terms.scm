@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tension-terms.scm — a need's KIND and VOICE, carried as classification terms.
 ;;;
 ;;; A citizen's need enters harmony as one of three tensions (tension-kinds.scm):

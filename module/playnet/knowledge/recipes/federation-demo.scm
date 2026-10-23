@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation-demo.scm — seed a demo commune for the cross-vat federation and
 ;;; the earth-map desire overlay in one shot: a bake recipe (flour+work→bread),
 ;;; a baker, a NESTED spatial tree (federation ⊃ commune ⊃ venue at real coords —

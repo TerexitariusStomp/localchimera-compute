@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/keria-reconnect.scm — Server recovery: reconnect KERIA
 ;;;
 ;;; After a server restart or KERIA reconnect, this module verifies

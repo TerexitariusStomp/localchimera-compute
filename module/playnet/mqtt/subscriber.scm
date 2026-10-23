@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/mqtt/subscriber.scm — shared MQTT subscription loop
 ;;;
 ;;; Extracts the pattern shared by dev-bridge.scm, fleet-bridge.scm,

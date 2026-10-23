@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-async-federation.scm — vow-based cross-vat federation queries
 ;;;
 ;;; Two scope-roots in two separate vats; query global-* aggregates via

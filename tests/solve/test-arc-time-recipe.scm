@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-arc-time-recipe.scm — recipe arcs split by physics under the table.
 ;;;
 ;;; A ride is a transport RECIPE: pickup/dropoff the mover's good, `use` the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-peer.scm — the coordinator-free federated solve across
 ;;; vat boundaries, every message signed.
 ;;;

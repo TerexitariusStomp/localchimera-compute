@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/manifests/keri-lib-manifest.scm — everything the KERI + OpenVTC
 ;;; library needs, and nothing else.
 ;;;

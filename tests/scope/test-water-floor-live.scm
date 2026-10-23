@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-water-floor-live.scm — a body's water floor, met from a form that is water.
 ;;;
 ;;; Water is the molecule (catalogues/substances.scm: every water form carries h2o, one for one),

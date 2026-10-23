@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catalogues/insurance.scm — the INSURANCE reserve, governed: q_r^res = ι_r · q_r^*.
 ;;;
 ;;; playnet.typ §Reproduction labour: a stock's standing level has two parts — the

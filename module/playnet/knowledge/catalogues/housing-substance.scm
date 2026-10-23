@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catalogues/housing-substance.scm — the closure: what a night in THIS dwelling delivers.
 ;;;
 ;;; dwelling.scm's `spec-shelter` answers WHETHER a body is sheltered — one

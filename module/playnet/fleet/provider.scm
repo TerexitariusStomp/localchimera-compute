@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/provider.scm — fleet provider protocol
 ;;;
 ;;; A provider is an alist of 6 closures, one per reconciler coupling

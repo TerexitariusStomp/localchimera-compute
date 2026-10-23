@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/mqtt/publish.scm — shared MQTT publish helper
 ;;;
 ;;; The publish-side sibling to (playnet mqtt subscriber)'s mqtt-subscribe:

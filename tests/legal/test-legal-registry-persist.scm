@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-registry-persist.scm — the ^legal-registry persists to DISK.
 ;;;
 ;;; Because a guard is now a serializable DATA FORM (not a closure), a rule

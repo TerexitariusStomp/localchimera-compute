@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; skill-matcher.scm — Match work flows to agents by skill
 ;;;
 ;;; Pure function (no actor state). Given work RecipeFlows, queries the

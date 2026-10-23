@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/identity/seat.scm — ^signup-agent Goblins actor
 ;;;
 ;;; Handles account registration using KERI AIDs instead of SSH public keys.

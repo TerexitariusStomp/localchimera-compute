@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/ingest.scm — the observer ingest: records become the world's tables.
 ;;;
 ;;; The engine (solve/engine) builds a program from the world (solve/world);

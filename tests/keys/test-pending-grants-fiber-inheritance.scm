@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-pending-grants-fiber-inheritance.scm
 ;;;
 ;;; Verifies the deployment-time uncertainty I flagged: when the

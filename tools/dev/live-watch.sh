@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/live-watch.sh — watch Scheme files and live-reload them.
 #
 # Usage (from project root):

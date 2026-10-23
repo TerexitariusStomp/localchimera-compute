@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 import SolverCertificate.BoxRadius
 import SolverCertificate.DistCurvature
 

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/uc-curator.scm — Universal Commune curator
 ;;;
 ;;; The UC has *derived* membership: its members are exactly the

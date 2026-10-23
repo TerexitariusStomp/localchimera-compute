@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/credentials.scm — the gateway's credential store, the founding commune minting into it, the planner reconciled from it.
 
 (define-module (playnet boot credentials)

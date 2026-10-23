@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-vf-patterns.scm — Core ValueFlows patterns
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/vf-examples.test.ts

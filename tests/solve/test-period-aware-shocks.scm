@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-period-aware-shocks.scm — one recipe, a different weather draw each period.
 ;;;
 ;;; docs/planning/solve/scenario-tree.md flagged a real gap: test-scenario-tree.scm's tree

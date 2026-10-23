@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; event-log-store.scm — the ^event-log-store actor: a scope's portable,
 ;;; self-certifying economic event stream (gap #18).
 ;;;

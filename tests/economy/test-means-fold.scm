@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-means-fold.scm — capacity folds like labour and demand do.
 ;;;
 ;;; The fourth column of the federation fold (fold-node.scm names it in its own

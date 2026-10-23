@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/transport.scm — Transport adapter protocol
 ;;;
 ;;; A transport adapter implements 3 methods:

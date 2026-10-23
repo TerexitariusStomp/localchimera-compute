@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; profile.scm — what to extract from the irrigation and hydrology literature.
 ;;;
 ;;;   node tools/corpus/corpus.mjs probe water --target crop-demand

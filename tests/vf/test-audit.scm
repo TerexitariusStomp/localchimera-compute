@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-audit.scm — the audit arithmetic (planner/facts/audit.scm), pure.
 (use-modules ((playnet utils units) #:select (%count-unit)))
 (use-modules (playnet test harness) (playnet vf schemas) (playnet vf facts audit))

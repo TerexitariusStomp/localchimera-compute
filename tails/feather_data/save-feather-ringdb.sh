@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # save-feather-ringdb.sh
 # Sync Feather's Monero ringdb back to Persistent so it survives reboot.
 # Run periodically or before shutdown.

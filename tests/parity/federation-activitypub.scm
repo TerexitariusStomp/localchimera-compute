@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/federation-activitypub.scm — federation ↔ ActivityPub.
 ;;; The contract: a federated act is a signed activity POST to the
 ;;; actor's outbox. Invariant leg pins the activity shape; live leg

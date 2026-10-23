@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/jurisdiction-at.scm — the place a position stands in.
 ;;;
 ;;; A member's position is a pair of coordinates; the law is written on places.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catalogues/food-sources.scm — where each food's composition is READ from.
 ;;;
 ;;; A food spec's nutrient composition is not authored here: it is read off

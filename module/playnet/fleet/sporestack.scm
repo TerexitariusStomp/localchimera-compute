@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/sporestack.scm — SporeStack API client
 ;;;
 ;;; SporeStack (https://sporestack.com) is a Monero-native VPS reseller

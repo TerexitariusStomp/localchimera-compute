@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/witness-publisher.scm — HTTP push of signed
 ;;; KEL events to remote KERIA-style witness endpoints.
 ;;;

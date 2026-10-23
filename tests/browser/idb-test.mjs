@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/idb-test.mjs — app/idb.ts: the IndexedDB door.
 //
 // Three claims, each the reason the door exists:

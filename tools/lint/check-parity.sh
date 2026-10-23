@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # check-parity — the keep-all-functionality gate (spec/oss-inventory.md).
 #
 # Every Tier-2 module may only shrink AFTER a parity suite proves the OSS

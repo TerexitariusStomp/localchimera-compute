@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal/crossings.scm — the legal "crossings" a recipe can trip.
 ;;;
 ;;; Design: docs/legal/legal-crossings.md. A legal requirement is NOT a

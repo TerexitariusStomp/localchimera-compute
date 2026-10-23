@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/federate.scm — a gateway's commune as a peer of the federated solve.
 ;;;
 ;;; The gateway holds the commune: its planner record (the planner service's

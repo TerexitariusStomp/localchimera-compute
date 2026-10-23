@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/federation/test-universal-commune-kind.scm
 ;;; UC promoted to a first-class 'universal-commune kind.
 

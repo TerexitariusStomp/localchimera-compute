@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; scope.scm — unified governance scope actor
 ;;;
 ;;; A `^scope` is a group AID with members + acdc-store + governance

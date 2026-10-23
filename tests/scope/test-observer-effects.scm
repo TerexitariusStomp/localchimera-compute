@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-observer-effects.scm — Observer action-effect tests
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/observer.test.ts

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-peer-procs.scm — the coordinator-free federated solve across
 ;;; TWO PROCESSES, each commune put on the wire through the gateway's door
 ;;; (federation/federate.scm), joined from credentials, and one of them restarted.

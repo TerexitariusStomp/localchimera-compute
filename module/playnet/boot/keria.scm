@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/keria.scm — the KERIA client tier: the agent, its schemas, the peers, the witness publisher.
 ;;;
 ;;; What the gateway does with a KERIA agent when KERIA_BRAN names one: boot

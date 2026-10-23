@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-demand-fold.scm — declared needs → the demand a solve answers for.
 ;;;
 ;;; The share face writes a standing `need:AID:SPEC` intent; this is the other

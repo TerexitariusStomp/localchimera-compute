@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-containment-place.scm — a thing inside a thing is somewhere.
 ;;;
 ;;; `contained-in` names a container; the container names where it is. So the place

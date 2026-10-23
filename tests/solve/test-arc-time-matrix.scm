@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-arc-time-matrix.scm — the matrix as a first-class source, locked.
 ;;;
 ;;; Matrix-sourced entries are (hours . road-km) pairs; from them the planner

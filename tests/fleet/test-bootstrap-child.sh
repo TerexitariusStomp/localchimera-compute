@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/fleet/test-bootstrap-child.sh — the installer's remote conversation, as a transcript
 #
 # bootstrap-child.sh talks to its target only through ssh and scp. Here both

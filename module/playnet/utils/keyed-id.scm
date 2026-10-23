@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; utils/keyed-id.scm — the id that names WHAT a record is.
 ;;;
 ;;; A commitment's id is built from its terms (a claim: spec, claimant, place,

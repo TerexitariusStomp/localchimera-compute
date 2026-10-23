@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile --no-auto-compile -s
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; lint-parens.scm — every .scm file in the tree parses as Scheme
 ;;;

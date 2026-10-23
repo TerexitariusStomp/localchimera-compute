@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/manifests/ui-manifest.scm — the TypeScript checker/emitter env
 ;;;
 ;;; `ui/` holds TypeScript sources whose emitted JavaScript is committed

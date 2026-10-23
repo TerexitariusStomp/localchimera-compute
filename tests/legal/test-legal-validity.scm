@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-validity.scm — a rule that MATCHES is not always a rule that STANDS.
 ;;;
 ;;; The fold used to filter on one thing: does the guard match? So a rule with a

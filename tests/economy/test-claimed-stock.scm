@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/economy/test-claimed-stock.scm — WHAT A CITIZEN HOLDS ENTERS THE PLAN AS THEIR OWN.
 ;;;
 ;;; A loaf ada claimed sits in the scope's inventory under her accountability.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-emphasis.scm — the spec's law for social desire, on closed-form rows.
 ;;;
 ;;; What the module claims and this suite holds: an owner's masses sum to

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/test/harness.scm — shared test infrastructure
 ;;;
 ;;; Extracts the pattern duplicated across all test files:

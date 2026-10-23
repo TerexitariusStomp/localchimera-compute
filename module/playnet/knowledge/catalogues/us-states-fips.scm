@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catalogues/us-states-fips.scm — GENERATED from browser/data/geo/us-states-10m.json (us-atlas v3).
 ;;; (fips . name) for every state/territory geometry. Do not hand-edit the table;
 ;;; the define-module header below is hand-maintained (no generator script for

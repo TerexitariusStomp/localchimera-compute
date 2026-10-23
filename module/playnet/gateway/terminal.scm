@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/terminal.scm — PTY sessions over OCapN
 ;;;
 ;;; Spawns login shells as provisioned Unix users and bridges

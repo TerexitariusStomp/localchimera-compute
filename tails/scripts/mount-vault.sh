@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # mount-vault.sh
 # Mount the encrypted gocryptfs vault at ~/Persistent/vault
 # Prompts for password on the terminal (respects keyboard layout).

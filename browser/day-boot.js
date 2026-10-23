@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/day-boot.js — boots the app's capability spine (day-boot.wasm)
 //
 // app.html is the shell; this script gives it the vat: gateway CapTP,

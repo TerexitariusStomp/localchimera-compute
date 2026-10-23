@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; chemistry-test.scm — the mole/atom-exact substance layer: molecules by
 ;;; FORMULA, molar mass DERIVED from the periodic table, and reactions that
 ;;; BALANCE by integer atom conservation (not just asserted). This is the leap

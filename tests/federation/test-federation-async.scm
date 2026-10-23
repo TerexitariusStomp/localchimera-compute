@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-async.scm — the federated pull solve with no coordinator
 ;;; and no rounds: peers that message each other, a network that reorders,
 ;;; loses and repeats them, and a federation that has settled when it falls

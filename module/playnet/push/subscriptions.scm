@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/push/subscriptions.scm — whose device a Web Push reaches.
 ;;;
 ;;; The decisions around the transport, as pure functions with no crypto and

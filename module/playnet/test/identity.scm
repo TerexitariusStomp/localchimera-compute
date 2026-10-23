@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/test/identity.scm — a test identity and a lobby to seat it
 ;;;
 ;;; The ~30 lines three lobby tests each spelled out word for word

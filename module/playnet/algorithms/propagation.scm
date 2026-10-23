@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; propagation.scm — Duration conversion, SNLT computation, flow record creation
 ;;;
 ;;; Translated from src/lib/algorithms/propagation.ts

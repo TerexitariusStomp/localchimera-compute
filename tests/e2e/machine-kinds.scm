@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/e2e/machine-kinds.scm — every envelope kind through the doors.
 ;;;
 ;;; The lifecycle suite walks the exec story; this one walks the KINDS:

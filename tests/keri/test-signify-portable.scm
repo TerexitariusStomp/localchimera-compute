@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-signify-portable.scm — verify the portable subset
 ;;; produces output byte-identical to the original.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; person-facts.scm — what a person states about themselves, and where it lives.
 ;;;
 ;;; A citizen belongs to the federation; a scope is a gateway they connect

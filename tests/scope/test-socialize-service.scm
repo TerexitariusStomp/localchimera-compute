@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-socialize-service.scm — the client-signed socialization grant, live on
 ;;; the governance service. The owner lends a means into a commune's use-pool:
 ;;; the browser signs the custody attestation (issuer = OWNER, key never leaves

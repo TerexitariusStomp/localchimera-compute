@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/emit/emit-notice-facts.scm — the figures the notices quote, written into them
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/credit-commons.scm — the mutual-credit rail:
 ;;; Credit Commons cc-node (GPL-3.0) is the adopted ledger for commons
 ;;; credit settlement; this is the wire shape a settled statement becomes

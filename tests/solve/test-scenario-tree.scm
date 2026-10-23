@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scenario-tree.scm — a genuine branch structure, not a single split.
 ;;;
 ;;; docs/planning/solve/scenario-tree.md: `plan-robust-from-records` already stitches

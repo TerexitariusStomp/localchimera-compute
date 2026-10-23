@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/repl.scm — the operator's REPL inside the gateway: the live refs bound in (guile-user), a socket of mode 0600.
 ;;;
 ;;; An operator evaluates in (guile-user) over the REPL socket, where the

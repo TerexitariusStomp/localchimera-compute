@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-observer-corrections.scm — corrections are events, and the fold stays a sum.
 ;;;
 ;;; ValueFlows (concepts/accounting.md, examples/ex-production.md "Correcting

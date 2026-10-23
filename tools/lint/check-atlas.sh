@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/lint/check-atlas.sh — tools/dev/atlas.txt is well formed: every region has a unique name that is a
 # valid file stem, an https OSM extract (.osm.pbf) and, when it has one, an https transit feed. The routing
 # script reads this table and nothing else names a region, so a malformed row would show only in a `fetch`

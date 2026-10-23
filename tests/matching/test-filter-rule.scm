@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-filter-rule.scm — the slot's eligibility rule: the evaluator, the
 ;;; criteria sidecar parser, and the feasibility pre-gate that reads both.
 ;;; Run: guile -L module tests/matching/test-filter-rule.scm

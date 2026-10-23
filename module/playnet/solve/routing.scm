@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solve/routing.scm — the arc-time table: Valhalla travel-time priors ⊕ observed EWMA.
 ;;;
 ;;; Travel time between located places is a FACT with two sources of knowledge:

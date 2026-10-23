@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/formulas/flows.scm — a planned flow, read.
 ;;;
 ;;; What a plan lays down is ValueFlows: an Intent (an open need or an offer) or a

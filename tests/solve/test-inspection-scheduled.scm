@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-inspection-scheduled.scm — inspection as SCHEDULED labour through build-located (Slice 2).
 ;;;
 ;;; Slice 1 (test-inspection-in-plan.scm) proved the convex MECHANISM in solve-native:

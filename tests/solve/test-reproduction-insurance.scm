@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-reproduction-insurance.scm — the two ways a plan can refuse to leave
 ;;; someone short, and what each costs.
 ;;;

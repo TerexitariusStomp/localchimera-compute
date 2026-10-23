@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scope-persistence.scm — full kill+restore round-trip for
 ;;; durable autonomous-signer scopes (vault and Shamir modes).
 ;;;

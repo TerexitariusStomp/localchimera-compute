@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recipe-conservation.scm — the keystone invariant, over the real recipes.
 ;;;
 ;;; `check-conservation` (knowledge/catalogues/substances.scm) is described in its own source

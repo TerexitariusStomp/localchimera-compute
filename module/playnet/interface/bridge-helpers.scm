@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/bridge-helpers.scm — shared chat-bridge plumbing
 ;;;
 ;;; The Telegram and Matrix bridges (and any future chat surface) all

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solve/externality.scm — what an ask displaces in the rest of the plan.
 ;;;
 ;;; One pattern, scope-free: withdraw a demand, re-solve, difference what the

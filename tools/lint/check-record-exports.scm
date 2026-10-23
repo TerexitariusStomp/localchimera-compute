@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tools/lint/check-record-exports.scm — every name a record declaration defines is in its module's export list.
 ;;;
 ;;; `define-vf-record` (utils/records.scm) defines a type, its predicate and one

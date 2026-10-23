@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-nac.scm — Member, review-link, spatial pull unit tests
 ;;;
 ;;; Source: docs/evr/NAC_sepv2.nlogo (`setup`, `decay-links`, `pull-toward-…`)

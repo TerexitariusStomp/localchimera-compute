@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; skills/meeting-skills.scm — the catalogue's entries for a meeting's roles.
 ;;;
 ;;; Migrated out of `knowledge/recipes/meeting.scm`, ids unchanged

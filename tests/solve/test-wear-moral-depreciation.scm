@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-wear-moral-depreciation.scm — depreciation is a BLEND of repair and rebuild.
 ;;;
 ;;; Each use wears the oven, and that wear splits in two: a REPARABLE part, made

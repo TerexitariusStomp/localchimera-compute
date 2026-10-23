@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; door-inventory.scm — the protocol's doors sorted by (object, kind).
 ;;;
 ;;; docs/planning/federation/federation-flow-map.md §7 item 10: every door is one of

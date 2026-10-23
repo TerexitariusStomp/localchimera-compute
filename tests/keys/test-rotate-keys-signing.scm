@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-rotate-keys-signing.scm — a scope's rotate-keys produces a real,
 ;;; signed, chained `rot` event
 ;;;

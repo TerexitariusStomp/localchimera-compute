@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-budget.scm — a CUMULATIVE fragility budget across the horizon (Time coordinate).
 ;;;
 ;;; Slice 2, the "max is a no-op" half of the monotone envelope: a fragility barrier on a spec's

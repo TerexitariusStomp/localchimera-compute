@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # reconfigure-restarts.sh — the followup `guix system reconfigure` never
 # does for you: the restarts, and closing out what it just applied. Run
 # right after `make reconfigure` (or a raw `guix system reconfigure`), on

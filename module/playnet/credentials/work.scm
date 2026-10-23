@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/work.scm — work and what was seen: the work event, the observation event, the contrary observation, a skill, a claim, an external index observation.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

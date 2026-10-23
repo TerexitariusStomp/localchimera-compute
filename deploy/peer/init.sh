@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # deploy/peer/init.sh — entrypoint for the self-updating peer image.
 #
 # Runs as PID 1. Responsible for:

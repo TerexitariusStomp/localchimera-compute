@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/test/planner-suite.sh — the planner's named suites, run under the solve's
 # invariants (PLANNER_INVARIANTS, PLANNER_RAW_LINT) with the raw lint read.
 #

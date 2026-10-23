@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-limit-roster.scm — the form each ecological limit is carried in, against
 ;;; the form its reversibility implies.
 ;;;

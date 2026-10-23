@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-witnesses.scm — witness selection + OOBI sharing tests
 ;;;
 ;;; Exercises (playnet keri witnesses):

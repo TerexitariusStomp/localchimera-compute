@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-restore-symmetry.scm — a fragility feels RESTORE as well as DRAW.
 ;;;
 ;;; A limit that only ever counts what is taken is a ratchet: the plan can spend

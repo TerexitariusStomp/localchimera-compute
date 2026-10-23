@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/doors-opa.scm — domain-door authz ↔ OPA parity.
 ;;; The contract: a door's "may this citizen act" is a policy decision —
 ;;; POST /v1/data/<policy> {input}. Invariant leg pins the request wire;

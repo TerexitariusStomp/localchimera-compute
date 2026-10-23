@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-seed.scm — a federation's inventories are seeded as resources.
 ;;;
 ;;; seed-federation-inventory named `generate-id` without importing it, so seeding any

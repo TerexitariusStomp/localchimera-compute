@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; playnet/matching/filter-rule.scm — the slot's ELIGIBILITY rule,
 ;;; and the criteria sidecar it rides in on the wire.
 ;;;

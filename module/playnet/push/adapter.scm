@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/push/adapter.scm — Web Push transport adapter
 ;;;
 ;;; Implements the ^output-sink transport interface for delivering

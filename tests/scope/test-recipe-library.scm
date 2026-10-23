@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recipe-library.scm — the recipe-library actor serves recipes to the planner
 ;;;
 ;;; Seeds an in-memory recipe library with the bread chain, then uses it AS the

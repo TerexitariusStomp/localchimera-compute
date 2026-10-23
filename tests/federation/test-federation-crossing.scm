@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-crossing.scm — a good several scopes supply and several draw:
 ;;; ONE pull for it, settled between its participants with no coordinator.
 ;;;

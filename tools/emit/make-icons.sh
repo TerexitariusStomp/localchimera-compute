@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # make-icons.sh — the raster icons, drawn from the two SVG sources.
 #
 #   icon.svg           the mark on its rounded ground   → icon-192, icon-512

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/endorsement.scm — Capability-governed endorsement primitives
 ;;; Pure library. Hoot-compatible. Uses Goblins sealers.
 ;;;

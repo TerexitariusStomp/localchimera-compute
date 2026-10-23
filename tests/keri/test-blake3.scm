@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-blake3.scm — Blake3 FFI vectors
 ;;;
 ;;; Vectors taken directly from the BLAKE3 reference test suite at

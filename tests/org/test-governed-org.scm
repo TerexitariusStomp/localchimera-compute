@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-governed-org.scm — tests for make-governed-org
 ;;; Run with: guile -L module tests/test-governed-org.scm
 

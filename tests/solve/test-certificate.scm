@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-certificate.scm — a plan and its proof are one object.
 ;;;
 ;;; Spec: docs/playnet.typ §7.11 ("it carries its own certificate: the duality

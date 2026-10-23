@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-container.scm — a possibility-tension on a CONTAINER, via contained-in.
 ;;;
 ;;; Ecological agents are containers: the Amazon contains its trees. A `tree` EconomicResource whose

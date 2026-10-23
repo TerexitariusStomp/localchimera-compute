@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/http.scm — the doors over HTTP, signed by a device key
 ;;;
 ;;; POST /api/<object>/<name> with a JSON object body keyed by the door's

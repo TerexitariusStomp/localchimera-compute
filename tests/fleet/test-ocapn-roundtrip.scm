@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-ocapn-roundtrip.scm — OCapN sturdyref round-trip
 ;;;
 ;;; Mirrors how fleet-bridge talks to ^fleet-reconciler in production:

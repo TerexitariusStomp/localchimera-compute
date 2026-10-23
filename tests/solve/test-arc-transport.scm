@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-arc-transport.scm — pickup/dropoff transport recipes tile over ARCS.
 ;;;
 ;;; A transport recipe `pickup`s a good at the origin and `dropoff`s the SAME good at

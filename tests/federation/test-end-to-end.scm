@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-end-to-end.scm — full-stack smoke driving every hardening layer
 ;;;
 ;;; A single-scenario test that exercises the protocol from genesis

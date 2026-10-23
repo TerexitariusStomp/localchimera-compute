@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/ai/bridge.scm — Server-side AI bridge for gplay
 ;;;
 ;;; Wires the gplay (ai …) and (ai-eval …) special forms to a real LLM.

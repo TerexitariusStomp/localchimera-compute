@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; skills/skill-shorthand.scm — a skill's resource specification, spelled once.
 ;;;
 ;;; playnet.typ's own catalogue of skills, $\mathcal{K}$ (§Labour, skills,

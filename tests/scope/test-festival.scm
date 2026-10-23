@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-festival.scm — real-time planning of a growing nomadic festival with
 ;;; free food distribution for thousands.
 ;;;

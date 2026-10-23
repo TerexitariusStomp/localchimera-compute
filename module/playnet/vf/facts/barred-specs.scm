@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/facts/barred-specs.scm — specs no individual may ever hold a claim of.
 ;;;
 ;;; Most of what a citizen may claim is bread, a ride, a repair — things

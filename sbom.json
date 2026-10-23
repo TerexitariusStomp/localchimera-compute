@@ -6,7 +6,7 @@
     "component": {
       "type": "application",
       "name": "playnet-compute",
-      "licenses": [{ "license": { "id": "AGPL-3.0" } }]
+      "licenses": [{ "expression": "AGPL-3.0-or-later" }]
     }
   },
   "components": [

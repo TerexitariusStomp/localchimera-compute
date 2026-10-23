@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; buffer-zones.scm — Goblins actor for DDMRP buffer zone management
 ;;; @defines buffer-zones
 ;;; @builds buffer-zones capacity-buffers

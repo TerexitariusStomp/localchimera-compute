@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/platforms.scm — every platform as a config row.
 ;;;
 ;;; The whole point of the generic substrate (bearer-endpoint + simple-publisher +

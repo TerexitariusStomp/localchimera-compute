@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; algorithms-foundation.scm — Tests for Layer 2 foundation algorithms
 ;;;
 ;;; Tests: propagation (SNLT, duration), SNE, DDMRP (ADU, DLT, NFP, zones),

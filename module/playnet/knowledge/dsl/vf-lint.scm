@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/knowledge/dsl/vf-lint.scm — is this ValueFlows well formed?
 ;;;
 ;;; The planner reads recipes, events and needs as ValueFlows records, and the

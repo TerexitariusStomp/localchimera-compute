@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; economy/socialization.scm — Temporary socialization of private property
 ;;;
 ;;; An owner may TEMPORARILY place a privately-held resource into a commune's

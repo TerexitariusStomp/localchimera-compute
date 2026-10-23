@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-property-enact.scm — a plan enacted against the books conserves every good.
 ;;;
 ;;; Ten seeded worlds (two or three places, a chain of three recipes that make one or

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf-conformance-verbs-test.scm — the sets of actions, held to the vocabulary.
 ;;;
 ;;; `(playnet vf formulas actions)` answers the questions code asks of the action

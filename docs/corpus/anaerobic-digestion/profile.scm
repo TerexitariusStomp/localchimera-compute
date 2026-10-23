@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; profile.scm — what to extract from the anaerobic-digestion literature.
 ;;;
 ;;;   node tools/corpus/corpus.mjs probe anaerobic-digestion --target yield

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/scope-graph.scm — in-memory scope topology
 ;;;
 ;;; A `^scope-graph` is the gateway-wide view of "which scopes exist,

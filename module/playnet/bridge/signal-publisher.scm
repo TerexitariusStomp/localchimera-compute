@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; signal-publisher.scm — Publish planning signals to MQTT
 ;;;
 ;;; Takes signal alists (from signals.scm) and publishes them as JSON

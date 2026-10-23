@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-comms-fragility.scm — channel concentration is measurably more fragile.
 ;;;
 ;;; Proves the tag→barrier bridge (comms/fragility.scm): a campaign that reaches

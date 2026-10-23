@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/handler-bridge-test.mjs — the seam between the spine's handler
 // registry and the page's promise bridges is a CHECKED CLAIM, not a hand-kept
 // mirror.

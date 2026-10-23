@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # install-to-disk.sh — one-shot installer for the playnet ISO (Path B).
 #
 # Runs inside the live system booted from deploy/playnet-iso.scm.

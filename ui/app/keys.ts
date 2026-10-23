@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/keys.ts — every localStorage key the app uses, named once.
 //
 // A key is a promise to the person's own past: what was written under it last

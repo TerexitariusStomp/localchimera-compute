@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-auditor.scm — ^federation-auditor + ^custody-half-life-watcher
 
 (use-modules ((playnet utils units) #:select (%count-unit)))

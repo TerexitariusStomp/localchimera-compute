@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation-recipes.scm — Bootstrap recipe data for federation demos
 ;;;
 ;;; Provides seed functions to populate a RecipeStore with standard

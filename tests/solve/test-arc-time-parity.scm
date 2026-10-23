@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-arc-time-parity.scm — STRICT PARITY of the arc-hours rewrite.
 ;;;
 ;;; The arc-time table must be invisible when empty: every rewritten call site

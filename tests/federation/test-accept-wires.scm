@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-accept-wires.scm — the three accept wires around the #:pins seam.
 ;;;
 ;;; docs/planning/solve/commitment-horizon.md, "the two accept wires":

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/federation/test-ratification-delivery.scm
 ;;;
 ;;; D1+D2 minimal: when ratify-recomposition! runs, it should deliver

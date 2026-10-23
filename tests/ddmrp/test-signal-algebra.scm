@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-signal-algebra.scm — Signal algebra: emit, query, round-trip
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/signal-algebra.test.ts

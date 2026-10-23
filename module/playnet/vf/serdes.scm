@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; serdes.scm — Generic record serialization for VF schemas
 ;;;
 ;;; Replaces the per-type `<thing>->list` / `list-><thing>` boilerplate

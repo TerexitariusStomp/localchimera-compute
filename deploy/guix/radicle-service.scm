@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/radicle-service.scm — Guix service for Radicle seed node
 ;;;
 ;;; Provides two Shepherd services:

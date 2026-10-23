@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-climb.scm — the arc's climb lengthens the road for what is spent over distance.
 ;;;
 ;;; A place states its altitude (SpatialThing alt); an arc a→b rises what b stands

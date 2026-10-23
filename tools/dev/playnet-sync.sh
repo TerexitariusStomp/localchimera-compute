@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # playnet-sync — push this delegate's Radicle repo state to the canonical
 # seed(s) over Tor. Generic: reads the seed list from deploy/radicle-seeds.txt,
 # so it works for ANY delegate on ANY machine (no hardcoded host, no flashdrive).

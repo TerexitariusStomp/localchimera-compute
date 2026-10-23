@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # check-ui-fresh.sh — the committed JavaScript matches the TypeScript it came from.
 #
 # ui/ compiles into browser/ and the OUTPUT IS COMMITTED, the way repl.wasm and

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/radicle-httpd-service.scm — Guix package + Shepherd service
 ;;; for radicle-httpd, the Radicle HTTP daemon.
 ;;;

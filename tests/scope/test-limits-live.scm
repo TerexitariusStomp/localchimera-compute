@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-limits-live.scm — a planetary limit carried as a stock, on a LIVE scope.
 ;;;
 ;;; The migration proved as records (limit-migration-test) now runs through the

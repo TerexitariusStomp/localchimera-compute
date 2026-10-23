@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-ownership-attestation.scm — title as a credential, live on the
 ;;; governance service: the rights-side twin of the socialize legs.
 ;;;

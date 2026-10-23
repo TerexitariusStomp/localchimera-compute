@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/did.scm — did:keri ↔ AID conversion
 ;;;
 ;;; Tiny helpers for surfacing KERI AIDs as W3C `did:keri` method

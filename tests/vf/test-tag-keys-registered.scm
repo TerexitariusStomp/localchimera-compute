@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-tag-keys-registered.scm — every "key:value" tag the planner reads has one reader.
 ;;;
 ;;; A classification tag is read through facts/agent-tags (tag-value, tag-values,

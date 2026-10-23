@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/context-pack.scm — a CONTEXT is one file: where a place is, and what the law
 ;;; asks there.
 ;;;

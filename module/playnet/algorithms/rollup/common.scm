@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; rollup/common.scm — shared scaffolding for the ALTERNATIVE cost-rollup
 ;;; variants (relative-snlt.scm, marginal-dual.scm).
 ;;;

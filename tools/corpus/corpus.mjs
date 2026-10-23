@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // corpus — a generic textbook -> retrieval -> knowledge-extraction pipeline.
 //
 // The pipeline is domain-agnostic. A domain is a directory under docs/corpus/

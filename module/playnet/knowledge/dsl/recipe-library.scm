@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; knowledge/recipe-library.scm — an in-memory library of VF recipes.
 ;;;
 ;;; A small Goblins actor that holds recipe definitions and serves them through

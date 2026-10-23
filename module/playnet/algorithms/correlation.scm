@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; correlation.scm — Pearson correlation over (timestamp . value) pair streams
 ;;;
 ;;; Pure-function leaf. A <covariance-view> holds two stream procedures

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-solve-settings-reach-every-path.scm — a setting the solve is given is set
 ;;; for the solve, whichever assembly runs it.
 ;;;

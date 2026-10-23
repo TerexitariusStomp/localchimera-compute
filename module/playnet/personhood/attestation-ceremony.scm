@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; personhood/attestation-ceremony.scm — the k-of-n vouching ritual, once.
 ;;;
 ;;; Enrollment (a PHC needs k humans who met the candidate) and witnessed work

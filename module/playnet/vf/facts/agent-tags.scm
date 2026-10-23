@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; agent-tags.scm — the "key:value" tags an agent carries.
 ;;;
 ;;; A person's profile reaches the planner as typed tags on their Agent record

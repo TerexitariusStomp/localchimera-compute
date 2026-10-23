@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solve/periods.scm — what a period is in wall-clock time, as a scope states it.
 ;;;
 ;;; The lattice period is an integer. A scope gives it a place on the clock (a

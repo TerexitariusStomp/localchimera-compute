@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/site.scm — where this gateway keeps its state, and what its environment says.
 ;;;
 ;;; The one reading of the environment the boot shares: a path under the data

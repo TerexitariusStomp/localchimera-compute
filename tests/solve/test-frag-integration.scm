@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-integration.scm — all the fragility mechanisms in one solve, plus edge cases.
 ;;;
 ;;; Closes gap 7: nothing exercised the mechanisms TOGETHER, or the edges.

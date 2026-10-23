@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-observation-evidence.scm — the picture a photo read was made from rides
 ;;; the observation credential as a claim of its own.
 ;;;

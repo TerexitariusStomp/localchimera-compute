@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/lint/protocol-extract.scm — the door heads of the three protocol objects
 ;;;

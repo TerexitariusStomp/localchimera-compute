@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; flat-key.scm — a flat's key, the door it opens, and the shift behind it.
 ;;;
 ;;; A flat is entered through its door, and the door opens to its key. So work

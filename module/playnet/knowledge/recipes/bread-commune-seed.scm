@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; bread-commune-seed.scm — the bread town, as a <world>.
 ;;;
 ;;; The grow→mill→bake chain in one town is the economy the live suites share

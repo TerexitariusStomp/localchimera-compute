@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/rotate-vault-key-lifecycle.sh — end-to-end PLAYNET_VAULT_KEY rotation
 #
 # Glues together the three pieces that have to move together:

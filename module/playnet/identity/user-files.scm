@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/identity/user-files.scm — the per-AID files a gateway keeps
 ;;;
 ;;; A member's own things, synced from their device and held in custody here:

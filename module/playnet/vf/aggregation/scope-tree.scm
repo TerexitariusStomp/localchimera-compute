@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/aggregation/scope-tree.scm — the shared skeleton of a scope-tree aggregator.
 ;;;
 ;;; ^labour-pool and ^folksonomy are the SAME actor pattern: each holds an

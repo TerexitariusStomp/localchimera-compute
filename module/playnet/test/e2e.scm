@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/test/e2e.scm — helpers for scenario-level tests.
 ;;;
 ;;; Unit suites check one act; an e2e suite walks a whole story through the

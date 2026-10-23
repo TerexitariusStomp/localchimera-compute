@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scope-brand.scm — scope brand rejects non-^scope refs
 ;;;
 ;;; merge-with and admit-commune accept a counterparty ref. Without a brand

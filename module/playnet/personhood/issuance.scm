@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/personhood/issuance.scm — the personhood methods of a scope: PHC issuance and revocation, the issuer blessing, invitations, vouches, enrollment, the trust triangle.
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

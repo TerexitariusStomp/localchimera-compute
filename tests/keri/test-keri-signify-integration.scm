@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-signify-integration.scm — full Signify pipeline mock test
 ;;;
 ;;; Drives the bridge through (keri-boot! → keri-create-aid) against an

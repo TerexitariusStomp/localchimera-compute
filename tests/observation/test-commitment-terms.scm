@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-commitment-terms.scm — the observer holds a commitment's terms; no caller reads them out of its id.
 ;;;
 ;;; A claim commitment's id spells the claim (claim|spec|claimant|place|when), and

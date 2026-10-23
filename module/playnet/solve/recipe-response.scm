@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solve/recipe-response.scm — a recipe's response, read off its runs.
 ;;;
 ;;; docs/planning/solve/recipe-metabolism-barbell.md, "The mechanism". Under common

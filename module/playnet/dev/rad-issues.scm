@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; rad-issues.scm — the repository's Radicle issues, read through `rad`.
 ;;;
 ;;; The I/O half of the development loop's reading: shell out to `rad cob`,

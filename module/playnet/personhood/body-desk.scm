@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/personhood/body-desk.scm — the desk where a body's inception
 ;;; waits for its stewards' signatures.
 ;;;

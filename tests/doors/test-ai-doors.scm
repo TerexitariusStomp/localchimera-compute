@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-ai-doors.scm — the AI the commons pays for is asked from a seat
 ;;;
 ;;; What this pins:

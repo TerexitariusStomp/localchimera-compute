@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bioregion-boundary-wire.scm — the ecoregion polygon flows from the ONTOLOGY
 ;;; to the wire, "live all the way". Single source browser/data/geo/boundaries.json →
 ;;; set-spatial-boundary! → the shed's SpatialThing.boundary (schemas.scm) →

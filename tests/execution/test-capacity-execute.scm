@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-capacity-execute.scm — Tests for capacity-managed execution primitives
 ;;;
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/manifests/keri-test-manifest.scm — real-KERIA integration test env
 ;;;
 ;;; Brings up the Python stack needed to run `keria start` and `kli witness

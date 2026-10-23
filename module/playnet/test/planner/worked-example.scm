@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/test/planner/worked-example.scm — the bread chain, and the fixtures built on it.
 ;;;
 ;;; A three-stage chain (grow → mill → bake) with two rival mills: a cassava mill

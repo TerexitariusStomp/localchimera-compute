@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/bootstrap.scm — governance bootstrap ceremony
 ;;;
 ;;; State-machine actor that walks through the founding ceremony:

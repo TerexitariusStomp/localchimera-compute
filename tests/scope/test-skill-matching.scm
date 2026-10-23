@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-matching.scm — who may do a piece of work, and what "may" means.
 ;;;
 ;;; Two questions live at two levels, and conflating them is easy:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; voice/voice-signer.scm — per-person signing capability for ballots and expressions
 ;;;
 ;;; A ^voice-signer binds a KERI AID to a signing function. The signing

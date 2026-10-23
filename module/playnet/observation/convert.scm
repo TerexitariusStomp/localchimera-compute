@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; observation/convert.scm — the physics of a reading: what a condition's number is in extensive terms.
 ;;;
 ;;; A reading lands on the books as the form it names (doors/count-door.scm

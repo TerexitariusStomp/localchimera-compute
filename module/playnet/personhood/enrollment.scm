@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; enrollment-ceremony.scm — k-of-n witness co-signature for PHC issuance
 ;;;
 ;;; The First-Person Project's intent **I2** ("one credential per real

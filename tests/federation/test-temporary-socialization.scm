@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-temporary-socialization.scm — a person temporarily socializes a personal
 ;;; resource into a commune's use-pool: custody moves, rights stay, the grant is
 ;;; window-bounded, and it reverts on lapse or owner recall. NOT a sale.

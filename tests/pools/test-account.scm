@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-account.scm — Commune labor-credit accounting (universal model)
 ;;;
 ;;; Verifies:

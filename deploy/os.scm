@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/os.scm — operating-system value, source of truth
 ;;;
 ;;; The entire operating-system declaration + every helper it needs

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal/registry.scm — guarded DEMANDS folded over an activity context.
 ;;;
 ;;; Design: docs/legal/legal-crossings.md. The elegant general core: a legal

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-ai-async-controller.scm — the browser's exact AI path, proven server-side.
 ;;;
 ;;; The browser calls ($ controller 'evaluate-to-sink expr sink), where (ai …)

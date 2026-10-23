@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/voting.scm — a voice recorded: stance, expression stance, ballot snapshot, tally result, recomposition ratification.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

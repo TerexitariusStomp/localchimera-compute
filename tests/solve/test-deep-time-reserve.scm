@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-deep-time-reserve.scm — the granary banked across a SEQUENCE of seasons.
 ;;;
 ;;; The fuller antifragility the paper called "the next section" — and it needs NO

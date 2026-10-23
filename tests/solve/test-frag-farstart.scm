@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-farstart.scm — the interior-point core recovers from a far warm start (no divergence).
 ;;;
 ;;; REGRESSION GUARD for the fraction-to-the-boundary fix. A warm start far past a barrier (bar OR

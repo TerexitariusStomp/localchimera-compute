@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-stage-effect.scm — a resource's stage is the specification of the process that made it.
 ;;;
 ;;; ValueFlows (concepts/actions.md, stageEffect): "if the process which the event is

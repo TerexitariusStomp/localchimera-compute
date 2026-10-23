@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; matching/temporal-index.scm — Time-bucketed index over intent-bindings.
 ;;;
 ;;; Three buckets: one-time (by YYYY-MM), recurring (by pattern),

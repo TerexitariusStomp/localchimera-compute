@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/challenge.scm — the storage challenge: prove you
 ;;; still hold the bytes.
 ;;;

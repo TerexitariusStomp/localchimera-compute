@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-boundary-conservation-law.scm — the boundary pull is the dual of the
 ;;; fold; primal feasibility at convergence IS the conservation law.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; nac.scm --- Network of Apprenticeship & Craft (NAC) agent/world layer
 ;;;
 ;;; SPECIFICATION

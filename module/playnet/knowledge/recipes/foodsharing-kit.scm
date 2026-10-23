@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; foodsharing-kit.scm — the two halves of foodsharing's entry cost, modelled as
 ;;; what they actually are: a COMPETENCE that has to be taught, and MEANS that can
 ;;; be held in common.

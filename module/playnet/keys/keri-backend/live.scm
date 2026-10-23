@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/keri-backend/live.scm — live KERIA backend
 ;;;
 ;;; Wraps the real KERIA bridge: every call hits the agent (libsodium +

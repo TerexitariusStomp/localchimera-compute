@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; compliance.scm — the SUPPLY side of the legal layer: what we HOLD, folded
 ;;; over the VF event log, reconciled against what the state DEMANDS.
 ;;; @defines compliance

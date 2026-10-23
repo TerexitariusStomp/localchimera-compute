@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-space-time-scenario.scm — Scenario operations
 ;;;
 ;;; Tests scenario and scenario-definition CRUD, inline scoring of

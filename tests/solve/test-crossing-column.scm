@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-crossing-column.scm — one column for a good that crosses either way.
 ;;;
 ;;; A scope's crossing column is its draw on the good, measured from G, the

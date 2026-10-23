@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/lint/warm-ccache.scm — compile every module of the tree into the cache the emits load from.
 ;;;

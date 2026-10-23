@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/governance.scm — the governance service: the gateway's one
 ;;; handle on voice, personhood, delegation, contests, the economy's doors and the
 ;;; federation's, composed from six fragments.

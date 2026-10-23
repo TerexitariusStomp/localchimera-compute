@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-discrete-records.scm — the discrete layer, reached through the records.
 ;;;
 ;;; §7 (planner.scm) searches minimum-batch and whole-count columns with a

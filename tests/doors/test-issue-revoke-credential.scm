@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-issue-revoke-credential.scm — the two doors wired to the live governor gate
 ;;;
 ;;; issue-credential/revoke-credential on ^lobby-session used to answer only the

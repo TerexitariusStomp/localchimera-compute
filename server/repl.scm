@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; playnet-repl.scm — Two-tier REPL entry point for playnet
 ;;; Run with:  guile playnet-repl.scm
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/sturdyref-credential.scm — the federation's word on the wire, read.
 ;;;
 ;;; A federation admits a commune with a `playnet-federation-sturdyref/v1`

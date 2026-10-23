@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-resource-conformance.scm — substitutability is GENERIC across skills and
 ;;; means.  A means supplies the CONFORMANCE CLOSURE of its spec, capped by one
 ;;; shared budget — the exact worker-bundle mechanism, minus the labour-only EMP

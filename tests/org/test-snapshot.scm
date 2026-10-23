@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-snapshot.scm — build-voice-snapshot unit tests
 ;;;
 ;;; Mocks a minimal scope-root + account-store so we can verify

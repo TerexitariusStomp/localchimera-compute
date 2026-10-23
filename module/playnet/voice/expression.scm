@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; voice/expression.scm — labor-weighted distribution over any per-scope per-domain question
 ;;;
 ;;; Generalizes the original ^plan-expression: citizens distribute their

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-arc-time-injection.scm — a populated arc-time table steers the QP.
 ;;;
 ;;; Inject a synthetic network time H for the commute arc A→B (≠ τ·km) and

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/identity/test-signup-with-icp.scm — browser-resident-Signify flow.
 ;;;
 ;;; Simulates the full Phase B path with no real browser:

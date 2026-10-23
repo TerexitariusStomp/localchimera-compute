@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; compute/specs.scm — compute as a resource the catalogue can name.
 ;;;
 ;;; WHAT THE FILE HOLDS. The `compute` ResourceSpecification family: the

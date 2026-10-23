@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-option-premium.scm — Pricing VF Plans as options
 ;;;
 ;;; Exercises the four functions in algorithms/option-premium.scm:

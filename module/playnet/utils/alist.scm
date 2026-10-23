@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/alist.scm — generic alist helpers
 ;;;
 ;;; Extracted from the (now-deprecated) DDMRP module, where they lived

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-child-os.scm — one host's operating-system, from the one template
 ;;;
 ;;; What has to hold:

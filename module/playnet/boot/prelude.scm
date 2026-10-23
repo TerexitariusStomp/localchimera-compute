@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/prelude.scm — the operator REPL's prelude: the planner and governance surface, bound unqualified.
 ;;;
 ;;; An operator evaluates in (guile-user) over the gateway's REPL socket

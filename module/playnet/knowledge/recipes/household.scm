@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; household.scm — the daily work of keeping a dwelling and its people livable,
 ;;; as recipes.
 ;;;

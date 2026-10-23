@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/identity.scm — the key logs this gateway holds: the oobi-host, who resolves a key, and the mirror every durable scope publishes through.
 
 (define-module (playnet boot identity)

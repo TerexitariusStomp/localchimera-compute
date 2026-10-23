@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-horizon-read.scm — the solve's own horizon read, and the escalation
 ;;; door that reads it: which processes defend a floor, each branch's chain
 ;;; reshaping, and an unbound floor named — never silently.

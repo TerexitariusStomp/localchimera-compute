@@ -163,8 +163,12 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
 
 ## Appendix B — open questions, answered where the code already answered them
 
-1. Code license for playnet itself (proposal lands AGPL-3.0 with PR-0).
-   OPEN — a legal decision, not a code one.
+1. Code license for playnet itself — DECIDED: AGPL-3.0-or-later. The full
+   text is `LICENSE` at the repository root; first-party source files carry
+   `SPDX-License-Identifier: AGPL-3.0-or-later`; `guix.scm` declares
+   `license:agpl3+`; vendored and emitted third-party files keep their own
+   licenses (`browser/vendor/`, `.hoot-compat/`, `deploy/typst-packages/`,
+   `browser/reflect.js`) per `spec/oss-inventory.md`.
 2. JS inference inside a browser worker, or must compute be hoot-compiled
    Scheme? — DECIDED, shipped: the job payload is JS or wasm inside a
    sandboxed Worker (`browser/app/machine-executor.js`); the accountability

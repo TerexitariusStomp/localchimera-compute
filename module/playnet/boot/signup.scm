@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/signup.scm — the signup vat: the agent that witnesses a key log, and the terminal.
 
 (define-module (playnet boot signup)

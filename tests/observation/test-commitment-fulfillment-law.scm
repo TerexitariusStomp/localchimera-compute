@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-commitment-fulfillment-law.scm — the time-axis unfold's law.
 ;;;
 ;;; The square (labour-fold.scm header holds the other side):

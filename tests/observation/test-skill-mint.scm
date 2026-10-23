@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-mint.scm — mint-on-first-work hook (Stage 4)
 ;;;
 ;;; The observer on-event callback (make-credentialing-on-event) issues a

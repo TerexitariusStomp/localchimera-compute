@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/evidence.scm — a counter's picture, held for a contest
 ;;;
 ;;; A photo read keeps its picture on the counter's device and names it on the

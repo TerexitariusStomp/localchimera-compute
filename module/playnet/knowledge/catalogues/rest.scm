@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catalogues/rest.scm — the time floor of the right to rest: SNIRT.
 ;;;
 ;;; catalogues/housing.scm states the CONDITIONS of rest (the place a body rests

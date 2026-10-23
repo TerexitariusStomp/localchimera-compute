@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; currency.scm — national currencies and internationally recognized stores
 ;;; of value (gold, silver), as ordinary substitutable medium-of-exchange
 ;;; ResourceSpecifications.

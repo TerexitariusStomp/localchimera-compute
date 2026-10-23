@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-sporestack-client.scm — SporeStack client unit tests
 ;;;
 ;;; Mocks the subset of the SporeStack API that the fleet reconciler

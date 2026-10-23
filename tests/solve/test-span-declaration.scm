@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-span-declaration.scm — span is governed, location is fact.
 ;;;
 ;;; docs/planning/federation/patchwork-scopes-containment.md §2.3: where a means sits is

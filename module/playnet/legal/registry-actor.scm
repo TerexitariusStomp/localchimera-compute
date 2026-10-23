@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal-registry-actor.scm — the legal rule registry as a governance actor,
 ;;; the SIBLING of tension-registry.scm (legal-crossings.md §7, §11).
 ;;;

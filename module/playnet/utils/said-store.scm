@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; said-store.scm — a content-addressed-by-SAID disk store.
 ;;;
 ;;; The shared body beneath three append-only KERI stores that had each grown

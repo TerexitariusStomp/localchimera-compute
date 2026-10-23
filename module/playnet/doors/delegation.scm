@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/delegation.scm — the delegation doors of the governance service: a citizen's map, liquid and mandated, signed by the citizen
 ;;;
 ;;; A fragment of the governance service (playnet doors governance): a procedure

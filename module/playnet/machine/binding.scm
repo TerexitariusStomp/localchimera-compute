@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/binding.scm — the AccountLink ceremony (spec §1).
 ;;;
 ;;; An AccountLink says three things: WHO the machine-side signer is (a

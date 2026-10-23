@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials.scm — the First Person / OpenVTC credentials as KERI ACDCs
 ;;;
 ;;; OpenVTC (github.com/OpenVTC/openvtc, Rust, DID/VC-based) defines the

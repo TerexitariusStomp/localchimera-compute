@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module-layout.scm — where each directory of module/playnet/ stands, as data.
 ;;;
 ;;; Read by tools/lint/module-map.scm; the reasoning is docs/planning/

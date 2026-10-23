@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/identity/recovery.scm — the personhood audit
 ;;;
 ;;; What a scope can say of its personhood corpus from the credentials

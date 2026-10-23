@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-delegation-scope-arg.scm — the delegation-family doors' scope-id
 ;;;
 ;;; The six delegation doors (delegation-preimage/set-delegation-signed,

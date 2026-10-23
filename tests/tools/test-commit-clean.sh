@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/tools/test-commit-clean.sh — a gated commit commits what passed, merges what moved, stops on a conflict.
 #
 # tools/dev/commit-clean.py --gate commits files from a tree other sessions share.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/integration/test-mesh-smoke.scm — LIVE mesh hop:
 ;;; two rns-bridges over a local TCP interface, one persona's mail
 ;;; destination registered + announced behind bridge B, a mail packet

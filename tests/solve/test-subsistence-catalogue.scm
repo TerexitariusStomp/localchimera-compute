@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-subsistence-catalogue.scm — reproduction floors DERIVED from the
 ;;; composed subsistence catalogue, driving a live diet.
 ;;;

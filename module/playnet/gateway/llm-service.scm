@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/llm-service.scm — Gateway-exposed LLM actor
 ;;;
 ;;; A single ^ai-service capability covers everything the lobby needs

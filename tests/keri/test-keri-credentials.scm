@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-credentials.scm — ACDC credential tests
 ;;;
 ;;; Exercises credential issuance, IPEX push flow, verification,

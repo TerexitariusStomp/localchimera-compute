@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/machine-sense.js — the sense kind's node leg: read what the
 // platform honestly reports, on an interval, and meter 'readings.
 //

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; store-utils.scm — Shared utilities for Goblins store actors
 ;;;
 ;;; Provides hashmap helpers, ID generation, and ISO datetime parsing

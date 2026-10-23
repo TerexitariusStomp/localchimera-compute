@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/spine-worker.js — the spine off the page's thread
 //
 // The Hoot/Goblins vat decodes every gateway frame byte by byte (Goblins'

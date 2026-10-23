@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/economy.scm — the economy doors of the governance service: socialization grants, purchase claims, titles, and a commune accepting them
 ;;;
 ;;; A fragment of the governance service (playnet doors governance): a procedure

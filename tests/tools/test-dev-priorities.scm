@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/tools/test-dev-priorities.scm — pure parts of the AI dev loop's
 ;;; live priority queue (module/playnet/dev/priorities.scm)
 ;;;

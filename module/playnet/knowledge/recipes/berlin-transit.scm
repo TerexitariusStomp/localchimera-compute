@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; berlin-transit.scm — Berlin's public transport as VF recipes
 ;;;
 ;;; Berlin already has a bioregion (knowledge/berlin.scm) and a commune placed

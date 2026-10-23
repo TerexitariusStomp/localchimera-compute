@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; plan/store.scm — Goblins actor for the VF planning layer
 ;;;
 ;;; Translated from src/lib/planning/planning.ts (PlanStore)

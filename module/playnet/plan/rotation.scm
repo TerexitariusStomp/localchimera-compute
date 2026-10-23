@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; plan/rotation.scm — taking turns, as a policy over what has already been done.
 ;;;
 ;;; EMP equalises each person's share of the TIME THEY OFFER, inside one plan.

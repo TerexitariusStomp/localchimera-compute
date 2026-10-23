@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/crossing.scm — the master's side of one good, as arithmetic.
 ;;;
 ;;; A good has one MASTER among the scopes that share it. It holds the good's

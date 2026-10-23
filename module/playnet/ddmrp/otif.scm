@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; otif.scm — On-Time In-Full delivery metrics
 
 (define-module (playnet ddmrp otif)

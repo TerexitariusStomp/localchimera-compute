@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-rest-catalogue.scm — SNIRT, the time floor of the right to rest.
 ;;;
 ;;; Pins the claims docs/planning/food/reproduction-of-labour-power.md §2a–2c makes:

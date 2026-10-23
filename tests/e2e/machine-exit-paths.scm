@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/e2e/machine-exit-paths.scm — how a commitment ends before work.
 ;;;
 ;;; Three doors close a commitment the receipt path never reaches:

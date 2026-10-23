@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; folksonomy/seed.scm — seed a scope's folksonomy from its own classifications.
 ;;;
 ;;; The gateway wires; it should not compute. This is the one piece of domain

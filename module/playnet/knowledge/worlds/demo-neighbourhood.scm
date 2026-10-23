@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; worlds/demo-neighbourhood.scm — the demo neighbourhood: one world, and what happened in it.
 ;;;
 ;;; The neighbourhood a person sees before they have a commune of their own: its

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-record-identity.scm — a record is the same kind of thing on both sides.
 ;;;
 ;;; The planner's schemas are reached two ways: imported as a module by

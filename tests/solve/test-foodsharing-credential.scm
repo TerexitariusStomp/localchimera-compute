@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-foodsharing-credential.scm — the two things a plan can say about
 ;;; foodsharing's entry cost that its wiki cannot.
 ;;;

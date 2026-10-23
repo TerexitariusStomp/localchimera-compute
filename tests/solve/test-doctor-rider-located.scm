@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-doctor-rider-located.scm — worker-as-rider: travel MODES, accessibility, stay.
 ;;;
 ;;; A mobile worker (a RIDER) is present where the plan puts them. Their PRESENCE is a

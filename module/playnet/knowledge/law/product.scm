@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/product.scm — the product's own acts, stated to the same law.
 ;;;
 ;;; The legal layer reads what an activity in the world trips: a kitchen, a

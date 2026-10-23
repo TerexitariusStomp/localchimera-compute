@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-transit-seat-capacity.scm — a seat is capacity, and it runs out.
 ;;;
 ;;; The U-Bahn is a ResourceSpecification a ride `use`s, exactly as a car ride

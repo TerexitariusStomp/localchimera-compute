@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; knowledge/catalogues/substances.scm — substances as first-class ECONOMIC RESOURCES.
 ;;;
 ;;; Nutrients and molecules (carbon, nitrogen, CO₂, …) are ResourceSpecifications

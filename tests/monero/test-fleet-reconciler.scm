@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/monero/test-fleet-reconciler.scm — end-to-end reconciler test
 ;;;
 ;;; This test stitches together all four layers:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/bran-custodians.scm — periodic ping
 ;;; of Shamir bran-share custodians; raises an alert when reachability
 ;;; drops below the configured threshold so the operator knows BEFORE

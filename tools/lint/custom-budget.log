@@ -14,3 +14,4 @@
 2026-10-23T04:17:14Z	250336 → 250485	phase 6: per-kind e2e suite (machine-kinds.scm) — Tier-1 machine resources
 2026-10-23T04:31:40Z	250485 → 250671	gap-closing: machine exit-paths + substrate-door liveness e2e — Tier-1 machine resources
 2026-10-23T04:54:29Z	250671 → 250717	lenderSig: machine-sig lib, did:key door verdict, signed-receipt e2e, spec decisions
+2026-10-23T05:15:55Z	250717 → 252012	license: AGPL-3.0-or-later SPDX headers across first-party code

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/federation/keria-notifications.scm — KERIA notification polling + dispatch
 ;;;
 ;;; This is the event bus for all async KERI activity. Nothing works without it:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/integration/test-ipex-cross-gateway.scm
 ;;;
 ;;; End-to-end IPEX credential delivery between two mock-KERIA gateways.

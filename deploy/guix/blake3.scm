@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/blake3.scm — Guix package for the BLAKE3 C library
 ;;;
 ;;; KERI's SAIDs (Self-Addressing Identifiers, CESR code "E") are

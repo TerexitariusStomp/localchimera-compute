@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/org/gplay.scm — Goblins-based org actor system
 ;;; Compatible with both Guile and Hoot/WASM
 

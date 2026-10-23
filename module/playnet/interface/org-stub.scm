@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/org-stub.scm — minimal ^org placeholder
 ;;;
 ;;; The /eval and /define commands in command-dispatch want an actor with

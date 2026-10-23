@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-reading-fold.scm — ^reading-pool: the scope fold of readings.
 ;;;
 ;;; pools/reading-fold.scm is `^fold-node` with a reading's three pieces;

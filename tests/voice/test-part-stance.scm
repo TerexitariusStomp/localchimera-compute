@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-part-stance.scm — a HAND of signed stances on parts of a plan.
 ;;;
 ;;; docs/planning/voice/voice-over-the-plan.md "The warp, and the conversation":

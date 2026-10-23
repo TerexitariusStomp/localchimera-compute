@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; scope-root.scm — Goblins actor that wires all VF stores into a single scope
 ;;;
 ;;; A scope (organization, commune, or ecological agent) is a single Goblins vat

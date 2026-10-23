@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/handlers-contract-test.mjs — every seam wrapper, exercised.
 //
 // The dispatch table's handlers each get a Promise wrapper on the page —

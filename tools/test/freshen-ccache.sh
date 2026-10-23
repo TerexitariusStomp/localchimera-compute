@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # freshen-ccache.sh — drop .go files that Guile cannot tell are stale.
 #
 # Guile checks .go freshness per module, by comparing the module's own source

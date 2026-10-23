@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; personhood/body-ceremony.scm — a body's AID: the k-of-n group of its stewards' dial AIDs
 ;;;
 ;;; STAGING beside the identity core (codebase-organization.md §7): a body is

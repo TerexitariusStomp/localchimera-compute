@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-free-time.scm — free time is stated once: f = 1 − hours/capacity.
 ;;;
 ;;; The plan's placed hours over what its people offer, a scope tree's

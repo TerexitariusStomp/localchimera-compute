@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; Patched server.scm — gnutls removed (TLS handled by reverse proxy).
 ;;; Original: Copyright © 2015, 2025 David Thompson <dthompson2@worcester.edu>
 ;;; License: LGPL-3.0+

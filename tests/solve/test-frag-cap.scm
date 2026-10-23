@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-cap.scm — the FRAGILITY barrier (frag) on an ecological cap, end to end.
 ;;;
 ;;; Slice 1 of the ecological possibility-tension. An eco draw used to be a HARD wall

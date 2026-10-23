@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-planner-facet.scm — the planner facet the lobby hands out
 ;;;
 ;;; The anonymous ^lobby answers (planner) with a facet, not the service. The

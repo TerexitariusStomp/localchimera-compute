@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/telegram.scm — Telegram transport adapter
 ;;;
 ;;; Two actors:

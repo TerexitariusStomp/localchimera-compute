@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-relaxation.scm — a warmed form relaxes to its base through the enclosure
 ;;; that holds it, and heat closes like carbon.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-subsistence-consumption.scm — the whole band binds to FOOD PRODUCTION
 ;;; through the `contains` closure (knowledge/catalogues/substances.scm), unified with the rift.
 ;;;

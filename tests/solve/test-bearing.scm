@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bearing.scm — a mover renders what it bears, where it stands.
 ;;;
 ;;; A means is in the plan as the capacity it renders at the place it stands. A

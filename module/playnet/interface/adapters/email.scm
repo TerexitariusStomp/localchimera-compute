@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/email.scm — Email transport adapter
 ;;;
 ;;; Sends notifications via SMTP. Same transport interface as browser,

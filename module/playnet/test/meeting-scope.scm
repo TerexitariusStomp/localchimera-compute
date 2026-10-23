@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/test/meeting-scope.scm — the demo "meeting commune", seeded into a scope root.
 ;;;
 ;;; A harness fixture: the meeting recipe (knowledge/recipes/meeting), three

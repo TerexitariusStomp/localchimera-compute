@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; worlds/doon-valley.scm — a real bioregion's climate scenarios + crop yields, for
 ;;; robust multi-scenario planning (docs/planning/solve/robust-multiscenario.md).
 ;;;

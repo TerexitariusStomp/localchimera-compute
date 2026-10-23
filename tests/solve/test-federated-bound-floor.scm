@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federated-bound-floor.scm — what the federated certificate is made of,
 ;;; and why its SIZE moves the way it does.
 ;;;

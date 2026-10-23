@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; kanren.scm — miniKanren implementation for playnet
 ;;; Follows the canonical microKanren (Hemann & Friedman) design:
 ;;;   state = (substitution . counter) — counter threaded through search

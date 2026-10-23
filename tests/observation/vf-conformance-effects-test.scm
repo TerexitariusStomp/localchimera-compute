@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf-conformance-effects-test.scm — the observer's resource effects, held to the
 ;;; ValueFlows vocabulary by a DIFFERENTIAL test.
 ;;;

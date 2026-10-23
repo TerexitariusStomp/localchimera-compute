@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/paths.scm — where a deployment keeps its state.
 ;;;
 ;;; One answer to "where does this file live", because the question was

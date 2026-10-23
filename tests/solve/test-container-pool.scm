@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-container-pool.scm — a line's seats are boardable anywhere on it, once.
 ;;;
 ;;; A network is not at a station; it runs THROUGH them. Held at one station, its

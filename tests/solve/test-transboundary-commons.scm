@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-transboundary-commons.scm — the metabolic border (playnet.typ §"The
 ;;; metabolic border" / §"A transboundary commons is one pooled budget").
 ;;;

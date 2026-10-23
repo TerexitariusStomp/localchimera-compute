@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-away-declaration.scm — a citizen's own signature over an away: tag.
 ;;;
 ;;; docs/planning/food/reproduction-of-labour-power.md §2c/§7: signing an away

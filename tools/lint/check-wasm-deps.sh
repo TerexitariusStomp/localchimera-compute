@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # check-wasm-deps.sh — the wasm prerequisite lists still cover their imports.
 #
 # Usage: check-wasm-deps.sh ENTRY.scm "declared prereqs ..."

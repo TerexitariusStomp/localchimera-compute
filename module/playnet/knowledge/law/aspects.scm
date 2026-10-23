@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/aspects.scm — the legal "aspects" as REAL ValueFlows ProcessSpecifications.
 ;;; @defines legal-aspects
 ;;; @builds legal-aspects reform

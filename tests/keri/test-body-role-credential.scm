@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-body-role-credential.scm — a body's role credential, signed by its stewards
 ;;;
 ;;; What this pins (keri/first-person/credentials.scm, the body-role projection):

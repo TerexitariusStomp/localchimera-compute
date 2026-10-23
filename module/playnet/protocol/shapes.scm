@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/protocol/shapes.scm — what each door argument is
 ;;;
 ;;; (playnet doors protocol) declares every door's arguments as written in its

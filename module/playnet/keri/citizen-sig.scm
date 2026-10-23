@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; citizen-sig.scm — per-AID Ed25519 signing for governance credentials
 ;;;
 ;;; Phase-B of the First-Person implementation. Lets a citizen sign

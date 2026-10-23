@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; records.scm — record types with identity, across the load seam.
 ;;;
 ;;; `make-record-type` mints a FRESH type on every evaluation. The planner's

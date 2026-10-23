@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-reconciler-persistence.scm
 ;;;
 ;;; Round-trip test for ^fleet-reconciler's #:portrait / #:restore wired

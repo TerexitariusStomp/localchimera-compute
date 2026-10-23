@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-cross-server.scm — cross-server federation via OCapN fake netlayer
 ;;;
 ;;; Simulates two servers: server-A hosts a scope-root, server-B hosts

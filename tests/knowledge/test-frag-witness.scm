@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-witness.scm — the sourced figures, guarded.
 ;;;
 ;;; The catalogue carries two witness tables of REAL published figures: nine planetary boundaries

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-netlayer-reticulum-bindings.scm — the Reticulum netlayer's names are bound.
 ;;;
 ;;; ^reticulum-netlayer:setup opens the bridge's sockets itself, through `let-values`,

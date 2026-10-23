@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-use-unit-register.scm — a non-time `use` effort, recorded rather than rumoured.
 ;;;
 ;;; A `use` states HOW MANY are engaged (resourceQuantity) and FOR HOW LONG

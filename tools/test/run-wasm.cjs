@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // run-wasm.cjs — run a Hoot-compiled program under node and print what it logs.
 //
 //   node tools/test/run-wasm.cjs <program.wasm>

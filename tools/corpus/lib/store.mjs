@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // SQLite-backed corpus store: chunks + FTS5 keyword index + float32 vectors.
 //
 // Uses node:sqlite (built into Node 22+), so the whole retrieval layer has

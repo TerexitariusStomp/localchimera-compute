@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; compile.scm — §5, THE VF COMPILER, the module (playnet solve compile).
 ;;;
 ;;; WHY THIS IS ITS OWN FILE. The compile stage is what BOTH the engine and the

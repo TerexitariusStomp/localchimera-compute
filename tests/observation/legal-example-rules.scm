@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal-example-rules.scm — five worked rules and the contexts that meet them.
 ;;;
 ;;; One rule per shape the vocabulary has: authorisation with a levy (food retail

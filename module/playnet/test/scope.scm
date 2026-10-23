@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; scope.scm — a live scope, mocked once for every planner test that needs one.
 ;;;
 ;;; plan-scope reads four stores off a scope-root actor — observer, agent-store,

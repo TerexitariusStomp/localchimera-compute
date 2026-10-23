@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // YouTube playlists as a corpus source kind.
 //
 // A great deal of practical knowledge is published as video and never written

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/assert.mjs — the unit tests' one way of saying what held.
 //
 // A unit test here is a plain node script: it states a claim, says whether it

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/machine-sense-test.mjs — the sense and bundle kinds,
 // the gpu gate, and the lend policy — tested.
 //

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; server/fleet-keeper.scm — the fleet keeper's process
 ;;;
 ;;; Every PLAYNET_KEEPER_INTERVAL seconds (default 120) it reads this box's

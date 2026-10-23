@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-enrollment-durable.scm — the ask as a durable, self-opened thing.
 ;;;
 ;;; A candidate opens their own ceremony (no sponsor); opening again finds the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-inspection-live.scm — inspection SCHEDULED in a live scope's plan, and
 ;;; the recert schedule read off both kinds of edge.
 ;;;

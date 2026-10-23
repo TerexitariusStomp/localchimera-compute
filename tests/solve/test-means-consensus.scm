@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-means-consensus.scm — the consensus row: one bar, across sovereign solves.
 ;;;
 ;;; pool-steering-test pins the bar INSIDE one solve: demand steers which cell

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; signals.scm — Planning signal types and conversion functions
 ;;;
 ;;; Translated from src/lib/planning/planning.ts (signal sections)

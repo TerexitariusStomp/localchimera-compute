@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/binding-verifiers.scm — the real signature
 ;;; checks the AccountLink ceremony needs.
 ;;;

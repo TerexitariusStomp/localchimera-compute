@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/reactive-test.mjs — signals and batched effects
 // (browser/app/reactive.js, from ui/app/reactive.ts)
 //

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-challenge.scm — the store kind: envelope kinds and params,
 ;;; resources and needs, and the storage challenge's issue→answer→verify
 ;;; lifecycle.

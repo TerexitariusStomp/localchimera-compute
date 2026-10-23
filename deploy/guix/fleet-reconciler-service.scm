@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/fleet-reconciler-service.scm — Shepherd service wrapper
 ;;;
 ;;; Runs server/fleet-bridge.scm as a long-lived Shepherd service on

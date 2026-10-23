@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/machine-bundle.js — the bundle kind's node leg: sub-envelopes run
 // in order on the one claim, and the receipt binds the legs' report.
 //

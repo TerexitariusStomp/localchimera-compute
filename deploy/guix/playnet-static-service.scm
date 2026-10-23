@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/playnet-static-service.scm — Shepherd service for the static/OOBI HTTP server
 ;;;
 ;;; Runs server/serve-static.scm, which owns ALL HTTP routing on the

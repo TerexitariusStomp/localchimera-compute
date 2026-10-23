@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-element-closure.scm — conservation as a constraint, not a reading.
 ;;;
 ;;; docs/social-material.typ: "a balanced chemical reaction is a recipe … the convex

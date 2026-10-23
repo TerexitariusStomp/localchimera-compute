@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fold-node.scm — one aggregator for the whole federation fold.
 ;;;
 ;;; The property push has to survive is REFEDERATION, and the reason the old

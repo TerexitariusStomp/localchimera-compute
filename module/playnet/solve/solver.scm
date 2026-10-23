@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solver.scm — the convex solver, and nothing about an economy.
 ;;;
 ;;; Sectioned by ROLE, not by backend — so a change to one concern is a change

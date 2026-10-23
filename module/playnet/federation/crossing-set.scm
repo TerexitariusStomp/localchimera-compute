@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/crossing-set.scm — which goods cross, read off the records.
 ;;;
 ;;; The supply a scope holds is not the scope's to withhold: the stock and the

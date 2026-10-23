@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-body-credential.scm — a body's standing is a credential chain in the vLEI's shape
 ;;;
 ;;; What this pins (keri/first-person/credentials.scm + predicates.scm):

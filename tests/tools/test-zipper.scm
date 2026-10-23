@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/tools/test-zipper.scm — round trips and local moves over the Huet zipper
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-zipper.scm

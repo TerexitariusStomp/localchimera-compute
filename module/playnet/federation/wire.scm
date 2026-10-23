@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/wire.scm — the federated solve across a vat boundary: a commune
 ;;; as an actor that answers the boundary oracle's questions under its own AID,
 ;;; and the coordinator that runs the consensus loop over such actors, near or

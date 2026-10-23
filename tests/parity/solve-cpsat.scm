@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/solve-cpsat.scm — solve ↔ OR-Tools CP-SAT parity.
 ;;; The contract: a planning problem ships as a CP-SAT model proto over
 ;;; /solve; the upstream answers a status + assignment. Invariant leg

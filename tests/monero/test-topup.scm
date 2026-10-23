@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/monero/test-topup.scm — the wallet keeps the AI accounts funded
 ;;;
 ;;; The keys live in the key-pool's vat and the policy in the wallet's

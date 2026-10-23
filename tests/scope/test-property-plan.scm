@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-property-plan.scm — what must not change a plan does not, and what must scale scales.
 ;;;
 ;;; Eight seeded bread chains (grow → mill → bake; one to three citizens; stock scarce

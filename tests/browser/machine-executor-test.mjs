@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/machine-executor-test.mjs — the browser node, tested.
 //
 // machine-executor.js is the "browser tab IS the compute node" claim:

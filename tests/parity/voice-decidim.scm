@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/voice-decidim.scm — ballots ↔ Decidim parity.
 ;;; The contract: a cast ballot is a GraphQL mutation on /api. Invariant
 ;;; leg pins the document envelope; live leg posts to a real component.

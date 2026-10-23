@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/root-lineage.scm — a root scope's AID across its own recompositions
 ;;;
 ;;; The OpenVTC layer asks one question of a deployment: which AIDs ARE this

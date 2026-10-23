@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/protocol/seam.scm — the seam, declared once, both halves
 ;;;
 ;;; The seam is the object the TypeScript app and the Scheme spine exchange

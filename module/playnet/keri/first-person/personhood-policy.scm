@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; first-person/personhood-policy.scm — the ecosystem's word on how a person is recognised.
 ;;;
 ;;; Four numbers govern enrollment, and they are the ECOSYSTEM's to set, not a

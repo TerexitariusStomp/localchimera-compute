@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-navdanya-farm.scm — a robust plan for a REAL bounded scope.
 ;;;
 ;;; A 2-hectare Navdanya-style smallholding in the Doon Valley (knowledge/recipes/

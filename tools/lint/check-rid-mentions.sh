@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/lint/check-rid-mentions.sh — every tracked file naming this project's or a
 # satellite's RID, as a transition checklist.
 #

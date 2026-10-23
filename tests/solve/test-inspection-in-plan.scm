@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-inspection-in-plan.scm — inspection as first-class labour IN the plan.
 ;;;
 ;;; Not the isolated economics (that is test-inspection-cadence.scm) but the SOLVER

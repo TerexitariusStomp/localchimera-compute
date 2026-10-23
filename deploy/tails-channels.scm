@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/tails-channels.scm — channels for tails.scm with WiFi firmware
 ;;;
 ;;; **Tails-only.** This file is consumed by `guix time-machine` when

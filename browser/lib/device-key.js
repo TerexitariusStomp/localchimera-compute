@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/lib/device-key.js — the device's own signing key
 //
 // docs/planning/device-keys.md. The passcode is the root of an identity and

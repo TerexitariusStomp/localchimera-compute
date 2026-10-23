@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-antifragile-reserve.scm — bank the good years to survive the tail.
 ;;;
 ;;; Robustness survives shocks; ANTIFRAGILITY gains from them. The good years'

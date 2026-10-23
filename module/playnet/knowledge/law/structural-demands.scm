@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/structural-demands.scm — the DEEP program: the structural demands.
 ;;;
 ;;; The regulatory program (law/reform-mirrors.scm) withers the state's redundant

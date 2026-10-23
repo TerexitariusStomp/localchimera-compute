@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/records.scm — fleet record types (runtime + deploy)
 ;;;
 ;;; SRFI-9 record types with define* keyword constructors so that both

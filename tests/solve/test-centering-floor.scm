@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-centering-floor.scm — the barrier left standing at the path floor is
 ;;; FELT IN THE PLAN, and the knob that controls it must actually be connected.
 ;;;

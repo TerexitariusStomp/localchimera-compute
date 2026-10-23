@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; algorithms/unit-conversion.scm — Unit normalization for the netter.
 ;;;
 ;;; The netter does quantity arithmetic on plain numbers. When donors

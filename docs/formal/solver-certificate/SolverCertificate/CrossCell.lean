@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 import Mathlib.Data.Real.Basic
 import Mathlib.Order.MinMax
 import Mathlib.Algebra.Order.BigOperators.Group.Finset

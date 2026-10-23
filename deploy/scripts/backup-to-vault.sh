@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # backup-to-vault.sh — refresh tier 3 (KeePass vault) from tier 2 cleartext.
 #
 # Adds (or updates) entries in ~/.playnet-secrets/playnet-vault.kdbx:

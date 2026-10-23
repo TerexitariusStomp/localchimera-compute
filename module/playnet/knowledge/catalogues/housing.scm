@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catalogues/housing.scm — the adequacy standard: what a night's housing owes
 ;;; a person, as bands.
 ;;;

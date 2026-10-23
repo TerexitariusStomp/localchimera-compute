@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # promote.sh — promote a signed commit to canonical main on the box.
 #
 #   bash deploy/scripts/promote.sh <commit-ish> [agent-name]

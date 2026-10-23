@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scope-unified.scm — unified ^scope actor (commune + federation kinds)
 ;;;
 ;;; Verifies that ^scope correctly specializes by kind: commune-style methods

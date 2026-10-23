@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-history-signatures.scm — tests for cryptographic history entry signatures
 ;;; Run with:  guile -L module tests/test-history-signatures.scm
 

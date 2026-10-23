@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/scope/test-kel-anchoring.scm
 ;;;
 ;;; OOBI.md §3.2.1 KEL-Anchored Updates: a credential's SAID anchored

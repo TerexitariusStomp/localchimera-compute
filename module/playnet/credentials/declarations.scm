@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/declarations.scm — what a scope says of itself: span, hosting willingness, regime claim, and the generic self-declaration.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

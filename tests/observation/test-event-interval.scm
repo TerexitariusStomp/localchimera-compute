@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-event-interval.scm — one event, one time, whoever reads it.
 ;;;
 ;;; An event states when it happened as a beginning, an end, a point in time, or only

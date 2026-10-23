@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; social/relationship-kinds.scm — the kinds a relationship is named by.
 ;;;
 ;;; A relationship is named in three places: the `rel` a person gives a

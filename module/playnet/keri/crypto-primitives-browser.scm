@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/crypto-primitives-browser.scm — Hoot/WASM backend
 ;;;
 ;;; FFI binding from (playnet keri crypto-primitives) into the

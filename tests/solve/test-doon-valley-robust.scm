@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-doon-valley-robust.scm — robust planning for a REAL bioregion.
 ;;;
 ;;; Doon Valley / Uttarakhand (the Navdanya region), with REAL data

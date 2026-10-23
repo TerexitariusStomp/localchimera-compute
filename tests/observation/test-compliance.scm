@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-compliance.scm — the SUPPLY side, over a REAL ^observer + a REAL bill.
 ;;;
 ;;; A permit/licence is an ordinary <economic-resource> conforming to a spec,

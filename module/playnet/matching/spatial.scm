@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; matching/spatial.scm — Spatial indexing helpers.
 ;;;
 ;;; The matcher reads location data from VF <spatial-thing> records

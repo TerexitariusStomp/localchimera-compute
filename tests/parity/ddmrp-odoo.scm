@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/ddmrp-odoo.scm — ddmrp ↔ Odoo OCA parity.
 ;;; The contract: our <buffer-zone>'s 40-field portrait is the record an
 ;;; Odoo stock.buffer must reproduce. Invariant leg proves the roundtrip;

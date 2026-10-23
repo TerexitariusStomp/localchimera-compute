@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; scope/demand-registry.scm — per-scope registry of free-form demands
 ;;;
 ;;; A "demand" is someone in a scope saying "this place needs X". Each

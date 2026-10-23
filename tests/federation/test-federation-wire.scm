@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-wire.scm — the federated solve across a vat boundary, in
 ;;; one process: the boundary oracle reproduces solve-decomposed, two communes
 ;;; in two vats settle through signed messages, and a reply that is not what

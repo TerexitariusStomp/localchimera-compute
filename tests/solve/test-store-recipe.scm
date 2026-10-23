@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-store-recipe.scm — inventory carries because a scope has a SILO, not
 ;;; because a caller remembered a keyword.
 ;;;

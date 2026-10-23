@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-accept-pins-live.scm — the live loop closes: a plan-store accept PINS
 ;;; the next plan-scope solve.
 ;;;

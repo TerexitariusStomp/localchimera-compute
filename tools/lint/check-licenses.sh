@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # check-licenses — the license gate for the OSS-inventory rule (spec/oss-inventory.md).
 #
 #   1. spec/oss-adopted.txt is the component manifest; every license it names

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-retention-disclosure.scm — retention + disclosure minimization (the
 ;;; compliance §13 open thread: where filing artifacts live, how long, and the
 ;;; pseudonymity floor).

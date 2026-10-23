@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/keys-test.mjs — app/keys.ts: the key table and its migration.
 //
 // A key is a promise to the person's own past, so three things are held:

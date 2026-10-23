@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/gateway/test-allotment.scm — the week's unplanned photo reads
 ;;; (module/playnet/gateway/allotment.scm; docs/observation/capture.md §5).
 ;;;

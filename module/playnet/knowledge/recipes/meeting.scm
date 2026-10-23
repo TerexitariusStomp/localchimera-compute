@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; meeting.scm — Weekly Planning Meeting recipe, as a <world>.
 ;;;
 ;;; Extracted so all reusable recipe seed data lives under

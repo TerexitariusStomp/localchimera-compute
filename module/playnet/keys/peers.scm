@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; keys/peers.scm — the peers and parent this gateway federates with
 ;;;
 ;;; Operator-supplied, env-driven: PLAYNET_PEERS (OOBI URLs of peer gateways)

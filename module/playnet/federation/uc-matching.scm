@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/uc-matching.scm — UC-level labour matching.
 ;;;
 ;;;   Score(P,M) = -Σ_d w_d · u_d(P)² - Σ_p u_p(M)²

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf-conformance-classes-test.scm — the vocabulary file, held to the vocabulary's classes.
 ;;;
 ;;; `module/playnet/vf/schemas.scm` is the ValueFlows core of this

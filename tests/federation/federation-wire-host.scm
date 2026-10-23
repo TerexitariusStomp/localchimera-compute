@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation-wire-host.scm — one commune, in its own process, on the wire.
 ;;;
 ;;; A commune moored behind a websocket netlayer at a berth, keeping its

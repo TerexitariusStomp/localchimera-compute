@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/push/crypto.scm — Web Push encryption (RFC 8291)
 ;;;
 ;;; Implements the content-encoding for Web Push payloads:

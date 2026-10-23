@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/keys.scm — what a scope's keys rest on: the bran share and the witness assignment, with the witness-quorum audit.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # sbom.sh — emit a CycloneDX 1.5 SBOM for the deployed product.
 #
 # The inventory is the source: spec/oss-adopted.txt names every component,
 # its license and its source. First-party files are the one component named
-# "playnet" (AGPL-3.0); everything else arrives as a library/service entry.
+# "playnet" (AGPL-3.0-or-later); everything else arrives as a library/service entry.
 #
 #   tools/sbom.sh [OUT]     default OUT=sbom.json
 #
@@ -28,7 +29,7 @@ json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g'; }
     "component": {
       "type": "application",
       "name": "playnet-compute",
-      "licenses": [{ "license": { "id": "AGPL-3.0" } }]
+      "licenses": [{ "expression": "AGPL-3.0-or-later" }]
     }
   },
   "components": [

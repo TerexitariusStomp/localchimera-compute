@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-use-unit-lint.scm — a draw and its capacity, denominated the same way.
 ;;;
 ;;; A `use` states two things: HOW MANY are engaged (resourceQuantity) and FOR

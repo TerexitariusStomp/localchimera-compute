@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solve/admm-link.scm — the ADMM step on one good, and the arithmetic around it.
 ;;;
 ;;; A good crosses between the scopes that share it: some supply it, some draw

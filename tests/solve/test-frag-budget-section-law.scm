@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-budget-section-law.scm — the eco-budget over a container obeys
 ;;; the section law: what the container counts is exactly the sum of what its
 ;;; leaves draw, and the pool is ONE pool — fungible across the leaves.

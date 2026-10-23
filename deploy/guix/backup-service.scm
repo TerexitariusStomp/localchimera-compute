@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/backup-service.scm — declarative state backup service.
 ;;;
 ;;; Provides:

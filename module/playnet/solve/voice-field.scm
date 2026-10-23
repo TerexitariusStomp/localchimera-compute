@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solve/voice-field.scm — producer voice over the plan, as a fold: the spec's law
 ;;; for how the people who do the work re-weigh HOW it is done.
 ;;;

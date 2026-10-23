@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-tee-crypto.scm — pin the pure-Guile keccak256 + secp256k1 ecrecover to
 ;;; CANONICAL, externally-known vectors, so we KNOW the crypto is correct (not
 ;;; merely that it runs). If any of these fail, the TEE verifier is unsound.

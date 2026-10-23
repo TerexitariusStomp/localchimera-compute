@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/lib/keri-crypto.js — synchronous KERI crypto primitives for Hoot
 //
 // Exposes Blake3-256, HMAC-SHA256, Ed25519 keygen-from-seed, and

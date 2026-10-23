@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/economy/acceptance.scm — the economy methods of a scope: a socialization grant and a reimbursement claim accepted.
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

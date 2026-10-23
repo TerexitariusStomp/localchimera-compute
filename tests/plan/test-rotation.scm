@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-rotation.scm — taking turns, over a sequence of whole assignments.
 ;;;
 ;;; One bin run a week. Three people who could all do it. The plan is EMP-fair

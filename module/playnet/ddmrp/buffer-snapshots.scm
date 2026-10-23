@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; buffer-snapshots.scm — Goblins actor for buffer health time-series
 ;;;
 ;;; Translated from src/lib/knowledge/buffer-snapshots.ts

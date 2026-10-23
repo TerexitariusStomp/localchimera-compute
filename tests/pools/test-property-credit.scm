@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-property-credit.scm — credit invariants over random communes.
 ;;;
 ;;; For fifteen seeded communes (two to five citizens, their hours and contribution

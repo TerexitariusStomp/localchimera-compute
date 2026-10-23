@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # publish-iso.sh — build + pin + publish a playnet bootable ISO.
 #
 # Output: a content-addressed download URL the VPS provider (or any other

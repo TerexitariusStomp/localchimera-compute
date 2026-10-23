@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # restore-radicle.sh
 # Restores Radicle from Persistent storage after a Tails reboot.
 # - Adds rad/radicle-node/git-remote-rad to PATH

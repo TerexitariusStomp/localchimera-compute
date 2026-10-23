@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-pending-grants.scm
 ;;; ^pending-grants actor — tagged retry queue with disk persistence
 ;;;

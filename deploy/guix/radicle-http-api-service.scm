@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/radicle-http-api-service.scm — Guix package + Shepherd service
 ;;; for radicle-http-api, the cytechmobile community fork of radicle-httpd
 ;;; that RESTORES the write (Create/Update/Delete) endpoints upstream removed.

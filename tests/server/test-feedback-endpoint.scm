@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/server/test-feedback-endpoint.scm
 ;;;
 ;;; Unit tests for the anonymous feedback pool in server/serve-static.scm:

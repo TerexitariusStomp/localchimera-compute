@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-joint-production.scm — one labour cost, several outputs.
 ;;;
 ;;; Spec: docs/social-category.typ §4 (sub-additivity is where joint production

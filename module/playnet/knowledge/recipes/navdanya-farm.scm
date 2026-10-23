@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; navdanya-farm.scm — a REAL bounded scope: a Navdanya-style smallholding in
 ;;; the Doon Valley, planned robustly against the region's monsoon futures. This
 ;;; is W1 (inscribe a real in-natura scope) made concrete, standing on the real

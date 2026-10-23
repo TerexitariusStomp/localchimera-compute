@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catalogues/subsistence.scm — the reproduction of labour-power, made executable.
 ;;;
 ;;; The CONSUMPTION side of the reproduction of labour-power (playnet.typ §The

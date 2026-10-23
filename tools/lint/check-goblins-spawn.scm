@@ -1,4 +1,5 @@
 #!/usr/bin/env guile
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; check-goblins-spawn.scm — every `(spawn …)` in a Goblins module is Goblins' spawn.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; bay-area-commune-seed.scm — a Bay Area market-garden commune (SF, Oakland, …) as DATA
 ;;; over the generic seed-farm-commune! (farm-commune-seed.scm). The market-garden set with
 ;;; US-national yields, and a THREE-deep containment (biosphere ⊃ bay-area ⊃ city ⊃ garden)

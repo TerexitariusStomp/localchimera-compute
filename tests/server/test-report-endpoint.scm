@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/server/test-report-endpoint.scm
 ;;;
 ;;; Reports (POST /report, GET /report.json, POST /report/{id}/delete) are a

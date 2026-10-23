@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-tee-verification.scm — TEE (confidential-enclave) response verification.
 ;;;
 ;;; Proves the client-side check that turns "we asked nano-gpt for a TEE/ model"

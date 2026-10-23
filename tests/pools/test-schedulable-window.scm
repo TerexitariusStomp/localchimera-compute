@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-schedulable-window.scm — what a person states of their time, read by the schedule and the labour pool.
 ;;;
 ;;; Two tags on the agent take time out of the offer: "sleep:23:00-07:00", a

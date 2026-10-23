@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; guile-websocket --- WebSocket client/server
 ;;; Copyright © 2026 David Thompson <dave@spritely.institute>
 ;;;

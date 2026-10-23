@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/receiptor.scm — witness receipt collection for
 ;;; LOCALLY-BUILT AIDs (autonomous-signer scopes).
 ;;;

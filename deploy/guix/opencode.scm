@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/opencode.scm — the opencode agentic coding CLI, as a pinned
 ;;; prebuilt binary package.
 ;;;

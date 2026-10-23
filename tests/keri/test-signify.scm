@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-signify.scm — Signify auth client unit tests
 ;;;
 ;;; Pure unit tests, no network. Covers:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; dsl/shorthand.scm — the ValueFlows records, spelled short, once.
 ;;;
 ;;; A recipe process, a produce / consume / work / use flow, a resource spec,

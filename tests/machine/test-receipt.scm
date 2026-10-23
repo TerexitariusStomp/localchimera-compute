@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-receipt.scm — the digest is the contract.
 ;;;
 ;;; The vectors below are produced by poi-compute's receipt-translate.ts —

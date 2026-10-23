@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; berlin-commune-seed.scm — the Berlin/Brandenburg commune as DATA over the generic
 ;;; seed-farm-commune! (farm-commune-seed.scm). Just the three grain staples, their
 ;;; per-crop summer water + German yields, and where the farm sits in the shed.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; manifest.scm — the wild-capture fisheries corpus.
 ;;;
 ;;; Phase 1 of docs/planning/food/natural-processes-research-plan.md. Fisheries is

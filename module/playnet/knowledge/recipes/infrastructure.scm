@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; infrastructure.scm — Compute infrastructure recipes
 ;;;
 ;;; Two recipes that turn shared infrastructure resources (compute,

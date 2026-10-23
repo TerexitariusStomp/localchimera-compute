@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-horizon.scm — a real MULTI-PERIOD plan over a wall-clock horizon.
 ;;;
 ;;; This is the end-to-end proof that the period↔wall-clock bridge is live: give

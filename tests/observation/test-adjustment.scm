@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-adjustment.scm — a count lands the difference
 ;;; (module/playnet/observation/adjustment.scm).
 ;;;

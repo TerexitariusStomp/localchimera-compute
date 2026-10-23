@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/payout.scm — ring-3 settlement pays the treasury,
 ;;; only the treasury, and only through a live payout binding (spec §2).
 ;;;

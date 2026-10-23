@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/scope/custody.scm — the custody methods of a scope: attestations, transfer, the outstanding commitments of a spec.
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/keria-store.scm — the credential store with KERIA as the store of record
 ;;;
 ;;; ^acdc-store (keri/acdc-store.scm) holds the credentials, their typed claim

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-rest-reserve.scm — the engine's reservation of rest.
 ;;;
 ;;; A caller that knows what a person's body takes each day registers it once

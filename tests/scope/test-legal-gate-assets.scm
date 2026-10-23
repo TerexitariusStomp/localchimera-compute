@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-gate-assets.scm — the gate sees the activity's THINGS and their
 ;;; HOLDERS, under the schema's own field names.
 ;;;

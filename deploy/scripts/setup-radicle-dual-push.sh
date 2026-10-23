@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # setup-radicle-dual-push.sh — Configure git to push to both GitHub and Radicle
 #
 # After running this, `git push` sends to both remotes automatically.

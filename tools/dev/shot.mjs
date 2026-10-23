@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tools/dev/shot.mjs — headless screenshot via Playwright + guix chromium.
 // Driven by tools/dev/shot.sh (which enters the browser-test guix shell, links
 // node_modules, and sets CHROMIUM_PATH). Not run directly.

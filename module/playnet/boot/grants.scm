@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/grants.scm — the pending-grants vat: outbound IPEX grants that wait for KERIA, and the finders an inbound apply or agree reads.
 
 (define-module (playnet boot grants)

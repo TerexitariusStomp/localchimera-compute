@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/keywords.scm — the keywords a solve takes, stated once, each with its kind
 ;;;
 ;;; Every layer between a scope and its program used to carry its own list of

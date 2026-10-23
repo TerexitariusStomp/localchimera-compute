@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-pool-steering.scm — one bar, and demand steers which cell draws it.
 ;;;
 ;;; docs/planning/federation/patchwork-scopes-containment.md §1: a means-pool spanning

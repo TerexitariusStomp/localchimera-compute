@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recipe-response.scm — a recipe's response, read off its runs.
 ;;;
 ;;; The comparator hands the plan a CURVE, and a future reads it at the stress

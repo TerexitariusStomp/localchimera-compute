@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/gateway.scm — the machine gateway composed: every vat the process starts, in the order each needs the last.
 ;;;
 ;;; server/gateway.scm parses the arguments and calls boot-gateway!; this is

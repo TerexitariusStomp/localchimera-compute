@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; sheds.scm — the bioregions the tree ships, registered.
 ;;;
 ;;; Each regional world registers its bioregion on import (register-bioregion!,

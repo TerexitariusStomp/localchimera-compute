@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-budgeted-floor.scm — a floor held against ANY Γ sources lost, without a
 ;;; future per source (Bertsimas & Sim 2004; engine `lay-budgeted-floors`).
 ;;;

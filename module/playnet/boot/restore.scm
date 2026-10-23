@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/restore.scm — the durable scopes restored into their vats, and replayed from their credentials.
 ;;;
 ;;; A scope's home vat by kind: governance roots (UC, federations) live in

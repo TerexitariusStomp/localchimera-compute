@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-reserve-dilemma.scm — the calamity has arrived: bare need vs the stock
 ;;; kept for exactly this.
 ;;;

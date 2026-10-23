@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; cascadia.scm — the Cascadia bioregion (Pacific NW) as a first-class ecological
 ;;; agent, paralleling worlds/doon-shed.scm. A SECOND real bioregion proves the whole stack
 ;;; is generic: same <bioregion> record, same pipeline, a different continent and a

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; farm-commune-seed.scm — ONE generic seeder for a live farm/garden commune, placed in
 ;;; a bioregion under earth. seed-berlin-commune! and seed-bay-area-commune! are now thin
 ;;; config wrappers over this: a farm is DATA — its crops, where it sits in the containment

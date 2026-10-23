@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; scope-integration.scm — End-to-end integration test for the VF Goblins layer
 ;;;
 ;;; Exercises the full ValueFlows lifecycle in a single persistent vat:

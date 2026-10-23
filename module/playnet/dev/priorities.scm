@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; dev-priorities.scm — what a Radicle issue states about the work it asks for.
 ;;;
 ;;; One reader of the repository's Radicle issues (`rad cob show` JSON), and

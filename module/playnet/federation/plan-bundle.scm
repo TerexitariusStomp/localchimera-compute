@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/plan-bundle.scm — Rising plan proposals.
 ;;;
 ;;; A rising plan is a VF Proposal with purpose='request: the leaf

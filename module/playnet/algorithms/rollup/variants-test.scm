@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; rollup/variants-test.scm — exercises the alternative joint-production rollups
 ;;; against a hand-built technology, with results checked by hand.
 ;;;

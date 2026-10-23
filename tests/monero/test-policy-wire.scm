@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/monero/test-policy-wire.scm — the wallet policy across a process boundary
 ;;;
 ;;; The gateway holds the policy through OCapN, and CapTP's Syrup refuses a

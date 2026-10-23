@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; first-person.scm — First Person layer over KERI/ACDC
 ;;;
 ;;; Two primitives from the First Person Project whitepaper, rendered as

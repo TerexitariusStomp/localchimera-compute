@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-purchase-claim.scm — reimbursement as restitution, in the VF Claim
 ;;; shape: the member signs their own purchase-claim (the exact twin of
 ;;; socialize-preimage/-signed), and the commune's OWN gov-cap mints the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-ai-async-evaluator.scm — the delimited-continuation AI seam in the org
 ;;; evaluator. Proves the evaluator can suspend at an AI completion and resume
 ;;; either synchronously (server: value returns normally) or LATER (browser: the

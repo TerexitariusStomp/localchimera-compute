@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # merge-patch.sh — DELEGATE action: merge a contributor's Radicle patch to
 # canonical main (and thereby deploy it).
 #

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; membership.scm — Membership index: citizen/scope mapping
 ;;;
 ;;; Builds from agents + relationships. Maps persons to scopes.

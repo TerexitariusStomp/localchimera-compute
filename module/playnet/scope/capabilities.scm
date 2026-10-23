@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/scope/capabilities.scm — the capability methods of a scope: the four sealers minted and recognised.
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

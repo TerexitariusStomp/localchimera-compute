@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-rollover-pricing.scm — End-to-end rollover-premium pricing
 ;;;
 ;;; Exercises the six-piece MVP pipeline:

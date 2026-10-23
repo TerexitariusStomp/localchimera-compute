@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/emit/reach-emit.scm — ui/app/reach-catalogue.ts from the reach kinds
 ;;;

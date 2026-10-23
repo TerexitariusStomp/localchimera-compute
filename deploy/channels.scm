@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/channels.scm — pinned, authenticated channels
 ;;;
 ;;; Refresh the Guix pin with: guix describe --format=channels

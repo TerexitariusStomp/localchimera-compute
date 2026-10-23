@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation-wire-fixture.scm — the two-commune economy the wire tests solve.
 ;;;
 ;;; The same economy test-federation-pull.scm and test-federation-live.scm

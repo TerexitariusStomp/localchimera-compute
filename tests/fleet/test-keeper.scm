@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-keeper.scm — a recorded host, carried to a running one
 ;;;
 ;;; What has to hold:

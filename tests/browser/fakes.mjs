@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/fakes.mjs — stand-ins for the browser's two stores, for node.
 //
 // node has no localStorage and no IndexedDB. The storage tests share these two

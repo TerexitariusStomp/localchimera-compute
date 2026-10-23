@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/manifests/dev-test-manifest.scm — fast dev test loop env
 ;;;
 ;;; Brings up vanilla Guile + Goblins + the Scheme libraries needed to run

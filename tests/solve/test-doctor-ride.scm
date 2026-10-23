@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-doctor-ride.scm — the worker-as-rider, composed from the aligned pieces.
 ;;;
 ;;; Dr. Dana is at A; doctoring is demanded at B (far). She is a WORKER, so her

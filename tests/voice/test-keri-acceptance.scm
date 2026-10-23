@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-keri-acceptance.scm — the full KERI-gated VF acceptance chain.
 ;;;
 ;;; Demonstrates:

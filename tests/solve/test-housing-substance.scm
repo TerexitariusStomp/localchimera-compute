@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-housing-substance.scm — housing's floor on the substance, derived from
 ;;; the person, met by the dwelling, its certificate a whole act.
 ;;;

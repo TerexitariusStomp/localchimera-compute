@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-key-terms-shapes.scm — key-terms reads every column the build lays.
 ;;;
 ;;; A column's key is the one grammar the plan's rows are read off (vf/facts/located.scm):

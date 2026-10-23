@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-festival-robust.scm — the supply shock as UNCERTAINTY: plant before the
 ;;; harvest is known, and let diversity emerge from defending the crowd's floor.
 ;;;

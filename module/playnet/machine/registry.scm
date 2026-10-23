@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; compute/registry.scm — a commune's compute dispatch book.
 ;;;
 ;;; WHAT THE FILE HOLDS. One ^machine-registry actor per commune: the lane

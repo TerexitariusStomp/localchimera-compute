@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-floor-bounds.scm — what a person may declare about their own floor.
 ;;;
 ;;; A floor is a hard requirement the commons must meet, so what lifts it is

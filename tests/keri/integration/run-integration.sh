@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/keri/integration/run-integration.sh — spin up real KERIA + witnesses,
 # run the integration test suite, tear everything down.
 #

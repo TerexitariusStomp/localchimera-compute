@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/peer/peer.scm — Shepherd config for the in-container peer.
 ;;;
 ;;; Loaded as PID 1's config (see init.sh: `exec shepherd --config`).

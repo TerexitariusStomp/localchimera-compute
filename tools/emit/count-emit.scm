@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/emit/count-emit.scm — ui/app/count-catalogue.ts from the counting rules
 ;;;

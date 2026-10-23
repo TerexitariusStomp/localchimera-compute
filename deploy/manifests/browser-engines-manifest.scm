@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/manifests/browser-engines-manifest.scm — every engine the layout
 ;;; matrix runs under, all from guix, nothing vendored:
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/hashmap.scm — hashmap helpers missing from Goblins
 ;;;
 ;;; Goblins' (goblins utils hashmap) exports hashmap-fold but not

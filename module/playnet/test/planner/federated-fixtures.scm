@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federated-fixtures.scm — the one place a federated test economy is built.
 ;;;
 ;;; Shared by tests/solve/test-decomposed-optimality.scm and

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // check-scope-worker.cjs — boot browser/scope.wasm the way the page's worker does, and ask its doors.
 //
 //   node tools/test/check-scope-worker.cjs        (make check-scope-worker builds the wasm first)

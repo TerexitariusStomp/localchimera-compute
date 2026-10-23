@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-filings.scm — the filing round-trip: render → submit → grant → HELD.
 ;;;
 ;;; Proves the loop closes: legal/filings.scm renders a deterministic, content-addressed

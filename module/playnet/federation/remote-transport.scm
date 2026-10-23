@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; remote-transport.scm — Snapshot/hydrate for cross-scope data sync
 
 (define-module (playnet federation remote-transport)

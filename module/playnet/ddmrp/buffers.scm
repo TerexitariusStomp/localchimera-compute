@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; ddmrp.scm — DDMRP buffer algorithms
 ;;;
 ;;; Translated from src/lib/algorithms/ddmrp.ts

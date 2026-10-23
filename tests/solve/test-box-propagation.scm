@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-box-propagation.scm — the rail on interval propagation, measured.
 ;;;
 ;;; `column-caps` (solver.scm) propagates upper bounds to a fixpoint: a row

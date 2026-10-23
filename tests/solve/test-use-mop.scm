@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-use-mop.scm — capacity is a SERVICE good; `use` is a consume of it.
 ;;;
 ;;; A means of production is `use`d, not consumed — it persists. Its per-period

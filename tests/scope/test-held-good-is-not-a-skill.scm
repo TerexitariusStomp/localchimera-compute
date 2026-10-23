@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-held-good-is-not-a-skill.scm — a good a person holds is not a skill they have.
 ;;;
 ;;; vf-agent-skills (solve/engine.scm) read every resource an agent held with an

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/lint/lint-ids.sh — no module spells an id grammar's prefix by hand.
 #
 # A grammar written in one place has a constructor, a membership test and (where one is

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; worlds/berlin-baumscheiben.scm — Berlin's street-tree pits (Baumscheiben) as located
 ;;; economic resources. The city's most widely distributed piece of unbuilt,
 ;;; already-public growing land: 434,765 of them, one per street tree.

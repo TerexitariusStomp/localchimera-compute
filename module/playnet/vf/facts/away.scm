@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/facts/away.scm — a signed declaration, over an away: tag's own text.
 ;;;
 ;;; docs/planning/food/reproduction-of-labour-power.md §2c/§7: the declaration

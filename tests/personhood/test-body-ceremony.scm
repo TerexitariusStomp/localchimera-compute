@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/personhood/test-body-ceremony.scm — a body's AID is its stewards' k-of-n group
 ;;;
 ;;; What this pins (module/playnet/personhood/body-ceremony.scm and the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-insurance-live.scm — the governed calamity reserve, on a LIVE scope.
 ;;;
 ;;; The mechanism (held per scenario, the granary banked before the monsoon) was

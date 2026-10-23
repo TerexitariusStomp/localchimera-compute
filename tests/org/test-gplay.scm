@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-gplay.scm — tests for (playnet org gplay)
 ;;; Run with:  guile -L module tests/test-gplay.scm
 

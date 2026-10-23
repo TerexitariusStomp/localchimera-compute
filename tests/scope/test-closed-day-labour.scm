@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-closed-day-labour.scm — a day nobody works is a day nothing is made.
 ;;;
 ;;; A world that declares no partition stands on the standing one, laid from

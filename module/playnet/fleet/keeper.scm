@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/keeper.scm — carrying a recorded host to a running one
 ;;;
 ;;; The reconciler's work ends when a host is paid for, launched and written

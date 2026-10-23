@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; mimir.scm — Mímir AI co-facilitation recipe
 ;;;
 ;;; Mímir (github.com/Valley-of-the-Commons/mimir) is a system-prompt agent that

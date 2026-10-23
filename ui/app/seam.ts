@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/seam.ts — THE SEAM: the one object the app shares with its capability
 // spine (day-boot.js + day-boot.wasm — gateway CapTP, KERI login, the planner).
 //

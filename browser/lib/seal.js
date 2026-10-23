@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/lib/seal.js — sealing a secret under an AES-GCM key.
 //
 // One core: a fresh 12-byte IV, AES-GCM, and the envelope `iv ‖ ciphertext‖tag`

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/credentials.scm — ACDC credential issuance + verification
 ;;;
 ;;; ACDC (Authentic Chained Data Containers) are KERI's verifiable credentials.

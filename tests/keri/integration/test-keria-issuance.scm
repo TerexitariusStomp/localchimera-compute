@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/integration/test-keria-issuance.scm — LIVE economic-credential
 ;;; issuance against real KERIA.
 ;;;

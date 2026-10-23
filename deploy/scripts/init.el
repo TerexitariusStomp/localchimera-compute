@@ -1,4 +1,5 @@
 ;;; playnet Emacs daemon configuration -*- lexical-binding: t; -*-
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; Deployed to /home/playnet/.emacs.d/init.el via guix activation.
 ;;; Source of truth: deploy/scripts/init.el (referenced from
 ;;; deploy/guix/machines.scm).  Local devs can copy the live-reload

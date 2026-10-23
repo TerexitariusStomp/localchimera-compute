@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/ocapn.scm — the OCapN vat: the designator key, the websocket netlayer, mycapn, and what a registration keeps.
 
 (define-module (playnet boot ocapn)

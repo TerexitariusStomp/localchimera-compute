@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # reconfigure.sh — Guix system reconfigure
 #
 # Two commands. That's it.

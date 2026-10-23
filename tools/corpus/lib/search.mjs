@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Hybrid retrieval: dense (cosine over normalized embeddings) fused with
 // sparse (SQLite FTS5/BM25) by reciprocal rank fusion.
 //

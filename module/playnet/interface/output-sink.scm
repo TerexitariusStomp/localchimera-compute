@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/output-sink.scm — Channel output sink
 ;;;
 ;;; The *print side* of a channel. Receives output (strings, alerts —

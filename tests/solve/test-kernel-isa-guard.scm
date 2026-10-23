@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-kernel-isa-guard.scm — the compiled kernel says which cpu it needs, and
 ;;; the loader believes it.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; planner.scm — THE planner. One engine, one problem, two backends.
 ;;;
 ;;; This is the consolidation: the eight prototypes (relaxation, spatial-core,

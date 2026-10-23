@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; hoot/day-boot.scm — the dial's capability spine (slim Hoot program)
 ;;;
 ;;; app.html is the shell: the whole UI is the d3 instrument. This

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; acdc-store.scm — accumulator for issued credentials with typed indexes
 ;;;
 ;;; In-memory hashmap SAID → credential, plus typed claim indexes for

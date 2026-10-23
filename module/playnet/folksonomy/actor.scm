@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; folksonomy/actor.scm — ^folksonomy actor.
 ;;;
 ;;; It is `^fold-node` (vf/aggregation/fold-node.scm) with taxonomy's three pieces

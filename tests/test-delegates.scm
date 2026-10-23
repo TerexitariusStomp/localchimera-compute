@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/test-delegates.scm — the Tier-2 seams: wire shapes are pinned,
 ;;; fail-closed defaults refuse, injected transports answer. Same rule as
 ;;; the compute adapters — the thin shipped is the wire the upstream reads.

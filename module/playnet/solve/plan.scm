@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/plan.scm — from records to a plan: the one door, deterministic or robust.
 ;;;
 ;;; `plan-from-records` takes a scope's records (resources, agents, spatial

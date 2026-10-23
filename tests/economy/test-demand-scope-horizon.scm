@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-demand-scope-horizon.scm — a declared need's OWN [from,until] widens
 ;;; a live solve's horizon, with no caller passing #:horizon at all — the last
 ;;; piece of R4 (docs/planning/solve/time-and-uncertainty.md); and a PLACELESS need

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-spec.scm — a federation's store says who is on the wire.
 ;;;
 ;;; A federation scope, signing under its own key, admits three communes as

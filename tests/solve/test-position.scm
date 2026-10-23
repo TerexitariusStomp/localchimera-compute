@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-position.scm — live/expected position overrides the commute origin.
 ;;;
 ;;; The planner places a worker at their static primary-location (home) for every

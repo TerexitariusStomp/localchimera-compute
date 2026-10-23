@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/monero/test-monero-policy.scm — ^wallet-policy unit tests
 ;;;
 ;;; Exercises the full enforcement order + persistence round-trip

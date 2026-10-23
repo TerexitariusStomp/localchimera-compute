@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/interop/smoke-test.sh — deploy-time IPEX peer smoke test
 #
 # Verifies that a running playnet gateway exposes the expected IPEX

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-insurance-reserve.scm — the calamity reserve q_r^"res", wired through the
 ;;; records pipeline as #:insurance and held by `held`.
 ;;;

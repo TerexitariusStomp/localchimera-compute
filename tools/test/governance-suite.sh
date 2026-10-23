@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Run all governance test suites.
 #
 # Every test file imports the governance modules it uses. This script cd's

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fulfillment.scm — commitment-fulfillment co-signature + spec hierarchy
 
 (use-modules (playnet test harness))

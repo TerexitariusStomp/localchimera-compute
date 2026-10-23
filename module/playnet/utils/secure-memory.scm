@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/secure-memory.scm — mlock + secure-zero for secrets
 ;;;
 ;;; Guile has no built-in mlock/mprotect. This module wraps libc's

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-cascade.scm — the Leontief cascade (Space coordinate): coupled ecological agents.
 ;;;
 ;;; Slice 3. Ecological agents stress each other: drawing agent j degrades agent k. The frag barrier

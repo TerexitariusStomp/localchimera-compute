@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tools/dev/host-facts.scm — read THIS host and print its placement ledger.
 ;;;
 ;;; The visibility half of distributed orchestration: what shepherd runs,

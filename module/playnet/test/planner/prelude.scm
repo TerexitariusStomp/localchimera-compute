@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; prelude.scm — the shared test harness, a module: (playnet test planner prelude).
 ;;;
 ;;;   (use-modules (playnet test planner prelude))

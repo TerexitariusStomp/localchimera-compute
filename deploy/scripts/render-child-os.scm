@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/scripts/render-child-os.scm — a fleet host's operating-system, filled in
 ;;;
 ;;;   guile -L module deploy/scripts/render-child-os.scm NAME \

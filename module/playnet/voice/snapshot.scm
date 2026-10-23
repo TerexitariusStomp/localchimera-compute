@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; voice/snapshot.scm — build a real voice-snapshot from the economic substrate
 ;;;
 ;;; The ballot's voice-snapshot is `hashmap citizen-id → (voice-share .

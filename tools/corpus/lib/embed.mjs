@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Local embedding runtime — transformers.js on the ONNX backend, no network
 // after the first model fetch, no API key, nothing leaves the machine.
 

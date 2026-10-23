@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; food-surplus.scm — Food reclamation / surplus redistribution recipe
 ;;;
 ;;; Single-step "Collect & Sort Produce" recipe used by the SF foodnet

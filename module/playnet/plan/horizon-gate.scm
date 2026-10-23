@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; plan/horizon-gate.scm — the accept gate: how far out a work commitment may reach.
 ;;;
 ;;; docs/planning/solve/commitment-horizon.md, "the gate in one clause": a column is

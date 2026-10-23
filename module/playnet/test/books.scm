@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; books.scm — a live scope's books, stated once for the suites.
 ;;;
 ;;; `(playnet test events)` holds the pure kernel's helpers (a state, an event, a

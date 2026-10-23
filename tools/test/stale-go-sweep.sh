@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # stale-go-sweep.sh — drop .go files that an edited INCLUDE left stale.
 #
 # Guile checks compiled-cache freshness per module, by comparing the module's

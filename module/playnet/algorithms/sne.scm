@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; sne.scm — SNLT_crystallized: the total (embodied) labour per unit.
 ;;;
 ;;; Spec: docs/playnet.typ §"Labour, skills, and planning" — the two

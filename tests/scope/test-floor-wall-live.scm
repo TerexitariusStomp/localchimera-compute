@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-floor-wall-live.scm — the floor-vs-wall dilemma, priced unasked on a LIVE scope.
 ;;;
 ;;; test-floor-wall-dilemma proves plan-dilemma at the records level. This is the

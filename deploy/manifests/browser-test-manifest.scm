@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/browser-test-manifest.scm — Browser UX test environment
 ;;;
 ;;; Declarative environment for running Playwright browser tests.

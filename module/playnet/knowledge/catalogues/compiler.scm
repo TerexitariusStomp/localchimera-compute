@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catalogue.scm — the ONE compiler behind every governed frag catalogue.
 ;;;
 ;;; A governed limit — a planetary boundary, a conformance-freshness margin, any

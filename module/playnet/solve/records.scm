@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/records.scm — the records pipeline: a scope's VF records become one world.
 ;;;
 ;;; `ingest-records!` takes the EconomicResource, Agent and SpatialThing

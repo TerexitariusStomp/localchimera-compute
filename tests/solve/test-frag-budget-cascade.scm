@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-budget-cascade.scm — Space ∘ Time: a CUMULATIVE budget on EFFECTIVE pressure.
 ;;;
 ;;; The budget reads the spec's effective pressure p = (I−C)^{-1}·draw, summed across the whole

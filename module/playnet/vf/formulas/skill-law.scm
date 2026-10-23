@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; skill-law.scm — a skill's law, read off its spec and folded over the record.
 ;;;
 ;;; The engine carries one law for a skill's competence (engine.scm, SKILL

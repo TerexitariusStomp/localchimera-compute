@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-host-facts-counts.scm — a probe's snapshot is a count of the host's stock.
 ;;;
 ;;; docs/observation/readings-are-counts.md §1.6 (4): cores and gigabytes are

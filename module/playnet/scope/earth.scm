@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; earth.scm — the planetary economic root: ^earth, a durable registry of every
 ;;; commune's economic scope-root.
 ;;;

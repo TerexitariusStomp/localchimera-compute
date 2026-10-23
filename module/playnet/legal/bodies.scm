@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal/bodies.scm — a legal body is its ValueFlows records: an organization
 ;;; <agent>, the <agent-relationship>s of the people who stand behind it, and
 ;;; the <economic-resource>s it holds. Everything here is a fold over those.

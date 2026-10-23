@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-pd-finiteness.scm — a plan must be made of numbers.
 ;;;
 ;;; Spec: docs/playnet.typ §7.11 (the primal-dual predictor-corrector clears the

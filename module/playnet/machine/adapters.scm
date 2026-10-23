@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/adapters.scm — the executor adapters: how a
 ;;; registered replay executor actually reaches a service.
 ;;;

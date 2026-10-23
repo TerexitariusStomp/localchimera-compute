@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-cdn.scm — the CDN protocol, through an adapter
 ;;;
 ;;; What has to hold, whichever adapter stands behind the protocol:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-simulation.scm — End-to-end NAC simulation, asserting the
 ;;; THINGS TO NOTICE / monitors / plot-invariants documented in
 ;;; docs/evr/NAC_sepv2.html (Info tab).

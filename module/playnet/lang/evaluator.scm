@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/lang/evaluator.scm — Metacircular evaluator for Hoot/WASM
 ;;;
 ;;; Needed because Hoot doesn't have Guile's `eval` or module system.

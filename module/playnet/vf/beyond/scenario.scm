@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/beyond/scenario.scm — a future the plan is held against: the planning scenario.
 ;;;
 ;;; ValueFlows has Scenario and ScenarioDefinition, groupings for analysis. Robust

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/cdn.scm — the CDN protocol
 ;;;
 ;;; A clearnet face sits behind a CDN: the edge terminates TLS, caches the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bay-area-subscopes.scm — SF + Oakland as DURABLE nested subscopes under earth,
 ;;; in the Bay Area bioregion. The union of everything built this session:
 ;;;   • earth (durable per-commune economic roots),

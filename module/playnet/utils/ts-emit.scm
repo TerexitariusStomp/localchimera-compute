@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; ts-emit.scm — the two ways a generated TypeScript file writes a value.
 ;;;
 ;;; tools/emit/nutrition-emit.scm, housing-emit.scm and rest-emit.scm turn a

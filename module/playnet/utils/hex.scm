@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/hex.scm — bytevector ↔ hex string codec
 ;;;
 ;;; Single home for the hex encoding shared by KERI, bran custody, and

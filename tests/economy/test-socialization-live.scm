@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-socialization-live.scm — a socialized private means, scheduled in a REAL solve.
 ;;;
 ;;; The end-to-end proof that ties the socialization arc together. Alice owns a

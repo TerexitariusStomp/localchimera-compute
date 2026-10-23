@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; worlds/doon-shed.scm — the Doon Valley bioregion, ASSEMBLED as an ecological agent =
 ;;; a SpatialThing container (playnet.typ §bioregion) carrying a MULTITUDE of
 ;;; fragile specs. This is W2 ("calibrate ecological parameters to a real

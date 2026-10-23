@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-ballot-close-ceremony.scm — closing a ballot takes k signatures,
 ;;; never one.
 ;;;

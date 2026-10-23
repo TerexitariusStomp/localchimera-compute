@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; propagate.scm — the cascade behind mutual coupling: p = e_k + C·p.
 ;;;
 ;;; A tree climbs (vf/aggregation/containment.scm: one direction, no cycles). A

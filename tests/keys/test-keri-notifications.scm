@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-keri-notifications.scm — notification dispatch + handler tests
 ;;;
 ;;; Exercises (playnet federation keria-notifications):

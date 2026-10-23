@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/machine-store.js — the store kind's node leg: hold bytes, prove it.
 //
 // A 'store envelope's inputHash is the content commitment — sha256(content)

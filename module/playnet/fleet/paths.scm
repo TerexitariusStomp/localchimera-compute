@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/paths.scm — where a provider's credential lives.
 ;;;
 ;;; The fleet's providers are reached through one interface ((playnet

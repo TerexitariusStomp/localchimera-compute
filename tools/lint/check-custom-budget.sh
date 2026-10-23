@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # check-custom-budget — the ≤5% custom-code gate (spec/oss-inventory.md).
 #
 # Counts first-party source lines: module/, hoot/, tests/ (*.scm), ui/ (*.ts),

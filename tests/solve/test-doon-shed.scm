@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-doon-shed.scm — a bioregion carries a MULTITUDE of fragilities, on ONE
 ;;; shed id, each via the existing containment cascade. Proves the architectural
 ;;; claim "any resource-spec can contain fragilities": the Doon shed contains TWO

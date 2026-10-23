@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/aggregation/fold-node.scm — one aggregator for the whole federation fold.
 ;;;
 ;;; Everything the federation aggregates upward is the same shape:

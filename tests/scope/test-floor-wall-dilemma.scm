@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-floor-wall-dilemma.scm — when the only route to bare need crosses a wall.
 ;;;
 ;;; A household whose ONLY food is fished from a reef, and a reef whose fragility

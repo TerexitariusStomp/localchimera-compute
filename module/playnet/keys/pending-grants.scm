@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/pending-grants.scm — durable retry queue
 ;;;
 ;;; Generic at-least-once delivery for outbound work that can't be

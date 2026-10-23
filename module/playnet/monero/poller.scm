@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/monero/poller.scm — donation poller for ^monero-wallet
 ;;;
 ;;; Background thread that bridges a live Monero wallet to the planner's

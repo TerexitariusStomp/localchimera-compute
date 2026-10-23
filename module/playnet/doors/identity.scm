@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/identity.scm — the identity doors of the lobby and the session
 ;;;
 ;;; Who is this, what may they sign, how are they reached: the doors that

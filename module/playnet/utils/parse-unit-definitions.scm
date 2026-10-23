@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; parse-unit-definitions.scm — Build-time parser for GNU units database
 ;;;
 ;;; SUPERSEDED by (playnet utils units) which shells out to `units --terse`

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-catalogue.scm — the catalogue $\mathcal{K}$: every area, a real law.
 ;;;
 ;;; docs/playnet.typ names the catalogue as theory; knowledge/skills/ is its

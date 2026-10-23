@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; plan/accepts.scm — what the plan-store's standing commitments and offers ARE
 ;;; to a solve: the READ side of the commitment arc, called by plan-scope at
 ;;; every solve (docs/planning/solve/commitment-horizon.md).

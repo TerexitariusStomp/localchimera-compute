@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/capabilities-test.mjs — lib/capabilities.js: does this engine run the wasm?
 //
 // The probes are bytes of wasm that use one engine feature each. Two things have to

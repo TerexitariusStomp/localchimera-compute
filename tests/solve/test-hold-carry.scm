@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-hold-carry.scm — the two bare shapes of transport.scm, and what a
 ;;; commons can do with them.
 ;;;

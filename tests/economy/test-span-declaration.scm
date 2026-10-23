@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-span-declaration.scm — span is governed, location is fact: the
 ;;; credential half. A steward scope declares how far a means' service pools
 ;;; (patchwork-scopes-containment.md §2.2–2.3); the declaration is a

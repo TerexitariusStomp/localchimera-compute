@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module -s
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/emit/saidify-schemas.scm — compute SAIDs for ACDC schema files.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/identity/kel.scm — the key log in hand
 ;;;
 ;;; A person's KERI key event log as the browser keeps it, and the passcode

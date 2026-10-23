@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/discrete.scm — §7: the discrete layer, minimum-batch and whole-count acts decided.
 ;;;
 ;;; The ONE genuinely non-convex thing in the solve, non-convex because the

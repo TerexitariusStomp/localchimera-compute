@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/structural-invariants.scm — leaves-are-real validators
 ;;;
 ;;; Implements the four structural invariants documented in

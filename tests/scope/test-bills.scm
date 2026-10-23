@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bills.scm — the plan asked backwards: what would it take?
 ;;;
 ;;; Rights, needs and wants are three kinds the solver already holds apart — a

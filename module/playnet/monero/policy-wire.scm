@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/monero/policy-wire.scm — the wallet policy across a process boundary
 ;;;
 ;;; The wallet and its spend policy live in their own process

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; economy/demand-fold.scm — the scope tree's declared needs → a solve's demand
 ;;;
 ;;; A citizen declares a need on the share face and it lands as a standing

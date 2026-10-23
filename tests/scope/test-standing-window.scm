@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-standing-window.scm — a standing declaration's window re-stands.
 ;;;
 ;;; The festival's crowd terms carry a rolling three-day window, and the

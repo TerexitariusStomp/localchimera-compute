@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; berlin-festival-seed.scm — the food festival, LIVE on the Berlin commune.
 ;;;
 ;;; The live half of tests/solve/test-berlin-festival.scm over the same real

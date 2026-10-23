@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; bay-area.scm — the San Francisco Bay Area bioregion as a first-class ecological
 ;;; agent, the FOURTH real shed (after doon, cascadia, berlin). California's
 ;;; Mediterranean climate makes this the water-fragility shed: a wet winter, a

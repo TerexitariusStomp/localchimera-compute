@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-comms-mandate.scm — permission to speak IS a competence on publish work.
 ;;;
 ;;; The last "not derived" item collapses too. A governance mandate to speak in

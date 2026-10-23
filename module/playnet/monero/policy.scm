@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/monero/policy.scm — declarative spend policy + governance actor
 ;;;
 ;;; The ^wallet-policy actor wraps a raw ^monero-wallet cap with a

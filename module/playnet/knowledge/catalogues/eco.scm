@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; knowledge/catalogues/eco.scm — the federation's fragility catalogue.
 ;;;
 ;;; Real planetary-boundary AND climate-tipping-point figures, expressed as fragility profiles and

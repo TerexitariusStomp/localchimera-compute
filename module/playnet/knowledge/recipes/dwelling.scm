@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; dwelling.scm — shelter as a located-dated good: the bed, used by night.
 ;;;
 ;;; Housing enters the plan the way every durable means does: it is `use`d, not

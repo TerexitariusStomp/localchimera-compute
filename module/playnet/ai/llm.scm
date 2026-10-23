@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/ai/llm.scm — Plain LLM completion primitive over a key-pool
 ;;;
 ;;; Single concern: given a key-pool actor (assumed reachable

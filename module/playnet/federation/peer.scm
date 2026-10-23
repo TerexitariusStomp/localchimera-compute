@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/peer.scm — a commune as a PEER of the federated solve, on the
 ;;; wire: the coordinator-free, round-free ADMM of federation/async.scm behind
 ;;; a Goblins capability, every message signed under the commune's KERI AID.

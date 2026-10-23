@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/governance.scm — the governance service composed from its fragments.
 ;;;
 ;;; The composition root's word on what the governance service is: the actor

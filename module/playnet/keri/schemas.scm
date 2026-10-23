@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/schemas.scm — the ACDC schema catalog
 ;;;
 ;;; ONE table names every checked-in ACDC schema document. Everything

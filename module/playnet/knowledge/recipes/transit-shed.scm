@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; transit-shed.scm — a shed's transport as mechanism, with the city as data
 ;;;
 ;;; The twin of farm-commune-seed.scm. That file says a farm is DATA — its crops,

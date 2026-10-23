@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fragility-scales.scm — one form for every limit, read at a different scale.
 ;;;
 ;;; playnet.typ §"Worker, soil, and tool: one field" holds that the burnout

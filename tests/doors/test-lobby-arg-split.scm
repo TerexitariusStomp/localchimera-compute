@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-lobby-arg-split.scm — doors/lobby.scm's own boundary translation for the
 ;;; doors split from a bare variadic tail into real named arguments
 ;;;

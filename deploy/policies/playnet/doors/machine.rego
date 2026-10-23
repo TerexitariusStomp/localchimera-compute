@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # playnet/doors/machine — the OPA policy the compute doors consult.
 #
 # The delegate posts /v1/data/playnet/doors/machine with:

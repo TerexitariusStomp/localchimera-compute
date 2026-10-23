@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-ladder-rescue.scm — the solve returns the best plan anyone produced,
 ;;; never the seed it started from.
 ;;;

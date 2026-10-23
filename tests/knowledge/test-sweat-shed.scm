@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-sweat-shed.scm — the sodium a working body loses comes from the SHED's
 ;;; own climate record and from whether that body is acclimated to it.
 ;;;

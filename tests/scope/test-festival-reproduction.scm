@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-festival-reproduction.scm — thousands of attendees, each fed to their
 ;;; own reproduction floor, at the festival, gated by the jurisdiction's permit.
 ;;;

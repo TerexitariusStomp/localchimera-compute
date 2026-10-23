@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tools/dev/webgl-args.mjs — the Chromium flags that give a HEADLESS page a real
 // WebGL context, in software (SwiftShader), so the maplibre faces build a map
 // and a probe or a screenshot sees its layers, markers and camera.

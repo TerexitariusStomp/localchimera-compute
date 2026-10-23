@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/mailbox.scm — the mailbox vat: the manager of every person's mailbox, persistent.
 
 (define-module (playnet boot mailbox)

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-personhood-policy.scm — the ecosystem's word on recognition, read bare.
 ;;;
 ;;; With no row the defaults stand, an explicit value wins, and effective-k

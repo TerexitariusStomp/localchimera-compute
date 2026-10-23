@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/integration/gateway-harness.sh — two real gateways as subprocesses.
 #
 # Sourced by the integration scripts that boot `guile -s server/gateway.scm`

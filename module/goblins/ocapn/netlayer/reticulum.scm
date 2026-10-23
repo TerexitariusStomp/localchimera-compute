@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; Reticulum netlayer for Goblins OCapN
 ;;;
 ;;; Enables Goblins actors over Reticulum mesh networks (LoRa, serial,

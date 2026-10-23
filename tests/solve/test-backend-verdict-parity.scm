@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-backend-verdict-parity.scm — the two backends agree about what is IMPOSSIBLE.
 ;;;
 ;;; The engine already parity-locks its backends on delivered demand: they solve

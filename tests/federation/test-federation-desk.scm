@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-desk.scm — a federation answers for itself, and a commune
 ;;; takes its word only as far as it checks.
 ;;;

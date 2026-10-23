@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-spec.scm — the per-spec RATE boundary in isolation.
 ;;;
 ;;; *frag-spec* (eco-spec-frag) is a PER-PERIOD flux limit applied at every cell the spec is drawn —

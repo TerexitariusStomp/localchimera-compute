@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/economy-ccnode.scm — settlement ↔ cc-node parity.
 ;;; The contract: each settled entry — treasury pays lender,
 ;;; bridgeJobId:receiptDigest as the reference — is the ledger line.

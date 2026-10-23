@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; utils/keywords.scm — a keyword list and an alist, one grammar.
 ;;;
 ;;; A door's arguments arrive as keywords, a scope's standing settings live as

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-resource-conformance-robust.scm — substitution UNDER UNCERTAINTY.
 ;;;
 ;;; The resource-supplier channel threads all the way through the robust

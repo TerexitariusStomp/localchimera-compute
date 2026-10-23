@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; algorithms/deferred-acceptance.scm — Producer-proposing Gale-Shapley.
 ;;;
 ;;; After plan scales are committed, assigns specific producers to

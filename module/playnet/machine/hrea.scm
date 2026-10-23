@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/hrea.scm — the ValueFlows landing pad for a
 ;;; compute receipt: hREA (Apache-2.0) is the adopted VF backend; this is
 ;;; the wire shape a receipt becomes when it lands there, plus the seam

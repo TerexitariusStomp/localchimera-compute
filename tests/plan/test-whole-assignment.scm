@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-whole-assignment.scm — atomic work gets whole people.
 ;;;
 ;;; The convex plan works in DIVISIBLE hours, and that is right: it is deciding

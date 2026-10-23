@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-leaf-bounds.scm — a floor and a cap are both bounds on a LEAF.
 ;;;
 ;;; docs/observation/physics.md §6: the leaf registry (catalogues/substances.scm declare-leaf!)

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-unfold-node.scm — the fold's dual: one router for the whole descent.
 ;;;
 ;;; The property the descent has to keep is the SECTION LAW: re-folding a

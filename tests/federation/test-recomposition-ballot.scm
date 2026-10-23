@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recomposition-ballot.scm — Phase 6: recomposition ratification
 ;;;
 ;;; Four scenarios:

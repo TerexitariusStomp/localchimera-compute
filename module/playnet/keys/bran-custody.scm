@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/bran-custody.scm — bran persistence
 ;;;
 ;;; A scope's "bran" is the 32-byte seed from which all of its KERI keys

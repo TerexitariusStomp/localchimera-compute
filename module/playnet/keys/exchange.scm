@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/exchange.scm — IPEX exchanges signed by
 ;;;                                            scope-owned keys
 ;;;

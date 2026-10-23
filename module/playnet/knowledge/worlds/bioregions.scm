@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; bioregions.scm — a bioregion is not a bespoke index; it is an ECOLOGICAL AGENT
 ;;; = a SpatialThing CONTAINER (playnet.typ §bioregion: "the watershed, the
 ;;; foodshed, the airshed, the ecoregion", a matter-bound scope shaped by its

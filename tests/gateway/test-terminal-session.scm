@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-terminal-session.scm — a shell's output reaches the client's inbox.
 ;;;
 ;;; ^terminal-session reads the child's output on a thread of its own and hands

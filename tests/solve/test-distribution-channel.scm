@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-distribution-channel.scm — a distribution mode is a recipe, and the
 ;;; composition of modes is something the solver finds.
 ;;;

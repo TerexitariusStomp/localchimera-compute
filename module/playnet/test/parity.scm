@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/test/parity.scm — the parity-suite helpers.
 ;;;
 ;;; spec/oss-inventory.md's gate: a Tier-2 module may only shrink after a

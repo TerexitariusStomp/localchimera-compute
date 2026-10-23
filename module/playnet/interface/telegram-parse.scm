@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/telegram-parse.scm — pure parsing helpers
 ;;;
 ;;; Split out of server/telegram-bridge.scm so the parsing logic is

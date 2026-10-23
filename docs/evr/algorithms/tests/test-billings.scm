@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-billings.scm — Billings score unit tests
 ;;;
 ;;; Source spec: docs/evr/billings-overview.md

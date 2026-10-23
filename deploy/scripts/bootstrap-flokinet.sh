@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # bootstrap-flokinet.sh — Bootstrap a FlokiNET VPS with Guix System
 #
 # FlokiNET supports custom ISO upload via their web panel (IPMI).

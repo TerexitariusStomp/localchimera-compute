@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; live-resource.scm — Goblins actor for infrastructure resources
 ;;;
 ;;; An economic resource that IS an actor. The observer tracks total capacity

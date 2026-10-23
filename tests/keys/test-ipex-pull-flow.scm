@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-ipex-pull-flow.scm — apply/offer/agree handlers
 ;;;
 ;;; The pull-flow trio: handler-side. Asserts the cooperative behaviour

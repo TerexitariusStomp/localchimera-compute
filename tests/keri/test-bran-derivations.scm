@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-bran-derivations.scm — everything derived from the bran
 ;;;
 ;;; The bran is the single root: lose it and the identity is gone, hold it and

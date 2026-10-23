@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; ways.scm — the ways of doing an activity, as ValueFlows recipes.
 ;;;
 ;;; The law face lists WAYS of an activity: share a meal from a home kitchen,

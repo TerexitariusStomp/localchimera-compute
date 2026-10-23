@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; capacity-execute.scm — Capacity-managed execution primitives
 ;;;
 ;;; Composable procedures for doing real work with infrastructure:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-regenerating-stock.scm — the REGENERATING-STOCK recurrence, in the small.
 ;;;
 ;;; A field carries a CONDITION — "fertility", a storable level that starts at 100.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/incumbent-readings.scm — what a structural demand's incumbent function is
 ;;; HERE: one steward's reading of one place.
 ;;;

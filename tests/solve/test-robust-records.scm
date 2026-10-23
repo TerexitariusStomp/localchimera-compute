@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-robust-records.scm — robust multi-scenario planning through the RECORDS
 ;;; pipeline, keyed by the VF-aligned <planning-scenario> record (Phase 2).
 ;;;

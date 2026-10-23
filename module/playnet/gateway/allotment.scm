@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/allotment.scm — the week's unplanned photo reads
 ;;;
 ;;; A count the plan asked for draws on the plan: the commitment is the

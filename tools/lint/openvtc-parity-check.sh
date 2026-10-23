@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # openvtc-parity-check.sh — list upstream OpenVTC commits not yet audited
 # against our hand-ported credential/trust layer.
 #

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-tee-attestation.scm — the vendor-rooting orchestration + enclave pinning.
 ;;;
 ;;; The vendor QUOTE parser (Intel DCAP / NVIDIA NRAS) is an injected seam that

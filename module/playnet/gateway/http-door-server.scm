@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/http-door-server.scm — the HTTP door's listener
 ;;;
 ;;; Runs (playnet doors http)'s handler on a loopback port inside the

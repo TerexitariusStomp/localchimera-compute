@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; mk-founder.scm — mint a fresh founder identity for First-Person bootstrap.
 ;;;
 ;;; This is the FALLBACK path. PREFER having the person sign up on the dial:

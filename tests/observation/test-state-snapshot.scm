@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-state-snapshot.scm — completeness anchor (follow-on #3)
 ;;;
 ;;; A derived-state-snapshot ACDC edges to every input it covers, so a holder of

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/monero/test-reconciler-cross-vat.scm — the reconciler where it really runs
 ;;;
 ;;; On the box the fleet reconciler has its own vat, the swapper and the

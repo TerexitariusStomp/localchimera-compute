@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-resource-records.scm — a stock the books were told of survives a restore.
 ;;;
 ;;; A resource comes into the books by an event (a `raise`, a `produce`) or, for what

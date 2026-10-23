@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-host-facts.scm — the machine reads itself: herd/ps/proc text →
 ;;; placement ledger → ^live-resource facts in the scope's live-registry.
 ;;;

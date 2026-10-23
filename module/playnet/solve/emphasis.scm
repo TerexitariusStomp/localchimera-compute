@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solve/emphasis.scm — social desire, as a fold: the spec's one law for how a
 ;;; citizen's priorities become the plan's weight on a good.
 ;;;

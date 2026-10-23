@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-rented-fragility.scm — the GENERAL rented/tenure fragility.
 ;;;
 ;;; A resource held under SPLIT tenure — custody here, rights elsewhere — is one

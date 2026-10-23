@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-whole-counts.scm — acts that happen a whole number of times.
 ;;;
 ;;; The relaxation may run 0.5 of an act. At population scale that is the RIGHT

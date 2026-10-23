@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; transition.scm — Scope transition economics (CPM to social plan)
 ;;;
 ;;; Translated from src/lib/observation/transition.ts

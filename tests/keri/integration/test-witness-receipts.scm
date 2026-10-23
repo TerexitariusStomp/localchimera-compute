@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/integration/test-witness-receipts.scm — LIVE witnessed
 ;;; inception with receipt collection: the end of the witness-receipt chain.
 ;;;

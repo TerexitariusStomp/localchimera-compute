@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/push/vapid.scm — VAPID key persistence
 ;;;
 ;;; Generates a P-256 key pair on first boot and persists it to disk.

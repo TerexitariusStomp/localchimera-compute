@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-notify-registry.scm — golden tests for the ONE notification
 ;;; registry (Phase 0 of the unified router).
 ;;;

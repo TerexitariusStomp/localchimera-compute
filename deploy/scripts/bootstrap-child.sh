@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # bootstrap-child.sh — automated installer for fleet child hosts.
 #
 # Partitions the target disk, opens LUKS, renders the child OS config,

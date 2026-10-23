@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/monero/specs.scm — XMR ResourceSpecification + bootstrap
 ;;;
 ;;; Wires a Monero wallet actor into a planner scope as a first-class

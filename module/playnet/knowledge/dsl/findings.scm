@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/knowledge/dsl/findings.scm — what a lint says, in one shape
 ;;;
 ;;; A finding is (severity kind subject detail): severity ∈ error | warning |

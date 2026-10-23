@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; algorithms/elastic.scm — the credit identity's arithmetic over cells.
 ;;;
 ;;; A scope's account store states its own credit CELLS (account.scm

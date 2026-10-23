@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-ipex-grant-handler.scm — handle-ipex-grant unit tests
 ;;;
 ;;; Exercises the IPEX grant handler against a mock KERIA. We record

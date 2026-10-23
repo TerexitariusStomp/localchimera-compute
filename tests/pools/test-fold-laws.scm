@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fold-laws.scm — the algebra of the folds the federation sums.
 ;;;
 ;;; A parent recombines its children in hashmap order, so a combine must be

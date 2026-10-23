@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/aggregation/unfold-node.scm — the fold's dual: one router for the descent.
 ;;;
 ;;; Everything the federation sends DOWN the scope tree is the same shape:

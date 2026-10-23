@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-pins.scm — the pin book: map lists folded like the folksonomy
 ;;;
 ;;; A citizen's book is theirs; only the lists marked shared fold, and a note

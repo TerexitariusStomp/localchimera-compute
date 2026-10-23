@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-demand-to-proposal.scm — end-to-end:
 ;;;   demand → weighted voice tally → VF proposal + intent in plan-store
 ;;;

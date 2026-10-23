@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bottom-up-merge.scm — Phase-2 bottom-up recomposition
 ;;;
 ;;; Validates docs/governance/democracy-on-keri.md §4.3:

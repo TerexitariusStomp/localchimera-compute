@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; stone-paper.scm — stone (mineral) paper production recipe
 ;;; @defines stone-paper
 ;;;

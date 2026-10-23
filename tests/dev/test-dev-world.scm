@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-dev-world.scm — playnet's own development, planned by the planner.
 ;;;
 ;;; An open Radicle issue is a want, its area label a skill, its kind label a

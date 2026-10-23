@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/bridge.scm — Guile↔KERIA HTTP bridge
 ;;;
 ;;; Thin wrapper around KERIA's REST API. All identity ops go through here.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; berlin-flotte.scm — fLotte Berlin as DATA over the Lastenrad mechanism that
 ;;; berlin-transit.scm already carries.
 ;;;

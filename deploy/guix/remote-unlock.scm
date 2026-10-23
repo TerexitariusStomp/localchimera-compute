@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/remote-unlock.scm — LUKS root unlocked over SSH from the initrd
 ;;;
 ;;; A fleet host reboots unattended: its parent holds the LUKS passphrase

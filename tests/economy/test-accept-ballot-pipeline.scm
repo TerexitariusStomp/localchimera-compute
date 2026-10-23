@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-accept-ballot-pipeline.scm — the full ballot pipeline, wired to a
 ;;; real accept-socialization.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/playnet-valhalla-service.scm — Shepherd service for the
 ;;; self-hosted Valhalla routing engine (Tier-1, offline, no IP leak).
 ;;;

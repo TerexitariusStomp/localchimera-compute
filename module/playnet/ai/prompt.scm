@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/ai/prompt.scm — Shared prompt fragments for the AI bridge
 ;;;
 ;;; This module deliberately holds only string constants — no I/O, no

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/monero/rpc-digest.scm — HTTP Digest auth over (web client)
 ;;;
 ;;; monero-wallet-rpc negotiates HTTP Digest when --rpc-login is set;

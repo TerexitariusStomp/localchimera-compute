@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile --no-auto-compile -s
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; doc-cites.scm — a planning document's code cites resolve against the tree
 ;;;

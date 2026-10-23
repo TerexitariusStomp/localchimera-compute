@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/mcp.scm — the doors as an MCP server
 ;;;
 ;;; POST /api/mcp speaks the Model Context Protocol over its HTTP transport:

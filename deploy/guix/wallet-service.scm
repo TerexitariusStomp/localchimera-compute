@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/wallet-service.scm — Shepherd service for the isolated wallet
 ;;;
 ;;; Runs server/wallet-service.scm as a separate process from the gateway.

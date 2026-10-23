@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; humisoil-recipe.scm — HumiSoil soil-amendment recipe
 ;;;
 ;;; HumiSoil is a high-humus soil restoration product made by fermenting

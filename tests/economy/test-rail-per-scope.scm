@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/economy/test-rail-per-scope.scm — one commune's rail is never another's.
 ;;;
 ;;; *spec-rail*/*social-portion* used to be one table for the whole process:

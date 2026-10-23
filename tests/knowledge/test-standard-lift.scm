@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-standard-lift.scm — a ratified standard raises a floor, up to its ceiling.
 ;;;
 ;;; Three catalogues (nutrition, housing, rest) carry an L4 layer: the scope's

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-indexes.scm — Independent demand/supply index tests
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/independent-demand.test.ts

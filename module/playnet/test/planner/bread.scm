@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; bread.scm — THE live fixture: the grow→mill→bake chain in one town, as
 ;;; the live suites share it. One copy, so the files that prove the
 ;;; commitment arc, the live wire and the willingness service plan over the

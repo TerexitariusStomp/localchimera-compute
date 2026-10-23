@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-intent-acdc.scm — intent ACDCs close the VF triad
 ;;;
 ;;; Verifies:

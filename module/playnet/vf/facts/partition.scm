@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; partition.scm — one record, one program.
 ;;;
 ;;; A decomposed solve (the federated ADMM, the tree of folds) equals the

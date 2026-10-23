@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federated-reference-core.scm — a scope solves the same program on either core.
 ;;;
 ;;; The federated solve (solve-decomposed) and the boundary oracle read a scope's

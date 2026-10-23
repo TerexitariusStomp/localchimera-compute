@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; terminal-reserve-test.scm — a recurring floor keeps recurring past the
 ;;; horizon's own edge — R3's second, previously-open option, live.
 ;;;

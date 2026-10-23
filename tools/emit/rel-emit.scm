@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/emit/rel-emit.scm — ui/app/rel-catalogue.ts from the relationship kinds
 ;;;

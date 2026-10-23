@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-clock.scm — one clock, three scales, civil only at the boundary.
 ;;;
 ;;; (playnet utils clock) is the single place a numeric instant is made or

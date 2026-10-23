@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-e2e.scm — composition through the live planner (Stage 6)
 ;;;
 ;;; A spec's satisfied-by lets a worker who holds the COMPONENT skills supply the

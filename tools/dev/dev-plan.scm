@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tools/dev/dev-plan.scm — the development scope's week, planned and printed.
 ;;;
 ;;; Reads the repository's Radicle issues and the scope's people, plans the

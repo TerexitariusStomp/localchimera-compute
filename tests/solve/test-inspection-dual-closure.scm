@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-inspection-dual-closure.scm — the recert cadence is READ OFF the plan.
 ;;;
 ;;; Slice 4 (test-inspection-credential.scm) closed the loop CONCEPTUALLY:

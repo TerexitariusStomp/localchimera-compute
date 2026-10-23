@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/observation/test-event-log.scm — the portable observer event log (gap #18).
 ;;;
 ;;; Pure module, depends only on the keri primitives — needs libblake3.so, so

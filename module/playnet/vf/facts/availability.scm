@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; matching/availability.scm — Overlap and intersection of availability
 ;;; windows for the matching layer.
 ;;;

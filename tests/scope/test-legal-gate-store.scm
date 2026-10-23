@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-gate-store.scm — the gate, built from the REAL stores + actor.
 ;;;
 ;;; Extends test-legal-gate.scm: instead of hand-built flows, the crossings are

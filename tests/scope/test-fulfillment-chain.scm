@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fulfillment-chain.scm — work-event → commitment SAID linkage
 ;;;
 ;;; Verifies the elegance: fulfillments and satisfactions are derivable

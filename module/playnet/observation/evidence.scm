@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; evidence.scm — the picture a reading was made from, by its hash
 ;;;
 ;;; A photo read keeps its picture on the device and names it on the reading by

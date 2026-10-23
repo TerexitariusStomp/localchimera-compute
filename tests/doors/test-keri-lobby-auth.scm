@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-keri-lobby-auth.scm — end-to-end lobby challenge-response
 ;;;
 ;;; Exercises the full KERI authentication flow through the ^lobby actor:

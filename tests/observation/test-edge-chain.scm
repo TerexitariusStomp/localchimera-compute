@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-edge-chain.scm — full per-work-event edge-chaining (follow-on #2)
 ;;;
 ;;; Every work event after the founding one edges to its skill ACDC, so a skill's

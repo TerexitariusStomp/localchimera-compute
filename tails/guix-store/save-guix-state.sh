@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # save-guix-state.sh
 # Saves /var/guix state back to Persistent so it survives the next reboot.
 # Run before shutting down Tails. Uses vsudo for graphical auth.

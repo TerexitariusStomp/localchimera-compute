@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-wire-procs.scm — the federated solve across TWO PROCESSES.
 ;;;
 ;;; Commune B is hosted by a child process (federation-wire-host.scm) behind a

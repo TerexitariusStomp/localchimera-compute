@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-gate.scm — THE VERTICAL SLICE (§6 of legal-crossings.md).
 ;;;
 ;;; Proves the whole chain gels with the planner, with REAL code at every link:

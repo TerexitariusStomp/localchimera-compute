@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-holes.scm — a hole in the recipe web: known by its boundary, yielding once mapped
 ;;;
 ;;; A hole is one tagged process whose flows are its ports. It seeds through

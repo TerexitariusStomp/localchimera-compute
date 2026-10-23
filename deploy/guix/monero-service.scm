@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/monero-service.scm — Guix/Shepherd service for monero-wallet-rpc
 ;;;
 ;;; Runs monero-wallet-rpc as a native Shepherd service, pointed at a

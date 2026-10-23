@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tools/emit/fdc-snapshot.scm — slice USDA FoodData Central (SR Legacy) into the
 ;;; composition rows the food sources bind.
 ;;;

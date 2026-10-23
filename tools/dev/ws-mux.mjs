@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // ws-mux.mjs — one public origin in front of the two gateway-side services.
 //
 // A deployment exposes ONE stable origin for the whole compute path:

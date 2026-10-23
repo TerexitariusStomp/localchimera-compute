@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-oracle.scm — QUESTION ZERO for federated planning:
 ;;; does the base located solver satisfy REMOTE demand via transport?
 ;;;

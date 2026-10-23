@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recover-lineage.scm — recover scope lineage from recomposition ACDCs
 ;;;
 ;;; Verifies that a fresh scope, given an acdc-store containing scope-merger

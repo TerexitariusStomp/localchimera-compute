@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/lib/machine-sig.js — the lender's signature on a receipt.
 //
 // A machine node's accountable chain (spec §1): the tab holds an Ed25519

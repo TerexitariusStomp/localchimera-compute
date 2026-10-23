@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 (define-module (scripts serve)
   #:use-module (web server)
   #:use-module (web request)

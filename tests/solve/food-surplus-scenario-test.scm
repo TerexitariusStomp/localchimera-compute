@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; food-surplus-scenario-test.scm — SF food-surplus redistribution, on the CONVEX
 ;;; planner (a condensed re-expression of the old relational
 ;;; deprecated-planner-tests/test-food-surplus-scenario.scm).

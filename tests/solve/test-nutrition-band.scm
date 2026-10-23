@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-nutrition-band.scm — a nutrient band has TWO edges, and the plan holds both.
 ;;;
 ;;; The subsistence catalogue carries each nutrient as a band (rda … ul, weight w).

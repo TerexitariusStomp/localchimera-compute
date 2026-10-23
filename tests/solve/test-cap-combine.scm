@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-cap-combine.scm — caps on one located good from two pools ADD.
 ;;;
 ;;; ingest takes eco-caps from several independent sources appended by the

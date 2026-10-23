@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/tools/test-scm-index.scm — scope/shadow-aware find-callers + duplicate-shape detection
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-scm-index.scm

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; voice/index-oracle.scm — ^index-oracle actor
 ;;;
 ;;; Writes external-index observation credentials into the ACDC store on

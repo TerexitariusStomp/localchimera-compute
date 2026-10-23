@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/credentials/test-frozen-emission.scm — a constructor's emission is frozen; a SAID commits to it.
 ;;;
 ;;; Every credential kind in credentials/ and keri/first-person is one

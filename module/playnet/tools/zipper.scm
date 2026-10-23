@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/tools/zipper.scm --- generic zipper over Scheme s-expression trees
 ;;;
 ;;; A zipper is a pointer into a tree that supports O(1) local moves

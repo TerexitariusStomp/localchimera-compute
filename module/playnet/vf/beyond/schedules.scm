@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/beyond/schedules.scm — recurring availability: the temporal expressions.
 ;;;
 ;;; ValueFlows states when with `hasBeginning`, `hasEnd`, `hasPointInTime` and

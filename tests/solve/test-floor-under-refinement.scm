@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-floor-under-refinement.scm — a reproduction floor stated for a day
 ;;; holds for the DAY once the clock refines it into bands.
 ;;;

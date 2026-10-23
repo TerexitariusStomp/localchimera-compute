@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/backends/scope.scm — Scope handler
 ;;;
 ;;; The interface to ONE scope. Translates the channel's backend protocol

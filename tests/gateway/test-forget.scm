@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/gateway/test-forget.scm — forget-me: erasure as one act, the link last.
 ;;;
 ;;; A member with everything a gateway can hold of theirs — a seat, a presence

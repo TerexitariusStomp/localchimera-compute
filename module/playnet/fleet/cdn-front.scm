@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/cdn-front.scm — a recorded fleet host, behind the CDN
 ;;;
 ;;; The reconciler names the hosts that want fronting on every tick

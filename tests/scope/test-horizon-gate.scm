@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-horizon-gate.scm — the accept gate at the plan-store's doors.
 ;;;
 ;;; docs/planning/solve/commitment-horizon.md: a work intent's window may reach at

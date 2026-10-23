@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-folksonomy-actor.scm — ^folksonomy up-the-tree propagation.
 ;;;
 ;;; Proves the folksonomy rides the SAME scope-tree aggregation path as the

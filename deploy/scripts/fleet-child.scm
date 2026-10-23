@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/scripts/fleet-child.scm — what this box keeps for one fleet host
 ;;;
 ;;;   guile -L module deploy/scripts/fleet-child.scm init NAME

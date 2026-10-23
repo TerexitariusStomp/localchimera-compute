@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/crypto-primitives.scm — pluggable KERI crypto seam
 ;;;
 ;;; Abstracts the four host primitives that signify.scm needs but that

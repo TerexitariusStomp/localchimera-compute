@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 import Mathlib.Analysis.Convex.Deriv
 import SolverCertificate.InTheLarge
 

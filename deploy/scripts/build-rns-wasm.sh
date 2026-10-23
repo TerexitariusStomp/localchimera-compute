@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # build-rns-wasm.sh — build the browser Reticulum wasm artifacts at deploy.
 #
 # rns_wasm.js / rns_wasm_bg.wasm are gitignored build products (like a

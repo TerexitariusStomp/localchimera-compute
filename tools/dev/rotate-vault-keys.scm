@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile --no-auto-compile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/dev/rotate-vault-keys.scm — re-encrypt every scope's bran.vault
 ;;; under a new PLAYNET_VAULT_KEY.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; personhood/witness-relay.scm — the work-witness ceremony's CROSS-GATEWAY transport,
 ;;; on the rail gateways actually share: state files served by the static
 ;;; tier, pulled by the peer poll — the same shape /scopes federation rides.

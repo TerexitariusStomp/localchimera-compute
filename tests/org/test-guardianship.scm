@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-guardianship.scm — documentary guardianship; voice math unchanged
 
 (use-modules (playnet test harness))

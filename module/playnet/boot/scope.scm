@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/scope.scm — a scope composed from its fragments.
 ;;;
 ;;; The composition root's word on what a scope is: the actor (playnet scope

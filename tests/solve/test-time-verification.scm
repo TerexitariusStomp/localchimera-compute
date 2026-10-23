@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-time-verification.scm — the checks the design doc named and nobody ran.
 ;;;
 ;;; docs/planning/solve/intra-period-time.md ends with a verification list. Most of it

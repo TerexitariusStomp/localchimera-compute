@@ -1,4 +1,5 @@
 #!/usr/bin/env guile
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; lint-verbs.scm — count the sites that spell actions by hand, and let the count only fall.
 ;;;

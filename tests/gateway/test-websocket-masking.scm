@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-websocket-masking.scm — a server never masks the frames it sends
 ;;;
 ;;; RFC 6455 §5.1: a client masks every frame it sends, a server masks none, and

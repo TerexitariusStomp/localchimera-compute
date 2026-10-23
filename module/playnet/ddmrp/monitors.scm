@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; monitors.scm — Execution monitors and sinks
 ;;;
 ;;; Translated from src/lib/execution/monitors.ts

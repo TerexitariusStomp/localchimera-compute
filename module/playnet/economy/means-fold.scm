@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; economy/means-fold.scm — the scope tree's standing capacity → what a solve may draw
 ;;;
 ;;; The labour pool's twin, over means (docs/planning/federation/means-pool-uc-allocation.md,

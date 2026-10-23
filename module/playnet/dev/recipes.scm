@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; dev.scm — playnet's own development, as a <world>.
 ;;;
 ;;; The work of developing this codebase is ValueFlows economic activity the

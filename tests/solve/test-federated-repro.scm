@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federated-repro.scm — reproduction floors ACROSS a vat boundary.
 ;;;
 ;;; "Free healthy food for everyone in the city" is not a claim about one commune.

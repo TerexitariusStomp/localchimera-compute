@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # build-docs-epub.sh — compile docs/playnet.typ to PDF + EPUB at deploy.
 #
 # browser/docs/playnet.pdf and browser/docs/playnet.epub are gitignored build

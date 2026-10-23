@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-snlt-order-invariance.scm — SNLT is an INFIMUM over the recipe graph,
 ;;; so it is a property of the TECHNOLOGY and of nothing else.
 ;;;

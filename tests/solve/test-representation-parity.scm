@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-representation-parity.scm — one limit, two encodings, one answer.
 ;;;
 ;;; The engine already parity-locks its two BACKENDS against each other: they

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-conservation.scm — nothing is spent that does not exist, and the verdict
 ;;; is already how you know.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-emp-modes.scm — EMP congestion mode (total vs pool) + skill-time preference
 ;;;
 ;;; The egalitarian default spreads work, but there are two readings of "equal"

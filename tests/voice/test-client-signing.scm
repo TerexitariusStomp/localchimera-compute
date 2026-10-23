@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-client-signing.scm — citizen client-side signing + the unified verifier
 ;;;
 ;;; The governance write surface is client-signed: a citizen's key never leaves

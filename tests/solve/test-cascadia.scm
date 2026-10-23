@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-cascadia.scm — Cascadia is a first-class bioregion, real climate from its OWN
 ;;; record, same machinery as Doon on another continent with a WINTER wet season.
 ;;; Proves the whole stack generalized: a second <bioregion> is just data.

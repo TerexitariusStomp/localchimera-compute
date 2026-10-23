@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/scope/keys.scm — the KERI methods of a scope: sign, anchor into the key event log, rotate, the backend and lineage setters.
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

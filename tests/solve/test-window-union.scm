@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-window-union.scm — a person's day is offered once, in the roster and in the solve.
 ;;;
 ;;; Ranges that overlap are one stretch of the day. The roster (matching/

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-confirmed-move.scm — a confirmed relocation carries its stock, exactly.
 ;;;
 ;;; A plan carries stock between places as a `pickup` at the origin and a `dropoff` at the

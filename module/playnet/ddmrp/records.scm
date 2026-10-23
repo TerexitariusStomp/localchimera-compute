@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; ddmrp/records.scm — the records of the buffer planner (DDMRP).
 ;;;
 ;;; Nine record types ValueFlows does not define: strategic positioning and the

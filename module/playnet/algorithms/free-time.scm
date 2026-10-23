@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; algorithms/free-time.scm — the one arithmetic of free time.
 ;;;
 ;;; Free time is the share of the time offered that is not planned:

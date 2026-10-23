@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/pack-dir.scm — where the law packs stand on disk.
 ;;;
 ;;; The packs are the law's text, one file per jurisdiction or regime, in

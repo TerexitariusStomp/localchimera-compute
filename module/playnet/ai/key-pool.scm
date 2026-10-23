@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/ai/key-pool.scm — Goblins actor for capability-secure API key pooling
 ;;;
 ;;; Self-contained module. No dependency on planner or playnet.

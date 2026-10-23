@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/e2e/stack-integration.scm — the adopted-stack e2e: a REAL
 ;;; service governs a REAL door decision, end to end.
 ;;;

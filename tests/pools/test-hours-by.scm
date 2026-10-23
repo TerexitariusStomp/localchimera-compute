@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-hours-by.scm — one fold of validated hours, the key an argument.
 ;;;
 ;;; observer.scm `hours-by` is the single fold behind the credit ledger

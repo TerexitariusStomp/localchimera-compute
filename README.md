@@ -57,3 +57,14 @@ make test            # the green baseline (needs guix for TEST_ENV)
 
 Individual suites run plain: `guile -L module -L tests tests/<dir>/<t>.scm`.
 The UI freshness gate is `make check-ui-fresh` (TypeScript → committed JS).
+
+## License
+
+First-party code in this repository is free software under the
+**GNU Affero General Public License, version 3 or later**
+(`AGPL-3.0-or-later`) — see `LICENSE`. Source files carry
+`SPDX-License-Identifier: AGPL-3.0-or-later` markers; `guix.scm` declares
+the same. Vendored and toolchain-emitted files keep their own licenses —
+`browser/vendor/`, `.hoot-compat/` (LGPL-3.0-or-later),
+`deploy/typst-packages/`, and Hoot's `browser/reflect.js` — recorded in
+`spec/oss-inventory.md` and `spec/oss-adopted.txt`.

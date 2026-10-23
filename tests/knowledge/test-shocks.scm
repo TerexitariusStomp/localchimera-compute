@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-shocks.scm — the shock algebra (playnet vf formulas shocks), read against
 ;;; docs/antifragile/: one matcher behind every branch, the adverse direction,
 ;;; and a tail that stands beyond its record by construction.

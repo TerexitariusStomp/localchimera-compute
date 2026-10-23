@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
  ;;; test-composition-complexity.scm — PlanStore tag/spec indexes and
 ;;; StoreRegistry cross-scope resolution
 ;;;

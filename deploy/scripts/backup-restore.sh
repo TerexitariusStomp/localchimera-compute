@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # deploy/scripts/backup-restore.sh — restore a state-*.tar.age snapshot.
 #
 # Idempotent + dry-run-by-default. Two phases:

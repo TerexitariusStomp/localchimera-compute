@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-work-done-id.scm — the id of the event that confirms a commitment done is one function.
 ;;;
 ;;; record-work-done, record-flow-done and the dev ledger's guards each name the event

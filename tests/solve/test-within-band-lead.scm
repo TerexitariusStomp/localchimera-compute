@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-within-band-lead.scm — a chain's first unit must fit its band.
 ;;;
 ;;; A band holds no clock, so a dependent chain used to balance inside one

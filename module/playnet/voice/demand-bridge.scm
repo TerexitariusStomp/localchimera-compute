@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; voice/demand-bridge.scm — promote tallied demands into VF proposals
 ;;;
 ;;; Closes the loop: an ^expression with `domain='demand` whose

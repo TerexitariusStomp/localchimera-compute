@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-willingness.scm — the solver offers first; willingness gates materialization.
 ;;;
 ;;; The humane labour loop, proven at the convex core (no UI, no actors — like

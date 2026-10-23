@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-clock-horizon.scm — band width is the dial, and it turns.
 ;;;
 ;;; The lattice is the time-indexed formulation of scheduling, so sub-band

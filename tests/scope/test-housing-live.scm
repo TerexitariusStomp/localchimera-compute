@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-housing-live.scm — the housing floor, derived and met in a LIVE scope.
 ;;;
 ;;; tests/solve/test-housing-substance.scm proves the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/decomposed.scm — §10: the federated decomposed solve, scopes in parallel.
 ;;;
 ;;; The whole economy is ONE convex program (solve/engine §6); a SPATIALLY

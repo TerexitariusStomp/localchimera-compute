@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-device-auth.scm — cold root, hot device keys.
 ;;;
 ;;; The root (KEL key, passcode in hand) authorizes a device's key with a

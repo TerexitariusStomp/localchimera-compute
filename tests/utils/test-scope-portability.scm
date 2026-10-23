@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/utils/test-scope-portability.scm
 ;;;
 ;;; The portability claim: a scope's state directory

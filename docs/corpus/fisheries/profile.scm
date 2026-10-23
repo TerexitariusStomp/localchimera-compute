@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; profile.scm — what to extract from stock-assessment literature.
 ;;;
 ;;;   node tools/corpus/corpus.mjs probe fisheries --target envelope

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-contest-count.scm — a count is contested the way work is, and its
 ;;; whole family goes with it.
 ;;;

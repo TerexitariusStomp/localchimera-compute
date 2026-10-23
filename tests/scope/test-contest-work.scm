@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-contest-work.scm — the absence claim, given its door.
 ;;;
 ;;; Hours count the moment they are worked against a declared need; the spec's

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; demand-policy.scm — Demand derivation policies for communal planning
 
 (define-module (playnet observation demand-policy)

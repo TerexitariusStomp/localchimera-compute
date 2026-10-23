@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scenario-shocks.scm — a scenario generalizes BEYOND crop yields to ANY
 ;;; (action, spec) intent — the same unit the Observer measures ex-post. A shock is
 ;;; (action key factor):

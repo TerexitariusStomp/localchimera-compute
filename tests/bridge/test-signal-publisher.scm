@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-signal-publisher.scm — the ONE signal topic contract.
 ;;;
 ;;; signal-topic builds what the consumers subscribe to

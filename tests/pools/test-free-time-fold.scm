@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-free-time-fold.scm — ^freetime-node: social free time as a federation fold.
 ;;;
 ;;; A QUANTITY fold, nameless above the home: each scope states two cells, the

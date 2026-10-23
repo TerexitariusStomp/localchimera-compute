@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-household-recipe.scm — the housework recipes: shape, and the claim that
 ;;; cleaning moves matter without making any.
 ;;;

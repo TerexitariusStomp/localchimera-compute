@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/keria-service.scm — Guix/Shepherd services for KERIA + witnesses
 ;;;
 ;;; Runs KERIA (cloud agent) and kli witness nodes as native Shepherd services.

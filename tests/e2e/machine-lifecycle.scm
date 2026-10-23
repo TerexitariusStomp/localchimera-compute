@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/e2e/compute-lifecycle.scm — the whole compute story, in order.
 ;;;
 ;;; Not one act — the chain: a lender binds a did:key node to its AID with

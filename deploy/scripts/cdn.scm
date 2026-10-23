@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/scripts/cdn.scm — this deployment's CDN, from the command line
 ;;;
 ;;;   guile -L module deploy/scripts/cdn.scm purge

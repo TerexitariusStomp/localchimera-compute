@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-scale-invariance.scm — the same problem, in different units, is the same plan.
 ;;;
 ;;; A physical question does not change when you restate it in grams instead of

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; transport.scm — transport as a VF recipe: a vehicle is USED, the rider is
 ;;; PICKED UP / DROPPED OFF and CONTAINED in it for the trip.
 ;;;

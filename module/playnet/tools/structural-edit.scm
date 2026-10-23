@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/tools/structural-edit.scm --- path-addressed structural editing ops
 ;;;
 ;;; Zipper-backed paredit-style operations over a tree of forms, as read

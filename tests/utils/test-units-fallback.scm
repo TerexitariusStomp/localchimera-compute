@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-units-fallback.scm — unit conversion where GNU units is absent, and where
 ;;; it is present (module/playnet/utils/units.scm).
 ;;;

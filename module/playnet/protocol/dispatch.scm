@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/protocol/dispatch.scm — an object's methods are its declared doors
 ;;;
 ;;; `declared-methods` is Goblins' `methods` with one addition: the first time

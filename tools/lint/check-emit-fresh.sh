@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/lint/check-emit-fresh.sh — a generated, committed file matches what its emitter writes today.
 #
 #   EMIT_CMD="<guile invocation>" tools/lint/check-emit-fresh.sh <check-target> <out-file> <emit-target> <emit-tool> [ARG …]

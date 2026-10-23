@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/time.scm — shared time helpers
 ;;;
 ;;; Extracted from ai/key-pool.scm, policy.scm, poller.scm, reconciler.scm

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; conformance-catalogue.scm — the CONFORMANCE fragility catalogue.
 ;;;
 ;;; playnet.typ §2.0.8 (and social-means §"Inspection", §1110): "the margin above each

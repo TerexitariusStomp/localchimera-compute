@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; utils/lei.scm — the Legal Entity Identifier, as ISO 17442 states it.
 ;;;
 ;;; Twenty characters: a prefix of the issuing Local Operating Unit, the

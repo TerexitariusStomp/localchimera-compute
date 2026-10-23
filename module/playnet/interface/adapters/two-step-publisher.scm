@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/two-step-publisher.scm — the two-step publish
 ;;; strategy (Meta Graph): create a media container, then publish it.
 ;;;

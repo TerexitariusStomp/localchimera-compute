@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-containment.scm — storage is transport through TIME; loss is a recipe consume.
 ;;;
 ;;; Inspecting build-columns directly (solver-independent):

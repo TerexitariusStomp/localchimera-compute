@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-keria-store-pending.scm — umbrella-grant
 ;;; resilience via the unified ^pending-grants queue.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-membership.scm — Agent hierarchy and membership indexing
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/membership-lifecycle.test.ts

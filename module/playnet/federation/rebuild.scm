@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/rebuild.scm — reconstruct a live governance actor graph from ACDCs
 ;;;
 ;;; The architectural premise: ACDCs are the durable source of truth;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/mesh-mailbox.scm — ^mesh-mailbox
 ;;;
 ;;; Store-and-forward custody for mesh deliveries to browser personas

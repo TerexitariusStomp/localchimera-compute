@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; envelope.scm — the planner service's answer, ok or error
 ;;;
 ;;; A door returns either (ok . X) or (error . "message"); the browser

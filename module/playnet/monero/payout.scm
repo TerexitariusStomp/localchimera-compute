@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/monero/payout.scm — the payout runner: members' standing
 ;;; "send N XMR of mine to ⟨address⟩" intents, moved on-chain from the
 ;;; commons' wallet under its ^wallet-policy.

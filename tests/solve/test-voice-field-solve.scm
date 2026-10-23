@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-voice-field-solve.scm — the field on a solve: one labform entry per
 ;;; work column, and what it does to the plan.
 ;;;

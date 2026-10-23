@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; catch.scm — Guile's catch/throw, on a build that has neither.
 ;;;
 ;;; The planner signals "this week has no plan" with (throw 'planner-starvation …)

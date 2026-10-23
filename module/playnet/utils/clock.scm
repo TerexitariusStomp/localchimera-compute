@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; clock.scm — the one clock: time-of-day arithmetic on strings, and the
 ;;; timescale every numeric instant is counted on.
 ;;;

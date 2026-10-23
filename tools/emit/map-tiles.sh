@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/emit/map-tiles.sh — cut the basemap's archives and fetch its glyphs.
 #
 # The map draws OpenStreetMap vector tiles served from PMTiles archives under

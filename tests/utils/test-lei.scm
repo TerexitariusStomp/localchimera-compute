@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-lei.scm — the Legal Entity Identifier's check digits (utils/lei.scm).
 ;;;
 ;;; Twenty alphanumerics whose ISO 7064 MOD 97-10 residue is 1. GLEIF's own

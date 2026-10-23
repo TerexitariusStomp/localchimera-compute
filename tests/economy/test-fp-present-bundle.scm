@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fp-present-bundle.scm — a vouch that travels.
 ;;;
 ;;; Alice, recognised at commune A, vouches for Tia. Tia carries the bundle

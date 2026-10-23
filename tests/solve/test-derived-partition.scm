@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-derived-partition.scm — a declared boundary IS a period boundary.
 ;;;
 ;;; The solve has honoured declared boundaries for a while, but only once a

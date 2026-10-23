@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/monero/wallet.scm — sealed Goblins actor wrapping monero-wallet-rpc
 ;;;
 ;;; The raw RPC credentials never leave the actor closure. Callers interact

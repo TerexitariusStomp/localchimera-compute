@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/recomposition.scm — scopes recomposed: merger, split, rejoin, conflict resolution.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

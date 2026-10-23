@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/mesh.scm — the Reticulum mesh transport, wired when the bridge is reachable.
 ;;;
 ;;; Mesh is on with --reticulum or RETICULUM_BRIDGE_SOCKET. SOFT-DEGRADE,

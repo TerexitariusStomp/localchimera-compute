@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-wear-maintenance.scm — wear/maintenance with NO bespoke machinery.
 ;;;
 ;;; A durable's CONDITION is just a stock good `Cond|oven`. Per-recipe wear is a

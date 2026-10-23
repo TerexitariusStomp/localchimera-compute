@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-resource-conformance-live.scm — substitutable MEANS through the live planner.
 ;;;
 ;;; The means-side twin of test-skill-e2e. There, a worker holding the component

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; profile.scm — what to extract from silviculture literature, and how to find it.
 ;;;
 ;;; The generic seam (docs/corpus/README.md): tools/corpus/ knows nothing about

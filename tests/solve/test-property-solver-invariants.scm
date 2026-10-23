@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-property-solver-invariants.scm — randomized checks of the Layer-A
 ;;; math against the actual solver, not one hand-picked rig.
 ;;;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/machine-store-test.mjs — the store kind's node, tested.
 //
 // machine-store.js is the "browser tab holds bytes and proves it" claim:

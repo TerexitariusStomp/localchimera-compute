@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-material-loop.scm — the plan's own realisation moves stock, exactly, for a
 ;;; MULTI-STAGE chain. enact-rows records the plan's produce/consume/move rows into
 ;;; the REAL observer by readiness (a row waits for the stock it draws), so no

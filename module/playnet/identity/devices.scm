@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/identity/devices.scm — the devices a root authorized
 ;;;
 ;;; One file per person, `<dir>/devices-<aid16>.scm`: a list of entries, each

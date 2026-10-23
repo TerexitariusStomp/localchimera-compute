@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; matching/affinity.scm — classification affinity between needs and offers.
 ;;;
 ;;; The taxonomy-side of matching: two slots are affine when their categories

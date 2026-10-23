@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-contact-point.scm — user-held contact points (GDPR plan §Phase 1b)
 ;;;
 ;;; A contact point is how to REACH a person on some channel. It used to live

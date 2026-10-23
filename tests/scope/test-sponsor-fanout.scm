@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-sponsor-fanout.scm — sponsor fan-out cap on `invite`
 ;;;
 ;;; A single sponsor cannot flood the ecosystem with PHCs. Caps:

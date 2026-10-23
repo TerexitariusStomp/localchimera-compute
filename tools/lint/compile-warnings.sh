@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # compile-warnings.sh — compile every live module with the warnings that find calls
 # which can never run, and report them.
 #

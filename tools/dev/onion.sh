@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/onion.sh — the day dial, LIVE on your phone, over a throwaway .onion.
 #
 # One command for the "edit from mobile, see it on mobile" loop:

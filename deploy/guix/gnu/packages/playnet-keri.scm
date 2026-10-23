@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/gnu/packages/playnet-keri.scm — the KERI / ACDC / Signify library and the
 ;;; First Person (OpenVTC) credentials over it, as a Guix package
 ;;;

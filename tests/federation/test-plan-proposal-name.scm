@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-plan-proposal-name.scm — a rising plan's proposal is named for its plan, and the name reads back.
 ;;;
 ;;; The leaf publishes its work as a proposal named `plan:<plan-id>` (federation/plan-bundle.scm);

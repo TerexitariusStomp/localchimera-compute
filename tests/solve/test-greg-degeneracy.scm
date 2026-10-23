@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-greg-degeneracy.scm — the right tool for the wrong problem.
 ;;;
 ;;; Spec: docs/playnet.typ §7.12 (the gradient-regularized Newton step, after

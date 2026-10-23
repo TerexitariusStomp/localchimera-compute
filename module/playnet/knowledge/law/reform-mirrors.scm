@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/reform-mirrors.scm — the (L, I, D) mirror beside each spec-bearing demand,
 ;;; so reform.scm can derive the four cells and the move (legal-crossings
 ;;; §8). L/I/D are now fully DERIVED from real ValueFlows recipes (legal-aspects):

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Leads: turn a corpus into a research work-list.
 //
 // Some sources are worth reading for their FACTS. Others are worth reading for

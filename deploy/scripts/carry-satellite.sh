@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # carry-satellite.sh — carry a satellite repo's Radicle storage to the box.
 #
 #   bash deploy/scripts/carry-satellite.sh <name>       (names: deploy/satellites.scm)

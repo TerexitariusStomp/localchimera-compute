@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/ai/tee-attestation.scm — root a nano-gpt TEE response toward
 ;;; the hardware vendor, one honest layer past the response signature.
 ;;;

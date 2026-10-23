@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-enact-order.scm — a plan enacts in an order the books can serve, cycles included.
 ;;;
 ;;; A plan's material rows depend on one another: a good is made before it is used, a move

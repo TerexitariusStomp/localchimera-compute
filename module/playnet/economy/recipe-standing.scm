@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; economy/recipe-standing.scm — the response's live adapter: observer → runs → curve.
 ;;;
 ;;; solve/recipe-response.scm (planner) is the pure half of metabolism step 1: runs

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; compute/envelope.scm — the job envelope: what a node pulls and runs.
 ;;;
 ;;; WHAT THE FILE HOLDS. The <job-envelope> record — the self-describing

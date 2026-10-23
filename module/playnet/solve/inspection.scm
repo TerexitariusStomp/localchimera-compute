@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; solve/inspection.scm — inspection for a LIVE scope: the conformance edges a plan
 ;;; leans on, made into freshness stocks the plan must keep, and the loads it
 ;;; routes through them, read back off the solve.

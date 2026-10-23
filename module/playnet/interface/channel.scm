@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/channel.scm — Generic interface channel
 ;;;
 ;;; A ^channel is one interface surface (a Matrix room, a Telegram chat,

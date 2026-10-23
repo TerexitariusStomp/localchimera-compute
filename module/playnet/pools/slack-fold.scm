@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; pools/slack-fold.scm — ^slack-node: the federation fold, over desire.
 ;;;
 ;;; The earth face tints each place by how whole its demand reads — met over

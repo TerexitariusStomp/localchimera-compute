@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/economy/test-owned-delivery.scm — A WANT IS FELT ON THE CITIZEN'S OWN GOOD.
 ;;;
 ;;; truth-telling.md, "the path to dominance at scale": a want a citizen

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; utils/repl-client.scm — send one form to a live (system repl server) socket.
 ;;;
 ;;; `.claude/skills/repl/SKILL.md` documents the pattern this reuses, and

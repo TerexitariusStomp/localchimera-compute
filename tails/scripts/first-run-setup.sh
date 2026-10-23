@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # first-run-setup.sh
 # For new users who copied the USB. Wipes old encrypted vault, creates a new one,
 # generates fresh identities, and walks through adding API keys.

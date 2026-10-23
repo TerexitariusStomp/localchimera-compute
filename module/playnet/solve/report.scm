@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/report.scm — a plan, read: the solve's point as VF rows and ledgers.
 ;;;
 ;;; The engine (solve/engine) leaves a point x over the columns it built; this

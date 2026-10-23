@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/push/store.scm — ^push-subscription-store
 ;;;
 ;;; Each device's Web Push subscription, parsed, keyed by the device's id

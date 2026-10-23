@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-persistence.scm — Bloblin persist/restore round-trip tests
 ;;; Run with: guile -L module tests/test-persistence.scm
 

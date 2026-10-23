@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-decomposed-optimality.scm — when may the federation stop coordinating?
 ;;;
 ;;; Spec: docs/playnet.typ §7.15 / §10 (scope decomposition, pull-coordination),

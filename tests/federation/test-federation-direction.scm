@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-direction.scm — which way a good crosses is the solve's to say.
 ;;;
 ;;; A commune shares a good through one column, its draw on the crossing

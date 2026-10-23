@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-stock-conformance-live.scm — a substitutable STOCK through the live planner.
 ;;;
 ;;; The consumable-stock twin of test-resource-conformance-live. There a durable's

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/command-dispatch.scm — Generic command router
 ;;;
 ;;; A layer-pure actor: holds a hashmap of command-name → handler procedure

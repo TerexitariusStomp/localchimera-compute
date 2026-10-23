@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/vpsbg.scm — VPSBG API client + provider
 ;;;
 ;;; VPSBG (vpsbg.eu) is a no-KYC VPS provider offering AMD SEV-SNP

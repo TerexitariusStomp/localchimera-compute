@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/reconciler.scm — staged fleet reconciler actor
 ;;;
 ;;; `^fleet-reconciler` is the actor that actually closes the

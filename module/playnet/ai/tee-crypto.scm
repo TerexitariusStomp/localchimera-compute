@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/ai/tee-crypto.scm — pure-Guile Ethereum-style signature
 ;;; verification for nano-gpt TEE responses. No external libraries, no native
 ;;; deps (none are installed), no network — the whole check runs offline inside

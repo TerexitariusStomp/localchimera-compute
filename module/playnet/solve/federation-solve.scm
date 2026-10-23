@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/solve/federation-solve.scm — the records→scope-record bridge + a federated solve.
 ;;;
 ;;; Turns sovereign communes (each a bag of VF records) into a cross-vat

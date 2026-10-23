@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-reading-convert.scm — a reading is a count of a stock: the conversion.
 ;;;
 ;;; observation/convert.scm is the one place an intensive reading becomes an

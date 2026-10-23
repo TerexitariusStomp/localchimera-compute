@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-structural-invariants.scm — leaves-are-real validators
 
 (use-modules ((playnet utils units) #:select (%effort-unit)))

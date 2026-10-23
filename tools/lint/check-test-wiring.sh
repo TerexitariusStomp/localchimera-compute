@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/lint/check-test-wiring.sh — every test file must be reachable from `make`.
 #
 # The failure this exists to stop is not a failing test; it is a test nobody

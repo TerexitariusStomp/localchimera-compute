@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/knowledge/test-signup-disabled-gate.scm — PLAYNET_DISABLE_REAL_SIGNUP
 ;;; refuses identity-creating doors, leaves witnessing/seat-checking alone.
 ;;;

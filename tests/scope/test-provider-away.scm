@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-provider-away.scm — a work accept whose provider is away does not pin.
 ;;;
 ;;; docs/planning/food/reproduction-of-labour-power.md §2c/§7: a sick, rest or

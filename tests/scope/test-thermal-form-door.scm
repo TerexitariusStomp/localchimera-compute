@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-thermal-form-door.scm — a scope declares a warmed form, and everything follows.
 ;;;
 ;;; knowledge/thermal.scm `declare-thermal-form!` on a scope's recipe store: the

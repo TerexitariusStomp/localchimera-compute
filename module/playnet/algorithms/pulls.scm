@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; algorithms/pulls.scm — Pull: the marginal harmony of one more hour.
 ;;;
 ;;; Spec: docs/playnet.typ §"Derived demand and the pull of a bottleneck".

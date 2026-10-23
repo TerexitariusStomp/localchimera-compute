@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; berlin-food-seed.scm — the Berlin food chain as DATA over the generic
 ;;; seed-food-chain! (food-chain-seed.scm). Reclaim from a Betrieb, hold it cold,
 ;;; hand it out at a Fairteiler.

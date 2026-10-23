@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-value-equations-sne.scm — Income distribution and SNE computation
 ;;;
 ;;; Tests:

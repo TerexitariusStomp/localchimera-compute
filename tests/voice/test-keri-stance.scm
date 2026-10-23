@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-keri-stance.scm — KERI-signed stances with local Ed25519 keypairs
 ;;;
 ;;; Proves the verifier abstraction works: ballot accepts Ed25519-signed

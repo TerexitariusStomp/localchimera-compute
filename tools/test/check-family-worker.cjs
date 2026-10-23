@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // check-family-worker.cjs — boot browser/family.wasm the way the page's worker does, and ask it a week.
 //
 //   node tools/test/check-family-worker.cjs        (make check-family-worker builds the wasm first)

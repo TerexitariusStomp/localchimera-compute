@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-haul-work.scm — the driver's work on a haul is one need per recipe, and an accept of it
 ;;; pins nothing the solve cannot place.
 ;;;

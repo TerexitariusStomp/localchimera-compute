@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-open-terminal-mailbox-gate.scm — the two remaining role-gate stubs,
 ;;; wired to a live PHC
 ;;;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/store-test.mjs — app/store.ts: the localStorage door, and what
 // it says when the device refuses.
 //

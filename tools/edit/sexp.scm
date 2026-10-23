@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile --no-auto-compile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; sexp.scm — structural navigation and editing for Scheme sources.
 ;;;

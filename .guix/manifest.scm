@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; .guix/manifest.scm — CI build manifest
 ;;;
 ;;; Declares every package this channel provides.  CI runs:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tension-kinds.scm — the SINGLE SOURCE OF TRUTH for per-kind term math.
 ;;;
 ;;; One spec → BOTH backends. `*kind-spec*` is a list of

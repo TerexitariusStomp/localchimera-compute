@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-stage-state.scm — a stage is part of what a thing is.
 ;;;
 ;;; Soil after legumes is not soil after maize; a line that has just run peanuts

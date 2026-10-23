@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federated-certificate.scm — what a federated solve can and cannot prove.
 ;;;
 ;;; Spec: docs/social-category.typ §6 (constraints glue exactly, objectives glue

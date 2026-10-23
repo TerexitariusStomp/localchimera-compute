@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; audit.scm — needs are facts: the audit of a ratified kind
 ;;;
 ;;; truth-telling.md, stage 3. A `held` or `floor` row is the strongest

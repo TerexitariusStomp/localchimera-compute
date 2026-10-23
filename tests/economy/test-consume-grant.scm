@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-consume-grant.scm — socializing MONEY: a consume-grant lends a quantity
 ;;; to be SPENT, and the commune's plan draws on exactly that much.
 ;;;

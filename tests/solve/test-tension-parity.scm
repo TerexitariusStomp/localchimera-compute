@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-tension-parity.scm — termwise Scheme ≡ C, the regression net.
 ;;;
 ;;; The refactor routed term-coeffs / csr-grad / obj-value through

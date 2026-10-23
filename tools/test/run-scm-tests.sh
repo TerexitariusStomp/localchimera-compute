@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # run-scm-tests.sh — the generic green baseline.
 #
 # Discovers EVERY .scm test in the repo (tests/ and module/**/tests/) and runs

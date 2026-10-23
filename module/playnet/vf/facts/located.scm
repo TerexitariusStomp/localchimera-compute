@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; located.scm — a located key is a value; these are its constructors and
 ;;; its readers, stated once.
 ;;;

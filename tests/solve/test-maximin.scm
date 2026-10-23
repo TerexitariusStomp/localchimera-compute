@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-maximin.scm — the wants judged without a probability.
 ;;;
 ;;; docs/antifragile/antifragile.md: maximize the minimum fraction of available

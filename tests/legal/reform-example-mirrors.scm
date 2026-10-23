@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; reform-example-mirrors.scm — seven worked mirrors, one of each kind, and
 ;;; the program they sort into.
 ;;;

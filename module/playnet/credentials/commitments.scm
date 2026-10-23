@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/commitments.scm — what is promised: commitment, fulfillment, intent, agreement, the redistribution mandate and its predicate DSL.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

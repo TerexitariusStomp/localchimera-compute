@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-ipex-policy.scm — IPEX grant-policy registry tests
 ;;;
 ;;; Pure-data tests for the schema → policy-record lookup table. No

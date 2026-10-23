@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/lib/capabilities.js — does this browser run playnet's wasm?
 //
 // The spine (day-boot.wasm) and the planner (family.wasm) are compiled by Hoot

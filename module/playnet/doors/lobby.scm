@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/lobby.scm — OCapN gateway entry point
 ;;;
 ;;; The lobby is the single actor whose sturdyref is published.

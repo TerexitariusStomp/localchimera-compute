@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/identity/test-kel-in-hand.scm — the key log in hand, pinned natively
 ;;;
 ;;; What this pins (module/playnet/identity/kel.scm, the pure half of the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; brandenburg-farm.scm — a REAL bounded scope in the Berlin/Brandenburg shed, the
 ;;; structural twin of navdanya-farm.scm (Doon). Same builders, same robust machinery,
 ;;; DIFFERENT DATA: a temperate market-garden farm on the sandy soils around Berlin,

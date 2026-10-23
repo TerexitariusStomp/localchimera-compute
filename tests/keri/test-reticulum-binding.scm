@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-reticulum-binding.scm — AID ↔ mesh binding verifier.
 ;;;
 ;;; Three rings:

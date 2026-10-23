@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/emit/emit-attribution-notices.scm — the shipped RID token, written into
 ;;; every place that quotes it outside the browser's own TS/JS.

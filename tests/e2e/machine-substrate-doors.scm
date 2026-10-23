@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/e2e/machine-substrate-doors.scm — the declared substrate still answers.
 ;;;
 ;;; The browser product was stripped to the machine node, but the KERI /

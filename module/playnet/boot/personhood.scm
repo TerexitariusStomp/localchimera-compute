@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/personhood.scm — First-Person on this gateway: the roots it honours, the founders, the issuers it trusts, the asks' rails.
 
 (define-module (playnet boot personhood)

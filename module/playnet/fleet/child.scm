@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/child.scm — what this box keeps for each fleet host
 ;;;
 ;;; A fleet host's root is LUKS-encrypted, and it reboots with nobody at its

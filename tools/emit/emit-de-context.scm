@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; emit-de-context.scm — write the German/Berlin context pack.
 ;;;
 ;;;   guile -L module tools/emit/emit-de-context.scm [OUT]        (make de-pack)

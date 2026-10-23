@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-token-rotation.scm — token-rotation state machine
 ;;;
 ;;; Exercises advance-token-rotation-step's three terminal-or-pending

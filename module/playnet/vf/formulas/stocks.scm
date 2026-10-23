@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; stocks.scm — REGENERATING STOCKS: a resource whose CONDITION is a carried
 ;;; LEVEL, drawn down by production and restored by regeneration, threaded from
 ;;; each period to the next. The one dynamic behind soil fertility, tool wear,

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-robust-multiscenario.scm — diversity is a DERIVED result of robust planning.
 ;;;
 ;;; Claim (docs/planning/solve/robust-multiscenario.md): the planner needs NO new solver

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-person-ledger.scm — the plan's social ledger, person by person.
 ;;;
 ;;; The social block states the plan's hours as totals (direct + transport +

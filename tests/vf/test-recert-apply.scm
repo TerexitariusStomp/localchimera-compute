@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recert-apply.scm — the plan's recert schedule flows onto the credentials.
 ;;;
 ;;; The natural consumer of plan-scope's `conformance-recert` field: `apply-recert-

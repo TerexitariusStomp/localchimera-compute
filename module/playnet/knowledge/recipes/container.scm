@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; container.scm — a lockable container (strongbox, safe, cashbox, drop box)
 ;;; as a generic durable good. This file registers the SPEC only.
 ;;;

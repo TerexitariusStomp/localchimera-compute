@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-rotor.scm — round-robin provider rotor
 ;;;
 ;;; Run:

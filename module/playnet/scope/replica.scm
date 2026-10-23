@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; replica.scm — a scope's books, copied to wherever its member is.
 ;;;
 ;;; A member's device holds a copy of the scope they are in, so that a count, a

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-demand-vf-action.scm — the single source of truth for the demand → VF
 ;;; action correspondence, and its use at the obligation lowering site.
 ;;;

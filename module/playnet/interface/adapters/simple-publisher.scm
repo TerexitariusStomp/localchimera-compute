@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/simple-publisher.scm — the single-step
 ;;; publish strategy, config-driven. A new single-call bearer platform is a CONFIG
 ;;; ROW (platforms.scm), not a module.

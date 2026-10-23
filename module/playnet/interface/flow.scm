@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/flow.scm — Conversational flows
 ;;;
 ;;; A flow is a small, declarative state machine for multi-turn

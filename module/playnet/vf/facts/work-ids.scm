@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; work-ids.scm — the id grammar of the work-intent families, written once.
 ;;;
 ;;; The solve lays work as intents, and a family is told apart by its id:

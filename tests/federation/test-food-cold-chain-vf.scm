@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-food-cold-chain-vf.scm — VF-rich cold-chain food modeling
 ;;;
 ;;; This is the companion to `test-food-surplus-scenario.scm`. Where that

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; skills/dev-skills.scm — the catalogue's own entries for playnet's own development.
 ;;;
 ;;; One skill per `area:` docs/radicle-issues.md's taxonomy names, plus the

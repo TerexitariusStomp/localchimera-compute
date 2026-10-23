@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-sky-reading-live.scm — a reading replaces the estimate, by the one door.
 ;;;
 ;;; The shine states the light a hectare receives as an ESTIMATE (catalogues/substances.scm

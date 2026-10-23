@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/lib/rns-identity.js — the Reticulum mesh key, at rest.
 //
 // A browser's anonymous mesh identity is a 64-byte private key that has to

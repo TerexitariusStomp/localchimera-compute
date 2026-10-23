@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; worlds/presets.scm — the worlds a scope can start from, listed once.
 ;;;
 ;;; Every economy the tree ships as data (a <world>, knowledge/world.scm) is a

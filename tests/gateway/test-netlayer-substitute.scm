@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-netlayer-substitute.scm — Verify actors work across OCapN network boundary
 ;;;
 ;;; This test proves that every program relying on a netlayer (gateway,

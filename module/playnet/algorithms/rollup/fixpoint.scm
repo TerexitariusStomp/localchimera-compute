@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; rollup/fixpoint.scm — ONE fixpoint over the technology adjoint.
 ;;;
 ;;; Spec: docs/playnet.typ §"Reproduction labour and the two measures of labour"

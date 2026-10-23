@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/test/boot-smoke.sh — the gateway boots: a throwaway-state gateway reaches
 # "REPL listening", or the tail of its log says why not.
 #

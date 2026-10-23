@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; first-person/sybil-detect.scm — advisory analysis over the PHC + VRC graph
 ;;;
 ;;; Pure functions; nothing in this module mutates the store or revokes

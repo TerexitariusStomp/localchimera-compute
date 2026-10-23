@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-free-time-whatif.scm — a question never moves the published f.
 ;;;
 ;;; Credit and consumer voice read ONE social free time, `current-social-free-time`,

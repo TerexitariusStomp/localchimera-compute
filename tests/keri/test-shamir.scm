@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-shamir.scm — Shamir secret sharing over GF(256)
 ;;;
 ;;; Verifies: GF(256) arithmetic, split/combine round-trip, threshold

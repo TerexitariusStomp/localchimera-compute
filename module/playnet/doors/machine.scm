@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/machine.scm — the machine doors of the governance
 ;;; service: lane offers, job intents, dispatch claims, receipts, and the
 ;;; settlement statements a ring-3 bridge lands.

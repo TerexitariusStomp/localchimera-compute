@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-observe.scm — the observer→planner loop: an eco agent's MEASURED state becomes the baseline.
 ;;;
 ;;; Eco agents are ordinary observed resources: an EconomicResource whose `conforms-to` spec is

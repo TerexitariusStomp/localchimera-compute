@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/http-witness-publisher.scm — kel-store
 ;;; subscriber that POSTs every event to remote witness URLs.
 ;;;

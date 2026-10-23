@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; matching/feasibility.scm — 7-dimensional feasibility scoring.
 ;;;
 ;;; The matcher asks: given two <intent-binding>s — one carrying an

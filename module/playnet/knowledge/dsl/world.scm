@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; world.scm — an economy as data, and the two doors that read it.
 ;;;
 ;;; A <world> is what a scope's stores hold: resource specs, recipe processes,

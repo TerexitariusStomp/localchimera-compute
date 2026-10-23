@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; matching/schemas.scm — Sidecar records for the matching layer.
 ;;;
 ;;; The matcher operates on VF records from (playnet vf schemas):

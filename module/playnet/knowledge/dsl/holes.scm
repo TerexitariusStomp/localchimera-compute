@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; dsl/holes.scm — a HOLE in the recipe web: a process known by its boundary alone.
 ;;;
 ;;; A scope maps its economy recipe by recipe, and the map has holes in it

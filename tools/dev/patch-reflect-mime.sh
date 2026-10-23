@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # hoot's `guild compile-wasm --bundle` emits browser/reflect.js with a bare
 # WebAssembly.instantiateStreaming(fetch(...)) — which hard-fails when the
 # server mis-types .wasm (Capacitor's local scheme is a known offender;

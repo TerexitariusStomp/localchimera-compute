@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/audit.scm — what an auditor writes: the audit pass, the incoherence alert, the derived-state snapshot.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

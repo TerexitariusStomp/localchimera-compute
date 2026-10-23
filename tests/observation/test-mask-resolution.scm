@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-mask-resolution.scm — subject-across-masks: a demand binds to WHICHEVER
 ;;; per-door mask holds that door (playnet.typ: a mask is per-door, not per-asset).
 ;;;

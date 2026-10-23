@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; reproduction-terminal-test.scm — the reproduction floor holds THROUGH the
 ;;; live entry point's LAST period, not only its first.
 ;;;

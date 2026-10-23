@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-settlement-chain.scm — consumption side on the distributable substrate
 ;;;
 ;;; The bridge attests individually-claimable `transfer` events (credit draws) just

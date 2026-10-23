@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-optimal-face.scm — on a plateau, the honest claim is membership in the
 ;;; optimal FACE, not distance to a point.
 ;;;

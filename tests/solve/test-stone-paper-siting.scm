@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-stone-paper-siting.scm — which binder a hub gets is a question about DISTANCE
 ;;;
 ;;; One compounding line and one Regeneration Hub, solved at a range of distances.

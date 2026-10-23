@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-ice-servers.scm — the gateway says which servers a call
 ;;; finds its peers through, and the browser carries none of its own.
 ;;;

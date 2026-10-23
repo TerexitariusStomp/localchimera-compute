@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-filings-boundary.scm — template provenance + dry-run + submission drivers.
 ;;;
 ;;; (1) render-filing stamps the template's PROVENANCE onto the artifact.

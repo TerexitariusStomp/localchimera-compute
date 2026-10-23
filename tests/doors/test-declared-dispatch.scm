@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-declared-dispatch.scm — an object's methods are its declared doors
 ;;;
 ;;; What this pins:

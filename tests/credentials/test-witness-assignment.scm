@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/credentials/test-witness-assignment.scm —
 ;;; Federation-member witness assignment ACDC + auditor.
 ;;;

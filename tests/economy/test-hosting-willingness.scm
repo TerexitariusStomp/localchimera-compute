@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-hosting-willingness.scm — consent bounds how far a span may reach.
 ;;;
 ;;; Step 4 of patchwork-scopes-containment.md: a span declaration is the

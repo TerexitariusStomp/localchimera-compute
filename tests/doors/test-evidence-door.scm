@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-evidence-door.scm — a counter's picture, held for the
 ;;; contest of their count (docs/observation/capture.md §8).
 ;;;

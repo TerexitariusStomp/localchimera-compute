@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-earth-durability.scm — the planetary root, durable per commune.
 ;;;
 ;;; Proves ^earth (module/playnet/scope/earth.scm) makes EACH commune's economic state

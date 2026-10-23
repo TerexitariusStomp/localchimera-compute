@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/notify/rendered.scm — the rendered-notification shape.
 ;;;
 ;;; The interface between the RENDER stage (playnet notify registry) and

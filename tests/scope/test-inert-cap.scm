@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-inert-cap.scm — a limit that names nothing says so.
 ;;;
 ;;; A cap is a limit on a good. One spelt for a good no recipe touches limits

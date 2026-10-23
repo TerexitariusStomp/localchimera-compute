@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fp-present-phc.scm — inbound-PHC ingest hardening (FPP portability)
 ;;;
 ;;; A person's PHC is a PORTABLE card: `fp-my-phc` hands out the SAD-shaped

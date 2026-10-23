@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; adjustment.scm — a count lands the difference
 ;;;
 ;;; ValueFlows' rule for a count (docs/observation/readings-are-counts.md §1.1):

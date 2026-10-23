@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # keri-lib-take.sh — carry a contributor's commits from playnet-keri into the core.
 #
 # The KERI + OpenVTC library is developed in the core and cut out as

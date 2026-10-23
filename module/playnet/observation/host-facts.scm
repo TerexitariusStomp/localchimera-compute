@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; host-facts.scm — the machine reads itself: running services as VF facts
 ;;;
 ;;; Visibility first, actuation second. This module turns a host's real

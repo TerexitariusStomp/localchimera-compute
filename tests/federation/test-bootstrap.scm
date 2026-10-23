@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bootstrap.scm — governance bootstrap ceremony
 ;;;
 ;;; Tests the full founding ceremony: register founders, create governance

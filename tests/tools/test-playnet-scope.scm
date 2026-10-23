@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/tools/test-playnet-scope.scm
 ;;;
 ;;; Pure-Scheme parts of tools/dev/playnet-scope.scm: scope-summary,

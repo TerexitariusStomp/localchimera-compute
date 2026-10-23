@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-commune.scm — ^commune with 4-seal facets
 
 (use-modules (playnet test harness))

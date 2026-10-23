@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/browser.scm — Browser notification adapter
 ;;;
 ;;; A DUMB transport: it maps a pre-rendered notification (see

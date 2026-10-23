@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation-crossing-fixture.scm — the economy the crossing tests solve.
 ;;;
 ;;; A scope is a granary-and-bakery: a boundary column, grain, bread; land that

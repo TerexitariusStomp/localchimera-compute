@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-composition-units-live.scm — a composition row is per UNIT of the spec.
 ;;;
 ;;; The chemistry table states its rows per kilogram. A scope that counts a spec in

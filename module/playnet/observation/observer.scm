@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; observer.scm — Goblins actor for the VF event-sourced stockbook
 ;;;
 ;;; Architecture: The Observer is a FOLD.

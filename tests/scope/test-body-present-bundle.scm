@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-body-present-bundle.scm — a body's standing travels.
 ;;;
 ;;; Commune A admits a cooperative — a body whose AID is its three stewards'

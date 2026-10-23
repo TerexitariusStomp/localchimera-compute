@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/channel-manager.scm — Channel lifecycle manager
 ;;;
 ;;; Creates, destroys, and tracks channels. Takes a backend-factory

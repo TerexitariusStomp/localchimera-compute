@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-index-oracle-signing.scm — ^index-oracle issues issuer-signed observations
 ;;;
 ;;; An external-index observation is an (untargeted §7.5) assertion BY the

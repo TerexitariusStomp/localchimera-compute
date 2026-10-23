@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/org/actors.scm — Goblins actors for governed state
 ;;;
 ;;; Heart of Spritely patterns, expressed as reusable actors.

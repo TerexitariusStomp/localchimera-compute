@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-household-week.scm — a week of housework, solved.
 ;;;
 ;;; test-household-recipe.scm checks that the recipes are SHAPED right. This one

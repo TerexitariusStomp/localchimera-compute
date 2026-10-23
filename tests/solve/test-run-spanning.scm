@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-run-spanning.scm — a run longer than its band is a journey through time.
 ;;;
 ;;; The guarantee table states the rule for space: "a journey lands in the

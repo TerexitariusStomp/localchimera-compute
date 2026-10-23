@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/notify-ntfy.scm — notify ↔ ntfy parity.
 ;;; The contract: a rendered notification's text lands as the POST body
 ;;; at /<topic>. Invariant leg pins the wire; live leg publishes.

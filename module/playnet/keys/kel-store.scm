@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/kel-store.scm — durable KEL event store
 ;;;
 ;;; A scope's KEL (Key Event Log) is an append-only sequence of signed

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-derived-fulfilment.scm — fulfilment is a reading of the events, not a counter.
 ;;;
 ;;; ValueFlows (concepts/flows.md): an event fulfils a commitment by naming it

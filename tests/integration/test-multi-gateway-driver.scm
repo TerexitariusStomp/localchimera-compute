@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/integration/test-multi-gateway-driver.scm
 ;;;
 ;;; Driver for the two-gateway subprocess smoke test.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; governed-row.scm — a scope's own word on a matter, kept as one row.
 ;;;
 ;;; A scope governs some of its own settings: how a person is recognised, which

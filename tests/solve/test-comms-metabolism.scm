@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-comms-metabolism.scm — the comms campaign INSIDE the located solve.
 ;;;
 ;;; All four Stage-1 quantities derive from ONE solve, not four bolt-ons. Two

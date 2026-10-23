@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; law/protections.scm — the statutes that SHIELD an activity in a place.
 ;;;
 ;;; A shield removes risk; it is not a thing the activity must do. So it stays

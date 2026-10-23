@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; parts.scm — the one selector: a PART of the plan named in VF terms, and the
 ;;; one matcher that says which columns (or which work events) it covers.
 ;;;

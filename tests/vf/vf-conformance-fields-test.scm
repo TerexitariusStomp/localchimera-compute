@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf-conformance-fields-test.scm — every field of a VF record is a property of its class.
 ;;;
 ;;; `vf-conformance-classes-test.scm` holds the vocabulary file's record types to the

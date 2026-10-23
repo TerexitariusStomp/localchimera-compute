@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /// tools/dev/sms-verify-register.mjs — Playwright account registration via SMS code
 ///
 /// Two modes:

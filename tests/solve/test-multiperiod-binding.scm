@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-multiperiod-binding.scm — record-path multi-period via #:periods (no horizon).
 ;;;
 ;;; REGRESSION GUARD for the ingest-located! periods-binding: the agent-supply

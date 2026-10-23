@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; folksonomy/pins.scm — collections of map pins, folded like the folksonomy.
 ;;;
 ;;; A LIST is a name and a face a citizen gives to a set of places on the map

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; beenius-wax.scm — the Beenius "infinity wax" maker journey, as ValueFlows
 ;;; @defines beenius-wax
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/audits.scm — the auditors and custody watchers ticking over every restored scope.
 ;;;
 ;;; Wires the already-existing ^federation-auditor (one per federation/UC

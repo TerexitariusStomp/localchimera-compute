@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-coherence.scm — the solution is REAL ValueFlows, coherent, and respects stock.
 ;;;
 ;;; The bread chain (grow→mill→bake) with an EXISTING STOCK of flour (init = 30, as an

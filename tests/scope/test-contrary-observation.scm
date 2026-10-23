@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-contrary-observation.scm — the world as observed, in every future.
 ;;;
 ;;; A contrary observation reaches a scope's solve as `#:observed` rows

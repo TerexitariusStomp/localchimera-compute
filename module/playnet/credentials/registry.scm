@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/registry.scm — the catalogue of playnet schemas, the claim-index and timestamp registries, the plan SAID, and a scope's signature over a credential.
 ;;;
 ;;; The playnet credential catalogue stands in this directory by family

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/rotate-vault-keys-fleet.sh — orchestrate vault-key rotation
 #                                    across a fleet of playnet gateways
 #

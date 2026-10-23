@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; option-premium.scm — Price VF Plans as options
 ;;;
 ;;; Each Plan the planner proposes is a put option on the resources it

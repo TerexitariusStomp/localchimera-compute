@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; key-state.scm — which key speaks for an identifier, read off its key log.
 ;;;
 ;;; An identifier's AID names its INCEPTION. After a rotation the key that

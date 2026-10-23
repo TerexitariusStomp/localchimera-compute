@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/async.scm — the federated solve with no coordinator and no
 ;;; rounds: every scope a PEER, every good settled between the scopes that
 ;;; share it, convergence a silence.

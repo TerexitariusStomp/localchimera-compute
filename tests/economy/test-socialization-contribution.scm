@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-socialization-contribution.scm — a lend may carry a flat share of the
 ;;; lent thing's running cost, as one more reciprocal clause of its agreement.
 ;;;

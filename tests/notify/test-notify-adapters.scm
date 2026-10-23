@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-notify-adapters.scm — Phase 1 of the unified router: the render
 ;;; point moved OUT of the adapters into the sink formatter, leaving the
 ;;; adapters as dumb consumers of a rendered notification.

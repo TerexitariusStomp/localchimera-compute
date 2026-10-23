@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; gen-kernels.scm — emit kernel_kinds.h from tension-kinds.scm's *kind-spec*.
 ;;;
 ;;; The same spec that builds the Scheme closures is compiled to C here, so the

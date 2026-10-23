@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-holdings-audit.scm — every holding, against the catalogue that claims it.
 ;;;
 ;;; A durable's service capacity is `stock × the hours it stands available`. That

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # deploy/server-1/install.sh — idempotent installer for server-1 services
 #
 # Modes:

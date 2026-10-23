@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/economy/payouts.scm — a payout, as the records ValueFlows gives it: the member's intent, the commons' commitment, its ending.
 ;;;
 ;;; A library the planner service's doors call (docs/planning/codebase-layout.md §12): a

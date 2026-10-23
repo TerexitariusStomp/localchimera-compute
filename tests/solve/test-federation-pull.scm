@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-pull.scm — decomposition ACROSS VATS, the faithful dual form.
 ;;;
 ;;; Two sovereign communes, each its OWN local LP (built by the real located

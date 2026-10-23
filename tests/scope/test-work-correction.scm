@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-work-correction.scm — a corrected work event leaves every total.
 ;;;
 ;;; Hours count the moment they are worked against a declared need; what keeps

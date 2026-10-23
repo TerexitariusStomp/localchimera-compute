@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; shocks.scm — the shock algebra: what a future does to a coefficient.
 ;;;
 ;;; A scenario is a forecast of FULFILLMENT RATIOS, per (action, spec) intent — the

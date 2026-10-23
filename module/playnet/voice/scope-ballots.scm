@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/voice/scope-ballots.scm — the ballot methods of a scope: the federation voice math, the direct and scoped ballots, the close ceremony.
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

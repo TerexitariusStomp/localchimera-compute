@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; store-registry.scm — Goblins actor for cross-scope reference resolution
 ;;;
 ;;; Translated from src/lib/planning/store-registry.ts

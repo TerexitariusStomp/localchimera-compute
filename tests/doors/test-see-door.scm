@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-see-door.scm — a picture, read at the seat, and the
 ;;; week's allotment of reads (docs/observation/capture.md §5, §9).
 ;;;

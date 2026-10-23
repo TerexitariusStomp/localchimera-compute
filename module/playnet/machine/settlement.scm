@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; compute/settlement.scm — ring-3 settlement: what the bridge lands.
 ;;;
 ;;; WHAT THE FILE HOLDS. The two wire records spec/playnet-compute.md §5-6

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-restore-witnesses.scm — a witness younger than a scope still holds
 ;;; its log: a restored scope brings every default witness up to date.
 ;;;

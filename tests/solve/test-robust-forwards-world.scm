@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-robust-forwards-world.scm — a scenario ingests the same world as a solve
 ;;;
 ;;; `plan-from-records` sends any scope carrying scenarios down the robust branch,

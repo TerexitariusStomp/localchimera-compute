@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; rollup/marginal-dual.scm — joint-production rollup variant (4):
 ;;; MARGINAL / LP-DUAL imputation.
 ;;;

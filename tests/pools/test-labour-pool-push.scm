@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-labour-pool-push.scm — ^labour-pool converged onto the scope-tree push.
 ;;;
 ;;; Proves the labour pool now forwards its per-agent event UP the scope tree

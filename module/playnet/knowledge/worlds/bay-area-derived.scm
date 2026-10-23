@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; worlds/bay-area-derived.scm — GENERATED from vendored raw by data/emit-derived.scm. DO NOT EDIT.
 ;;; Regenerate: cd data && guile emit-derived.scm bay-area United States tomato,potato,bean,pea > ../bay-area-derived.scm
 ;;; Verify (CI): make verify-derived  — re-runs the generator, diffs this file, fails on drift.

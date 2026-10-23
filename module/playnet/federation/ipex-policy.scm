@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/federation/ipex-policy.scm — schema-keyed policy for inbound IPEX grants
 ;;;
 ;;; The grant handler (`handle-ipex-grant` in notifications.scm) consults

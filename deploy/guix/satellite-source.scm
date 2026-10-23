@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/satellite-source.scm — a satellite pin as a Guix package source
 ;;;
 ;;; deploy/satellites.scm pins every repo the core consumes by commit and nar

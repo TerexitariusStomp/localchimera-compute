@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-world-value.scm — the world is a value in hand, one per dynamic extent.
 ;;;
 ;;; `declare-world!` fills the world in hand; `(current-world)` is that value;

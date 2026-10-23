@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test/vf-ttl.scm — reads the VF vocabulary's action individuals.
 ;;;
 ;;; Shared by the four ValueFlows conformance tests (tests/*/vf-conformance-*-test.scm), which `load` it. It parses the Turtle file

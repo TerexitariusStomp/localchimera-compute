@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/replay.scm — the prover side of the receipt.
 ;;;
 ;;; A receipt is a claim; replay is the check. The registry remembers what

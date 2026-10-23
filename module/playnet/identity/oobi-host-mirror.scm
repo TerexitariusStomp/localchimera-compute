@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/identity/oobi-host-mirror.scm — bridge ^kel-store
 ;;; events into the existing ^oobi-host so scope KELs are served at
 ;;; the well-known KERI OOBI HTTP endpoints.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/mailbox.scm — Offline message queuing
 ;;;
 ;;; When a user is offline, messages are stored in their mailbox.

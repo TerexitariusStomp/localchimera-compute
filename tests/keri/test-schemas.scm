@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-schemas.scm — ACDC role schemas are self-saidified
 ;;;
 ;;; Each of the four playnet role-credential schemas

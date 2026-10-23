@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/gateway/monero-boot.scm — resolve wallet cap + spawn reconciler
 ;;;
 ;;; The wallet and policy actors run in a SEPARATE process

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; rail.scm — the rail a good is on, read off the recipes that touch it.
 ;;;
 ;;; A good is on the INDIVIDUAL rail because a claim recipe consumes it for

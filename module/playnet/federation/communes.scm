@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/federation/communes.scm — the commune and federation methods of a scope: admission near and remote, the federation spec and census, resolution, and recomposition (merge, split, rejoin).
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

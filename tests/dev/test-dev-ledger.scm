@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-dev-ledger.scm — the development scope's books.
 ;;;
 ;;; A row of the week's plan taken is a commitment; an issue solved is the

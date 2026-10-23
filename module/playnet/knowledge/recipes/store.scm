@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; recipes.scm — Goblins actor for recipe/specification management
 ;;;
 ;;; Translated from src/lib/knowledge/recipes.ts (RecipeStore)

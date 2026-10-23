@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/monero/test-monero-donation-scenario.scm
 ;;;
 ;;; End-to-end scenario: donations reach the planner through the live-registry.

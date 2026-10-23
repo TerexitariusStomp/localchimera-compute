@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-endorsement.scm — tests for (playnet utils endorsement) and capability-governed validation
 ;;; Run with:  guile -L module tests/test-endorsement.scm
 

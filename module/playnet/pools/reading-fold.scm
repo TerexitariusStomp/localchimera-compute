@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; pools/reading-fold.scm — ^reading-pool: the scope fold of readings.
 ;;;
 ;;; docs/observation/observe-wiring.md §4: several sources observe one target

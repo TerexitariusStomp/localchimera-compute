@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; live-registry.scm — Goblins actor mapping resource-ids to live-resource actors
 ;;;
 ;;; A thin registry within the scope's vat. When lift-planning-facts encounters

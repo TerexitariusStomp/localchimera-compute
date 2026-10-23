@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf-conformance-table-test.scm — the action table, held to the vocabulary.
 ;;;
 ;;; The ValueFlows vocabulary states, for each of its 19 actions, how an event of

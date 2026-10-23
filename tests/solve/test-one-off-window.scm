@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-one-off-window.scm — availability stated as calendar dates.
 ;;;
 ;;; A recurring window says "Tuesdays, 09:00–17:00". A one-off names the dates

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # gather-repos.sh — move the core and its sibling repos under one parent folder.
 #
 # The core finds each satellite as ../playnet-<name> and the OpenVTC cache as

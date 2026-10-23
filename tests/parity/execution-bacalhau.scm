@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/execution-bacalhau.scm — ring-3 compute ↔ Bacalhau parity.
 ;;; The contract: a job envelope's spec becomes an orchestrator job — PUT
 ;;; /api/v1/orchestrator/jobs with the Job body. Invariant leg pins the

@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # initdb/00-databases.sh — per-service databases for the adopted stack.
 # Runs once on first postgres start (docker-entrypoint-initdb.d).
 set -e

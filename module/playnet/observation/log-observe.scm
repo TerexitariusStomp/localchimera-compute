@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; log-observe.scm — an observation a person makes of their own doing.
 ;;;
 ;;; "I worked two hours on the pump", "I picked twelve kilos of apples": a

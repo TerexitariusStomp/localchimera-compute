@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; option-composition.scm — the option is WHICH RECIPES compose the plan.
 ;;;
 ;;; A leverage layer is NOT a constraint on "the plan" — it is a property of

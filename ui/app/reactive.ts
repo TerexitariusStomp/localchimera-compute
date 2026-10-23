@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/reactive.ts — a tiny (~40-line) reactive core: signals + batched effects.
 //
 // The elegant half of what a framework like Svelte would give us, with no build

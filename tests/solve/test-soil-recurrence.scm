@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-soil-recurrence.scm — the soil-condition recurrence on the REAL Doon farm.
 ;;;
 ;;; navdanya-farm.scm long carried a comment: the biofertilisers are "NOT yet in the

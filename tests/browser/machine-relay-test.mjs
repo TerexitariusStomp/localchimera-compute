@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/machine-relay-test.mjs — the relay kind's node, tested.
 //
 // machine-relay.js moves bytes and meters them: the HTTP leg (inUrl →

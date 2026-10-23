@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-first-person.scm — PHC + VRC shape, store queries, the I2I check, signed VRCs
 ;;;
 ;;; The First Person layer on its own two feet: credentials from

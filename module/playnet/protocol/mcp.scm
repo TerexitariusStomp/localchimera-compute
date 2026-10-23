@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/protocol/mcp.scm — the doors as MCP tools, from the declaration
 ;;;
 ;;; One tool per door with an HTTP form: the tool name is `object.name`, the

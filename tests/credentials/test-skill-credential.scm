@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-credential.scm — the skill membership ACDC (make-skill-credential)
 ;;;
 ;;; Asserts on schema / issuer / holder / claims / edges, NOT on SAID bytes

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/boot-cell.scm — boot-time global cells
 ;;;
 ;;; For values the gateway sets once at boot and actors read from any

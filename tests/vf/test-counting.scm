@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-counting.scm — the planned count's cadence, regime and grammar
 ;;; (module/playnet/vf/formulas/counting.scm; docs/observation/capture.md §4).
 ;;;

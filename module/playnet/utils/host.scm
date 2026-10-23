@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/host.scm — what the process around the code can say, stated once for both builds.
 ;;;
 ;;; A module that reads a PLANNER_* switch or another fact of its host asks

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-labour-projection-law.scm — the projection IS a per-key homomorphism.
 ;;;
 ;;; The law (labour-fold.scm, "the projection, stated as a per-key

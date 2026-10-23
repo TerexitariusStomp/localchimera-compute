@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; grow.scm — a crop grow recipe whose product's COMPOSITION IS THE RECIPE.
 ;;;
 ;;; The point of this recipe is the metabolic-rift question done in proper

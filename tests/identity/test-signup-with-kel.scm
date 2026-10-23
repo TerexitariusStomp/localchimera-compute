@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/identity/test-signup-with-kel.scm — an identity takes a seat at a
 ;;; commune that has never seen it, by bringing its own KEL.
 ;;;

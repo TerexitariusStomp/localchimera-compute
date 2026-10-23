@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; emit-fragility-snapshot.scm — the fragility face's data, straight from the
 ;;; encoded catalogue. Reads the WITNESS TABLES in
 ;;; module/playnet/knowledge/catalogues/eco.scm (the real, cited planetary-boundary

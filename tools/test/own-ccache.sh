@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # own-ccache.sh — run a command with a compile cache that belongs to the Guile
 # on PATH, and to no other Guile.
 #

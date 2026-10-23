@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/scope/test-vf-lint.scm — (playnet knowledge dsl vf-lint): one lint, two inputs
 ;;;
 ;;; What this pins:

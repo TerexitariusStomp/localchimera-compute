@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/delegates.scm — the Tier-2 adapter seams.
 ;;;
 ;;; spec/oss-inventory.md's second tier: functionality kept, maintenance

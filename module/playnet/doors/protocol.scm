@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/doors/protocol.scm — the doors the browser may call, declared once
 ;;;
 ;;; One entry per method on the three objects a client reaches: the anonymous

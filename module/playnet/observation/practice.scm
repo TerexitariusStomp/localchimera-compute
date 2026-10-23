@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; practice.scm — what a person has practised, across every scope they worked in.
 ;;;
 ;;; A work event is recorded in the scope where the work was done, so one

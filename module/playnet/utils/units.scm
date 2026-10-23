@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; units.scm — GNU Units integration for metabolic accounting
 ;;;
 ;;; Provides unit conversion and substance classification for the

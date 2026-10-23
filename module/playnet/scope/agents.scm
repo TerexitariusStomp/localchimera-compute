@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; agents.scm — Goblins actor for agent directory management
 ;;;
 ;;; Translated from src/lib/agents.ts (AgentStore)

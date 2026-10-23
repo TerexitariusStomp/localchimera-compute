@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile --no-auto-compile -s
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; module-map.scm — where every Scheme module is, what reaches it, and which
 ;;; imports point up the layers.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; server/deploy-runner.scm — auto-deploy on fleet changes via file-watch
 ;;;
 ;;; Watches /var/run/playnet/deploy-trigger for changes using inotifywait.

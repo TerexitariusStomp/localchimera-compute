@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/custody.scm — who holds and who owns: custody attestation, custody transfer commitment, reversion, ownership.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

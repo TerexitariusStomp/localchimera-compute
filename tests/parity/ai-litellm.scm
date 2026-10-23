@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/ai-litellm.scm — key-pool ↔ LiteLLM parity.
 ;;; The contract: a chat request is the OpenAI wire on
 ;;; /v1/chat/completions — model + messages, keys never in the body.

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-osqp-frag-exclusion.scm — the `solve` dispatcher actually excludes
 ;;; OSQP whenever a `frag` term is present, not just documents that it should.
 ;;;

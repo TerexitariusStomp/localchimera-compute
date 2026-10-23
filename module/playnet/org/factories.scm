@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/org/factories.scm — Org factories and the 3-seal pattern
 ;;;
 ;;; Kernel file #3 (alongside gplay.scm and endorsement.scm).

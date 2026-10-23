@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Read the committed Scheme manifest / profile for a corpus domain.
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';

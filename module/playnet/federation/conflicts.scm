@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/federation/conflicts.scm — the conflict methods of a scope: commitment conflicts detected and resolved.
 ;;;
 ;;; A fragment of the scope actor (playnet scope actor): a procedure from the

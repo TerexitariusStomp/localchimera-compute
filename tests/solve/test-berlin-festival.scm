@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-berlin-festival.scm — feed a Berlin festival from the city's Baumscheiben,
 ;;; planted before anyone knows the weather OR which Grünflächenamt will say no.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; plan/assignment.scm — from the plan's OFFER to a rota.
 ;;;
 ;;; `plan->work` ends with a candidate FIELD: per need, every worker who could

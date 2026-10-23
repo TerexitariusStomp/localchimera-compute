@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; operator.scm — who runs THIS gateway, read from the environment.
 ;;;
 ;;; The controller the notices name, and where a report, a data request or a

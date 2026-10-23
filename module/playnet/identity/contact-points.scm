@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; identity/contact-points.scm — a contact point, presented to a commune.
 ;;;
 ;;; A person holds their ways to be reached, and tells a commune one of them

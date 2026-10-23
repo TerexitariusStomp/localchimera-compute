@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/pending-recompositions.scm
 ;;;
 ;;; Cross-gateway recomposition orchestration (deferred task #43).

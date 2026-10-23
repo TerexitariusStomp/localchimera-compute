@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/python-keria.scm — Guix package definitions for KERIA + deps
 ;;;
 ;;; KERIA is a KERI cloud agent: a Python/Falcon HTTP service that manages

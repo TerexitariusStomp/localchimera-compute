@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-certificate.scm — a frag problem resolves cleanly as a CONVEX program, with a certificate.
 ;;;
 ;;; Closes gap 6: nothing checked that a fragility barrier solves convexly with a duality-gap

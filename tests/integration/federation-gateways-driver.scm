@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation-gateways-driver.scm — the federation between two gateways.
 ;;;
 ;;; Given the two gateways' data directories, each holding what its founding

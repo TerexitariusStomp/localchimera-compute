@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-plan-commune-scope.scm — socialization auto-applied at the scope level.
 ;;;
 ;;; test-socialization-live wires a commune's live grants into the solve by hand:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bread-seed.scm — the bread town is ONE economy behind two doors.
 ;;;
 ;;; bread-world ((playnet knowledge recipes bread-commune-seed)) is read

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/crossing-custody.scm — what a settled crossing leaves as a record.
 ;;;
 ;;; The goods in the federation's pool are common: a scope that gives a good

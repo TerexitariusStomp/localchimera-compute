@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; pools/free-time-fold.scm — ^freetime-node: the federation fold, over time.
 ;;;
 ;;; The plan states how much of the people's time it places; social free time

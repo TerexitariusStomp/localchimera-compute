@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-monitoring-cadence.scm — survey labour narrows a boundary, and buys α
 ;;; back off the precautionary floor.
 ;;;

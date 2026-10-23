@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-decorate.scm — the WHOLE bill fed through the planner's organs.
 ;;;
 ;;; The elegant unification (legal-crossings.md §6, §2.6): a legal bill is not a

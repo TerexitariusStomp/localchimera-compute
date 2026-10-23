@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-depth.scm — the federation resolver reaches arbitrarily deep.
 ;;;
 ;;; A means socialized into the commons must be findable wherever it physically

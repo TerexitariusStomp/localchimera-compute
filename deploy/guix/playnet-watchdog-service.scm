@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/playnet-watchdog-service.scm — health check + auto-restart
 ;;;
 ;;; Polls the gateway's /federation-status.json endpoint every

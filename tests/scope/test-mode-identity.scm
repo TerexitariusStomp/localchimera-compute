@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-mode-identity.scm — a travel mode is one recipe, named by its own specification.
 ;;;
 ;;; A mode recipe's process conforms to a ProcessSpecification of its own

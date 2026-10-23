@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/signify.scm — KERIA Signify auth client (server)
 ;;;
 ;;; Signify is the WebOfTrust client-side auth protocol for KERIA. It

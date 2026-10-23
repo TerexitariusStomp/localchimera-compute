@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/ntfy.scm — ntfy transport adapter
 ;;;
 ;;; The notify layer's adopted channel: ntfy (Apache-2.0) is the push

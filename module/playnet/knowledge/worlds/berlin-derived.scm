@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; worlds/berlin-derived.scm — GENERATED from vendored raw by data/emit-derived.scm. DO NOT EDIT.
 ;;; Regenerate: cd data && guile emit-derived.scm berlin Germany wheat,barley,potato,maize > ../berlin-derived.scm
 ;;; Verify (CI): make verify-derived  — re-runs the generator, diffs this file, fails on drift.

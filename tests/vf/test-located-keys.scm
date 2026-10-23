@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-located-keys.scm — every column key the program lays reads back as what it was laid as.
 ;;;
 ;;; vf/facts/located.scm holds one constructor per kind of column key and the one

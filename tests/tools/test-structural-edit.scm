@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/tools/test-structural-edit.scm — path-addressed paredit-style ops
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-structural-edit.scm

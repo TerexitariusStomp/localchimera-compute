@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // browser/lib/spine-imports.js — the spine's thread-agnostic FFI groups
 //
 // The Hoot/Goblins spine (day-boot.wasm) talks to JS through named import

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; manifest.scm — the permaculture / regenerative-design corpus.
 ;;;
 ;;; This file is COMMITTED; the texts it points at are NOT. `.git` already

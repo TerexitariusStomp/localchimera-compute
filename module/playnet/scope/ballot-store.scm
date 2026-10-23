@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; scope/ballot-store.scm — per-scope persistent registry of ballots and tallies
 ;;;
 ;;; Stand-alone module — depends only on Goblins, so the scope root (for its

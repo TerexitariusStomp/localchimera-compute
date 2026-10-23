@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/inception.scm — AID inception: this agent's controller, autonomous signers, groups
 ;;;
 ;;; Three things share this file because they all sit at the KERI/scope

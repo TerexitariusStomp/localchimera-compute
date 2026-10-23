@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/keystore-test.mjs — the IndexedDB keystore + legacy migration
 // (browser/lib/keystore.js). Runs in node with REAL WebCrypto (Ed25519) and small
 // in-memory mocks for localStorage + IndexedDB, so it exercises the real code

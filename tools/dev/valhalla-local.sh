@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/valhalla-local.sh — the self-hosted Valhalla routing engine
 # (Tier-1: offline, multimodal, no IP leak), driven end to end.
 #

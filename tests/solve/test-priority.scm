@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-priority.scm — the solver honours priority-weighted desire.
 ;;;
 ;;; The doc's harmony objective is Σ w_d g_d² — desires weighted by PRIORITY, so the

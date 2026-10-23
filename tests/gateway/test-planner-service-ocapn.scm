@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-planner-service-ocapn.scm — wire-format integration test
 ;;;
 ;;; This is the highest-confidence integration test for the calendar's

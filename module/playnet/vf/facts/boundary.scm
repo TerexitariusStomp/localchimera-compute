@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; boundary.scm — the flows nothing makes: the system's edge.
 ;;;
 ;;; The sky's gifts (light, water, the air's carbon dioxide and oxygen) and the

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; Patched utils.scm — replaces gnutls base64-encode with built-in.
 ;;; Original: Copyright © 2016 David Thompson <davet@gnu.org>
 ;;; License: LGPL-3.0+

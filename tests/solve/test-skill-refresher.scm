@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-refresher.scm — a dedicated refresher channel keeps a skill warm WITHOUT wasteful output.
 ;;;
 ;;; The defect (see docs/planning/identity/skill-maintenance-recipes.md): the only way for a TRAINABLE worker to

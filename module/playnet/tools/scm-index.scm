@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/tools/edit/scm-index.scm --- symbol index over a tree of top-level forms
 ;;;
 ;;; Scope/shadow-aware queries over a list of forms as read by `read`:

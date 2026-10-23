@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/notify/recipient.scm — the recipient registry.
 ;;;
 ;;; Phase 2 of the unified router (docs/notifications/UNIFIED-ROUTER.md).

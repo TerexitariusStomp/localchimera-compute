@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/deadlines-temporal.scm — deadline timers ↔ Temporal parity.
 ;;; The contract: the 72h challenge / 4d review / 7d closure clocks are
 ;;; durable timers — workflow start + signal wires. Invariant leg pins

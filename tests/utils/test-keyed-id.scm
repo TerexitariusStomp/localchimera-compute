@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-keyed-id.scm — the id that names what a record is (module/playnet/utils/keyed-id.scm).
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/utils/test-keyed-id.scm

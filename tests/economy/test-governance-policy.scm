@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/economy/test-governance-policy.scm — require-ratification closes the "any
 ;;; member can accept" gap, opt-in per scope.
 ;;;

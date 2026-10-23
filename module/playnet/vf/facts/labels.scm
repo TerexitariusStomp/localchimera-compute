@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; labels.scm — the code a thing is known by (docs/observation/capture.md §6)
 ;;;
 ;;; A label is six characters of Crockford's alphabet: no I, L, O or U, so a

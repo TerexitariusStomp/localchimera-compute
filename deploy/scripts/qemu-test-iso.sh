@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # qemu-test-iso.sh — boot the playnet ISO locally in QEMU for smoke testing.
 #
 # Usage:

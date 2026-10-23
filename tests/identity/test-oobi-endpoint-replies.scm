@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/identity/test-oobi-endpoint-replies.scm — OKEA endpoint replies in
 ;;; OOBI bodies (IMPLEMENTATION.md "Where we diverge" §4).
 ;;;

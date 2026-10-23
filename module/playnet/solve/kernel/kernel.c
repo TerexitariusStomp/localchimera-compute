@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /* kernel.c — the compiled hot loops of planner.scm's native interior-point
  * Newton-PCG backend (§2). The Newton outer loop, central-path schedule, and
  * line search stay in Scheme (cheap, O(iterations), where the policy lives);

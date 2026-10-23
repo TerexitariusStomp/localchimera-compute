@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal/body-roles.scm — the roles a person holds in a legal body, as
 ;;; ValueFlows <agent-relationship-role> records.
 ;;;

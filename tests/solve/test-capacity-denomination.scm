@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-capacity-denomination.scm — a capacity means the same at any period length.
 ;;;
 ;;; A period's length is a governed choice: `*period-length*` is what a scope sets

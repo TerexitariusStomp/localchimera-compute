@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; credentials/membership.scm — membership and its ends: membership, federation membership, exclusion, the CCF assessment, and the federation sturdyref and census.
 ;;;
 ;;; One family of the playnet credential catalogue (docs/planning/codebase-layout.md

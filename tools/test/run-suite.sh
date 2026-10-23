@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # run-suite.sh — the Scheme suites, in parallel, with a stable report.
 #
 #   tools/test/run-suite.sh                    # every tests/*/*.scm the gate runs

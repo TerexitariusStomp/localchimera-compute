@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; json-emit.scm — a minimal JSON writer for the snapshot emitters: strings,
 ;;; numbers, booleans, arrays and objects, each returned as a string to splice.
 ;;;

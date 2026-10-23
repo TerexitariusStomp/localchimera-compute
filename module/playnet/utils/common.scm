@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/common.scm — tiny utilities used across pillars
 ;;;
 ;;; Three patterns that recur in modules that interact with the

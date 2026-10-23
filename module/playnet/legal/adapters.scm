@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal/adapters.scm — the adapter is a FOLD, not an artifact: spawn, retire, rotate.
 ;;;
 ;;; Design: docs/legal/legal-compliance-lifecycle.md §12, and playnet.typ

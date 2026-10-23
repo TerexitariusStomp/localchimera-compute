@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/deploy-runner-service.scm — auto-deploy on fleet changes
 ;;;
 ;;; Runs as the `deploy` user (NOT playnet) because guix deploy needs

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/federation/test-scope-graph.scm
 ;;; ^scope-graph reactive topology view: orphans, parent links, decompose.
 

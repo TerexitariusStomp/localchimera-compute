@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/playnet-gateway-service.scm — Shepherd service for the OCapN gateway
 ;;;
 ;;; Runs the playnet OCapN gateway from the Guix package (immutable store).

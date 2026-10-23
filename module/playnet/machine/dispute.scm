@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/dispute.scm — the dispute lifecycle (spec §5).
 ;;;
 ;;; A receipt is a claim about work; a dispute is what happens when a party

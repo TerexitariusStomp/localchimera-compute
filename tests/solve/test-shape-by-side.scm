@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-shape-by-side.scm — the shape of a wall follows from its SIDE, and it is
 ;;; forced, not habit.
 ;;;

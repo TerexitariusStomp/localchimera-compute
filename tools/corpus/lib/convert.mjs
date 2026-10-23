@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Source file -> plain markdown-ish text with STABLE line numbers.
 //
 // Line numbers are the provenance currency of this whole pipeline: a bring-over

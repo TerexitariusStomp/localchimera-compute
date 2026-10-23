@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-redistribution.scm — redistribution mandate + breach detection
 
 (use-modules (playnet test harness))

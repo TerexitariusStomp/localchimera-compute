@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-common.scm — unit tests for the shared util helpers
 
 (use-modules (playnet test harness)

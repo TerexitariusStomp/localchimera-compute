@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # radicle-delegate-setup.sh — one-time setup so a delegate's local Radicle node
 # can sync this repo's board to the onion-only production seed over Tor.
 #

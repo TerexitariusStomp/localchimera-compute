@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; server/fleet-bridge.scm — MQTT → fleet reconciler bridge
 ;;;
 ;;; Two responsibilities:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/rns-bridge.scm — Guix package for rns-bridge (Rust Reticulum bridge)
 ;;;
 ;;; Single binary that embeds an RNS node and bridges Goblins OCapN to

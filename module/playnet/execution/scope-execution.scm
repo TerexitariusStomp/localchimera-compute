@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; scope-execution.scm — Execution engine for a scope
 ;;;
 ;;; Translated from src/lib/execution/scope-execution.ts

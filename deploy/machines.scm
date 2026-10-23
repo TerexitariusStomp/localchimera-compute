@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/machines.scm — <machine> wrapper for `guix deploy`
 ;;;
 ;;; The operating-system is defined in deploy/os.scm — the source of

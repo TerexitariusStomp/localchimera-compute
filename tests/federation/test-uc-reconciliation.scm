@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-uc-reconciliation.scm — cross-gateway UC collision policy
 ;;;
 ;;; The UC singularity check is vat-local, so two independently-booted

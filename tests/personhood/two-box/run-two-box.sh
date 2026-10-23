@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/personhood/two-box/run-two-box.sh — the TWO-BOX witness harness.
 #
 # Two boxes, for real: two processes with their OWN PLAYNET_STATE_DIR, each

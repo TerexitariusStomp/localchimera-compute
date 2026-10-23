@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation-rotation.scm — a scope's key rotates and the wire follows.
 ;;;
 ;;; An AID names an inception; after a rotation the key that signs for it is the

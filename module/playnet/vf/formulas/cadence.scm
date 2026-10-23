@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; cadence.scm — how often to check a thing that is relied on: the continuous
 ;;; intensity a*, the discrete interval T*, and the recert schedule a plan's loads give.
 ;;;

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-culcus.scm — Culcus / NAC scoring math unit tests
 ;;;
 ;;; Sources: docs/evr/NAC_sepv2.nlogo (authoritative equations)

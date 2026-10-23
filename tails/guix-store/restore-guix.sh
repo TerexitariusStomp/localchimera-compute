@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # restore-guix.sh
 # Restores Guix from Persistent storage after a Tails reboot.
 # Uses vsudo for a graphical password prompt with 5-min cache.

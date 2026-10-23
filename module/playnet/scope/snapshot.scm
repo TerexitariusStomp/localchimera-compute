@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; snapshot.scm — a scope's standing, as a snapshot carries it.
 ;;;
 ;;; The planner answers `scope-snapshot` with one alist: the scope's places, its

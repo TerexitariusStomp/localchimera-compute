@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: AGPL-3.0-or-later
 import Mathlib.Data.Real.Basic
 import Mathlib.Order.Bounds.Basic
 import Mathlib.Data.Set.Image

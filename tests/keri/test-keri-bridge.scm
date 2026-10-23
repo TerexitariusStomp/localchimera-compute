@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-bridge.scm — KERI bridge tests with mock KERIA
 ;;;
 ;;; Exercises the critical paths in (playnet keri bridge):

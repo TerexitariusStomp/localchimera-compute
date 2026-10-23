@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/boot/lobby.scm — the lobby over everything a session reaches, registered on the wire, and the HTTP door over it.
 
 (define-module (playnet boot lobby)

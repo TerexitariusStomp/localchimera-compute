@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; profile.scm — what to extract from permaculture literature, and how to find it.
 ;;;
 ;;; THIS FILE IS THE GENERIC SEAM. `tools/corpus/` knows nothing about

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-externality.scm — the scope-free externality pattern, on fakes.
 ;;;
 ;;; solve/externality.scm imports no solver, so it is tested here the way it is

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; recurrence.scm — Per-occurrence fulfillment tracking for recurring commitments
 
 (define-module (playnet plan recurrence)

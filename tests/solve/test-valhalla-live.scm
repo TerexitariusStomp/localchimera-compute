@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-valhalla-live.scm — the matrix client against the real local engine.
 ;;;
 ;;; GUARDED: skips cleanly (exit 0) when no Valhalla answers on

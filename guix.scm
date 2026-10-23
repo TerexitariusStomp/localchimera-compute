@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 (use-modules (guix packages)
              (guix gexp)
              (guix build-system copy)
@@ -154,4 +155,4 @@ governance (actors, facets, revocation), and mesh networking (Reticulum).
 Facts are plain S-expression tuples queried via unification.  Every
 allocation is reversible, every inference is traceable, every capability
 is unforgeable.")
-  (license license:agpl3))
+  (license license:agpl3+))

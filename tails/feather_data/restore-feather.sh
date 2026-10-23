@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # restore-feather.sh
 # Run this after each Tails boot to restore Feather wallet's ringdb from Persistent.
 # This prevents Feather from having to rescan the entire blockchain on startup.

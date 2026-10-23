@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-debts.scm — economy/debts.scm's own surface: what the commons
 ;;; owes a member back for a purchase they fronted, minted through
 ;;; accept-reimbursement (see that module's header). This test mints debts

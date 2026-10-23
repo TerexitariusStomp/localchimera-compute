@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-http-door.scm — the doors over HTTP, signed by a device key
 ;;;
 ;;; What this pins:

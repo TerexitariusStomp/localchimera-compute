@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/run-stack.sh — bring the light adopted stack up and run the
 # live parity legs end to end. The honest e2e for the delegate seams:
 # services that answer get a green leg; services not up get a loud skip,

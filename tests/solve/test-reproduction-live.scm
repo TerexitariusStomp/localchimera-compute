@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-reproduction-live.scm — reproduction floors on the LIVE entry point.
 ;;;
 ;;; reproduction-diet-test proved the mechanism at the low-level globals; this proves

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-websocket-fragments.scm — a fragmented WebSocket message arrives whole
 ;;;
 ;;; A browser splits a large send into frames: Chromium sent a 100 KB CapTP

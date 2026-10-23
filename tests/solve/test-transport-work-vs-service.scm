@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-transport-work-vs-service.scm — two economically DIFFERENT kinds of transport.
 ;;;
 ;;; (1) PLANNED WORK transport — getting a worker to where their labour is NEEDED. This is

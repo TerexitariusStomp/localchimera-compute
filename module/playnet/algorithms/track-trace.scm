@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; track-trace.scm — Resource provenance (trace backward) and destination (track forward)
 
 (define-module (playnet algorithms track-trace)

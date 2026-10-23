@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/machine/executors.scm — the executor registry: how a
 ;;; replay finds something that can actually run the job.
 ;;;

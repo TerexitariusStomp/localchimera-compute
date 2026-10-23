@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-lobby-seat-gate.scm — a key proven is not a seat held.
 ;;;
 ;;; ^oobi-host witnesses any verifiable KEL, so an AID can have a current

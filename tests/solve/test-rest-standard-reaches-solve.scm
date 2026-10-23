@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-rest-standard-reaches-solve.scm — a scope's ratified rest standard is
 ;;; what ITS solve keeps of a person's day for rest.
 ;;;

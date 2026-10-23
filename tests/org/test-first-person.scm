@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-first-person.scm — the trust triangle over the bootstrap ceremony, and a ^scope's invite / vouch / revoke
 ;;;
 ;;; The credential and verification halves that stand on the library alone are

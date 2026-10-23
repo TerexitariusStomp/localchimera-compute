@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal/gate.scm — the bridge: build the planner's `#:legal-forbids?`
 ;;; predicate from a scope's REAL stores + a ^legal-registry actor.
 ;;;

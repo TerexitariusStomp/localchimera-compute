@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-labor-capacity.scm — Labor-as-resource: capacity/capability separation
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/labor-as-resource.test.ts

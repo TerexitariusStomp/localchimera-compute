@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/files.scm — writing state files, naming them safely
 ;;;
 ;;; Two things every module that keeps a file on disk needs:

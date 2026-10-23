@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/gateway/test-presence-rooms.scm — ^presence keeps state, and rooms.
 ;;;
 ;;; WHY THIS EXISTS: `bcom` seals a record that only takes effect when it is

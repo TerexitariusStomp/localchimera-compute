@@ -1,4 +1,5 @@
 #!/usr/bin/env -S guile -L module
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/dev/door-call.scm — call a gateway door from a shell, signed by a device key
 ;;;

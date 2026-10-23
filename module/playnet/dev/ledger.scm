@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; dev-ledger.scm — the development scope's books: what was taken, what was done.
 ;;;
 ;;; The scope is a real commune — `server/gateway.scm` registers

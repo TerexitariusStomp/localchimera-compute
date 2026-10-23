@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; utils/wire-shapes.scm — the two shapes a door's reply takes on the way to a
 ;;; page: a list crosses as a vector, a symbol as its name. Stated once for every
 ;;; door that writes string-keyed alists for `scm->json-canonical`.

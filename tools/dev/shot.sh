@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/shot.sh — reliable headless screenshot of a local URL, via Playwright +
 # the guix `ungoogled-chromium` (UNCONFINED — not the snap Firefox, which hangs
 # headless under Wayland/snap confinement from a non-login shell).

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-recert-discrete.scm — the DISCRETE recert interval (Slice 3).
 ;;;
 ;;; The continuous a* prices inspection as a linear cost ℓ·a, so there is no reason to

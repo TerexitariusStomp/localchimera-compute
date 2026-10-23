@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/knowledge-sparql.scm — knowledge ↔ Jena parity.
 ;;; The corpus stays data; the query layer delegates to Fuseki. Invariant
 ;;; leg pins the SPARQL request the delegate emits for a fixture query;

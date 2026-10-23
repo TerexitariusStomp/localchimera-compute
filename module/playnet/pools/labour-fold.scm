@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; pools/labour-fold.scm — ^labour-pool: the federation fold, over labour.
 ;;;
 ;;; Lives at each scope. Maintains the availability of agents reachable through

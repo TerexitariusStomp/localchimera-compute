@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-option-composition.scm — the option is WHICH RECIPES compose the plan.
 ;;;
 ;;; A building needs a leak fixed. The occupants can compose the maintenance

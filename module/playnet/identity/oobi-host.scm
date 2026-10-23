@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/identity/oobi-host.scm — server-hosted OOBI store
 ;;;
 ;;; In playnet's browser-resident-Signify flow, the user creates an AID

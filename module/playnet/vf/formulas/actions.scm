@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/formulas/actions.scm — every reading of the action table, stated once.
 ;;;
 ;;; The action table (vf/schemas.scm `*action-definitions*`) says, per action, which

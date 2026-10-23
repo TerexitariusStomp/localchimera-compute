@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-substance-expansion.scm — a food recipe's nutrients enter the solve.
 ;;;
 ;;; expand-nutrient-flows (catalogues/substances.scm) turns a food PRODUCT flow into its induced

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; scope/policy.scm — a scope's own word on how far real quorum must
 ;;; reach before its governance acts bind.
 ;;;

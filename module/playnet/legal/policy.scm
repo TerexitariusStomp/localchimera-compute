@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; legal/policy.scm — the ONE governance datum of the legal arc.
 ;;;
 ;;; Everything else the legal layer needs it reads or derives: which crossings a

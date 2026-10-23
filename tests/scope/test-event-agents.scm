@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-event-agents.scm — a stock event names the agent accountable for the stock.
 ;;;
 ;;; ValueFlows gives every EconomicEvent a provider and a receiver. An event that draws on

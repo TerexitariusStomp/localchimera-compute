@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-output-cap.scm — tests for output capability wiring
 ;;; Run with: guile -L module tests/test-output-cap.scm
 

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf/facts/limits.scm — the sizes the gateway refuses past.
 ;;;
 ;;; Each is a bound a client has to stay within BEFORE it sends: a document or

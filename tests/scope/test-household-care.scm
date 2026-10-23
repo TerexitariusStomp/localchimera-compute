@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-household-care.scm — cooking, childcare and eldercare/sick-care: the
 ;;; family docs/planning/food/reproduction-of-labour-power.md §4 names as still
 ;;; missing once cleaning, dishes and laundry are recipes (test-household-

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/utils/http-auth.scm — Permissive Authorization writer
 ;;;
 ;;; Guile's stock `Authorization` header writer (in (web http)) only

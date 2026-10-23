@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; wire/rows.scm — a row of the wire, stated as a table.
 ;;;
 ;;; The page reads each reply as JSON rows with string keys. A row is written by a

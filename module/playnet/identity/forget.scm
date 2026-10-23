@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/identity/forget.scm — erasure of a member, as one act
 ;;;
 ;;; Article 17, in the shape docs/legal/gdpr-analysis.md §3.1 and

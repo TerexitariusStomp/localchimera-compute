@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/matrix-parse.scm — pure parsing helpers
 ;;;
 ;;; Same role as telegram-parse.scm: pull the network-free, actor-free

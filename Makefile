@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 all: browser/day-boot.wasm
 
 # The wasm toolchain's identity stamp (rule and rationale at HOOT_TOOLCHAIN_ID).

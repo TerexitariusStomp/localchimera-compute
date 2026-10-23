@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/crypto/shamir.scm — Shamir's Secret Sharing over GF(256)
 ;;;
 ;;; k-of-n threshold secret sharing. Each byte of the secret is split

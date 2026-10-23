@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bioregion-containment.scm — a bioregion is an ECOLOGICAL AGENT = a
 ;;; SpatialThing CONTAINER (playnet.typ §bioregion). It is NOT a bespoke index:
 ;;; the containment relation the planner already has IS the index. This test binds

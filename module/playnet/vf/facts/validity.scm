@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; validity.scm — a credential's validity, read and dated.
 ;;;
 ;;; A conformance or skill credential carries a `valid-until` claim. This module

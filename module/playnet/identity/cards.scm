@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; identity/cards.scm — a card: how to reach one person, handed to another.
 ;;;
 ;;; A person's ways to be reached are theirs. A card is a selection of them

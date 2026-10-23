@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-custody.scm — Custody-attestation + custody-transfer-commitment ACDCs
 
 (use-modules (playnet test harness))

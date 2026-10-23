@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-berlin-shed.scm — a THIRD real bioregion, spun up from the SAME infrastructure
 ;;; as Doon and Cascadia, planning a real Brandenburg farm against the region's real
 ;;; continental futures. Nothing here is Berlin-specific machinery: the shed is data

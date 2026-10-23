@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bodies.scm — a legal body is its ValueFlows records, and the law reads
 ;;; it as the holder.
 ;;;

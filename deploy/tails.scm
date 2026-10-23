@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/tails.scm — Tails-equivalent Guix System live ISO
 ;;;
 ;;; Build (with WiFi firmware — requires nonguix channel):

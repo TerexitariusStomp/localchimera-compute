@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; cold-chain.scm — Cold-chain food network recipe
 ;;;
 ;;; A 5-step pipeline (Receive → Pre-Cool → Sort & Inspect → Pack → Deliver)

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-output-port.scm — tests for ^output-port capability and org IO wiring
 ;;; Run with:  guile -L module tests/test-output-port.scm
 

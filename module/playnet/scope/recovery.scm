@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/scope/recovery.scm — restart hook for
 ;;; durable autonomous-signer scopes.
 ;;;

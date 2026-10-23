@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/dom-stub.mjs — enough browser for a dial module to LOAD.
 //
 // The dial's modules are written for a browser and node has none. Four unit

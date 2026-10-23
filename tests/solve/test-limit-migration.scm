@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-limit-migration.scm — the four constrained limits, carried as stocks.
 ;;;
 ;;; A fragility says "you have this much left" with a prior that only rises. A

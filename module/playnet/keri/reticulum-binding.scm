@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keri/reticulum-binding.scm — AID ↔ mesh binding verifier
 ;;;
 ;;; A persona's icp anchors its Reticulum PUBKEY (playnet-reticulum-pub,

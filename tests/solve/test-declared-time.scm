@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-declared-time.scm — time inside a period, declared rather than assumed.
 ;;;
 ;;; docs/planning/solve/intra-period-time.md. A period is a LENGTH of time, and a

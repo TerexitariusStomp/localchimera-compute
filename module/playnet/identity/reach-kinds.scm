@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; identity/reach-kinds.scm — the kinds of way a person can be reached.
 ;;;
 ;;; A person keeps a list of ways to reach them, and discloses entries of it

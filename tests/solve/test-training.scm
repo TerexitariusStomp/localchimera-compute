@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-training.scm — a skill is labour-power, not a storable good.
 ;;;
 ;;; The engine PRICES a scarce skill (the dual λ on its Lab|skill|cell balance)

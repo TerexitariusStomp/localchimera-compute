@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/keys/scope-witness.scm — federation-peer KEL mirror
 ;;;
 ;;; In rules.md / democracy-on-keri.md §4.1, a scope's KEL is published

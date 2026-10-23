@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/fleet/test-paths.scm — deployment layout resolution
 ;;;
 ;;; Guards the precedence rules in (playnet utils paths) and the

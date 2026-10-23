@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-inception-kel-store.scm — a minted AID's inception lands in its KEL store
 ;;;
 ;;; governance-create-scope-aid! takes an optional #:kel-store — an actor — and

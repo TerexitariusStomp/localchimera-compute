@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; handover.scm — a recipe states what it hands over, and what comes back.
 ;;;
 ;;; A recipe's process makes a good; who the good then goes to, and for what, is

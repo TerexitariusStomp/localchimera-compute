@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; acdc.scm — the ACDC data layer: credentials, edges, SAID binding, liveness
 ;;;
 ;;; A credential is an alist:

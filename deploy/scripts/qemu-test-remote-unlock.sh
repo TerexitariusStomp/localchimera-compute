@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # qemu-test-remote-unlock.sh — prove the initrd SSH unlock door in a local VM.
 #
 # Usage:

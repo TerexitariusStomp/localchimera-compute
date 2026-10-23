@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/auditor.scm — ^federation-auditor + ^custody-half-life-watcher
 ;;;
 ;;; Phase 1 of HARDENING.md: turning runtime-checkable invariants from

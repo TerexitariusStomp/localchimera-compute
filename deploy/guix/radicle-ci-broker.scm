@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/radicle-ci-broker.scm — Guix packages for the Radicle CI broker
 ;;; and its native CI adapter (full-native, in-repo, reproducible).
 ;;;

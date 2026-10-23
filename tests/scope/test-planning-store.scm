@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-planning-store.scm — Plan store operations and recipe instantiation
 ;;;
 ;;; Ported from: old/planner/src/lib/tests/planning.test.ts

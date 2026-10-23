@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/crypto/recovery-share.scm — a piece of a passcode, as a line
 ;;; of text a person can carry.
 ;;;

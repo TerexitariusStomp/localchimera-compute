@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # check-deploy-freshness.sh — alarm for the gap NOTHING else watches:
 # local `main` vs the box's deployed canonical.
 #

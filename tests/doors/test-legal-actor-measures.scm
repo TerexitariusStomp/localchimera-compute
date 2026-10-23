@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-legal-actor-measures.scm — the law reads WHO acts and HOW MUCH, and
 ;;; sometimes it gives.
 ;;;

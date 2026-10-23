@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; economy/guardianship.scm — documentary guardian↔ward primitive
 ;;;
 ;;; Voice in playnet is pure labor proportion: a citizen with no labor

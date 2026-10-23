@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; places.scm — ONE containment tree, shared by every legal fold.
 ;;;
 ;;; A jurisdiction path is a walk up `contained-in` (legal/registry.scm

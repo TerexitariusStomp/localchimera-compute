@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-socialize-to-uc.scm — socializing to THE WHOLE COMMONS (UC), and where
 ;;; the custody concretely has to be for a scope's solve to see it.
 ;;;

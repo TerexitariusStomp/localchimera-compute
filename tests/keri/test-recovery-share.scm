@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-recovery-share.scm — losing your passcode is survivable
 ;;; when you gave pieces of it to people you trust.
 ;;;

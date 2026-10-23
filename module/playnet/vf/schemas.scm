@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; schemas.scm — Guile Scheme records for the ValueFlows ontology
 ;;; Translated from src/lib/schemas.ts + src/lib/utils/time.ts
 ;;;

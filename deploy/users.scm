@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/users.scm — dynamically provisioned user accounts
 ;;;
 ;;; Managed by provision-user.scm — do not hand-edit.

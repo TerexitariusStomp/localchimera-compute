@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/fleet/cdn/bunny.scm — bunny.net adapter for the CDN protocol
 ;;;
 ;;; One adapter for (playnet fleet cdn). A "zone" here is a bunny.net pull

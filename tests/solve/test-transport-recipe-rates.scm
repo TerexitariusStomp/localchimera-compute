@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-transport-recipe-rates.scm — the car ride's flows are rates, per rider·km
 ;;;
 ;;; knowledge/recipes/transport.scm seeds one concrete trip. Its numbers are what

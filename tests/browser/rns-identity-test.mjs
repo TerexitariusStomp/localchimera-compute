@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // tests/browser/rns-identity-test.mjs — lib/rns-identity.js: the mesh key at rest.
 //
 // The claim: localStorage never holds the key's bytes. What it holds opens

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; critical-path.scm — Critical Path Method scheduling
 ;;;
 ;;; Forward pass (ES/EF) + backward pass (LS/LF). Float = LF - EF.

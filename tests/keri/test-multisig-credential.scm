@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-multisig-credential.scm — k-of-n multisig signing of a credential
 ;;;
 ;;; A single-controller scope signs a credential with one key. A governance

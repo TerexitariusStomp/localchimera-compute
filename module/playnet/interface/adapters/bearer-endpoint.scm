@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/adapters/bearer-endpoint.scm — a sealed OAuth2 bearer
 ;;; client for ANY Graph/REST API. The generic core the platform adapters sit on.
 ;;;

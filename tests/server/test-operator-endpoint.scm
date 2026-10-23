@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/server/test-operator-endpoint.scm
 ;;;
 ;;; Who runs this gateway comes from PLAYNET_OPERATOR_* in the environment and

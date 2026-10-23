@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-contact-binding.scm — contact points on ^lobby-session
 ;;;
 ;;; How a commune comes to hold a way to reach a person: the person presents

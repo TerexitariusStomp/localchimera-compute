@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-socialized-capacity.scm — a socialized private means enters the live
 ;;; solve as scheduled use-capacity.
 ;;;

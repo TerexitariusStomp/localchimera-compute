@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; worlds/feel-the-food.scm — FEEL THE FOOD.
 ;;;
 ;;; The principle, first, because the machinery below is only its arithmetic:

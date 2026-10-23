@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; facts-sync.scm — retained host snapshots → the scope's live-registry
 ;;;
 ;;; The consumer half of the host-facts loop. tools/dev/host-facts.scm

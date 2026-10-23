@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-admit-commune-door.scm — a federation admits a commune through a
 ;;; governor of the gateway that holds it.
 ;;;

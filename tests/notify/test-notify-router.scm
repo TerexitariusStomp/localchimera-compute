@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-notify-router.scm — Phase 3 of the unified router: resolve a
 ;;; recipient's channels, gate by prefs, dedup across channels, render
 ;;; each channel in its own style, hand off to the dumb adapters.

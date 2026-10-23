@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 (define-module (rust-crates)
   #:use-module (guix build-system cargo)
   #:export (lookup-cargo-inputs))

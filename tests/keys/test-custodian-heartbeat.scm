@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-custodian-heartbeat.scm
 
 ;; the host crypto backend: loading (playnet keri signify) installs it

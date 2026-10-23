@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-claim-recipe.scm — the claim is a recipe between the pool and the body.
 ;;;
 ;;;   bake:  2 h work            → bread 1            (the scope's good)

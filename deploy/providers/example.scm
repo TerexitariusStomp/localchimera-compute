@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/providers/example.scm — provider config template
 ;;;
 ;;; Copy this file to create a provider config for your server:

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-bridge-extra.scm — extended bridge coverage
 ;;;
 ;;; Complements test-keri-bridge.scm (which covers boot/connect/create-aid/

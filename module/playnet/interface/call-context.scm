@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; module/playnet/interface/call-context.scm — Per-call context (interface layer)
 ;;;
 ;;; A call-context bundles everything an interface-layer caller knows about

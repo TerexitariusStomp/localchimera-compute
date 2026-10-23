@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-taleb-tail.scm — don't bet survival on the historical distribution.
 ;;;
 ;;; Taleb: the record undersamples the tail; ±1σ assumes thin tails rainfall

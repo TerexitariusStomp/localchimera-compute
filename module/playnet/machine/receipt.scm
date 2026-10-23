@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; compute/receipt.scm — a receipt is an event whose digest a hive can replay.
 ;;;
 ;;; WHAT THE FILE HOLDS. The SignedReceipt as a wire record, the canonical

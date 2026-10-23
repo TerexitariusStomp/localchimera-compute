@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; cascade-provenance-test.scm — contents survive a boxing → transform boundary.
 ;;;
 ;;; The containment cascade no longer moves contents by silent state mutation: it

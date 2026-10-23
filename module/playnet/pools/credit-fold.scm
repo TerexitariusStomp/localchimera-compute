@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; pools/credit-fold.scm — ^credit-pool: the federation fold, over credit.
 ;;;
 ;;; Universal credit is federation-wide by design: your labour anywhere earns

@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; rollup/relative-snlt.scm — joint-production rollup variant (3):
 ;;; RELATIVE-SNLT allocation.
 ;;;

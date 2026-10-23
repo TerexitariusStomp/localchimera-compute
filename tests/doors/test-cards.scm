@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/doors/test-cards.scm — cards on ^lobby-session
 ;;;
 ;;; A card is how to reach one person, handed to another: sealed to the

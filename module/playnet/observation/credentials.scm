@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; observation/credentials.scm — the bridge between the planner's event/plan layer and the
 ;;; ACDC substrate, in BOTH directions. Issuance: planner events become portable
 ;;; signed credentials (work-event + skill via the observer on-event hook; intent

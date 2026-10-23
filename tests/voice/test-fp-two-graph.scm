@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fp-two-graph.scm — cross-gateway recognition between two graphs
 ;;;
 ;;; Two independently-booted graphs, each sovereign with its own Universal

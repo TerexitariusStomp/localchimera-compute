@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; geo.scm — a point, a polygon, and whether the one is in the other.
 ;;;
 ;;; The one ray-cast point-in-polygon the tree uses on the Scheme side: the

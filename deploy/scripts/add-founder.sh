@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # add-founder.sh — make an AID a First-Person founder (a bootstrap governor)
 # on the live gateway, then restart so the gate activates.
 #

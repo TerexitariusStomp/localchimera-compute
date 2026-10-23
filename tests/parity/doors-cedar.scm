@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/parity/doors-cedar.scm — domain-door authz ↔ cedar-agent parity.
 ;;; The contract: a door's "may I" is an authorization quad — POST
 ;;; /authorization with principal/action/resource/entities. Invariant leg

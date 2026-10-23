@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-frag-catalogue.scm — the real catalogue, end to end: governance figures → solver limits.
 ;;;
 ;;; The fragility catalogue (eco-catalogue.scm) holds REAL planetary-boundary AND climate-tipping-point

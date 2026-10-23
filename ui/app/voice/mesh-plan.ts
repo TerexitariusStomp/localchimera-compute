@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/voice/mesh-plan.ts — how much video one person sends into a room, and how
 // big a room can be.
 //

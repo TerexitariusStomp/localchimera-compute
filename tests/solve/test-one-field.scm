@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-one-field.scm — worker, soil, and tool: ONE field, ONE solve.
 ;;;
 ;;; social-means.typ §"One field: worker, soil, and tool" claims the three

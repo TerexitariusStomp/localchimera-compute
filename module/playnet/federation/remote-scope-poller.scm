@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; federation/remote-scope-poller.scm — cross-gateway scope ingest
 ;;;
 ;;; **Role after Phase 6:** secondary catch-up only.

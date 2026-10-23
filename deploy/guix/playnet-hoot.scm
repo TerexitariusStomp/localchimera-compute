@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; playnet-hoot.scm — the Hoot the wasm toolchain runs.
 ;;;
 ;;; Hoot 0.9.0 as the pinned Guix commit ships it (deploy/channels.scm), plus

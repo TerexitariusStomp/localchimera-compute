@@ -1,3 +1,4 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-world-door.scm — a world is declared through ONE door, structurally.
 ;;;
 ;;; declare-world! is where a located world's identity is written: its places,
