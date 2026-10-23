@@ -198,6 +198,91 @@
 (check-error "an envelope with a price is refused"
              (lambda () (alist->job-envelope (env-fields '(price . "1 XMR")))))
 
+;;; the inference profile — params.model commits the artifact
+(let* ((model '((uri . "https://models.example/f.gguf")
+                (sha256 . "0123456789abcdef") (format . gguf-wasm)
+                (context . 4096) (seed . 7)))
+       (env (alist->job-envelope
+             (env-fields `(params . ((model . ,model)))))))
+  (check "a model-bearing envelope parses"
+         (job-envelope? env) #t)
+  (check "envelope-model answers the descriptor"
+         (assq-ref (envelope-model env) 'sha256) "0123456789abcdef")
+  (check "envelope-model-seed answers the committed seed"
+         (envelope-model-seed env) 7)
+  (check "a plain envelope has no model"
+         (envelope-model (alist->job-envelope (env-fields))) #f)
+  ;; the string-keyed wire form parses too — params arrives normalized at
+  ;; the door, but a hand-written alist may keep string keys
+  (check "a string-keyed model descriptor parses"
+         (envelope-model-seed
+          (alist->job-envelope
+           (env-fields `(params . (("model" . ,model)))))) 7))
+(check-error "a model missing sha256 is refused at parse"
+             (lambda () (alist->job-envelope
+                         (env-fields
+                          '(params . ((model . ((uri . "https://m/x")
+                                                (format . gguf-wasm)))))))))
+(check-error "a non-positive context is refused"
+             (lambda () (alist->job-envelope
+                         (env-fields
+                          '(params . ((model . ((uri . "u") (sha256 . "s")
+                                                (format . f)
+                                                (context . 0)))))))))
+
+;;; ── the inference profile — params.model is the committed artifact ────
+
+(display "\n── params.model — the inference descriptor ──\n")
+
+(define model-fields
+  '((uri . "https://models/gguf/mini-q4.gguf")
+    (sha256 . "ab12cd34") (format . "gguf-wasm")
+    (context . 2048) (seed . 7)))
+
+(define model-env
+  (alist->job-envelope
+   (env-fields `(params . ((model . ,model-fields))))))
+(check "a model-bearing envelope parses"
+       (job-envelope? model-env) #t)
+(check "envelope-model answers the descriptor"
+       (assq-ref (envelope-model model-env) 'sha256) "ab12cd34")
+(check "envelope-model-seed answers the committed decode"
+       (envelope-model-seed model-env) 7)
+(check "an envelope with no model answers #f"
+       (envelope-model good-env) #f)
+(check "extra decode keys pass through uninspected"
+       (job-envelope?
+        (alist->job-envelope
+         (env-fields
+          `(params . ((model . ((uri . "u") (sha256 . "h")
+                                (format . 'gguf-wasm)
+                                (temperature . 0.2)))))))) #t)
+
+(check-error "a model with no sha256 is refused"
+             (lambda ()
+               (alist->job-envelope
+                (env-fields
+                 `(params . ((model . ((uri . "u") (format . "gguf-wasm")))))))))
+(check-error "a model with no uri is refused"
+             (lambda ()
+               (alist->job-envelope
+                (env-fields
+                 `(params . ((model . ((sha256 . "h") (format . "gguf-wasm")))))))))
+(check-error "a negative context is refused"
+             (lambda ()
+               (alist->job-envelope
+                (env-fields
+                 `(params . ((model . ((uri . "u") (sha256 . "h")
+                                       (format . "gguf-wasm")
+                                       (context . -1)))))))))
+(check-error "a price inside params.model is still a price"
+             (lambda ()
+               (alist->job-envelope
+                (env-fields
+                 `(params . ((model . ((uri . "u") (sha256 . "h")
+                                       (format . "gguf-wasm")
+                                       (amount . 5)))))))))
+
 
 
 ;;; ── the doors — the same acts, as the wire reaches them ─────────────────

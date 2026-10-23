@@ -181,5 +181,46 @@ console.log("\n── wasm: — the deterministic WASI shim runs a real module �
         JSON.stringify(a.result) === JSON.stringify(b.result));
 }
 
+console.log("\n── params.model — the committed artifact reaches the sandbox ──");
+
+{
+  // the model path: bytes fetched under the envelope's own network grant,
+  // verified against sha256, handed to the image as ctx.model (js) —
+  // deterministic seed rides alongside. A mismatch never reaches a worker.
+  const hex = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  const modelBytes = new TextEncoder().encode("fake-gguf-model-bytes");
+  const digest = hex(await crypto.subtle.digest("SHA-256", modelBytes));
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => ({
+    ok: url === "https://models.example/f.gguf",
+    status: url === "https://models.example/f.gguf" ? 200 : 404,
+    arrayBuffer: async () => modelBytes.buffer.slice(0),
+  });
+  try {
+    const env = { bridgeJobId: "bj-model", image: "js:eng",
+                  entrypoint: "(input, ctx) => ({ out: new TextDecoder().decode(ctx.model), tokens: ctx.model.length, seed: ctx.seed })",
+                  inputHash: "in:m", caps: ["fetch"], network: true,
+                  params: { model: { uri: "https://models.example/f.gguf",
+                                     sha256: digest, format: "gguf-wasm",
+                                     context: 4096, seed: 7 } } };
+    const { result } = await L.runEnvelope(env, null);
+    check("ctx.model carries the verified bytes into the sandbox",
+          result.out === "fake-gguf-model-bytes", JSON.stringify(result));
+    check("the committed seed rides ctx", result.seed === 7, `got ${result.seed}`);
+    check("the engine can report a token count", result.tokens === modelBytes.length);
+
+    const bad = { ...env, params: { model: { uri: "https://models.example/f.gguf",
+                                             sha256: "0".repeat(64), format: "gguf-wasm" } } };
+    const err = await L.runEnvelope(bad, null).then(() => null).catch(e => e.message);
+    check("a sha256 mismatch refuses before any worker runs",
+          /sha256 mismatch/.test(err), err || "no error");
+
+    const noCap = { ...env, caps: [], network: false };
+    const err2 = await L.runEnvelope(noCap, null).then(() => null).catch(e => e.message);
+    check("no fetch cap → the model fetch refuses closed",
+          /model fetch needs the fetch cap/.test(err2), err2 || "no error");
+  } finally { globalThis.fetch = origFetch; }
+}
+
 console.log(`\n── results: ${pass} passed, ${fail} failed ──`);
 process.exit(fail ? 1 : 0);

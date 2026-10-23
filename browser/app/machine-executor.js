@@ -15,9 +15,10 @@
 // is true AND its caps name "fetch". A timeout kills the worker; the lender
 // owes a receipt by the claim's deadline or the claim expires.
 //
-// The lender's signature is NOT produced here: a did:key↔AID binding is a
-// spec-open question (§1), so v1 emits lenderSig:null — the door answers
-// 'unverifiable for it, never a silent pass.
+// The lender signs when a signer rides opts (loadNodeSigner in
+// lib/machine-sig.js — the keystore's non-extractable node key); absent
+// one lenderSig rides null and the door answers 'unverifiable, never a
+// silent pass.
 const RECEIPT_DOMAIN = "naoms-compute-receipt/v1\0";
 const hex = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 const sha256hex = async (s) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
@@ -105,10 +106,13 @@ const __wasi = (stdinBytes, seed) => {
 self.onmessage = async (e) => {
   try {
     const d = e.data;
+    const model = d.model ? new Uint8Array(d.model) : null;
     if (d.kind === "js") {
       const fn = eval("(" + d.entrypoint + ")");
       if (typeof fn !== "function") throw new Error("entrypoint is not a function");
-      const out = await fn(d.input);
+      // ctx rides second — a js image driving its own engine (wllama-style
+      // glue over wasm) reads ctx.model; single-arg entrypoints ignore it.
+      const out = await fn(d.input, { model, seed: d.seed || 0 });
       self.postMessage({ ok: true, out: out === undefined ? null : out });
       return;
     }
@@ -118,8 +122,22 @@ self.onmessage = async (e) => {
     const imports = { wasi_snapshot_preview1: {} };
     for (const k in wasi.imports.wasi_snapshot_preview1)
       imports.wasi_snapshot_preview1[k] = (...a) => wasi.imports.wasi_snapshot_preview1[k](wasi, ...a);
+    // the model reaches wasm through deterministic host fns — engine-
+    // agnostic: model_len/model_read/seed_get, no filesystem, no clock.
+    const env = { mem: null, model, seed: d.seed || 0 };
+    imports.env = {
+      model_len: () => env.model ? env.model.length : 0,
+      model_read: (ptr, off, len) => {
+        if (!env.model || !env.mem) return 8;
+        const take = Math.min(len, env.model.length - off);
+        if (take <= 0) return 8;
+        new Uint8Array(env.mem.buffer).set(env.model.subarray(off, off + take), ptr);
+        return take;
+      },
+      seed_get: () => env.seed,
+    };
     const { instance } = await WebAssembly.instantiate(d.bytes, imports);
-    if (instance.exports.memory) wasi.mem = instance.exports.memory;
+    if (instance.exports.memory) { wasi.mem = instance.exports.memory; env.mem = instance.exports.memory; }
     const entry = instance.exports[d.entrypoint || "_start"];
     if (typeof entry !== "function") throw new Error("no export " + (d.entrypoint || "_start"));
     const r = entry();
@@ -155,6 +173,66 @@ const wasmBytes = async (env) => {
         throw new Error(`machine-executor: wasm fetch ${res.status}`);
     return new Uint8Array(await res.arrayBuffer());
 };
+// ── the model stage ─────────────────────────────────────────────────────
+// params.model commits the artifact an inference envelope decodes: fetched
+// under the envelope's own network grant, verified against sha256 before
+// the engine sees a byte, cached keyed BY that hash — a cache hit is by
+// definition the verified artifact, so hits never re-fetch or re-verify.
+const modelCache = {
+    _db: null,
+    async _open() {
+        if (this._db || typeof indexedDB === "undefined")
+            return this._db;
+        this._db = await new Promise((res, rej) => {
+            const r = indexedDB.open("playnet-models", 1);
+            r.onupgradeneeded = () => r.result.createObjectStore("models");
+            r.onsuccess = () => res(r.result);
+            r.onerror = () => rej(r.error);
+        });
+        return this._db;
+    },
+    async get(hash) {
+        const db = await this._open();
+        if (!db)
+            return null;
+        return new Promise((res) => {
+            const q = db.transaction("models").objectStore("models").get(hash);
+            q.onsuccess = () => res(q.result ?? null);
+            q.onerror = () => res(null);
+        });
+    },
+    async put(hash, bytes) {
+        const db = await this._open();
+        if (!db)
+            return;
+        return new Promise((res) => {
+            const tx = db.transaction("models", "readwrite");
+            tx.objectStore("models").put(bytes, hash);
+            tx.oncomplete = () => res();
+            tx.onerror = () => res();
+        });
+    },
+};
+const sha256hexBytes = async (u8) => hex(await crypto.subtle.digest("SHA-256", u8));
+const modelBytes = async (env) => {
+    const m = env.params?.model;
+    if (!m || typeof m.uri !== "string" || typeof m.sha256 !== "string")
+        throw new Error("machine-executor: params.model needs uri and sha256");
+    const hit = await modelCache.get(m.sha256);
+    if (hit)
+        return hit instanceof Uint8Array ? hit : new Uint8Array(hit);
+    if (!(env.network === true && (env.caps || []).includes("fetch")))
+        throw new Error("machine-executor: model fetch needs the fetch cap");
+    const res = await fetch(m.uri);
+    if (!res.ok)
+        throw new Error(`machine-executor: model fetch ${res.status}`);
+    const got = new Uint8Array(await res.arrayBuffer());
+    const digest = await sha256hexBytes(got);
+    if (digest !== m.sha256.toLowerCase())
+        throw new Error("machine-executor: model sha256 mismatch — the bytes are not the commit");
+    await modelCache.put(m.sha256, got);
+    return got;
+};
 export const runEnvelope = async (env, input, opts = {}) => {
     // non-exec kinds need no image; without one there is nothing to run —
     // the scheme parser only forces image on 'exec, and this is the exec path.
@@ -170,6 +248,10 @@ export const runEnvelope = async (env, input, opts = {}) => {
     // the fetch happens OUTSIDE the sandbox — the worker never sees the ref;
     // the network grant check lives here where the bytes actually move
     const bytes = isWasm ? await wasmBytes(env) : null;
+    // params.model stages the same way — fetched and verified out here,
+    // transferred in as opaque bytes the sandbox reads only through the
+    // deterministic host fns (or ctx.model for a js image)
+    const mBytes = env.params?.model ? await modelBytes(env) : null;
     return new Promise((resolve, reject) => {
         const timeoutMs = opts.timeoutMs ?? 5 * 60 * 1000;
         const blob = new Blob([`self.__caps = ${JSON.stringify(env.caps || [])};`,
@@ -199,13 +281,22 @@ export const runEnvelope = async (env, input, opts = {}) => {
             else
                 reject(new Error(`machine-executor: ${e.data && e.data.err || "failed"}`));
         };
+        const transfers = [];
+        if (isWasm)
+            transfers.push(bytes.buffer);
+        if (mBytes)
+            transfers.push(mBytes.buffer);
         if (isWasm) {
             const buf = bytes.buffer;
             w.postMessage({ kind: "wasm", entrypoint: env.entrypoint || "_start",
-                bytes: buf, input: input ?? null, seed: opts.seed ?? 0 }, [buf]);
+                bytes: buf, input: input ?? null,
+                seed: opts.seed ?? env.params?.model?.seed ?? 0,
+                model: mBytes ? mBytes.buffer : null }, transfers);
         }
         else {
-            w.postMessage({ kind: "js", entrypoint: env.entrypoint, input: input ?? null });
+            w.postMessage({ kind: "js", entrypoint: env.entrypoint, input: input ?? null,
+                seed: opts.seed ?? env.params?.model?.seed ?? 0,
+                model: mBytes ? mBytes.buffer : null }, transfers);
         }
     });
 };
@@ -274,10 +365,18 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
         return runBundleClaim(seam, commune, claimId, env, lenderDid, opts);
     }
     const { result, seconds } = await runEnvelope(env, input, opts);
+    // an inference engine that reports a token count meters in tokens —
+    // the kind's own unit; the count rides inside the hashed result so a
+    // challenge replays the decode it names, not just its byte output.
+    const model = env.params?.model;
+    const usage = model && result && typeof result.tokens === "number"
+        ? { unit: "tokens", amount: result.tokens }
+        : undefined;
     const receipt = await emitReceipt({
         env, lenderDid, input, result, seconds,
         bridgeJobId: claimId,
-        reproMode: opts.reproMode, seed: opts.seed,
+        reproMode: opts.reproMode, seed: opts.seed ?? model?.seed,
+        usage,
         signer: opts.signer,
     });
     return seam.machineReceipt(commune, JSON.stringify(receipt));

@@ -27,6 +27,7 @@
             job-envelope-entrypoint job-envelope-input-hash
             job-envelope-caps job-envelope-network? job-envelope-params
             envelope-kind? *envelope-kinds*
+            params-ref model-descriptor? envelope-model envelope-model-seed
             alist->job-envelope job-envelope->alist envelope-no-amount?))
 
 
@@ -63,6 +64,48 @@
   (network?      job-envelope-network?)      ; bool — egress allowed or not
   (params        job-envelope-params))       ; alist — kind fields, price-free
 
+;;; ── the inference profile ──────────────────────────────────────────────
+;;; params.model names the model artifact an inference envelope runs: the
+;;; bytes the engine decodes, committed so the executor caches by hash and
+;;; a challenge replays the SAME artifact — never a similar one. uri
+;;; fetches under the envelope's own network grant; sha256 is the commit
+;;; the fetched bytes are checked against before the engine sees them.
+;;; context and seed are the decode the receipt's repro reruns — a
+;;; 'deterministic spec under the envelope's committed seed.
+
+(define (params-ref params key)
+  "A params value by symbol name, tolerating the string key a raw wire
+   form may carry."
+  (cond ((assq-ref params key))
+        ((assoc (symbol->string key) params) => cdr)
+        (else #f)))
+
+(define (model-descriptor? m)
+  "The params.model shape: uri+sha256+format are the commit the executor
+   verifies before the engine sees a byte; context/seed are the decode
+   knobs a 'deterministic replay reruns. Extra keys pass through — an
+   engine's own tuning rides uninspected."
+  (and (list? m)
+       (string? (assq-ref m 'uri))
+       (string? (assq-ref m 'sha256))
+       (or (symbol? (assq-ref m 'format))
+           (string? (assq-ref m 'format)))
+       (or (not (assq 'context m))
+           (and (integer? (assq-ref m 'context))
+                (positive? (assq-ref m 'context))))
+       (or (not (assq 'seed m))
+           (number? (assq-ref m 'seed)))))
+
+(define (envelope-model e)
+  "The envelope's model descriptor, or #f — an exec envelope without one
+   is ordinary compute, not inference."
+  (params-ref (job-envelope-params e) 'model))
+
+(define (envelope-model-seed e)
+  "The decode seed the model commits, or #f — the receipt's repro records
+   it so replay reruns the same decode."
+  (params-ref (or (envelope-model e) '()) 'seed))
+
 (define* (make-job-envelope #:key (kind 'exec) bridge-job-id (image #f)
                             (entrypoint #f) input-hash
                             (caps '()) (network? #f) (params '()))
@@ -73,6 +116,10 @@
       (error "envelope: an exec envelope needs image and entrypoint")))
   (unless (envelope-no-amount? params)
     (error "envelope: params carry no amount"))
+  (let ((m (params-ref params 'model)))
+    (when m
+      (unless (model-descriptor? m)
+        (error "envelope: params.model is not a model descriptor" m))))
   (%make-job-envelope kind bridge-job-id image entrypoint input-hash caps
                       network? params))
 
