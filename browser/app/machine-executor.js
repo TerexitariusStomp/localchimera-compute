@@ -345,6 +345,13 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
     if (typeof raw === "string" && raw.startsWith("err:"))
         throw new Error(`machine-executor: ${raw}`);
     const env = (typeof raw === "string" ? JSON.parse(raw) : raw);
+    // a swarm descriptor rides any kind — the leg resolves its input from
+    // the bus and publishes its output to it; the kind's own runner still
+    // does the work inside.
+    if (env.params?.swarm) {
+        const { runSwarmClaim } = await import("./machine-swarm.js");
+        return runSwarmClaim(seam, commune, claimId, env, lenderDid, input, opts);
+    }
     // the store kind doesn't run a worker — it holds bytes and answers
     // challenges; the relay kind moves bytes and answers neither — each
     // imported at need so the exec path never pays for legs it doesn't run.
