@@ -63,7 +63,7 @@ retryable/missing-sref condition until the new one lands).
 
 1. Build artifacts: `make` (builds `browser/day-boot.wasm`)
    (requires the hoot toolchain — see "Artifacts" below). Re-run
-   `tools/wasm/patch-reflect-mime.sh` after **any** wasm rebuild — each
+   `tools/dev/patch-reflect-mime.sh` after **any** wasm rebuild — each
    hoot bundle rewrites `reflect.js` back to the nodejs-detect variant.
 2. `wrangler pages deploy browser/` (the local gate runs
    trufflehog/trivy/semgrep first).
