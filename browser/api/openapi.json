@@ -9118,6 +9118,225 @@
         }
       }
     },
+    "/api/session/machine-signal": {
+      "post": {
+        "operationId": "session.machine-signal",
+        "summary": "Posts signal BODY on CLAIM-ID in COMMUNE-AID — an opaque blob (an SDP offer/answer, an ICE candidate) seq'd by the shelf; this AID a party to the claim, and the claim must be live.",
+        "description": "Posts signal BODY on CLAIM-ID in COMMUNE-AID — an opaque blob (an SDP offer/answer, an ICE candidate) seq'd by the shelf; this AID a party to the claim, and the claim must be live.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "tags": [
+          "stock"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "governance",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "machineSignal",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commune-aid": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+                    "description": "a KERI AID prefix",
+                    "x-playnet-shape": "aid"
+                  },
+                  "claim-id": {
+                    "type": "string",
+                    "x-playnet-shape": "id"
+                  },
+                  "body": {
+                    "type": "string",
+                    "contentMediaType": "application/json",
+                    "description": "a JSON document, as a string",
+                    "x-playnet-shape": "json"
+                  }
+                },
+                "required": [
+                  "commune-aid",
+                  "claim-id",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (promise:ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "promise:ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/machine-signals": {
+      "post": {
+        "operationId": "session.machine-signals",
+        "summary": "Replies the signals on CLAIM-ID in COMMUNE-AID strictly after 'after (0 reads all) — the counterparty's poll; this AID a party to the claim or a governor.",
+        "description": "Replies the signals on CLAIM-ID in COMMUNE-AID strictly after 'after (0 reads all) — the counterparty's poll; this AID a party to the claim or a governor.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "tags": [
+          "stock"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "read",
+        "x-playnet-to": "governance",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "machineSignals",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commune-aid": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+                    "description": "a KERI AID prefix",
+                    "x-playnet-shape": "aid"
+                  },
+                  "claim-id": {
+                    "type": "string",
+                    "x-playnet-shape": "id"
+                  },
+                  "opts": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
+                    "x-playnet-shape": "alist"
+                  }
+                },
+                "required": [
+                  "commune-aid",
+                  "claim-id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (promise:ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "promise:ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
     "/api/session/machine-bind": {
       "post": {
         "operationId": "session.machine-bind",

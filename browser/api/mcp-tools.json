@@ -3075,6 +3075,83 @@
       "x-playnet-http": "/api/session/machine-challenges"
     },
     {
+      "name": "session.machine-signal",
+      "title": "stock: machine-signal",
+      "description": "Posts signal BODY on CLAIM-ID in COMMUNE-AID — an opaque blob (an SDP offer/answer, an ICE candidate) seq'd by the shelf; this AID a party to the claim, and the claim must be live. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "claim-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          },
+          "body": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "description": "a JSON document, as a string",
+            "x-playnet-shape": "json"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "claim-id",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-signal"
+    },
+    {
+      "name": "session.machine-signals",
+      "title": "stock: machine-signals",
+      "description": "Replies the signals on CLAIM-ID in COMMUNE-AID strictly after 'after (0 reads all) — the counterparty's poll; this AID a party to the claim or a governor. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "claim-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          },
+          "opts": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
+            "x-playnet-shape": "alist"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "claim-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-signals"
+    },
+    {
       "name": "session.machine-bind",
       "title": "stock: machine-bind",
       "description": "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names. [stock; callable by an enrolled device]",

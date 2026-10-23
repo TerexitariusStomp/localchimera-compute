@@ -1043,7 +1043,7 @@ check-ui-staged:
 # ── Browser test aggregates ─────────────────────────────────────────────────
 # test-browser: the node page's JS suites — node, no gateway.
 .PHONY: test-browser
-test-browser: test-machine-executor test-machine-store test-store test-keys test-bytes \
+test-browser: test-machine-executor test-machine-store test-machine-relay test-store test-keys test-bytes \
           test-idb test-keystore test-handler-bridge test-mesh-plan \
           test-capabilities test-rns-identity test-reactive 
 
@@ -1060,6 +1060,14 @@ test-machine-executor:
 .PHONY: test-machine-store
 test-machine-store:
 	node tests/browser/machine-store-test.mjs
+
+# The relay kind's browser leg (browser/app/machine-relay.js): the HTTP
+# leg's fetch-cap gate and in→out byte metering, the canary probe, and the
+# DataChannel leg negotiated over the claim's own signal log through a fake
+# peer pair — fail-closed on no grant, no RTCPeerConnection, no answer.
+.PHONY: test-machine-relay
+test-machine-relay:
+	node tests/browser/machine-relay-test.mjs
 
 # The IndexedDB keystore + legacy migration (browser/lib/keystore.js). Real
 # WebCrypto Ed25519 with in-memory localStorage/IndexedDB mocks. Pins that a

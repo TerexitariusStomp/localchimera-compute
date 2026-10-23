@@ -143,6 +143,15 @@
                 (hash-set! registries k s)
                 s))))
 
+      ;; the signal shelf — per-claim ordered blobs, the rendezvous a
+      ;; browser pair needs to relay because neither end can listen.
+      (define (signals-for commune-aid)
+        (let ((k (string-append "signal:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-signal-store)))
+                (hash-set! registries k s)
+                s))))
+
       ;; the hive's review pool: every citizen the service has met, minus
       ;; the dispute's parties — sortition scores and picks from this list.
       (define (review-pool exclude)
@@ -764,6 +773,62 @@
                         ($ (challenges-for commune-aid) 'by-claim claim-id)))))))
            (lambda (k . a)
              (list 'error (format #f "machine-challenges: ~a" a)))))
+
+        ;; ── relay signaling ──────────────────────────────────────────────
+        ;; The relay kind's rendezvous: neither browser end can listen, so
+        ;; the claim itself is the mailbox — SDP offers/answers, ICE
+        ;; candidates, the handshake the two ends exchange through the
+        ;; shelf. Only the claim's parties post or read, and only while the
+        ;; claim is live: a settled claim's signals are a dead letter.
+        ;; A signal row crosses as (seq . ((from . did) (at . epoch)
+        ;; (body . v))) — the shelf assigns seq; the door stamps from/at,
+        ;; so a body can neither spoof its sender nor predate its post.
+        ((machine-signal identity-key commune-aid claim-id body)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let ((c ($ (registry-for commune-aid) 'claim-of claim-id)))
+               (cond
+                ((not c) (list 'error "machine-signal: no such claim"))
+                ((not (or (equal? identity-key (dispatch-claim-lender-did c))
+                          (equal? identity-key (dispatch-claim-borrower-did c))))
+                 (list 'error "machine-signal: the claim's parties only"))
+                ((not (memq (dispatch-claim-state c) '(claimed accepted)))
+                 (list 'error "machine-signal: claim no longer live"))
+                (else
+                 (let ((seq ($ (signals-for commune-aid) 'append! claim-id
+                               `((from . ,identity-key)
+                                 (at . ,((*machine-clock*)))
+                                 (body . ,(wire-normalize body))))))
+                   (cons 'ok seq))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-signal: ~a" a)))))
+
+        ;; the counterparty's read — rows strictly after SEQ (0 starts at
+        ;; the beginning). Borrower, lender, governor may listen; a
+        ;; stranger's claim signals are not their business.
+        ((machine-signals identity-key commune-aid claim-id . opts)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let ((c ($ (registry-for commune-aid) 'claim-of claim-id)))
+               (cond
+                ((not c) (list 'error "machine-signals: no such claim"))
+                ((not (or (equal? identity-key (dispatch-claim-lender-did c))
+                          (equal? identity-key (dispatch-claim-borrower-did c))
+                          (governor? identity-key)))
+                 (list 'error "machine-signals: the claim's parties only"))
+                (else
+                 (cons 'ok
+                   (map (lambda (r)
+                          `(("seq" . ,(car r))
+                            ("from" . ,(assq-ref (cdr r) 'from))
+                            ("at" . ,(assq-ref (cdr r) 'at))
+                            ("body" . ,(assq-ref (cdr r) 'body))))
+                        ($ (signals-for commune-aid) 'after claim-id
+                           (or (opt-ref opts 'after 0) 0))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-signals: ~a" a)))))
 
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —

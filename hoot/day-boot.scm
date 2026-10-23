@@ -3304,6 +3304,22 @@
       (planner-call cb (<- *session* 'machine-challenges commune claim-id)
         (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
 
+;; the relay rendezvous — body crosses as a JSON string the door's own
+;; wire-normalize reduces; 'after rides as a number the session flattens.
+(define (handle-machine-signal commune claim-id body-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (let ((body (json-read-ordered body-json)))
+        (planner-call cb (<- *session* 'machine-signal commune claim-id body)
+          (lambda (v) (reply! cb (scm->json-canonical v)))))))
+
+(define (handle-machine-signals commune claim-id after cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (let ((n (arg-num after)))
+        (planner-call cb (apply <- *session* 'machine-signals commune claim-id
+                                (if (and (number? n) (> n 0))
+                                    (list 'after n) '()))
+          (lambda (v) (reply! cb (scm->json-canonical (list->vector v))))))))
+
 ;;; ── governance: the decision inbox (governance-surface.md §Inbox) ─────────
 ;; list-proposals → [{id, status}]; the dial renders the open decisions.
 (define (handle-list-proposals cb)
@@ -4085,6 +4101,8 @@
             ("machineChallengeAnswer"  . ,handle-machine-challenge-answer)
             ("machineChallengeVerify"  . ,handle-machine-challenge-verify)
             ("machineChallenges"       . ,handle-machine-challenges)
+            ("machineSignal"           . ,handle-machine-signal)
+            ("machineSignals"          . ,handle-machine-signals)
             ("machineBind"          . ,handle-machine-bind)
             ("machineUnbind"        . ,handle-machine-unbind)
             ("machineBindings"      . ,handle-machine-bindings)

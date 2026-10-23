@@ -54,7 +54,8 @@
             ^envelope-store spawn-envelope-store
             ^binding-store spawn-binding-store binding-key
             ^dispute-store spawn-dispute-store
-            ^challenge-store spawn-challenge-store))
+            ^challenge-store spawn-challenge-store
+            ^signal-store spawn-signal-store))
 
 
 ;;; ── the records ─────────────────────────────────────────────────────────
@@ -608,6 +609,39 @@
   (spawn ^challenge-store (hashmap)))
 
 
+;;; ── the signal shelf ─────────────────────────────────────────────────────
+;;; Relay signaling (browser/app/machine-relay.js) beside the claim it
+;;; coordinates — per-claim ordered opaque blobs, seq'd as they arrive:
+;;; SDP offers and answers, ICE candidates, whatever the two ends must
+;;; exchange because neither browser can listen. The policy (who may post,
+;;; who may read) lives in the doors; the shelf is a log, and it dies with
+;;; the claim's commune the way every shelf here does.
+
+(define (^signal-store bcom signals)
+  (methods
+    ;; append ROW (an alist minus its seq) to CLAIM-ID's log; the shelf
+    ;; assigns the seq so ordering is the shelf's word, not the caller's.
+    ;; Seqs start at 1 so 'after 0 reads the whole log.
+    ((append! claim-id row)
+     (let* ((cur (hashmap-ref signals claim-id '()))
+            (seq (+ 1 (length cur))))
+       (bcom (^signal-store bcom
+               (hashmap-set signals claim-id
+                            (append cur (list (cons seq row)))))
+             seq)))
+    ((by-claim claim-id)
+     (hashmap-ref signals claim-id '()))
+    ;; the poller's read: rows strictly after SEQ — a fresh reader asks 0
+    ((after claim-id seq)
+     (drop-while (lambda (r) (<= (car r) seq))
+                 (hashmap-ref signals claim-id '())))
+    ((all) signals)
+    ((portrait) (list 'signal-store (serialize-hashmap signals (lambda (x) x))))))
+
+(define (spawn-signal-store)
+  (spawn ^signal-store (hashmap)))
+
+
 ;;; ── persistence ─────────────────────────────────────────────────────────
 
 (define machine-registry-env
@@ -616,4 +650,5 @@
       (((playnet machine registry) ^envelope-store) ,^envelope-store)
       (((playnet machine registry) ^binding-store) ,^binding-store)
       (((playnet machine registry) ^dispute-store) ,^dispute-store)
-      (((playnet machine registry) ^challenge-store) ,^challenge-store))))
+      (((playnet machine registry) ^challenge-store) ,^challenge-store)
+      (((playnet machine registry) ^signal-store) ,^signal-store))))

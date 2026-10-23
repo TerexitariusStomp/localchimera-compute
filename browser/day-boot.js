@@ -1193,6 +1193,12 @@ function boot() {
       new Promise(res => schemeHandlers.machineChallengeVerify ? schemeHandlers.machineChallengeVerify(commune || "", challengeId || "", expected || "", contentHash || "", res) : res("err:offline"));
     HANDLERS.machineChallenges = (commune, claimId) =>
       new Promise(res => schemeHandlers.machineChallenges ? schemeHandlers.machineChallenges(commune || "", claimId || "", res) : res("[]"));
+    // relay signaling — the claim is the mailbox: body is any JSON value,
+    // seq'd by the shelf; signals reads rows strictly after `after` (0 = all)
+    HANDLERS.machineSignal = (commune, claimId, body) =>
+      new Promise(res => schemeHandlers.machineSignal ? schemeHandlers.machineSignal(commune || "", claimId || "", JSON.stringify(body ?? null), res) : res("err:offline"));
+    HANDLERS.machineSignals = (commune, claimId, after) =>
+      new Promise(res => schemeHandlers.machineSignals ? schemeHandlers.machineSignals(commune || "", claimId || "", after || 0, res) : res("[]"));
     HANDLERS.machineBind = (commune, wireJson) =>
       new Promise(res => schemeHandlers.machineBind ? schemeHandlers.machineBind(commune || "", wireJson || "{}", res) : res("err:offline"));
     HANDLERS.machineUnbind = (commune, key, side) =>

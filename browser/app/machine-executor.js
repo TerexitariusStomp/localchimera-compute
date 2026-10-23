@@ -237,11 +237,15 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
         throw new Error(`machine-executor: ${raw}`);
     const env = (typeof raw === "string" ? JSON.parse(raw) : raw);
     // the store kind doesn't run a worker — it holds bytes and answers
-    // challenges; machine-store.js is imported at need so the exec path
-    // never pays IndexedDB for a job it doesn't have.
+    // challenges; the relay kind moves bytes and answers neither — each
+    // imported at need so the exec path never pays for legs it doesn't run.
     if (env.kind === "store") {
         const { runStoreClaim } = await import("./machine-store.js");
         return runStoreClaim(seam, commune, claimId, env, lenderDid, opts);
+    }
+    if (env.kind === "relay") {
+        const { runRelayClaim } = await import("./machine-relay.js");
+        return runRelayClaim(seam, commune, claimId, env, lenderDid, opts);
     }
     const { result, seconds } = await runEnvelope(env, input, opts);
     const receipt = await emitReceipt({

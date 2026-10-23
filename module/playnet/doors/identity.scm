@@ -595,6 +595,12 @@
    ((machine-challenges commune-aid claim-id)
     (<- governance-svc 'machine-challenges aid-prefix commune-aid claim-id))
 
+   ((machine-signal commune-aid claim-id body)
+    (<- governance-svc 'machine-signal aid-prefix commune-aid claim-id body))
+
+   ((machine-signals commune-aid claim-id . opts)
+    (apply <- governance-svc 'machine-signals aid-prefix commune-aid claim-id opts))
+
    ((machine-bind commune-aid w)
     (<- governance-svc 'machine-bind aid-prefix commune-aid w))
 

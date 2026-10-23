@@ -103,7 +103,7 @@
         <div><label>replay</label>
           <select id="jobRepro"><option>deterministic</option><option>exact</option><option>none</option></select></div>
       </div>
-      <label>job envelope (JSON — kind/image/entrypoint/inputHash/caps; a 'store kind takes params.contentB64)</label>
+      <label>job envelope (JSON — kind/image/entrypoint/inputHash/caps; 'store takes params.contentB64, 'relay takes params.inUrl/outUrl|channel|probe + the fetch cap)</label>
       <textarea id="jobEnv" rows="3">{"image":"js:","entrypoint":"(x)=>x*x","inputHash":"","caps":[],"network":false}</textarea>
       <label>opts (JSON alist — needs{}, envelopeHash, specId, ring)</label>
       <input id="jobOpts" placeholder='{"needs":{"storage-gb":1}}'>
@@ -151,6 +151,16 @@
       </div>
       <button id="chBtn" class="ghost">issue challenge</button>
       <table id="challenges"></table>
+    </section>
+    <section>
+      <h2>Relay</h2>
+      <div class="caps">the bandwidth kind: a 'relay envelope moves bytes —
+        HTTP legs (params.inUrl → params.outUrl) or a DataChannel over the
+        claim's signal log — and meters 'bytes</div>
+      <div><label>canary url — a timed fetch; the report is the measurement a 'probe job would meter</label>
+        <input id="probeUrl" placeholder="https://…"></div>
+      <button id="probeBtn" class="ghost">canary</button>
+      <div class="caps" id="probeOut">—</div>
     </section>
     <section>
       <h2>Identity bindings (did:key ↔ AID)</h2>
@@ -439,6 +449,23 @@ $("challenges").addEventListener("click", async (e) => {
   refreshChallenges();
 });
 setInterval(refreshStore, 15_000); void refreshStore();
+
+// ── relay: the canary runs the same probe() a claimed 'relay envelope
+// would — same fetch-cap check, same byte metering — only the report is
+// read off locally instead of metered into a receipt.
+$("probeBtn").addEventListener("click", async () => {
+  const url = $("probeUrl").value.trim();
+  if (!url) return log("canary needs a url", "err");
+  try {
+    const { probe } = await import("./app/machine-relay.js");
+    const r = await probe({ network: true, caps: ["fetch"], params: { inUrl: url } });
+    $("probeOut").innerHTML = `
+      <span>bytes</span><b>${r.bytes}</b>
+      <span>ms</span><b>${r.ms}</b>
+      <span>throughput</span><b>${(r.bps / 1e6).toFixed(2)} MB/s</b>`;
+    log(`canary ${url} → ${r.bytes}B in ${r.ms}ms`, "ok");
+  } catch (e) { log(`canary: ${e.message}`, "err"); }
+});
 
 // ── bindings ──────────────────────────────────────────────────────────────
 $("bindBtn").addEventListener("click", async () =>

@@ -559,6 +559,14 @@ or #f when no handler sends it."
     (door session machine-challenges (commune-aid claim-id)
           #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
           #:doc "Replies the storage challenges on CLAIM-ID in COMMUNE-AID — the node's poll surface for what it must answer; this AID a party to the claim or a governor.")
+    ;; ── relay signaling — the relay kind's rendezvous: browsers cannot
+    ;; listen, so the claim is the mailbox for the SDP/ICE handshake.
+    (door session machine-signal (commune-aid claim-id body)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Posts signal BODY on CLAIM-ID in COMMUNE-AID — an opaque blob (an SDP offer/answer, an ICE candidate) seq'd by the shelf; this AID a party to the claim, and the claim must be live.")
+    (door session machine-signals (commune-aid claim-id . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the signals on CLAIM-ID in COMMUNE-AID strictly after 'after (0 reads all) — the counterparty's poll; this AID a party to the claim or a governor.")
     (door session machine-bind (commune-aid w)
           #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
           #:doc "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.")

@@ -317,5 +317,11 @@ export interface SeamHandlers {
   /** The storage challenges standing on CLAIM-ID in COMMUNE, as a JSON array — the node's poll surface. */
   // doors: session/machine-challenges
   machineChallenges?(commune: string, claimId: string): Promise<unknown>;
+  /** Post a signal blob on CLAIM-ID in COMMUNE — an SDP offer/answer or ICE candidate; this AID a party to the claim, while it is live. */
+  // doors: session/machine-signal
+  machineSignal?(commune: string, claimId: string, body: unknown): Promise<unknown>;
+  /** The signals on CLAIM-ID in COMMUNE strictly after AFTER (0 reads all), as a JSON array — the relay counterparty's poll. */
+  // doors: session/machine-signals
+  machineSignals?(commune: string, claimId: string, after?: number): Promise<unknown>;
   [handler: string]: unknown;
 }
