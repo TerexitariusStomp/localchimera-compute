@@ -218,6 +218,33 @@ await throws("an unknown leg kind names its index",
   const after = await (await import("../../browser/app/machine-store.js")).getContent("deadbeef");
   check("the leg evicts what it held — no residue", after === null);
 }
+
+// ── the availability bundle — legs run, then the tab stands the lease ────
+{
+  receipts.length = 0;
+  globalThis.fetch = async () =>
+    ({ ok: true, status: 200, arrayBuffer: async () => new TextEncoder().encode("cdn").buffer });
+  const t0 = Date.now();
+  await B.runBundleClaim(seam, "home", "claim-avail",
+    { kind: "bundle", inputHash: "in:av",
+      params: {
+        availability: { "lease-hours": 2, replicas: 3, "replica-index": 1 },
+        legs: [
+          { kind: "store", inputHash: "cafe",
+            params: { contentB64: btoa("served"), durationMs: 10 } },
+          { kind: "relay", network: true, caps: ["fetch"], params: { inUrl: "https://cdn" } },
+        ] } },
+    "did:lender", { leaseMs: 600 });
+  const held = Date.now() - t0;
+  const r = receipts[0];
+  check("the tab stood the lease", held >= 600, `${held}ms`);
+  check("an availability bundle meters node-hours, not seconds",
+        r.usage.unit === "node-hours", r.usage.unit);
+  check("the honest fraction is positive, under the lease",
+        r.usage.amount > 0 && r.usage.amount < 0.001, `${r.usage.amount}`);
+  check("the legs' report is still the bound output",
+        /^[0-9a-f]{64}$/.test(r.outputHash));
+}
 {
   const claims = async () => [{ claimId: "c1", lenderDid: "did:lender", state: "claimed" }];
   const mkSeam = () => ({

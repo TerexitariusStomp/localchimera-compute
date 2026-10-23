@@ -113,15 +113,40 @@ export const runLegs = async (env, seam, commune, claimId, opts = {}) => {
 };
 
 // ── the claim ─────────────────────────────────────────────────────────────
+// A bundle receipts in 'seconds — until params.availability rides: then
+// the legs run to establish them and the tab stands the lease, metering
+// 'node-hours — the honest fraction of lease-hours actually held, so a
+// tab that dies early meters less, never a rounded promise. replicas is
+// the borrower's fan-out count; replica-index marks which claim this is.
 export const runBundleClaim = async (seam, commune, claimId, env, lenderDid, opts = {}) => {
     const started = Date.now();
     const reports = await runLegs(env, seam, commune, claimId, opts);
+    const avail = env.params?.availability;
+    let usage, result;
+    if (avail) {
+        const leaseHours = avail["lease-hours"] ?? avail.leaseHours ?? 0;
+        // the hold IS the deliverable — capped at the lease; a test caps it
+        // shorter via opts.leaseMs; the claim's deadline caps it either way
+        const holdMs = Math.min(leaseHours * 3_600_000,
+                                opts.leaseMs ?? Number.POSITIVE_INFINITY);
+        if (holdMs > 0) await sleep(holdMs);
+        const heldMs = Date.now() - started;
+        usage = { unit: "node-hours", amount: Math.round(heldMs / 36) / 100_000 };
+        result = { legs: reports,
+                   availability: { leaseHours, heldMs,
+                                   replicaIndex: avail["replica-index"]
+                                                 ?? avail.replicaIndex ?? 0 } };
+    } else {
+        const seconds = (Date.now() - started) / 1000;
+        usage = { unit: "seconds", amount: Math.round(seconds * 1000) / 1000 };
+        result = { legs: reports };
+    }
     const seconds = (Date.now() - started) / 1000;
     const receipt = await emitReceipt({
         env, lenderDid, bridgeJobId: claimId,
-        result: { legs: reports },
+        result,
         seconds,
-        usage: { unit: "seconds", amount: Math.round(seconds * 1000) / 1000 },
+        usage,
         outputHash: await sha256hex(JSON.stringify(reports)),
         signer: opts.signer,
     });

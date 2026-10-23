@@ -29,6 +29,7 @@
             envelope-kind? *envelope-kinds*
             params-ref model-descriptor? envelope-model envelope-model-seed
             egress-profile? caps-grant?
+            availability-descriptor? envelope-availability
             alist->job-envelope job-envelope->alist envelope-no-amount?))
 
 
@@ -126,6 +127,32 @@
   (let ((items (if (vector? caps) (vector->list caps) (or caps '()))))
     (and (member name items) #t)))
 
+;;; ── the availability profile ───────────────────────────────────────────
+;;; params.availability on a 'bundle declares durable serving: the legs
+;;; hold (store) and serve (relay) for availability.lease-hours, and the
+;;; claim meters 'node-hours delivered — the honest fraction of the lease
+;;; the tab actually stood, not the promise. availability.replicas names
+;;; the redundancy the borrower fans: this claim IS one replica, and
+;;; correlating claims is the borrower's orchestration — an envelope
+;;; describes a job, not a fleet.
+
+(define (availability-descriptor? a)
+  "The params.availability shape: lease-hours is the commitment the
+   node-hours meter is read against (required, positive); replicas names
+   the borrower's intended fan-out (≥1); replica-index marks which claim
+   this is (≥0, optional)."
+  (and (list? a)
+       (let ((lh (params-ref a 'lease-hours))
+             (r (params-ref a 'replicas))
+             (i (params-ref a 'replica-index)))
+         (and (and (number? lh) (positive? lh))
+              (or (not r) (and (integer? r) (>= r 1)))
+              (or (not i) (and (integer? i) (>= i 0)))))))
+
+(define (envelope-availability e)
+  "The envelope's availability descriptor, or #f."
+  (params-ref (job-envelope-params e) 'availability))
+
 (define* (make-job-envelope #:key (kind 'exec) bridge-job-id (image #f)
                             (entrypoint #f) input-hash
                             (caps '()) (network? #f) (params '()))
@@ -147,6 +174,12 @@
       (error "envelope: an egress relay needs network:true"))
     (unless (caps-grant? caps "fetch")
       (error "envelope: an egress relay needs the fetch cap")))
+  (let ((a (params-ref params 'availability)))
+    (when a
+      (unless (eq? kind 'bundle)
+        (error "envelope: availability rides a bundle, not" kind))
+      (unless (availability-descriptor? a)
+        (error "envelope: params.availability is not an availability descriptor" a))))
   (%make-job-envelope kind bridge-job-id image entrypoint input-hash caps
                       network? params))
 
