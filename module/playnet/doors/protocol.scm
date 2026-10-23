@@ -544,6 +544,21 @@ or #f when no handler sends it."
     (door session machine-dispute-close (commune-aid dispute-id)
           #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
           #:doc "Closes DISPUTE-ID in COMMUNE-AID past its window or on verdicts in hand; the held receipt's settlement resumes or dies with the record.")
+    ;; ── storage challenges — the store kind's replay: a nonce answered by
+    ;; sha256(nonce ∥ held bytes), 'exact by construction. The borrower (or
+    ;; a governor) issues, the claim's lender answers, the issuer verifies.
+    (door session machine-challenge (commune-aid claim-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Issues a retention challenge on CLAIM-ID in COMMUNE-AID — a fresh nonce the lender's node must answer with sha256(nonce ∥ held content); this AID the claim's borrower or a governor, CLAIM-ID a live storage claim.")
+    (door session machine-challenge-answer (commune-aid challenge-id answer)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Answers CHALLENGE-ID in COMMUNE-AID with ANSWER — sha256(nonce ∥ held bytes) as hex; this AID the claim's lender, before the deadline.")
+    (door session machine-challenge-verify (commune-aid challenge-id expected content-hash)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Closes CHALLENGE-ID in COMMUNE-AID — EXPECTED is the issuer's sha256(nonce ∥ content), CONTENT-HASH sha256(content) which must equal the job's committed inputHash; the record lands 'reproduced, 'mismatch or 'failed.")
+    (door session machine-challenges (commune-aid claim-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the storage challenges on CLAIM-ID in COMMUNE-AID — the node's poll surface for what it must answer; this AID a party to the claim or a governor.")
     (door session machine-bind (commune-aid w)
           #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
           #:doc "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.")

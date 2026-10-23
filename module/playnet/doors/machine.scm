@@ -30,6 +30,7 @@
   #:use-module (playnet machine envelope)
   #:use-module (playnet machine replay)
   #:use-module (playnet machine dispute)
+  #:use-module (playnet machine challenge)
   #:use-module (playnet machine binding)
   #:use-module (playnet machine binding-verifiers)
   #:use-module (playnet machine payout)
@@ -132,6 +133,16 @@
                 (hash-set! registries k s)
                 s))))
 
+      ;; the challenge shelf — <store-challenge> records by challenge id,
+      ;; the storage kind's counterpart to replay: the proof the node
+      ;; still holds the bytes.
+      (define (challenges-for commune-aid)
+        (let ((k (string-append "challenge:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-challenge-store)))
+                (hash-set! registries k s)
+                s))))
+
       ;; the hive's review pool: every citizen the service has met, minus
       ;; the dispute's parties — sortition scores and picks from this list.
       (define (review-pool exclude)
@@ -175,6 +186,15 @@
          ((pair? v) (cons (car v) (wire-normalize (cdr v))))
          (else v)))
 
+      ;; a resources/needs alist over the wire arrives symbol-keyed
+      ;; ({"storageGB":4} → ((storageGB . 4))); the record's contract is
+      ;; string keys. One local lookup both directions.
+      (define (res-normalize v)
+        (map (lambda (p)
+               (cons (if (symbol? (car p)) (symbol->string (car p)) (car p))
+                     (cdr p)))
+             (wire-normalize (or v '()))))
+
       ;; ── wire shapes ───────────────────────────────────────────────────
       ;; alist rows out — self-describing over the seam, the same shape the
       ;; purchase-claims face reads.
@@ -188,7 +208,10 @@
                              (map symbol->string (lane-offer-task-classes o))))
           ("headroom" . ,(lane-offer-headroom o))
           ("reproMode" . ,(symbol->string (lane-offer-repro-mode o)))
-          ("usageUnit" . ,(lane-offer-usage-unit o))))
+          ("usageUnit" . ,(lane-offer-usage-unit o))
+          ;; an alist of string-keyed pairs crosses as a JSON object —
+          ;; {"storageGB":4}, symmetric with res-normalize on the way in
+          ("resources" . ,(lane-offer-resources o))))
 
       (define (job-row j)
         `(("id" . ,(machine-job-id j))
@@ -201,7 +224,8 @@
           ("envelopeHash" . ,(machine-job-envelope-hash j))
           ("ring" . ,(machine-job-ring j))
           ("state" . ,(symbol->string (machine-job-state j)))
-          ("specId" . ,(machine-job-spec-id j))))
+          ("specId" . ,(machine-job-spec-id j))
+          ("needs" . ,(machine-job-needs j))))
 
       (define (claim-row c)
         `(("id" . ,(dispatch-claim-id c))
@@ -234,7 +258,26 @@
                                    ("attestationHash" . ,(challenge-attestation-hash ch))
                                    ("counterHash" . ,(challenge-counter-hash ch))))))))
 
+      ;; a store challenge over the wire — the nonce travels so the node can
+      ;; compute sha256(nonce ∥ held bytes); expected/answer stay private to
+      ;; the record, the row carries only whether they're set.
+      (define (challenge-row c now)
+        `(("id" . ,(store-challenge-id c))
+          ("claimId" . ,(store-challenge-claim-id c))
+          ("issuer" . ,(store-challenge-issuer c))
+          ("nonce" . ,(store-challenge-nonce c))
+          ("state" . ,(symbol->string (store-challenge-state c)))
+          ("expected" . ,(and (store-challenge-expected c) #t))
+          ("answer" . ,(and (store-challenge-answer c) #t))
+          ("issuedAt" . ,(store-challenge-issued-at c))
+          ("deadline" . ,(store-challenge-deadline c))
+          ("expired" . ,(challenge-expired? c now))
+          ("verdict" . ,(and (store-challenge-verdict-field c)
+                             (symbol->string (store-challenge-verdict-field c))))))
+
       ;; a receipt over the wire is the JSON object the lender's node
+      ;; produced — symbol-keyed alist here, the same field names the
+      ;; canonical digest hashes. usage/repro are alist sub-objects.
       ;; produced — symbol-keyed alist here, the same field names the
       ;; canonical digest hashes. usage/repro are alist sub-objects.
       (define (wire->receipt w0)
@@ -287,6 +330,7 @@
                                        (string-split classes #\,)
                                        classes)))
                (usage-unit (or (opt-ref opts 'usageUnit #f) "seconds"))
+               (resources (res-normalize (opt-ref opts 'resources '())))
                (repro-sym (if (symbol? repro) repro (string->symbol repro))))
            (catch #t
              (lambda ()
@@ -294,7 +338,7 @@
                  (error "machine-offer: no valid task classes"))
                (cons 'ok ($ (registry-for commune-aid) 'offer
                             identity-key commune-aid lane classes
-                            headroom repro-sym usage-unit)))
+                            headroom repro-sym usage-unit resources)))
              (lambda (k . a) (list 'error (format #f "machine-offer: ~a" a))))))
 
         ((machine-retract identity-key commune-aid offer-id)
@@ -325,7 +369,8 @@
                                (string->symbol repro) input-hash
                                (opt-ref opts 'envelopeHash #f)
                                (opt-ref opts 'ring 1)
-                               (opt-ref opts 'specId #f))))
+                               (opt-ref opts 'specId #f)
+                               (res-normalize (opt-ref opts 'needs '())))))
                (when parsed
                  ($ (shelf-for commune-aid) 'put! job-id parsed))
                (cons 'ok job-id)))
@@ -595,6 +640,130 @@
                     (else (list 'error "machine-dispute-close: still within its window"))))))))
            (lambda (k . a)
              (list 'error (format #f "machine-dispute-close: ~a" a)))))
+
+        ;; ── storage challenges ───────────────────────────────────────────
+        ;; machine/challenge.scm — the store kind's replay: 'exact by
+        ;; construction, the answer a pure function of a fresh nonce and
+        ;; the committed bytes, answer = sha256(nonce ∥ content). The
+        ;; ISSUER is the claim's borrower (the content holder) or a
+        ;; governor; the ANSWERER is the claim's lender — the node being
+        ;; probed; the VERIFIER is the issuer again. A challenge binds to
+        ;; a 'storage job's committed inputHash, so an issuer cannot
+        ;; frame an honest node: expected is checked against the same
+        ;; content hash the job committed. Fail-closed like replay: no
+        ;; claim, no challenge; the wrong party, a refusal.
+        ((machine-challenge identity-key commune-aid claim-id)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((reg (registry-for commune-aid))
+                    (c ($ reg 'claim-of claim-id)))
+               (cond
+                ((not c) (list 'error "machine-challenge: no such claim"))
+                ((not (or (equal? identity-key (dispatch-claim-borrower-did c))
+                          (governor? identity-key)))
+                 (list 'error "machine-challenge: borrower or governor only"))
+                (else
+                 (let ((j ($ reg 'job-of (dispatch-claim-job-id c))))
+                   (cond
+                    ((not (eq? (machine-job-task-class j) 'storage))
+                     (list 'error "machine-challenge: a storage claim only"))
+                    ((not (memq (dispatch-claim-state c) '(claimed accepted)))
+                     (list 'error "machine-challenge: claim no longer live"))
+                    (else
+                     (let ((ch (make-store-challenge
+                                #:id (format #f "chal-~a-~a" claim-id
+                                             (random 1000000))
+                                #:claim-id claim-id #:issuer identity-key
+                                #:nonce (challenge-nonce)
+                                #:issued-at ((*machine-clock*)))))
+                       ($ (challenges-for commune-aid)
+                          'put! (store-challenge-id ch) ch)
+                       (cons 'ok (challenge-row ch ((*machine-clock*))))))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-challenge: ~a" a)))))
+
+        ;; the lender's half: sha256(nonce ∥ held bytes), posted back. Only
+        ;; the claim's lender may answer — an answer is the node's word on
+        ;; itself. Silence past the deadline reads 'failed; a late answer
+        ;; lands on a closed-by-time record and is refused.
+        ((machine-challenge-answer identity-key commune-aid challenge-id answer)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((shelf (challenges-for commune-aid))
+                    (ch ($ shelf 'get challenge-id))
+                    (now ((*machine-clock*))))
+               (cond
+                ((not ch) (list 'error "machine-challenge-answer: no such challenge"))
+                ((challenge-expired? ch now)
+                 (list 'error "machine-challenge-answer: window has closed"))
+                (else
+                 (let ((c ($ (registry-for commune-aid)
+                             'claim-of (store-challenge-claim-id ch))))
+                   (cond
+                    ((not (equal? identity-key (dispatch-claim-lender-did c)))
+                     (list 'error "machine-challenge-answer: the claim's lender only"))
+                    ((not (and (string? answer) (= (string-length answer) 64)))
+                     (list 'error "machine-challenge-answer: answer is a sha256 hex"))
+                    (else
+                     (let ((ch* (challenge-answer! ch answer)))
+                       ($ shelf 'put! challenge-id ch*)
+                       (cons 'ok (challenge-row ch* now))))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-challenge-answer: ~a" a)))))
+
+        ;; the issuer closes: EXPECTED is sha256(nonce ∥ content) over the
+        ;; bytes IT holds; CONTENT-HASH is sha256(those bytes) and must
+        ;; equal the job's inputHash — the binding that keeps expected
+        ;; honest. Verdict lands on the record: 'reproduced | 'mismatch |
+        ;; 'failed (no answer).
+        ((machine-challenge-verify identity-key commune-aid challenge-id
+                                   expected content-hash)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((shelf (challenges-for commune-aid))
+                    (ch ($ shelf 'get challenge-id)))
+               (cond
+                ((not ch) (list 'error "machine-challenge-verify: no such challenge"))
+                ((not (equal? identity-key (store-challenge-issuer ch)))
+                 (list 'error "machine-challenge-verify: the issuer only"))
+                ((eq? (store-challenge-state ch) 'closed)
+                 (list 'error "machine-challenge-verify: already closed"))
+                (else
+                 (let* ((c ($ (registry-for commune-aid)
+                              'claim-of (store-challenge-claim-id ch)))
+                        (j ($ (registry-for commune-aid)
+                              'job-of (dispatch-claim-job-id c))))
+                   (if (not (equal? content-hash (machine-job-input-hash j)))
+                       (list 'error "machine-challenge-verify: content-hash is not the job's committed inputHash")
+                       (let ((ch* (challenge-verify! ch expected)))
+                         ($ shelf 'put! challenge-id ch*)
+                         (cons 'ok (challenge-row ch* ((*machine-clock*)))))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-challenge-verify: ~a" a)))))
+
+        ;; the node's poll surface — challenges the claim's lender must
+        ;; answer, or the issuer may audit. Borrower, lender, governor.
+        ((machine-challenges identity-key commune-aid claim-id)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((c ($ (registry-for commune-aid) 'claim-of claim-id))
+                    (now ((*machine-clock*))))
+               (cond
+                ((not c) (list 'error "machine-challenges: no such claim"))
+                ((not (or (equal? identity-key (dispatch-claim-lender-did c))
+                          (equal? identity-key (dispatch-claim-borrower-did c))
+                          (governor? identity-key)))
+                 (list 'error "machine-challenges: the claim's parties only"))
+                (else
+                 (cons 'ok
+                   (map (lambda (ch) (challenge-row ch now))
+                        ($ (challenges-for commune-aid) 'by-claim claim-id)))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-challenges: ~a" a)))))
 
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —

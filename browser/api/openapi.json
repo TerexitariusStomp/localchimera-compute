@@ -8691,6 +8691,433 @@
         }
       }
     },
+    "/api/session/machine-challenge": {
+      "post": {
+        "operationId": "session.machine-challenge",
+        "summary": "Issues a retention challenge on CLAIM-ID in COMMUNE-AID — a fresh nonce the lender's node must answer with sha256(nonce ∥ held content); this AID the claim's borrower or a governor, CLAIM-ID a live storage claim.",
+        "description": "Issues a retention challenge on CLAIM-ID in COMMUNE-AID — a fresh nonce the lender's node must answer with sha256(nonce ∥ held content); this AID the claim's borrower or a governor, CLAIM-ID a live storage claim.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "tags": [
+          "stock"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "governance",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "machineChallenge",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commune-aid": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+                    "description": "a KERI AID prefix",
+                    "x-playnet-shape": "aid"
+                  },
+                  "claim-id": {
+                    "type": "string",
+                    "x-playnet-shape": "id"
+                  }
+                },
+                "required": [
+                  "commune-aid",
+                  "claim-id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (promise:ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "promise:ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/machine-challenge-answer": {
+      "post": {
+        "operationId": "session.machine-challenge-answer",
+        "summary": "Answers CHALLENGE-ID in COMMUNE-AID with ANSWER — sha256(nonce ∥ held bytes) as hex; this AID the claim's lender, before the deadline.",
+        "description": "Answers CHALLENGE-ID in COMMUNE-AID with ANSWER — sha256(nonce ∥ held bytes) as hex; this AID the claim's lender, before the deadline.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "tags": [
+          "stock"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "governance",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "machineChallengeAnswer",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commune-aid": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+                    "description": "a KERI AID prefix",
+                    "x-playnet-shape": "aid"
+                  },
+                  "challenge-id": {
+                    "type": "string",
+                    "x-playnet-shape": "id"
+                  },
+                  "answer": {
+                    "type": "string",
+                    "x-playnet-shape": "string"
+                  }
+                },
+                "required": [
+                  "commune-aid",
+                  "challenge-id",
+                  "answer"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (promise:ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "promise:ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/machine-challenge-verify": {
+      "post": {
+        "operationId": "session.machine-challenge-verify",
+        "summary": "Closes CHALLENGE-ID in COMMUNE-AID — EXPECTED is the issuer's sha256(nonce ∥ content), CONTENT-HASH sha256(content) which must equal the job's committed inputHash; the record lands 'reproduced, 'mismatch or 'failed.",
+        "description": "Closes CHALLENGE-ID in COMMUNE-AID — EXPECTED is the issuer's sha256(nonce ∥ content), CONTENT-HASH sha256(content) which must equal the job's committed inputHash; the record lands 'reproduced, 'mismatch or 'failed.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "tags": [
+          "stock"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "performative",
+        "x-playnet-to": "governance",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "machineChallengeVerify",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commune-aid": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+                    "description": "a KERI AID prefix",
+                    "x-playnet-shape": "aid"
+                  },
+                  "challenge-id": {
+                    "type": "string",
+                    "x-playnet-shape": "id"
+                  },
+                  "expected": {
+                    "type": "string",
+                    "x-playnet-shape": "string"
+                  },
+                  "content-hash": {
+                    "type": "string",
+                    "x-playnet-shape": "string"
+                  }
+                },
+                "required": [
+                  "commune-aid",
+                  "challenge-id",
+                  "expected",
+                  "content-hash"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (promise:ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "promise:ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
+    "/api/session/machine-challenges": {
+      "post": {
+        "operationId": "session.machine-challenges",
+        "summary": "Replies the storage challenges on CLAIM-ID in COMMUNE-AID — the node's poll surface for what it must answer; this AID a party to the claim or a governor.",
+        "description": "Replies the storage challenges on CLAIM-ID in COMMUNE-AID — the node's poll surface for what it must answer; this AID a party to the claim or a governor.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "tags": [
+          "stock"
+        ],
+        "x-playnet-auth": "device",
+        "x-playnet-kind": "read",
+        "x-playnet-to": "governance",
+        "x-playnet-object": "session",
+        "x-playnet-seam": "machineChallenges",
+        "security": [
+          {
+            "deviceSignature": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commune-aid": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+                    "description": "a KERI AID prefix",
+                    "x-playnet-shape": "aid"
+                  },
+                  "claim-id": {
+                    "type": "string",
+                    "x-playnet-shape": "id"
+                  }
+                },
+                "required": [
+                  "commune-aid",
+                  "claim-id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the door's reply (promise:ok-or-error), as JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "const": "ok"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "ok"
+                        },
+                        {
+                          "description": "the value"
+                        }
+                      ],
+                      "description": "(ok . value)"
+                    },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "const": "error"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ],
+                      "description": "(error \"reason\")"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "((error . \"reason\"))"
+                    }
+                  ],
+                  "x-playnet-reply": "promise:ok-or-error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "no valid device signature (B4)"
+          },
+          "403": {
+            "description": "the door is outside this device's allowlist"
+          }
+        }
+      }
+    },
     "/api/session/machine-bind": {
       "post": {
         "operationId": "session.machine-bind",

@@ -283,6 +283,8 @@
     (lane . string) (classes . list) (headroom . number) (repro . symbol)
     (task-class . symbol) (input-hash . string)
     (offer-id . id) (job-id . id) (claim-id . id) (dispute-id . id)
+    (challenge-id . id) (answer . string) (expected . string)
+    (content-hash . string)
     (w . json) (verdict . symbol) (key . string) (side . symbol)
     ;; capabilities and in-process objects
     (user-inbox . capability) (client-inbox . capability) (watcher-ref . capability)

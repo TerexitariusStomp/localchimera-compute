@@ -106,7 +106,7 @@
    "// the table says, keep the value under seam.data, raise the push. SEAM_SINKS\n"
    "// is what the spine worker forwards to the page by name.\n"
    "\n"
-   "import type { GatewayStatus, Grant, GrantKind } from \"./seam.js\";\n"
+   "import type { GatewayStatus, Grant } from \"./seam.js\";\n"
    "import type * as W from \"./wire-rows.js\";\n"
    "\n"
    "/** The JSON string of a door's reply table, or \"err:…\" — read with seam.ts readJson. */\n"

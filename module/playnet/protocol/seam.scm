@@ -521,4 +521,24 @@
              "Promise<unknown>"
              ((session . machine-envelope))
              "Read a job envelope wire, as JSON.")
+    (handler "machineChallenge"
+             "commune: string, claimId: string"
+             "Promise<unknown>"
+             ((session . machine-challenge))
+             "Issue a retention challenge on CLAIM-ID in COMMUNE (borrower or governor). The challenge row carries the nonce for the node to answer.")
+    (handler "machineChallengeAnswer"
+             "commune: string, challengeId: string, answer: string"
+             "Promise<unknown>"
+             ((session . machine-challenge-answer))
+             "Answer CHALLENGE-ID in COMMUNE with sha256(nonce ∥ held bytes) hex — this AID the claim's lender, before the deadline.")
+    (handler "machineChallengeVerify"
+             "commune: string, challengeId: string, expected: string, contentHash: string"
+             "Promise<unknown>"
+             ((session . machine-challenge-verify))
+             "Close CHALLENGE-ID in COMMUNE — expected the issuer's hash, contentHash sha256(content) bound to the job's inputHash. Verdict lands on the record.")
+    (handler "machineChallenges"
+             "commune: string, claimId: string"
+             "Promise<unknown>"
+             ((session . machine-challenges))
+             "The storage challenges standing on CLAIM-ID in COMMUNE, as a JSON array — the node's poll surface.")
     ))

@@ -12,7 +12,7 @@
 // the table says, keep the value under seam.data, raise the push. SEAM_SINKS
 // is what the spine worker forwards to the page by name.
 
-import type { GatewayStatus, Grant, GrantKind } from "./seam.js";
+import type { GatewayStatus, Grant } from "./seam.js";
 import type * as W from "./wire-rows.js";
 
 /** The JSON string of a door's reply table, or "err:…" — read with seam.ts readJson. */
@@ -305,5 +305,17 @@ export interface SeamHandlers {
   /** Read a job envelope wire, as JSON. */
   // doors: session/machine-envelope
   machineEnvelope?(wireJson: string): Promise<unknown>;
+  /** Issue a retention challenge on CLAIM-ID in COMMUNE (borrower or governor). The challenge row carries the nonce for the node to answer. */
+  // doors: session/machine-challenge
+  machineChallenge?(commune: string, claimId: string): Promise<unknown>;
+  /** Answer CHALLENGE-ID in COMMUNE with sha256(nonce ∥ held bytes) hex — this AID the claim's lender, before the deadline. */
+  // doors: session/machine-challenge-answer
+  machineChallengeAnswer?(commune: string, challengeId: string, answer: string): Promise<unknown>;
+  /** Close CHALLENGE-ID in COMMUNE — expected the issuer's hash, contentHash sha256(content) bound to the job's inputHash. Verdict lands on the record. */
+  // doors: session/machine-challenge-verify
+  machineChallengeVerify?(commune: string, challengeId: string, expected: string, contentHash: string): Promise<unknown>;
+  /** The storage challenges standing on CLAIM-ID in COMMUNE, as a JSON array — the node's poll surface. */
+  // doors: session/machine-challenges
+  machineChallenges?(commune: string, claimId: string): Promise<unknown>;
   [handler: string]: unknown;
 }

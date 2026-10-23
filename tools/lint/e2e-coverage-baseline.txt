@@ -1,7 +1,6 @@
 # e2e coverage debt — names with no test naming them.
 # The gate fails on any uncovered name NOT listed here;
 # remove a line when its name gains coverage.
-delegate:make-radicale-delegate
 door:admit-body
 door:fetch-icp
 door:find-icp
@@ -76,7 +75,6 @@ handler:hours
 handler:issuer
 handler:kelExport
 handler:kelImport
-handler:kind
 handler:laid
 handler:lastMu
 handler:listDelegations
@@ -97,7 +95,6 @@ handler:machineOffer
 handler:machineOffers
 handler:machinePayout
 handler:machinePreempt
-handler:machineReceipt
 handler:machineReplay
 handler:machineRetract
 handler:machineSettle

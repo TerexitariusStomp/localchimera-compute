@@ -155,7 +155,9 @@ const wasmBytes = async (env) => {
     return new Uint8Array(await res.arrayBuffer());
 };
 export const runEnvelope = async (env, input, opts = {}) => {
-    const isWasm = env.image.startsWith("wasm:");
+    // non-exec kinds need no image; without one there is nothing to run —
+    // the scheme parser only forces image on 'exec, and this is the exec path.
+    const isWasm = (env.image ?? "").startsWith("wasm:");
     // the fetch happens OUTSIDE the sandbox — the worker never sees the ref;
     // the network grant check lives here where the bytes actually move
     const bytes = isWasm ? await wasmBytes(env) : null;
@@ -210,9 +212,9 @@ export const emitReceipt = async (args) => {
         bridgeJobId: args.bridgeJobId ?? env.bridgeJobId,
         lenderDid,
         inputHash: env.inputHash,
-        outputHash: await sha256hex(JSON.stringify(result ?? null)),
+        outputHash: args.outputHash ?? await sha256hex(JSON.stringify(result ?? null)),
         engine: env.image || null,
-        usage: { unit: "seconds", amount: Math.round(seconds * 1000) / 1000 },
+        usage: args.usage ?? { unit: "seconds", amount: Math.round(seconds * 1000) / 1000 },
         repro: args.reproMode
             ? {
                 mode: args.reproMode,
@@ -234,6 +236,13 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
     if (typeof raw === "string" && raw.startsWith("err:"))
         throw new Error(`machine-executor: ${raw}`);
     const env = (typeof raw === "string" ? JSON.parse(raw) : raw);
+    // the store kind doesn't run a worker — it holds bytes and answers
+    // challenges; machine-store.js is imported at need so the exec path
+    // never pays IndexedDB for a job it doesn't have.
+    if (env.kind === "store") {
+        const { runStoreClaim } = await import("./machine-store.js");
+        return runStoreClaim(seam, commune, claimId, env, lenderDid, opts);
+    }
     const { result, seconds } = await runEnvelope(env, input, opts);
     const receipt = await emitReceipt({
         env, lenderDid, input, result, seconds,

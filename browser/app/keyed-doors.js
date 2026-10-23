@@ -5,7 +5,4 @@
 // A keyed door's act carries a token its caller minted for that one act, so a repeat
 // of the request names the event that already stands. This is each seam handler
 // whose door is keyed, with the index of the token among its arguments (the last).
-export const KEYED = {
-    recordEffort: 4,
-    recordFlow: 10,
-};
+export const KEYED = {};

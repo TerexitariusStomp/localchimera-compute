@@ -6,16 +6,4 @@
 // from the device's copy of the scope, an `act` lands on it and waits for the gateway.
 // `at` is the index, among the handler's arguments, of the instant an act is stamped
 // with when it states none; null where the act's ids name it.
-export const OFFLINE = {
-    countHistory: { kind: "read", at: null },
-    countSchedule: { kind: "read", at: null },
-    countStock: { kind: "act", at: 5 },
-    declareMeans: { kind: "act", at: null },
-    declareNeed: { kind: "act", at: null },
-    logObserve: { kind: "act", at: 5 },
-    mySlots: { kind: "read", at: null },
-    readingsBetween: { kind: "read", at: null },
-    recordEffort: { kind: "act", at: null },
-    recordFlow: { kind: "act", at: null },
-    scopeReadings: { kind: "read", at: null },
-};
+export const OFFLINE = {};

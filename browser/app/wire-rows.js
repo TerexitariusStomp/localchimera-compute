@@ -6,5 +6,4 @@
 // One interface per table: each key with the type the table's kind writes.
 // A figure reads `number | null`, null where absent; a key a row may leave
 // out is optional; a list that is false while there is none says so.
-
 export {};

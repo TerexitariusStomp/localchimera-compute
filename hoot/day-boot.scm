@@ -3277,6 +3277,33 @@
                             (json-read-ordered wire-json))
         (lambda (v) (reply! cb (string-append "ok:" (if (string? v) v "")))))))
 
+;; storage challenges — the store kind's replay: a nonce answered by
+;; sha256(nonce ∥ held bytes), 'exact by construction. The borrower (or a
+;; governor) issues; the claim's lender answers; the issuer verifies. v is
+;; the challenge row as an alist (or a list of them).
+(define (handle-machine-challenge commune claim-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-challenge commune claim-id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-machine-challenge-answer commune challenge-id answer cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-challenge-answer commune
+                            challenge-id answer)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-machine-challenge-verify commune challenge-id expected
+                                         content-hash cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-challenge-verify commune
+                            challenge-id expected content-hash)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-machine-challenges commune claim-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-challenges commune claim-id)
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
 ;;; ── governance: the decision inbox (governance-surface.md §Inbox) ─────────
 ;; list-proposals → [{id, status}]; the dial renders the open decisions.
 (define (handle-list-proposals cb)
@@ -4054,6 +4081,10 @@
             ("machineDisputeVerdict" . ,handle-machine-dispute-verdict)
             ("machineDisputes"      . ,handle-machine-disputes)
             ("machineDisputeClose"  . ,handle-machine-dispute-close)
+            ("machineChallenge"        . ,handle-machine-challenge)
+            ("machineChallengeAnswer"  . ,handle-machine-challenge-answer)
+            ("machineChallengeVerify"  . ,handle-machine-challenge-verify)
+            ("machineChallenges"       . ,handle-machine-challenges)
             ("machineBind"          . ,handle-machine-bind)
             ("machineUnbind"        . ,handle-machine-unbind)
             ("machineBindings"      . ,handle-machine-bindings)

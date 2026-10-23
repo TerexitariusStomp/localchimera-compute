@@ -2932,6 +2932,149 @@
       "x-playnet-http": "/api/session/machine-dispute-close"
     },
     {
+      "name": "session.machine-challenge",
+      "title": "stock: machine-challenge",
+      "description": "Issues a retention challenge on CLAIM-ID in COMMUNE-AID — a fresh nonce the lender's node must answer with sha256(nonce ∥ held content); this AID the claim's borrower or a governor, CLAIM-ID a live storage claim. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "claim-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "claim-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-challenge"
+    },
+    {
+      "name": "session.machine-challenge-answer",
+      "title": "stock: machine-challenge-answer",
+      "description": "Answers CHALLENGE-ID in COMMUNE-AID with ANSWER — sha256(nonce ∥ held bytes) as hex; this AID the claim's lender, before the deadline. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "challenge-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          },
+          "answer": {
+            "type": "string",
+            "x-playnet-shape": "string"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "challenge-id",
+          "answer"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-challenge-answer"
+    },
+    {
+      "name": "session.machine-challenge-verify",
+      "title": "stock: machine-challenge-verify",
+      "description": "Closes CHALLENGE-ID in COMMUNE-AID — EXPECTED is the issuer's sha256(nonce ∥ content), CONTENT-HASH sha256(content) which must equal the job's committed inputHash; the record lands 'reproduced, 'mismatch or 'failed. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "challenge-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          },
+          "expected": {
+            "type": "string",
+            "x-playnet-shape": "string"
+          },
+          "content-hash": {
+            "type": "string",
+            "x-playnet-shape": "string"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "challenge-id",
+          "expected",
+          "content-hash"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-challenge-verify"
+    },
+    {
+      "name": "session.machine-challenges",
+      "title": "stock: machine-challenges",
+      "description": "Replies the storage challenges on CLAIM-ID in COMMUNE-AID — the node's poll surface for what it must answer; this AID a party to the claim or a governor. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "claim-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "claim-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-challenges"
+    },
+    {
       "name": "session.machine-bind",
       "title": "stock: machine-bind",
       "description": "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names. [stock; callable by an enrolled device]",

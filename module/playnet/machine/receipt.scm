@@ -46,12 +46,12 @@
 (define-record-type <usage-meter>
   (%make-usage-meter unit amount)
   usage-meter?
-  (unit    usage-meter-unit)     ; "tokens" | "seconds"
+  (unit    usage-meter-unit)     ; one of *machine-usage-units*
   (amount  usage-meter-amount))  ; number
 
 (define* (make-usage-meter #:key unit amount)
-  (unless (member unit '("tokens" "seconds"))
-    (error "usage-meter: unit must be tokens or seconds" unit))
+  (unless (usage-unit? unit)
+    (error "usage-meter: not a usage unit" unit))
   (%make-usage-meter unit amount))
 
 (define-record-type <repro-spec>

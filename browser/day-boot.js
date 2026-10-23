@@ -1184,6 +1184,15 @@ function boot() {
       new Promise(res => schemeHandlers.machineDisputes ? schemeHandlers.machineDisputes(commune || "", res) : res("err:offline"));
     HANDLERS.machineDisputeClose = (commune, disputeId) =>
       new Promise(res => schemeHandlers.machineDisputeClose ? schemeHandlers.machineDisputeClose(commune || "", disputeId || "", res) : res("err:offline"));
+    // storage challenges — the store kind's replay: sha256(nonce ∥ bytes)
+    HANDLERS.machineChallenge = (commune, claimId) =>
+      new Promise(res => schemeHandlers.machineChallenge ? schemeHandlers.machineChallenge(commune || "", claimId || "", res) : res("err:offline"));
+    HANDLERS.machineChallengeAnswer = (commune, challengeId, answer) =>
+      new Promise(res => schemeHandlers.machineChallengeAnswer ? schemeHandlers.machineChallengeAnswer(commune || "", challengeId || "", answer || "", res) : res("err:offline"));
+    HANDLERS.machineChallengeVerify = (commune, challengeId, expected, contentHash) =>
+      new Promise(res => schemeHandlers.machineChallengeVerify ? schemeHandlers.machineChallengeVerify(commune || "", challengeId || "", expected || "", contentHash || "", res) : res("err:offline"));
+    HANDLERS.machineChallenges = (commune, claimId) =>
+      new Promise(res => schemeHandlers.machineChallenges ? schemeHandlers.machineChallenges(commune || "", claimId || "", res) : res("[]"));
     HANDLERS.machineBind = (commune, wireJson) =>
       new Promise(res => schemeHandlers.machineBind ? schemeHandlers.machineBind(commune || "", wireJson || "{}", res) : res("err:offline"));
     HANDLERS.machineUnbind = (commune, key, side) =>

@@ -87,40 +87,6 @@ export type GrantKind = "use" | "consume";
  */
 export type Wide<T> = { [K in keyof T]?: T[K] extends number | null ? number | string : T[K] };
 
-/** One reading of a recipe channel's curve: the stress and the capture at it. */
-export type ScopeCurvePoint = Wide<W.WireCurvePoint>;
-/** One claim an event fulfilled: what was intended (already scaled by what the day's conditions allowed) against what the event realized. */
-export type ScopeRecipeClaim = Wide<W.WireClaim>;
-/** One run behind a stressor's curve: the day it happened, the (severity, capture) pair plotted, and the raw claims behind that capture. */
-export type ScopeRecipeRun = Wide<Omit<W.WireChannelPoint, "claims">> & { claims?: ScopeRecipeClaim[] };
-/** One stressor of a recipe's response (solve/recipe-response.scm): the curve of what its runs captured at each stress delivered. */
-export type ScopeRecipeChannel = Wide<Omit<W.WireRecipeChannel, "curve" | "bend" | "points">> & {
-  curve?: ScopeCurvePoint[];
-  bend?: Wide<W.WireBend>;
-  points?: ScopeRecipeRun[];
-};
-/** One flow of a recipe step; demo flows carry an emoji where real ones carry the spec's name. */
-export type ScopeFlow = Wide<W.WireRecipeFlow> & { emoji?: string };
-export type ScopeRecipeStep = Wide<Omit<W.WireRecipeStep, "in" | "out" | "tags" | "hours">> & {
-  hours?: number;
-  tags?: string[];
-  in?: ScopeFlow[];
-  out?: ScopeFlow[];
-  emoji?: string;
-  eligible?: string;
-};
-/**
- * A recipe from the scope's library, as the log's extraction reads it — the
- * structural subset, not a claim about the whole recipe. `need` is the need it
- * is for, when the plan matched it to one.
- */
-export type ScopeRecipe = Wide<Omit<W.WireRecipe, "steps" | "profile">> & {
-  steps?: ScopeRecipeStep[];
-  profile?: ScopeRecipeChannel[];
-  emoji?: string;
-  need?: string;
-};
-
 /** A gift under an ecological agent's care: emoji, name, quantity-in-words. */
 export interface EcoResource {
   e: string;
@@ -167,154 +133,6 @@ export interface Inventory {
 
 // The ring face's event shape — the only thing a ribbon's `_pref` carries.
 // ring.ts itself lives with the deleted dial faces; the type stays here.
-export interface RingItem {
-  id: string;
-  t0: number;
-  t1: number;
-  title?: string;
-  days?: string[];
-  repeat?: boolean;
-  doy?: number | null;
-  committed?: boolean;
-  [key: string]: unknown;
-}
-
-/**
- * A place on an event: the server's location id, with the name and coordinates
- * the scope's locations table resolves for it. The id alone still identifies
- * the place when the table holds no coordinates for it.
- */
-export interface EventLoc {
-  id: string;
-  name?: string;
-  lat?: number;
-  lng?: number;
-}
-
-/**
- * One thing an act needs, as the solve states it (the act-need table): `kind`
- * consume | use | work | obtain-entity | obtain-person | pay | tell; `name` the
- * id, the join key; `label` the same thing resolved for reading; `met` "held" ·
- * "missing" · "unknown" (nobody checked — not the second: an unobserved fee is
- * no reason to say the act cannot happen).
- */
-export type EventNeed = Omit<W.WireActNeed, "qty" | "unit"> & { qty?: number | null; unit?: string | null };
-
-export interface DayEvent {
-  label: string;
-  /** Turn-hours, 0..24. */
-  t0: number;
-  t1: number;
-  /**
-   * The absolute day this event occupies (days since epoch, the same doy
-   * turnAnchor()/24 yields); t0/t1 are hours within it. Absent = the dial's
-   * ONE viewed day, which is where anchor-column events live.
-   */
-  doy?: number;
-  /**
-   * The day the event ENDS, when its span crosses midnight: t0 counts on
-   * doy, t1 on doy1, and every day between is fully covered. Absent = the
-   * span lives inside its one day.
-   */
-  doy1?: number;
-  /** work | free — which rail it reads on. */
-  kind?: string;
-  /** Which ribbon row it draws in. */
-  lane?: number;
-  /** consume | work | use | deliver-service — the VF action. */
-  action?: string;
-  /** The need it serves, by classification id. */
-  serves?: string;
-  place?: string;
-  /**
-   * The planner's own id for the thing this event is, when it has one. It is
-   * also the CHAT TOPIC and the walkie ROOM — one id, not three
-   * (meeting-station.md, Layer 0).
-   */
-  vfId?: string;
-  /** Offset from the user, as core's places are. */
-  at?: { dLat: number; dLng: number };
-  /** Where it happens, as the server names it. `at` is derived from this. */
-  loc?: EventLoc;
-  /** A move's destination — the other end of the journey. */
-  toLoc?: EventLoc;
-  /** The process this row belongs to, as the solve names it. */
-  proc?: string;
-  /** A material row's own id in the plan: what recordFlow names to confirm it. */
-  rowId?: string;
-  /** A material row's spec, by id (`spec` carries the label the row shows). */
-  specId?: string;
-  /**
-   * What this act needs HERE — its own material and labour flows, and what the
-   * law asks of it at this place. Joined from the plan's `requires` on
-   * (proc, place, when), which is an equality on three fields the solve wrote
-   * from one source.
-   *
-   * THREE STATES, and the difference matters: a list means the solve published
-   * what this act needs (an EMPTY list means it needs nothing here, which is a
-   * real answer); `undefined` means no row was found, which is not an answer at
-   * all. A reader must not draw "nothing needed" for an act it simply has no
-   * row for — rides and lived events have none by construction.
-   */
-  needs?: EventNeed[];
-  /** Why this act is absent from the plan, when it is. Absent on acts that ran. */
-  why?: { reason: string; detail?: string[] };
-  /** The recipe behind it, when the plan states one. */
-  recipeId?: string;
-  from?: string;
-  /** "proposed" until you accept it. */
-  status?: string;
-  /**
-   * Which commune this belongs to. Carried on the event rather than read from
-   * the current scope, because a response has to reach the scope the item CAME
-   * from — you can be looking at another one by the time you answer.
-   */
-  scope?: string;
-  /** A social invite rather than an assignment out of a solve. */
-  social?: boolean;
-  /** A DIRECTED WORK OFFER — the presentation caller's proposal
-   *  (offers.scm offer-work); accept routes to acceptWorkOffer. */
-  offer?: boolean;
-  /**
-   * The plan's PULL on an open shift: λ(skill, place@period), the dual of
-   * the located labour balance it was minted from — what the plan gains per
-   * hour of this skill at this place. Absent where no solve priced it.
-   */
-  pull?: number;
-  /** The record stated no clock: dated in its day, at no fabricated hour —
-   *  lists and the month place it; the hour grid does not. */
-  unclocked?: boolean;
-  /**
-   * The (skill, cell) pair willingness is offered over. Willingness is not a
-   * claim on THIS slot: the solver matches across everyone who offered for the
-   * pair, which is what makes it over-subscribable.
-   */
-  spec?: string;
-  cell?: string;
-  /** "open" for a work-intent you are merely eligible for; "lived" for the record. */
-  tier?: string;
-  /** Its observation already happened this session — the card's verb retires. */
-  recorded?: boolean;
-  /**
-   * A personal event's link back to the ring item it IS. Present only on the
-   * ribbons personalEvs() shapes, and its presence is the test for "mine, and
-   * therefore editable in place" everywhere the rim asks.
-   */
-  _pid?: string;
-  _pref?: RingItem;
-  /**
-   * Where this event ended up standing on the CURRENT turn — its midpoint in
-   * turn-units, and the radius of the lane it drew in. Stamped by the ribbon
-   * pass and read by the chords, which is the whole reason it is remembered:
-   * a chord starts at the ribbon it comes from, so it must not recompute a
-   * position the ribbons might have clipped or re-angled. Null when the event
-   * does not stand on this turn at all.
-   */
-  _tmid?: number | null;
-  _r?: number;
-  [key: string]: unknown;
-}
-
 /**
  * A live custody grant: a capacity you have lent into a commons. Custody moved,
  * the right stayed — so this is not a sale and there is nothing to buy back,
@@ -351,14 +169,6 @@ export interface Grant {
 export type ClaimRow = Omit<W.WireClaimRow, "state" | "total" | "fulfilled" | "remaining" | "snlt">
   & Wide<Pick<W.WireClaimRow, "total" | "fulfilled" | "remaining" | "snlt">>
   & { state: "asked" | "held" | "taken" };
-
-/** One standing payout, as my-payouts reports it; `state` is "pending" | "sending" | "sent:<txid>" | "failed:<reason>". */
-export type Payout = W.WirePayout;
-
-/** One open debt the commons carries to you — what it owes back for a
- *  purchase you fronted, once accepted (economy/debts.scm). Face AMOUNT
- *  never changes; REMAINING is what is still open after any part-payments. */
-export type Debt = W.WireDebt;
 
 /** Someone's open ask to be recognised, as a person who may sign it sees it. */
 export interface ContactAsk {
@@ -412,72 +222,6 @@ export interface ScopeRef {
 
 /** One need in the scope's plan: how met it is, and what fills it. */
 /**
- * One need of the plan (the plan-need table): `id` the classification, so a
- * band opens straight onto it; `met` 0..1, how much the solve provisions;
- * `for` whose own good it is ("spec~aid"), absent on the scope's own rows.
- * The page adds what it reads for itself: the band's emoji and suggestions,
- * and the hands raised for it in this snapshot.
- */
-export type PlanNeed = Omit<W.WirePlanNeed, "met" | "want" | "runs" | "labourH" | "recipeId"> & {
-  /** 0..1, read as a number by ingest (the wire's null is 0). */
-  met: number;
-  runs: number;
-  labourH: number;
-  want?: number | string | null;
-  recipeId: string | null;
-  emoji?: string;
-  suggested?: string[];
-  willing?: number;
-};
-
-/** A line of the solve's ledger: what the scope made, in the unit its rows count it in. */
-export type Produced = Wide<W.WirePlanYield> & { emoji?: string };
-
-/**
- * The PLAN, as live.scm's plan-scope hands it over (the plan table). Its
- * totals (`coverage`, `labourH`) are the solve's own, authoritative where
- * present; the ledger derives from the rows only for the demo plan, which
- * carries neither. `kept` is the portion kept back per good — the scope's own
- * draw this horizon plus the reserve, before anything is shared out. `flow` is
- * the solver's ACTUAL chosen flows, one per process that ran, absent offline
- * where the plan face reconstructs one from recipe topology; `schedule` where
- * each commitment was placed, read by the schedule board.
- */
-export type Plan = Wide<Omit<W.WirePlan, "needs" | "kept" | "produced" | "flow" | "schedule" | "feasible" | "stale" | "discrete" | "placement" | "requires" | "coverage" | "labourH">> & {
-  /** The solve's own totals, read as numbers by ingest. */
-  coverage?: number | null;
-  labourH?: number | null;
-  needs?: PlanNeed[];
-  kept?: W.WirePlanKept[];
-  produced?: Produced[];
-  flow?: Production[];
-  /** Every placed commitment, work and material alike; false until a solve has run. */
-  schedule?: ScheduleRow[] | false | null;
-  requires?: Wide<W.WireActRequires>[];
-  /**
-   * Whether the solve stayed inside the limits it was given: "yes" | "no" |
-   * "unknown" — three words, not a boolean, since a plan no solve has filled
-   * is neither.
-   */
-  feasible?: string;
-  /**
-   * True while a decision's re-solve has not landed (stale-while-revalidating):
-   * the plan face shows the schedule and says it is being re-solved.
-   */
-  stale?: boolean;
-  /**
-   * The discrete layer's verdict, present only when a recipe declared a minimum
-   * batch or a whole count (or a mover rode): how many batch keys the tree
-   * searched (2^keys configurations), how many nodes it solved, whether it was
-   * exhausted (certified) and the gap it left when it was not. `recourseRelaxed`
-   * names the recourse columns a two-stage (robust) solve kept continuous.
-   */
-  discrete?: Wide<W.WirePlanDiscrete>;
-  /** Where each mover stands: mover id → cell (place@period) → presence. */
-  placement?: Record<string, Record<string, number>>;
-};
-
-/**
  * The matter graph, exactly as the planner's matter table emits it: a
  * substance and the colour it is drawn in; a node, a PROCESS (kind !==
  * "resource") or a RESOURCE, an `env` resource being an environment stock —
@@ -494,31 +238,6 @@ export interface MatterGraph {
 }
 
 /**
- * A commitment the solve placed, at its own clock moment and place — a work
- * row (who works what where) or a material one (the produce / consume / pickup /
- * dropoff / use that realises the plan at its cell): the commitment-record row,
- * the one vocabulary a commitment is read in wherever it rides.
- */
-export type ScheduleRow = Wide<W.WireCommitmentRecord>;
-
-/**
- * One flow into a production: what it drew in, and how.
- *
- * `spec` and `id` are required because plan.js's own header states the shape
- * that way — a production's inputs are {spec, id, q, action} on both the live
- * wire and the reconstructed path.
- */
-export type ProductionFlow = Wide<Omit<W.WireFlowIn, "spec" | "id">> & { spec: string; id: string; emoji?: string };
-
-/** A process that ran: its output, and what it drew in to make it. */
-export type Production = Wide<Omit<W.WireFlowProd, "id" | "spec" | "specId" | "in">> & {
-  id: string;
-  spec: string;
-  specId: string;
-  in?: ProductionFlow[];
-};
-
-/**
  * The snapshot bag day-boot fills and the faces read (main.js's EXT).
  *
  * Named members are the ones a converted module reads, on the same
@@ -530,19 +249,10 @@ export interface SeamData {
   contacts?: Contact[];
   /** Every grant you have made, from the my-grants push. */
   grants?: Grant[];
-  plan?: Plan;
   /** Drawable credit, derived server-side. */
   credit?: Credit;
-  /** The scope's recipe library, as the store serialized it. */
-  recipes?: ScopeRecipe[];
   /** The scope snapshot, as the planner's snapshot table states it, locations included. */
   snapshot?: Partial<Omit<W.WireScopeSnapshotReply, "locations">> & { locations?: SnapshotLocation[]; [key: string]: unknown };
-  /** The day's lived events. A LIVE array — the host mutates it in place. */
-  events?: DayEvent[];
-  /** Intents directed at you, awaiting a yes. */
-  proposals?: DayEvent[];
-  /** Slots you could fill by offering willingness — not assignments. */
-  eligible?: DayEvent[];
   /** The scopes this member belongs to. */
   scopes?: ScopeRef[];
   /** The spine's signed identity — THE "who am I" fact, from set-aid!. */

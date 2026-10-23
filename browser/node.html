@@ -103,10 +103,10 @@
         <div><label>replay</label>
           <select id="jobRepro"><option>deterministic</option><option>exact</option><option>none</option></select></div>
       </div>
-      <label>job envelope (JSON — image/entrypoint/inputHash/caps)</label>
+      <label>job envelope (JSON — kind/image/entrypoint/inputHash/caps; a 'store kind takes params.contentB64)</label>
       <textarea id="jobEnv" rows="3">{"image":"js:","entrypoint":"(x)=>x*x","inputHash":"","caps":[],"network":false}</textarea>
-      <label>opts (JSON alist, optional)</label>
-      <input id="jobOpts" placeholder="{}">
+      <label>opts (JSON alist — needs{}, envelopeHash, specId, ring)</label>
+      <input id="jobOpts" placeholder='{"needs":{"storage-gb":1}}'>
       <button id="submitBtn">submit</button>
       <table id="jobs"></table>
       <table id="matches"></table>
@@ -141,6 +141,16 @@
       </div>
       <button id="disputeBtn" class="warn">raise dispute</button>
       <table id="disputes"></table>
+    </section>
+    <section>
+      <h2>Storage</h2>
+      <div class="caps" id="storeCaps">—</div>
+      <div class="row">
+        <div><label>claim id</label><input id="chClaim"></div>
+        <div><label>content (utf8 — the bytes committed to)</label><input id="chContent"></div>
+      </div>
+      <button id="chBtn" class="ghost">issue challenge</button>
+      <table id="challenges"></table>
     </section>
     <section>
       <h2>Identity bindings (did:key ↔ AID)</h2>
@@ -245,7 +255,11 @@ $("offers").addEventListener("click", async (e) => {
 $("offerBtn").addEventListener("click", async () => {
   const classes = pickedClasses();
   if (!commune() || !classes.length) return log("need a commune AID and at least one class", "err");
-  const opts = JSON.stringify({ usageUnit: "seconds" });
+  // the offer's resources are this machine's probed capacities — matching
+  // only claims a job's needs when the offer covers them.
+  const opts = JSON.stringify({ usageUnit: "seconds", resources: {
+    "cores": caps.cores || 0, "memory-gb": caps.memGB || 0,
+    "storage-gb": caps.storageGB || 0, "net-mbps": caps.netMbps || 0 } });
   const r = await H.machineOffer(commune(), $("offerLane").value, classes,
                                  Number($("offerHeadroom").value) || 1,
                                  $("offerRepro").value, opts);
@@ -298,7 +312,9 @@ $("matches").addEventListener("click", async (e) => {
 $("submitBtn").addEventListener("click", async () => {
   const env = tryJson($("jobEnv").value, null);
   if (!env) return log("envelope JSON does not parse", "err");
-  const opts = JSON.stringify(env);
+  // the door shelves the envelope under 'envelope and the machine's wants
+  // under 'needs — extra keys in jobOpts ride through as other opts.
+  const opts = JSON.stringify({ envelope: env, ...(tryJson($("jobOpts").value, {}) || {}) });
   const r = await H.machineSubmit(commune(), $("jobClass").value, $("jobLane").value,
                                   $("jobRepro").value, env.inputHash || "", opts);
   log(`submit → ${r}`, String(r).startsWith("err:") ? "err" : "ok");
@@ -377,6 +393,52 @@ $("disputes").addEventListener("click", async (e) => {
   if (d.dclose) log(`close ${d.dclose.slice(0,10)}…: ${await H.machineDisputeClose(commune(), d.dclose)}`);
   refreshDisputes();
 });
+
+// ── storage ───────────────────────────────────────────────────────────────
+// the health strip is what this tab is holding; challenges are the
+// borrower's probe — issue on a claim, the node answers sha256(nonce ∥
+// bytes), verify closes it against expected computed over the content here.
+const sha256hex = async (u8) =>
+  [...new Uint8Array(await crypto.subtle.digest("SHA-256", u8))]
+    .map(b => b.toString(16).padStart(2, "0")).join("");
+const refreshStore = async () => {
+  try {
+    const { storeHealth } = await import("./app/machine-store.js");
+    const h = await storeHealth();
+    $("storeCaps").innerHTML = `
+      <span>held</span><b>${h.held} B</b>
+      <span>metered</span><b>${h.byteSeconds} byte·s</b>
+      <span>blobs</span><b>${h.blobs}</b>
+      <span>quota used</span><b>${h.quota ? Math.round(100 * (h.usage || 0) / h.quota) + "%" : "?"}</b>`;
+  } catch (e) { $("storeCaps").textContent = `storage: ${e.message}`; }
+};
+const refreshChallenges = async () => {
+  if (!H.machineChallenges || !$("chClaim").value.trim() || !commune()) return;
+  const list = rows(await H.machineChallenges(commune(), $("chClaim").value.trim()));
+  $("challenges").innerHTML = "<tr><th>challenge</th><th>state</th><th>verdict</th><th></th></tr>" +
+    list.map(c => `<tr><td>${esc(String(c.id ?? "").slice(0, 18))}…</td>
+      <td>${esc(c.state)}${c.expired ? " (expired)" : ""}</td><td>${esc(c.verdict ?? "—")}</td>
+      <td><button class="ghost" data-chverify="${esc(c.id)}|${esc(c.nonce)}">verify</button></td></tr>`).join("");
+};
+$("chBtn").addEventListener("click", async () => {
+  const r = await H.machineChallenge(commune(), $("chClaim").value.trim());
+  log(`challenge → ${r}`, String(r).startsWith("err:") ? "err" : "ok");
+  refreshChallenges();
+});
+$("challenges").addEventListener("click", async (e) => {
+  const v = e.target.dataset?.chverify;
+  if (!v) return;
+  const [id, nonce] = v.split("|");
+  const content = new TextEncoder().encode($("chContent").value);
+  const n = new TextEncoder().encode(nonce);
+  const both = new Uint8Array(n.length + content.length);
+  both.set(n); both.set(content, n.length);
+  const expected = await sha256hex(both), contentHash = await sha256hex(content);
+  const r = await H.machineChallengeVerify(commune(), id, expected, contentHash);
+  log(`verify ${id.slice(0, 12)}… → ${r}`, String(r).startsWith("err:") ? "err" : "ok");
+  refreshChallenges();
+});
+setInterval(refreshStore, 15_000); void refreshStore();
 
 // ── bindings ──────────────────────────────────────────────────────────────
 $("bindBtn").addEventListener("click", async () =>

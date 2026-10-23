@@ -27,18 +27,22 @@
   #:use-module (playnet machine specs)
   #:use-module (playnet machine receipt)
   #:use-module ((playnet machine dispute) #:select (dispute-claim-id))
+  #:use-module ((playnet machine challenge) #:select (store-challenge-claim-id))
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:export (<lane-offer> make-lane-offer lane-offer?
             lane-offer-id lane-offer-lender-did lane-offer-commune-aid
             lane-offer-lane lane-offer-task-classes lane-offer-headroom
             lane-offer-repro-mode lane-offer-usage-unit lane-offer-retracted?
+            lane-offer-resources
             lane-offer->list list->lane-offer
+            resource-alist? resources-cover?
             <machine-job> make-machine-job machine-job?
             machine-job-id machine-job-borrower-did machine-job-commune-aid
             machine-job-task-class machine-job-lane machine-job-repro-mode
             machine-job-input-hash machine-job-envelope-hash machine-job-ring
             machine-job-state machine-job-created-at machine-job-spec-id
+            machine-job-needs
             machine-job->list list->machine-job
             <dispatch-claim> make-dispatch-claim dispatch-claim?
             dispatch-claim-id dispatch-claim-job-id dispatch-claim-offer-id
@@ -49,14 +53,15 @@
             ^machine-registry machine-registry-env
             ^envelope-store spawn-envelope-store
             ^binding-store spawn-binding-store binding-key
-            ^dispute-store spawn-dispute-store))
+            ^dispute-store spawn-dispute-store
+            ^challenge-store spawn-challenge-store))
 
 
 ;;; ── the records ─────────────────────────────────────────────────────────
 
 (define-record-type <lane-offer>
   (%make-lane-offer id lender-did commune-aid lane task-classes headroom
-                    repro-mode usage-unit retracted?)
+                    repro-mode usage-unit retracted? resources)
   lane-offer?
   (id            lane-offer-id)
   (lender-did    lane-offer-lender-did)    ; AID or did:key of the member
@@ -65,26 +70,50 @@
   (task-classes  lane-offer-task-classes)  ; list of task-class symbols
   (headroom      lane-offer-headroom)      ; number — units/second it can lend
   (repro-mode    lane-offer-repro-mode)    ; 'exact | 'deterministic | 'none
-  (usage-unit    lane-offer-usage-unit)    ; "tokens" | "seconds"
-  (retracted?    lane-offer-retracted?))
+  (usage-unit    lane-offer-usage-unit)    ; one of *machine-usage-units*
+  (retracted?    lane-offer-retracted?)
+  (resources     lane-offer-resources))    ; alist — what the node has:
+                                         ; cores, memGB, storageGB, netKbps, gpu
 
 (define* (make-lane-offer #:key id lender-did commune-aid lane task-classes
                           headroom repro-mode (usage-unit "seconds")
-                          (retracted? #f))
+                          (retracted? #f) (resources '()))
   (unless (and (list? task-classes) (every task-class? task-classes))
     (error "lane-offer: task-classes must be a list of task classes" task-classes))
   (unless (repro-mode? repro-mode)
     (error "lane-offer: not a repro mode" repro-mode))
   (unless (and (number? headroom) (> headroom 0))
     (error "lane-offer: headroom must be a positive number" headroom))
-  (unless (member usage-unit '("tokens" "seconds"))
-    (error "lane-offer: usage-unit must be tokens or seconds" usage-unit))
+  (unless (usage-unit? usage-unit)
+    (error "lane-offer: not a usage unit" usage-unit))
+  (unless (resource-alist? resources)
+    (error "lane-offer: resources must be an alist of string . number" resources))
   (%make-lane-offer id lender-did commune-aid lane task-classes headroom
-                    repro-mode usage-unit retracted?))
+                    repro-mode usage-unit retracted? resources))
+
+;;; a resources/needs alist: ((key . amount) …), string keys, number amounts —
+;;; "storageGB" . 4, "netKbps" . 800. The same shape on both sides lets
+;;; matching be a plain cover test.
+(define (resource-alist? a)
+  (and (list? a)
+       (every (lambda (p) (and (pair? p) (string? (car p))
+                               (number? (cdr p))))
+              a)))
+
+;;; the offer covers the job's needs when every named need is present in the
+;;; offer's resources and at least as large. A job that names nothing is
+;;; covered by any offer — needs absent means the lane+class match alone
+;;; decides, the same rule as before the alist existed.
+(define (resources-cover? resources needs)
+  (every (lambda (need)
+           (let ((have (assoc-ref resources (car need))))
+             (and have (>= have (cdr need)))))
+         needs))
 
 (define-record-type <machine-job>
   (%make-machine-job id borrower-did commune-aid task-class lane repro-mode
-                     input-hash envelope-hash ring state created-at spec-id)
+                     input-hash envelope-hash ring state created-at spec-id
+                     needs)
   machine-job?
   (id            machine-job-id)               ; the bridgeJobId
   (borrower-did  machine-job-borrower-did)
@@ -97,19 +126,25 @@
   (ring          machine-job-ring)           ; 0..3 — the outermost it may route at
   (state         machine-job-state)          ; 'open | 'claimed | 'settled | 'withdrawn
   (created-at    machine-job-created-at)     ; epoch ms
-  (spec-id       machine-job-spec-id))       ; the ResourceSpecification id it names
+  (spec-id       machine-job-spec-id)        ; the ResourceSpecification id it names
+  (needs         machine-job-needs))         ; alist — what the job requires:
+                                           ; storageGB, netKbps, gpu, …
 
 (define* (make-machine-job #:key id borrower-did commune-aid task-class lane
                            repro-mode input-hash (envelope-hash #f)
-                           (ring 1) (state 'open) created-at (spec-id #f))
+                           (ring 1) (state 'open) created-at (spec-id #f)
+                           (needs '()))
   (unless (task-class? task-class)
     (error "machine-job: not a task class" task-class))
   (unless (repro-mode? repro-mode)
     (error "machine-job: not a repro mode" repro-mode))
   (unless (and (integer? ring) (<= 0 ring 3))
     (error "machine-job: ring must be an integer 0..3" ring))
+  (unless (resource-alist? needs)
+    (error "machine-job: needs must be an alist of string . number" needs))
   (%make-machine-job id borrower-did commune-aid task-class lane repro-mode
-                     input-hash envelope-hash ring state created-at spec-id))
+                     input-hash envelope-hash ring state created-at spec-id
+                     needs))
 
 (define-record-type <dispatch-claim>
   (%make-dispatch-claim id job-id offer-id lender-did borrower-did
@@ -132,16 +167,19 @@
 
 ;;; ── matching ────────────────────────────────────────────────────────────
 ;;; An offer answers a job when its lane names the job's lane, the job's
-;;; task class is among the classes it runs, it has headroom left, the
-;;; lender is not the borrower, and it is live. Replay mode is not part of
-;;; the match — a borrower that needs exact replay reads it off the offer;
-;;; refusing 'none offers here would hide capacity a 'none job wants.
+;;; task class is among the classes it runs, it has headroom left, its
+;;; resources cover every need the job names, the lender is not the
+;;; borrower, and it is live. Replay mode is not part of the match — a
+;;; borrower that needs exact replay reads it off the offer; refusing
+;;; 'none offers here would hide capacity a 'none job wants.
 
 (define (lane-offer-answers? offer job)
   (and (not (lane-offer-retracted? offer))
        (equal? (lane-offer-lane offer) (machine-job-lane job))
        (memq (machine-job-task-class job) (lane-offer-task-classes offer))
        (> (lane-offer-headroom offer) 0)
+       (resources-cover? (lane-offer-resources offer)
+                         (machine-job-needs job))
        (not (equal? (lane-offer-lender-did offer)
                     (machine-job-borrower-did job)))))
 
@@ -152,15 +190,17 @@
   (list (lane-offer-id o) (lane-offer-lender-did o) (lane-offer-commune-aid o)
         (lane-offer-lane o) (lane-offer-task-classes o) (lane-offer-headroom o)
         (symbol->string (lane-offer-repro-mode o)) (lane-offer-usage-unit o)
-        (lane-offer-retracted? o)))
+        (lane-offer-retracted? o) (lane-offer-resources o)))
 
 (define (list->lane-offer l)
+  ;; pre-resources portraits carry 9 fields; resources defaults to '()
   (apply make-lane-offer
          #:id (list-ref l 0) #:lender-did (list-ref l 1)
          #:commune-aid (list-ref l 2) #:lane (list-ref l 3)
          #:task-classes (list-ref l 4) #:headroom (list-ref l 5)
          #:repro-mode (string->symbol (list-ref l 6))
-         #:usage-unit (list-ref l 7) #:retracted? (list-ref l 8) '()))
+         #:usage-unit (list-ref l 7) #:retracted? (list-ref l 8)
+         #:resources (if (> (length l) 9) (list-ref l 9) '()) '()))
 
 (define (machine-job->list j)
   (list (machine-job-id j) (machine-job-borrower-did j)
@@ -168,9 +208,11 @@
         (machine-job-lane j) (symbol->string (machine-job-repro-mode j))
         (machine-job-input-hash j) (machine-job-envelope-hash j)
         (machine-job-ring j) (symbol->string (machine-job-state j))
-        (machine-job-created-at j) (machine-job-spec-id j)))
+        (machine-job-created-at j) (machine-job-spec-id j)
+        (machine-job-needs j)))
 
 (define (list->machine-job l)
+  ;; pre-needs portraits carry 12 fields; needs defaults to '()
   (apply make-machine-job
          #:id (list-ref l 0) #:borrower-did (list-ref l 1)
          #:commune-aid (list-ref l 2)
@@ -178,7 +220,8 @@
          #:repro-mode (string->symbol (list-ref l 5))
          #:input-hash (list-ref l 6) #:envelope-hash (list-ref l 7)
          #:ring (list-ref l 8) #:state (string->symbol (list-ref l 9))
-         #:created-at (list-ref l 10) #:spec-id (list-ref l 11) '()))
+         #:created-at (list-ref l 10) #:spec-id (list-ref l 11)
+         #:needs (if (> (length l) 12) (list-ref l 12) '()) '()))
 
 (define (dispatch-claim->list c)
   (list (dispatch-claim-id c) (dispatch-claim-job-id c)
@@ -221,12 +264,13 @@
 
     ;; ── offers ───────────────────────────────────────────────────────────
     ((offer lender-did commune-aid lane task-classes headroom repro-mode
-            #:optional (usage-unit "seconds"))
+            #:optional (usage-unit "seconds") (resources '()))
      (let* ((id (generate-id "offer-"))
             (o (make-lane-offer #:id id #:lender-did lender-did
                                 #:commune-aid commune-aid #:lane lane
                                 #:task-classes task-classes #:headroom headroom
-                                #:repro-mode repro-mode #:usage-unit usage-unit)))
+                                #:repro-mode repro-mode #:usage-unit usage-unit
+                                #:resources resources)))
        (bcom (^machine-registry bcom (hashmap-set offers id o) jobs claims statements)
              id)))
 
@@ -245,7 +289,8 @@
                           #:headroom (lane-offer-headroom o)
                           #:repro-mode (lane-offer-repro-mode o)
                           #:usage-unit (lane-offer-usage-unit o)
-                          #:retracted? #t '())))
+                          #:retracted? #t
+                          #:resources (lane-offer-resources o) '())))
            (bcom (^machine-registry bcom (hashmap-set offers offer-id o*)
                                     jobs claims statements)))))))
 
@@ -259,7 +304,7 @@
 
     ;; ── jobs ─────────────────────────────────────────────────────────────
     ((submit borrower-did commune-aid task-class lane repro-mode input-hash
-             #:optional (envelope-hash #f) (ring 1) (spec-id #f))
+             #:optional (envelope-hash #f) (ring 1) (spec-id #f) (needs '()))
      (let* ((id (generate-id "job-"))
             (j (make-machine-job #:id id #:borrower-did borrower-did
                                  #:commune-aid commune-aid #:task-class task-class
@@ -267,7 +312,7 @@
                                  #:input-hash input-hash #:envelope-hash envelope-hash
                                  #:ring ring #:created-at
                                  (* (current-epoch-seconds) 1000)
-                                 #:spec-id spec-id)))
+                                 #:spec-id spec-id #:needs needs)))
        (bcom (^machine-registry bcom offers (hashmap-set jobs id j)
                                 claims statements) id)))
 
@@ -305,7 +350,8 @@
                                                  #:ring (machine-job-ring j)
                                                  #:state 'withdrawn
                                                  #:created-at (machine-job-created-at j)
-                                                 #:spec-id (machine-job-spec-id j) '()))
+                                                 #:spec-id (machine-job-spec-id j)
+                                                 #:needs (machine-job-needs j) '()))
                                   claims statements))))))
 
     ;; offers answering JOB, inner ring first: an offer answers at ring
@@ -348,7 +394,8 @@
                       #:envelope-hash (machine-job-envelope-hash j)
                       #:ring (machine-job-ring j) #:state 'claimed
                       #:created-at (machine-job-created-at j)
-                      #:spec-id (machine-job-spec-id j) '())))
+                      #:spec-id (machine-job-spec-id j)
+                      #:needs (machine-job-needs j) '())))
            (bcom (^machine-registry bcom offers (hashmap-set jobs job-id j*)
                                     (hashmap-set claims cid c) statements)
                  cid))))))
@@ -406,7 +453,8 @@
                       #:ring (min 3 (+ 1 (machine-job-ring j)))
                       #:state 'open
                       #:created-at (machine-job-created-at j)
-                      #:spec-id (machine-job-spec-id j) '()))
+                      #:spec-id (machine-job-spec-id j)
+                      #:needs (machine-job-needs j) '()))
                 (c* (apply make-dispatch-claim
                       #:id claim-id #:job-id (dispatch-claim-job-id c)
                       #:offer-id (dispatch-claim-offer-id c)
@@ -441,7 +489,8 @@
                       #:envelope-hash (machine-job-envelope-hash j)
                       #:ring (machine-job-ring j) #:state 'settled
                       #:created-at (machine-job-created-at j)
-                      #:spec-id (machine-job-spec-id j) '()))
+                      #:spec-id (machine-job-spec-id j)
+                      #:needs (machine-job-needs j) '()))
                 (c* (apply make-dispatch-claim
                       #:id claim-id #:job-id (dispatch-claim-job-id c)
                       #:offer-id (dispatch-claim-offer-id c)
@@ -536,6 +585,29 @@
   (spawn ^dispute-store (hashmap)))
 
 
+;;; ── the challenge shelf ──────────────────────────────────────────────────
+;;; Storage challenges (machine/challenge.scm) beside the claims they probe
+;;; — keyed by challenge id, listed by claim so a node finds what its tabs
+;;; must answer. The policy (who issues, who answers, who verifies) lives
+;;; in the doors; the shelf holds records.
+
+(define (^challenge-store bcom challenges)
+  (methods
+    ((put! key challenge)
+     (bcom (^challenge-store bcom (hashmap-set challenges key challenge))))
+    ((get key)
+     (hashmap-ref challenges key #f))
+    ((by-claim claim-id)
+     (hashmap-filter
+       (lambda (c) (equal? (store-challenge-claim-id c) claim-id)) challenges))
+    ((all)
+     (hashmap-filter (lambda (v) #t) challenges))
+    ((portrait) (list 'challenge-store (serialize-hashmap challenges (lambda (x) x))))))
+
+(define (spawn-challenge-store)
+  (spawn ^challenge-store (hashmap)))
+
+
 ;;; ── persistence ─────────────────────────────────────────────────────────
 
 (define machine-registry-env
@@ -543,4 +615,5 @@
     `((((playnet machine registry) ^machine-registry) ,^machine-registry)
       (((playnet machine registry) ^envelope-store) ,^envelope-store)
       (((playnet machine registry) ^binding-store) ,^binding-store)
-      (((playnet machine registry) ^dispute-store) ,^dispute-store))))
+      (((playnet machine registry) ^dispute-store) ,^dispute-store)
+      (((playnet machine registry) ^challenge-store) ,^challenge-store))))

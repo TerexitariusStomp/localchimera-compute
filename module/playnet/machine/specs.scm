@@ -36,6 +36,8 @@
   #:export (repro-mode?
             task-class?
             *machine-task-classes*
+            *machine-usage-units*
+            usage-unit?
             lane-tag
             repro-tag
             make-machine-spec
@@ -57,6 +59,16 @@
 (define (repro-mode? x)
   (and (memq x '(exact deterministic none)) #t))
 
+;;; the units a machine resource meters in — one vocabulary for offers,
+;;; specs and usage meters. "seconds"/"tokens" are the original compute
+;;; pair; the rest are the per-kind meters: byte-seconds for storage,
+;;; bytes for relay, readings for sense, node-hours for presence.
+(define *machine-usage-units*
+  '("seconds" "tokens" "bytes" "byte-seconds" "readings" "node-hours"))
+
+(define (usage-unit? x)
+  (and (member x *machine-usage-units*) #t))
+
 (define (lane-tag lane)     (string-append "lane:" lane))
 (define (repro-tag mode)    (string-append "repro:" (symbol->string mode)))
 
@@ -76,6 +88,8 @@
     (error "machine-spec: not a task class" task-class))
   (unless (repro-mode? repro-mode)
     (error "machine-spec: not a repro mode" repro-mode))
+  (unless (usage-unit? usage-unit)
+    (error "machine-spec: not a usage unit" usage-unit))
   (make-resource-specification
     #:id id
     #:name name

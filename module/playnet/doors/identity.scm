@@ -580,6 +580,21 @@
    ((machine-dispute-close commune-aid dispute-id)
     (<- governance-svc 'machine-dispute-close aid-prefix commune-aid dispute-id))
 
+   ;; storage challenges — the store kind's replay. The borrower (or a
+   ;; governor) issues, the claim's lender answers sha256(nonce ∥ bytes),
+   ;; the issuer verifies.
+   ((machine-challenge commune-aid claim-id)
+    (<- governance-svc 'machine-challenge aid-prefix commune-aid claim-id))
+
+   ((machine-challenge-answer commune-aid challenge-id answer)
+    (<- governance-svc 'machine-challenge-answer aid-prefix commune-aid challenge-id answer))
+
+   ((machine-challenge-verify commune-aid challenge-id expected content-hash)
+    (<- governance-svc 'machine-challenge-verify aid-prefix commune-aid challenge-id expected content-hash))
+
+   ((machine-challenges commune-aid claim-id)
+    (<- governance-svc 'machine-challenges aid-prefix commune-aid claim-id))
+
    ((machine-bind commune-aid w)
     (<- governance-svc 'machine-bind aid-prefix commune-aid w))
 

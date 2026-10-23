@@ -197,24 +197,6 @@ export interface WireFloor {
   branchFactors: Record<string, number | null>;
 }
 
-export interface WireFlowIn {
-  spec: string;
-  id: string;
-  q: number | null;
-  action: string;
-}
-
-export interface WireFlowProd {
-  id: string;
-  spec: string;
-  specId: string;
-  name: string;
-  q: number | null;
-  u: string;
-  period: string;
-  in: readonly WireFlowIn[];
-}
-
 export interface WireFragility {
   source: string;
   people: readonly WirePersonIntake[];
@@ -427,56 +409,6 @@ export interface WirePersonIntake {
   intake: Record<string, number | null>;
 }
 
-export interface WirePlan {
-  scope: string;
-  coverage: number | null;
-  feasible: string;
-  stale: boolean;
-  labourH: number | null;
-  produced: readonly WirePlanYield[];
-  needs: readonly WirePlanNeed[];
-  kept: readonly WirePlanKept[];
-  discrete?: WirePlanDiscrete | null;
-  placement?: Record<string, Record<string, number | null>>;
-  flow: readonly WireFlowProd[] | false;
-  requires: readonly WireActRequires[];
-  schedule: readonly WireCommitmentRecord[] | false;
-}
-
-export interface WirePlanDiscrete {
-  keys: number;
-  nodes: number;
-  budget: number;
-  certified: boolean;
-  gap: number | null;
-  recourseRelaxed: readonly (string)[];
-}
-
-export interface WirePlanKept {
-  spec: string;
-  name: string;
-  q: number | null;
-}
-
-export interface WirePlanNeed {
-  id: string;
-  label: string;
-  for?: string;
-  met: number | null;
-  want: number | null;
-  recipeId: string;
-  runs: number;
-  labourH: number | null;
-  willing: number;
-}
-
-export interface WirePlanYield {
-  specId: string;
-  spec: string;
-  q: number | null;
-  u: string;
-}
-
 export interface WireReadLabelReply {
   resource: WireInventoryResource | null;
   contents: readonly WireInventoryResource[];
@@ -521,21 +453,13 @@ export interface WireScopeReadingsReply {
 }
 
 export interface WireScopeSnapshotReply {
-  commitments: readonly WireCommitmentRecord[];
-  intents: readonly WireIntentRecord[];
-  proposals: readonly WireProposal[];
-  recipes: readonly WireRecipe[];
-  plan: WirePlan | false;
   matter: WireMatter | false;
   inventory: WireInventory | false;
   credit: WireCredit | false;
   fragility: WireFragility | false;
   locations: readonly WireLocation[];
-  events: readonly WireEvent[];
   scopeId: string;
   scopeName: string;
-  members: readonly WireMember[];
-  plans: readonly WirePlanRef[];
   alerts: readonly WireAlert[];
   floors: readonly WireFloor[];
 }
