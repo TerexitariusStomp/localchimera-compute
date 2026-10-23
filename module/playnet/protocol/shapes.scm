@@ -279,6 +279,11 @@
     (cats-json . json) (criteria-json . json) (need-kind . string) (voice . number)
     (deliver-at . instant) (accountable . aid) (window-days . number) (eligible . json)
     (opts . alist)
+    ;; machine-resource sharing (playnet machine)
+    (lane . string) (classes . list) (headroom . number) (repro . symbol)
+    (task-class . symbol) (input-hash . string)
+    (offer-id . id) (job-id . id) (claim-id . id) (dispute-id . id)
+    (w . json) (verdict . symbol) (key . string) (side . symbol)
     ;; capabilities and in-process objects
     (user-inbox . capability) (client-inbox . capability) (watcher-ref . capability)
     (cb . capability) (vat . internal) (thunk . internal) (store . internal)

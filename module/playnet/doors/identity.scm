@@ -845,7 +845,4 @@
    ;; uses an org pubkey, not the KERI AID. When the terminal/mailbox
    ;; UX migrates onto the KERI identity, expose them here too.
 
-   ;; Upserts this AID's profile tags from a JSON array, keeping other classifications; replies the tags.
-   ((set-profile scope-id json)
-    (planner! 'set-profile scope-id aid-prefix json))
 )))

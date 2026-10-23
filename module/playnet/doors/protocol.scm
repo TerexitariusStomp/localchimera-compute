@@ -440,9 +440,6 @@ or #f when no handler sends it."
     (door session admit-commune (federation-aid commune-aid sturdyref-uri #:optional (ratification #f))
           #:auth device #:topic governance #:reply promise:ok-or-error #:kind performative #:to governance
           #:doc "Admits the commune COMMUNE-AID into the federation FEDERATION-AID this gateway holds, at the sturdyref its peer answers at, as one of the federation's governors (the federation's own ladder decides whether it recognises the caller, and its governance policy may require the commune's consent as RATIFICATION, a SAID). The goods that cross are not named: the commune tells the federation what it deals in. Replies ok or an error.")
-    (door session scope-replica (scope-id)
-          #:auth device #:topic stock #:reply ok-or-error #:kind read #:to planner
-          #:doc "Replies SCOPE-ID as this AID's device holds a copy of it: one text carrying the scope's goods, places, people, the needs standing in it and the observer's books (its stock and the events behind it), each serialized as its own store keeps it. A device seeds its copy from it on taking a seat and after it flushes what it queued, so the same doors answer there with no gateway in reach.")
     (door session my-grants ()
           #:auth device #:topic custody #:reply ok-or-error #:kind read #:to governance
           #:doc "Replies (ok rows), the live custody grants this AID holds out: said, spec, commune, until, qty, consume or use, and steward rule.")
@@ -477,22 +474,7 @@ or #f when no handler sends it."
           #:auth device #:topic governance #:reply ok-or-error #:kind preference #:to governance
           #:doc "Revokes this AID's delegation to DELEGATE-AID, federation-wide or for SCOPE-ID when given; replies ok.")
 
-    ;; acting-as-this-AID forwards to the planner (the agent argument is the session's)
-    ;; The AI the commons pays for, at the seat: each session has a budget of
-    ;; calls per minute, and \"\" is the answer past it — the browser falls
-    ;; back to its own, on-device, as it does with no keys.
-    (door session claim (scope-id resource-id qty labor-cost #:optional (where #f) (deliver-at #f))
-          #:auth device #:topic stock #:reply ok-or-error #:kind performative #:to planner
-          #:feature credit
-          #:doc "Draws this AID's credit to claim QTY of RESOURCE-ID at LABOR-COST (derived from crystallized SNLT when #f), checked against on-hand and any live wallet reading; WHERE/DELIVER-AT record the claim's own place and time. Replies claimed, balance and credit.")
-    (door session set-profile (scope-id json)
-          #:auth device #:topic identity #:reply ok-or-error #:kind constative #:to planner
-          #:feature health-profile
-          #:doc "Upserts this AID's profile tags in SCOPE-ID from a JSON array, replacing prior profile tags and keeping other classifications; replies (ok . tags).")
-    ;; ── bodies: a legal body declared, stewarded, incepted k-of-n, read by the law
-    ;;    (doors/body.scm; every structure is a JSON string, every reply (ok . x) | (error . msg))
-
-    ;; ── compute — the commons' machine book ─────────────────────────────
+    ;; ── machine — the node tab's machine book ──────────────────────────
     ;; identity-bound doors pass this AID as the member the act belongs to:
     ;; the lender on offer, claim and preempt; the borrower on submit,
     ;; withdraw and accept. Reads are open.

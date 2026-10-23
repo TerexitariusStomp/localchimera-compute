@@ -24,7 +24,7 @@
 
 (use-modules (playnet doors protocol) (playnet protocol shapes) (playnet protocol seam)
              ((playnet wire rows) #:select (reply-table-ref wire-type-name wire-table-name))
-             (playnet wire replies) (playnet doors record-rows)   ; the reply tables, registered
+             (playnet wire replies)
              (playnet protocol mcp)
              (json) (ice-9 match) (ice-9 format) (srfi srfi-1))
 

@@ -889,44 +889,18 @@ function boot() {
         const a = keyed(name, Array.from({ length: arity }, (_, i) => args[i])).slice(0, arity);
         fn(...a, res);
       });
-    HANDLERS.transcribe = (wavB64) =>
-      new Promise(res => schemeHandlers.transcribe
-        ? schemeHandlers.transcribe(wavB64, res) : res(""));
-    HANDLERS.ai = (system, user, model) =>
-      new Promise(res => schemeHandlers.ai
-        ? schemeHandlers.ai(system, user, model, res) : res(""));
     // the orb's exact-plan read: a wire-safe STRING summary of the current
     // plan (satisfaction, social ledger, loudest pulls, certificate). The orb
     // narrates it as ground truth instead of guessing over the snapshot.
-    HANDLERS.solve = (overridesJson) =>
-      new Promise(res => schemeHandlers.solve
-        ? schemeHandlers.solve(overridesJson || "{}", res) : res(""));
     // the handshake outbound: accepting a proposal on the dial accepts
     // the Intent in the plan (acting-as = the signed-in AID); the
     // refreshed snapshot returns it as a commitment. Page calls these
     // positionally: (scope, intentId) → Promise<"ok" | "err:…">
-    HANDLERS.commit = (scope, intentId) =>
-      new Promise(res => schemeHandlers.commit
-        ? schemeHandlers.commit(scope || "", intentId || "", res)
-        : res("err:offline"));
-    HANDLERS.decline = (scope, intentId) =>
-      new Promise(res => schemeHandlers.decline
-        ? schemeHandlers.decline(scope || "", intentId || "", res)
-        : res("err:offline"));
     // a directed work offer's accept — the bounded rung's gated door
     // (accept-work-offer: the accepting worker is the PROVIDER)
-    HANDLERS.acceptWorkOffer = (scope, proposalId) =>
-      new Promise(res => schemeHandlers.acceptWorkOffer
-        ? schemeHandlers.acceptWorkOffer(scope || "", proposalId || "", res)
-        : res("err:offline"));
     // the offer-side opt-in: willing("yes") raises your hand for the
     // (skill, cell) — an option, not a bind; willing("no") withdraws /
     // declines the standing. Resolves "ok" | "err:…".
-    HANDLERS.willing = (scope, spec, cell, willing) =>
-      new Promise(res => schemeHandlers.willing
-        ? schemeHandlers.willing(scope || "", spec || "", cell || "",
-                                 willing ? "yes" : "no", res)
-        : res("err:offline"));
     // leaving a thing in a shared container, and taking one out — the VF
     // pickup/dropoff pair (planner service `drop-event`). Resolves the id of
     // the resource touched, or "err:…". A fresh snapshot follows the write, so
@@ -934,7 +908,6 @@ function boot() {
     // …the last argument is the CLAIM: "mine" when the person leaving a new
     // thing holds the rights to it, "" when nobody does (the default — leaving
     // something is not how anyone comes to own it).
-    HANDLERS.dropEvent = bridge("dropEvent", 7);
     // the captain's log — per-AID document sync, the same local-first +
     // server-backup shape as the contact book: log("sync", json) → "ok",
     // log("list", "") → the stored JSON string ("" when none).
@@ -942,43 +915,24 @@ function boot() {
     // the pin book — map lists: pins("sync", json) → "ok", pins("list", "")
     // → the stored JSON string; pins("ourLists", "") / pins("ourPins", id)
     // → the commune's shared lists / one list's members, as JSON
-    HANDLERS.pins = bridge("pins", 2);
     // …and its observe path: a log suggestion becomes a self-scoped
     // EconomicEvent on the scope's observer (planner `log-observe`).
     // (action, spec, qty, unit, note, whenIso) → "ok:<event-id>" | "err:…"
-    HANDLERS.logObserve = bridge("logObserve", 6);
     // a count of a stock the books hold: the difference from the ledger
     // lands on that stock (planner `count-stock`).
     // (resource, counted, unit, technique, place, whenIso, fulfills,
     //  evidence, note) → JSON {event, record, hours, delta, onhand} | "err:…"
-    HANDLERS.countStock = bridge("countStock", 9);
     // the code a stock is known by, for its label, and what a code names
     // (resource) → JSON {code, id, name};  (code) → JSON {resource, contents}
-    HANDLERS.labelStock = bridge("labelStock", 1);
-    HANDLERS.countHistory = bridge("countHistory", 2);
-    HANDLERS.scopeReplica = bridge("scopeReplica", 0, "");
-    HANDLERS.contests = bridge("contests", 0, "");
-    HANDLERS.attachEvidence = bridge("attachEvidence", 3);
-    HANDLERS.contestEvidence = bridge("contestEvidence", 1, "");
-    HANDLERS.readLabel = bridge("readLabel", 1);
     // the schedule of counts, and laying the due ones as offers
     // (regime) → JSON {rows};  (regime, counter, atMost) → JSON {laid, due, refused?}
-    HANDLERS.countSchedule = bridge("countSchedule", 1);
-    HANDLERS.planCounts = bridge("planCounts", 3);
     // a picture, read at the seat: one to four base64 JPEGs of one thing cross
     // joined by newlines, and the spine sends each on in parts
     // (images, system, user, fulfills) → the model's text | "" | "err:…"
-    HANDLERS.see = (images, system, user, fulfills) =>
-      new Promise(res => schemeHandlers.see
-        ? schemeHandlers.see((images || []).join("\n"), system || "", user || "", fulfills || "", res)
-        : res(""));
     // the week's unplanned photo reads → JSON {remaining, perWeek, opens, sees}
-    HANDLERS.allotment = bridge("allotment", 0);
     // retag a contact (writes the rel into the synced contact book; the
     // gateway re-pushes the updated list to seam.data.contacts).
     // The tag is the person's own label; a vouch is its own act (fpVouch).
-    HANDLERS.setContactRel = bridge("setContactRel", 2);
-    HANDLERS.contactForget = bridge("contactForget", 1);
     HANDLERS.contactCheck = bridge("contactCheck", 1);
     // contact points told to this commune; the clock stamp is the credential's
     // issued-at (SAID material), since Hoot is clock-free
@@ -990,9 +944,6 @@ function boot() {
     HANDLERS.reachWithdraw = bridge("reachWithdraw", 2);
     HANDLERS.reachRead = bridge("reachRead", 0);
     // this device's browser notifications (ui/app/push.ts)
-    HANDLERS.pushKey = bridge("pushKey", 0);
-    HANDLERS.pushRegister = bridge("pushRegister", 2);
-    HANDLERS.pushUnregister = bridge("pushUnregister", 1);
     // a card for one contact: CONTENT is the JSON text sealed to them
     HANDLERS.cardGive = (aid, content) =>
       new Promise(res => schemeHandlers.cardGive
@@ -1000,47 +951,19 @@ function boot() {
         : res("err:offline"));
     HANDLERS.cardWithdraw = bridge("cardWithdraw", 1);
     // the clock stamp is the book's added-at, since Hoot is clock-free
-    HANDLERS.contactConnect = (aid, alias, oobi, myName) =>
-      new Promise(res => schemeHandlers.contactConnect
-        ? schemeHandlers.contactConnect(aid || "", alias || "", oobi || "", myName || "", String(Date.now()), res)
-        : res("err:offline"));
     // read the book again; the answer arrives as the contacts push
-    HANDLERS.contactsRefresh = bridge("contactsRefresh", 0);
     // publish the current spine as this AID's taxonomy cut (the edit-republish
     // arm of the loop). `wire` is the parser-free T/E flattening from main.js.
-    HANDLERS.publishSpine = (wire) =>
-      new Promise(res => schemeHandlers.publishSpine
-        ? schemeHandlers.publishSpine(wire || "", res)
-        : res("err:offline"));
     // swing the folksonomy lens: "social" → the commons/UC cut, "individual" →
     // your own (the dial's individual⇄social toggle; folksonomy.md Phase 4).
-    HANDLERS.taxonomyLens = (name) =>
-      new Promise(res => schemeHandlers.taxonomyLens
-        ? schemeHandlers.taxonomyLens(name || "", res)
-        : res("err:offline"));
     // adopt the currently-viewed cut as your own published taxonomy (the loop).
-    HANDLERS.adoptCut = () =>
-      new Promise(res => schemeHandlers.adoptCut
-        ? schemeHandlers.adoptCut(res)
-        : res("err:offline"));
     // the navcard's go/arrive → VF records: phase "begin" mints the
     // commitment + pickup event, "end" the fulfilling dropoff. Resolves
     // "ok:<commitment-id>" — the dial threads it back on arrival.
-    HANDLERS.journey = (phase, from, to, mode, cid) =>
-      new Promise(res => schemeHandlers.journey
-        ? schemeHandlers.journey(phase || "begin", from || "", to || "",
-                                 mode || "pedestrian", cid || "", res)
-        : res("err:offline"));
     // topic chat: op "post" (body) | "history" (→ JSON array string).
     // Strata are stamped server-side; the dial filters read-side.
-    HANDLERS.chat = (op, topic, body, kind) =>
-      new Promise(res => schemeHandlers.chat
-        ? schemeHandlers.chat(op || "history", topic || "", body || "",
-                              kind || "", res)
-        : res("err:offline"));
     // the wake: every live room + who is in it + the last thing said there,
     // as one JSON array. Cheap enough to poll (text and counts, no media).
-    HANDLERS.wake = bridge("wake", 0);
     // live walkie: op "join" | "leave" | "talk" (arg "on"/"off")
     HANDLERS.walkie = (op, arg) =>
       new Promise(res => schemeHandlers.walkie
@@ -1069,9 +992,7 @@ function boot() {
     // the passcode, changed: two rotations as one act. passcodeCheck is
     // asked first, so a new passcode is shown only to its holder.
     HANDLERS.passcodeCheck  = bridge("passcodeCheck", 1);    // passcode → "ok" | "err:…"
-    HANDLERS.changePasscode = bridge("changePasscode", 2);   // current new → "ok:<aid>|<first key>"
     // forget me: the passcode again, and "retire" to close the key log for good
-    HANDLERS.forgetMe       = bridge("forgetMe", 2);         // passcode retire → receipt JSON | "err:…"
     HANDLERS.guardianRecover = (linesJson) =>
       new Promise(res => schemeHandlers.guardianRecover
         ? schemeHandlers.guardianRecover(linesJson, res)
@@ -1095,8 +1016,6 @@ function boot() {
     HANDLERS.devices      = bridge("devices", 0, "[]");
     HANDLERS.revokeDevice = bridge("revokeDevice", 1);
     // where this person is reached on the map: declared at the home, read back
-    HANDLERS.setLocationSharing = bridge("setLocationSharing", 1);   // mode → mode | "err:…"
-    HANDLERS.locationSharing    = bridge("locationSharing", 0);      // → mode | "undeclared"
     // an OUTSIDE interface enrolled as a device: its own AID, a label, its doors
     HANDLERS.enrollExternalDevice = bridge("enrollExternalDevice", 3);
     // browser-side facts and the local wipe (the authorization's revocation
@@ -1150,111 +1069,47 @@ function boot() {
     // <intent> (declareNeed). Both carry quantity, unit, place, the recurring
     // arcs, note and emoji; a need adds its [from, until] bounds. mySlots
     // reads both back, retireNeed withdraws a standing order.
-    HANDLERS.declareMeans = bridge("declareMeans", 10);  // spec qty unit loc arcs note emoji name catsJson criteriaJson
-    HANDLERS.declareNeed  = bridge("declareNeed", 14);   // spec qty unit loc arcs note emoji from until name catsJson criteriaJson tension voice
-    HANDLERS.retireNeed   = bridge("retireNeed", 1);     // spec
-    HANDLERS.retireMeans   = bridge("retireMeans", 1);   // spec — the offer side's own withdrawal
     // the declaration-time price (the ⚖️ chip) and the burn-meter it feeds:
     // the scope's moved-distribution over its kept solves
-    HANDLERS.needDisplacement = bridge("needDisplacement", 2); // spec qty → JSON {read, perUnit, moved, lately?}
-    HANDLERS.externalityHistory = bridge("externalityHistory", 0); // → JSON {solves, meanTotal, specs}
     // the constitution's gate: a kind beyond a want is the scope's statement
-    HANDLERS.ratifyKind = bridge("ratifyKind", 2);       // spec kind ("floor"|"held"; "des" withdraws)
-    HANDLERS.ratifiedKinds = bridge("ratifiedKinds", 0); // → JSON [{spec, kind, by, at}]
-    HANDLERS.auditKinds = bridge("auditKinds", 0);       // stage 3: → JSON {examined, padded, findings[]}
-    HANDLERS.audits = bridge("audits", 0);               // → JSON [{spec, who, kind, declared, observed, verdict, rate, by, at}]
     // ── the citizen's own skills: self-declared labour-power ─────────────
-    HANDLERS.declareSkill  = bridge("declareSkill", 1);   // skill-spec-id
-    HANDLERS.revokeSkill   = bridge("revokeSkill", 1);    // skill-spec-id
-    HANDLERS.mySkills      = bridge("mySkills", 0, "");   // → newline-joined skill-spec-ids
-    HANDLERS.mySkillStanding = bridge("mySkillStanding", 0);   // → JSON rows: claim beside its validation; "err:…" leaves the demo standing
-    HANDLERS.contestWork   = bridge("contestWork", 3);      // scope, event-id, reason → ballot id
-    HANDLERS.mySlots      = bridge("mySlots", 0, "");    // → {needs:[…], means:[…]} JSON
     // corpus search (docs/planning/corpus-guile-native.md phase 4): domain
     // "" searches every built domain, merged by fusion score — the
     // federation corpus tab's own call; a real domain slug scopes to one
     // (the recipes face's call). → {hits:[…]} or {hits:[],error} JSON
-    HANDLERS.corpusSearch  = bridge("corpusSearch", 3, '{"hits":[],"error":"offline"}');
-    HANDLERS.lintRecords   = bridge("lintRecords", 2, "err:offline");
-    HANDLERS.corpusDomains = bridge("corpusDomains", 0, '{"domains":[]}');
     // the fold at the scope you stand in — Our Needs / Our Offers as summed
     // cells, your own share joined as `mine`; no one else's name travels
-    HANDLERS.ourSlots     = bridge("ourSlots", 0, "");   // → {needs:[cells], means:[cells]} JSON
     // payouts: "send N XMR of my claim to ⟨address⟩" — the commons' wallet
     // sends it under policy; the member holds a record, never a key
-    HANDLERS.requestPayout = bridge("requestPayout", 4);  // address xmr due note
-    HANDLERS.myPayouts     = bridge("myPayouts", 0, "");  // → {available, payouts:[…], owed:[…]} JSON
-    HANDLERS.myClaims      = bridge("myClaims", 0, "");   // → {rows:[ClaimRow…]} JSON: asked, held, taken
-    HANDLERS.myCreditHistory = bridge("myCreditHistory", 0, "");   // → {rows:[CreditHistoryRow…]} JSON: earned, waiting, drawn, voided, newest first
     // what every source says of a spec, and the history behind it: the reading
     // fold's rows and drift, then one row per reading between two instants
     // (spec) → {rows, drift, latest};  (spec, fromIso, untilIso) → {rows, fold}
-    HANDLERS.scopeReadings = bridge("scopeReadings", 1);
-    HANDLERS.readingsBetween = bridge("readingsBetween", 3);
     // the three scope declarations: a stock held at a place until a time, a
     // hosting ceiling for a spec, and a recipe's tail regime for a process
     // (scope, resourceId, place, until);  (scope, spec, ceiling, until);
     // (scope, recipe, tails, process, until) → the planner's reply | "err:…"
-    HANDLERS.declareSpan = bridge("declareSpan", 4);
-    HANDLERS.declareHosting = bridge("declareHosting", 4);
-    HANDLERS.claimRegime = bridge("claimRegime", 5);
-    HANDLERS.retirePayout  = bridge("retirePayout", 1);   // id
     // "I bought this for the commons": the good is raised into the commons;
     // what you advanced becomes a debt the commons owes you once accepted —
     // read back via myPayouts' `owed` (governance/debts.scm)
-    HANDLERS.recordPurchase = (spec, qty, unit, moneySpec, cost, where, note, receipt, donation) =>
-      new Promise(res => schemeHandlers.recordPurchase
-        ? schemeHandlers.recordPurchase(spec || "", String(qty ?? 1), unit || "each", moneySpec || "spec-eur",
-                                        String(cost ?? 0), where || "", note || "", receipt || "",
-                                        donation ? "yes" : "no", res)
-        : res("err:offline"));
-    HANDLERS.slotsAt      = bridge("slotsAt", 0, "");    // → the scope's pool: {needs:[…]+who, means:[…]+owner}
     // the match ring's one read: needs + declared means with their folksonomy
     // terms, and every scored need↔means pairing (classification affinity ×
     // time × quantity, geometric mean — planner match-slots)
-    HANDLERS.matchSlots   = bridge("matchSlots", 0, ""); // → {needs, means, matches:[{need, hits:[…]}]}
     // ── availability, invites, the confirmation mile, the witness doors ──
     // The spine registers these; the faces guard on their presence and treat
     // absence as offline — so each one MUST be bridged here to work live.
-    HANDLERS.setAvailability = bridge("setAvailability", 1);  // arcs JSON
-    HANDLERS.invite          = bridge("invite", 4);           // aid label t0-iso t1-iso
-    HANDLERS.acceptInvite    = bridge("acceptInvite", 2);     // scope, proposal-id
-    HANDLERS.recordEffort    = bridge("recordEffort", 5);     // scope cid qty unit tap
-    HANDLERS.recordFlow      = bridge("recordFlow", 11);      // scope action spec qty total place when proc note rowId tap
-    HANDLERS.witnessOpen     = bridge("witnessOpen", 2);      // scope event-id
-    HANDLERS.witnessInbox    = bridge("witnessInbox", 0, ""); // → [{said,kind,worker,sponsor,skill,hours,count,quorum}…] JSON
-    HANDLERS.witnessAttest   = bridge("witnessAttest", 1);    // said
     // its own wrapper: qty crosses as a NUMBER (the spine checks number?),
     // and shop.ts speaks callback here rather than promise.
-    HANDLERS.claim = (rid, qty, where, when, cb) =>
-      schemeHandlers.claim
-        ? schemeHandlers.claim(rid || "", qty, where || "", when || "", cb)
-        : cb("err:offline");
     // the family face: a purse split across stated needs by harmony. Callback
     // style like claim (the face wants the reply as soon as it lands, not a
     // Promise it has to unwrap) — weighted crosses as a string, like every
     // other boolean on this FFI edge (arg-num/arg-str's own doc, above).
     // who you are: the profile tags the reproduction floors and the diet read,
     // written onto your own agent record (a JSON array of "key:value" strings)
-    HANDLERS.setProfile = (tagsJson, cb) =>
-      schemeHandlers.setProfile
-        ? schemeHandlers.setProfile(tagsJson || "[]", cb)
-        : cb("err:offline");
     // membersJson: the household's own consumer voice (playnet.typ §The
     // credit identity) — {person,capacity,hours} rows; "[]" (the face's
     // default) reads every owner as an equal citizen.
-    HANDLERS.familySplit = (needsJson, purse, labourH, weighted, membersJson, perCitizenHours, cb) =>
-      schemeHandlers.familySplit
-        ? schemeHandlers.familySplit(needsJson || "", purse, labourH, weighted ? "true" : "false",
-                                      membersJson || "[]", perCitizenHours, cb)
-        : cb("err:offline");
     // the same week asked backwards: the three bills (euros and hours beyond
     // the purse for rights, then needs, then wants), a euro priced in hours.
-    HANDLERS.familyBills = (needsJson, purse, labourH, weighted, eurPerHour, membersJson, perCitizenHours, cb) =>
-      schemeHandlers.familyBills
-        ? schemeHandlers.familyBills(needsJson || "", purse, labourH, weighted ? "true" : "false", eurPerHour,
-                                      membersJson || "[]", perCitizenHours, cb)
-        : cb("err:offline");
     // ── live / expected position ─────────────────────────────────────────
     // Where you ARE at a period (0 = now): the commute origin for your labour
     // and the cell your reproduction floors sit in. setPositionHere hands raw
@@ -1262,13 +1117,8 @@ function boot() {
     // place — a place id is all that is ever stored. setPosition names a place
     // directly, which is how a FUTURE period gets declared ("the park, Saturday
     // afternoon"). An empty place clears that period back to your home.
-    HANDLERS.setPosition     = bridge("setPosition", 2);       // period place
-    HANDLERS.setPositionHere = bridge("setPositionHere", 3);   // period lat lon
     // your registered home: a known place id, or "" with coordinates for your own place
-    HANDLERS.setHome = bridge("setHome", 3);                   // place lat lng
-    HANDLERS.declareDwelling = bridge("declareDwelling", 10);  // place areaM2 rooms warmthWinterDegC warmthSummerDegC beds attestsJson certified rentEurNight tenure
     // a new place by name (+ optional lat lon) → its id, for a slot's WHERE
-    HANDLERS.declarePlace = bridge("declarePlace", 5);         // name lat lon address parent
     // its own wrapper: `movable` crosses as the spine's "yes"/"no" string;
     // `kind` is "use" (lend the service) or "consume" (lend a quantity to
     // spend — a purse), absent = use.
@@ -1277,34 +1127,20 @@ function boot() {
     // one; auto-filled with a timestamp when the caller passes none.
     // `eligible` is the owner's steward rule — the slot criteria JSON ("" =
     // anyone) — bounding who may be assigned to work drawing on the grant.
-    HANDLERS.socialize = (commune, spec, qty, until, movable, returnTo, floor, resource, kind, ref, eligible) =>
-      new Promise(res => schemeHandlers.socialize
-        ? schemeHandlers.socialize(commune || "", spec || "", String(qty ?? ""), until || "",
-                                   movable ? "yes" : "no", returnTo || "", floor || "", resource || "",
-                                   kind === "consume" ? "consume" : "use",
-                                   ref || String(Date.now()), eligible || "", res)
-        : res("err:offline"));
-    HANDLERS.recall = (said) =>
-      new Promise(res => schemeHandlers.recall ? schemeHandlers.recall(said || "", res) : res("err:offline"));
     // "I gave the commons this" — the reimbursement primary, client-signed
     // like socialize above. Replies the claim's own SAID, not just "ok" —
     // whoever calls acceptReimbursement needs it.
-    HANDLERS.purchaseClaim = bridge("purchaseClaim", 8); // commune spec qty unit due resource ref trig(purchase-event id)
     // accepting a grant or a reimbursement — the commune's own word, no new
     // signature (the session's own identity is the proof). See
     // doors/governance.scm's own doc: no governor-role gate exists live
     // anywhere yet, so this is open to any authenticated member — only
     // self-accepting one's own reimbursement is actually refused.
-    HANDLERS.acceptSocialization = bridge("acceptSocialization", 2); // commune grantSaid
-    HANDLERS.acceptReimbursement = bridge("acceptReimbursement", 2); // commune claimSaid
     HANDLERS.setScope = (id) =>
       new Promise(res => schemeHandlers.setScope ? schemeHandlers.setScope(id || "", res) : res("err:offline"));
     HANDLERS.fpPresent = (wireJson) =>
       new Promise(res => schemeHandlers.fpPresent ? schemeHandlers.fpPresent(wireJson || "", res) : res("err:offline"));
     // the bundle you carry between gateways (vouches + personhoods + key
     // logs), and presenting one here — "ok:<newly imported>" | "err:…"
-    HANDLERS.fpMyVouches = () =>
-      new Promise(res => schemeHandlers.fpMyVouches ? schemeHandlers.fpMyVouches(res) : res("err:offline"));
     HANDLERS.fpPresentBundle = (json) =>
       new Promise(res => schemeHandlers.fpPresentBundle ? schemeHandlers.fpPresentBundle(json || "", res) : res("err:offline"));
 
@@ -1373,27 +1209,17 @@ function boot() {
     // They live in schemeHandlers (day-boot.scm's dispatch) but were never
     // surfaced here, so every `if (HANDLERS.cast)` guard in the tab was falsy —
     // the whole governance tab (cast / open / results) was inert. Wire them.
-    HANDLERS.listProposals = () =>
-      new Promise(res => schemeHandlers.listProposals ? schemeHandlers.listProposals(res) : res("[]"));
     HANDLERS.getResult = (id) =>
       new Promise(res => schemeHandlers.getResult ? schemeHandlers.getResult(id || "", res) : res(""));
-    HANDLERS.cast = (id, stance) =>
-      new Promise(res => schemeHandlers.cast ? schemeHandlers.cast(id || "", stance || "", res) : res("err:offline"));
     HANDLERS.openProposal = (kind, domain, id, description, franchise, subject) =>
       new Promise(res => schemeHandlers.openProposal
         ? schemeHandlers.openProposal(kind || "ballot", domain || "policy", id || "",
                                       description || "", franchise || "federation", subject || "", res)
         : res("err:offline"));
-    HANDLERS.voiceIn = (sid) =>
-      new Promise(res => schemeHandlers.voiceIn ? schemeHandlers.voiceIn(sid || "", res) : res(""));
     HANDLERS.close = (id) =>
       new Promise(res => schemeHandlers.close ? schemeHandlers.close(id || "", res) : res("err:offline"));
-    HANDLERS.myVoice = () =>
-      new Promise(res => schemeHandlers.myVoice ? schemeHandlers.myVoice(res) : res(""));
     HANDLERS.listDelegations = () =>
       new Promise(res => schemeHandlers.listDelegations ? schemeHandlers.listDelegations(res) : res("[]"));
-    HANDLERS.listUcProposals = () =>
-      new Promise(res => schemeHandlers.listUcProposals ? schemeHandlers.listUcProposals(res) : res("[]"));
     HANDLERS.setDelegation = (to, fraction) =>
       new Promise(res => schemeHandlers.setDelegation
         ? schemeHandlers.setDelegation(to || "", String(fraction ?? ""), res) : res("err:offline"));

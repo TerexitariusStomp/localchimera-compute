@@ -739,8 +739,6 @@
    ;; The schedule of counts: every target with its cadence, soonest due first.
    ;; Lays the counts that are due as directed work offers.
    ;; The scope as this person's device holds it, as one text.
-   ((scope-replica scope-id)
-    (planner! 'scope-replica scope-id aid-prefix))
    ;; The counts of one stock, newest first, as a member reads them to contest one.
    ;; The code a stock is known by, for its label.
    ;; What a label's code names: the thing, where it is, what is in it.
@@ -815,33 +813,7 @@
 
    ((revoke-delegation delegate-aid #:optional (scope-id #f))
     (apply <- governance-svc 'revoke-delegation aid-prefix delegate-aid
-           (franchise-rest scope-id)))
-
-   ;; ── planner doors that act AS this AID ─────────────────────────────
-   ;; These planner doors name the acting agent as an argument. Over the
-   ;; session the AID is closed over — the caller cannot act as anyone
-   ;; else — and the planner facet the anonymous lobby hands out does not
-   ;; carry them (declared `operator` on the planner side).
-   ;; Opens the witness ceremony over a recorded event as this AID; replies the statement said.
-   ;; The context rows this AID may co-sign; replies those requests.
-   ;; Lands this AID's co-signature on a ceremony's statement; replies attested, finalized, or a failure.
-   ;; Records this AID's ride commitment and its pickup event at departure; replies the new commitment id.
-   ;; Records the dropoff event that fulfills this AID's ride commitment; replies that commitment id.
-   ;; Posts a line to scope/topic as this AID; replies the stored row.
-   ;; Accepts a suggested intent as this AID (steward-gated) and re-plans the scope.
-   ;; Declines a suggested intent as this AID.
-   ;; Marks this AID willing (or withdraws it) for skill@cell with an optional hours budget; binds nothing.
-   ;; Draws this AID's credit to claim a resource, checked against on-hand and any live wallet reading; replies the balance.
-   ((claim scope-id resource-id qty labor-cost #:optional (where #f) (deliver-at #f))
-    (planner! 'claim scope-id resource-id qty aid-prefix labor-cost where deliver-at))))))
-   ;; Records QTY of this AID's effort against a commitment.
-   ;; Records this AID's spoken log entry as its suggested event, with note and narrated time.
-   ;; Records this AID's count of a stock: the difference from the ledger lands on that stock.
-   ;; Records this AID's reading of a stock's condition: the form the reading names.
-   ;; Upserts this AID's availability window from the dial's arcs JSON.
-   ;; Creates a social use-intent and a proposal from this AID to the invitee; replies the proposal id.
-   ;; Accepts a directed social invite as this AID, promoting the intent to a commitment.
-   ;; Accepts a work offer with this AID as provider and the scope as receiver, then re-plans the scope.
+           (franchise-rest scope-id)))))))
 
 ;;; ── ^planner-facet ───────────────────────────────────────────────────────────
 ;;;
