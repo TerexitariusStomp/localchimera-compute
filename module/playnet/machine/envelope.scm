@@ -30,6 +30,7 @@
             params-ref model-descriptor? envelope-model envelope-model-seed
             egress-profile? caps-grant?
             availability-descriptor? envelope-availability
+            sense-profile?
             alist->job-envelope job-envelope->alist envelope-no-amount?))
 
 
@@ -153,6 +154,30 @@
   "The envelope's availability descriptor, or #f."
   (params-ref (job-envelope-params e) 'availability))
 
+;;; ── the sense profile ─────────────────────────────────────────────────
+;;; A 'sense envelope turns the tab into an instrument: params.sources
+;;; names the sensors to sample, intervalMs the tick, count|durationMs the
+;;; session bound. A stream is not an open-ended promise — it is a bounded
+;;; sampling session (the tab is ephemeral; the claim's deadline is the
+;;; outer bound), so every knob the session is measured by is a positive
+;;; number or the descriptor is refused at submit, not inside the node's
+;;; sampler.
+
+(define (sense-profile? params)
+  "The 'sense params shape: sources is a non-empty list (or vector — JSON
+   decodes arrays to vectors) naming sensors; intervalMs, count, and
+   durationMs are the session knobs — each optional, each a positive
+   number when named (a zero count samples nothing; a negative interval
+   is not a tick)."
+  (let ((sources (params-ref params 'sources)))
+    (and (or (pair? sources) (and (vector? sources) (positive? (vector-length sources))))
+         (every (lambda (s) (or (string? s) (symbol? s)))
+                (if (vector? sources) (vector->list sources) sources))
+         (let ((pos? (lambda (k)
+                       (let ((v (params-ref params k)))
+                         (or (not v) (and (number? v) (positive? v)))))))
+           (and (pos? 'intervalMs) (pos? 'count) (pos? 'durationMs))))))
+
 (define* (make-job-envelope #:key (kind 'exec) bridge-job-id (image #f)
                             (entrypoint #f) input-hash
                             (caps '()) (network? #f) (params '()))
@@ -180,6 +205,9 @@
         (error "envelope: availability rides a bundle, not" kind))
       (unless (availability-descriptor? a)
         (error "envelope: params.availability is not an availability descriptor" a))))
+  (when (eq? kind 'sense)
+    (unless (sense-profile? params)
+      (error "envelope: a sense envelope needs params.sources and positive session knobs" params)))
   (%make-job-envelope kind bridge-job-id image entrypoint input-hash caps
                       network? params))
 

@@ -163,6 +163,27 @@
     (check "the readings receipt completes the claim"
            (car (land-receipt claim-id "readings" 6 "in:sense")) 'ok))
 
+  (scenario "sense — a malformed stream refuses at submit, not in the node")
+  ;; the instrument's contract crosses the envelope: no sources is no
+  ;; instrument, and a session knob that isn't positive measures nothing —
+  ;; the door refuses before a claim is ever minted
+  (define (submit-sense params)
+    (car ($ gov 'machine-submit BOB HOME "canary" "member"
+            "deterministic" "in:bad-sense"
+            'envelope `((kind . "sense") (bridgeJobId . "bj-bs")
+                        (inputHash . "in:bs") (caps . ()) (network . #f)
+                        (params . ,params)))))
+  (check "a sense envelope with no sources refuses"
+         (submit-sense '((count . 3))) 'error)
+  (check "empty sources is still no instrument"
+         (submit-sense '((sources . ()))) 'error)
+  (check "a zero-count session refuses — it would sample nothing"
+         (submit-sense '((sources . #("machine")) (count . 0))) 'error)
+  (check "a negative interval is not a tick"
+         (submit-sense '((sources . #("machine")) (intervalMs . -5))) 'error)
+  (check "a duration-bound session parses — count is not the only shape"
+         (submit-sense '((sources . #("machine")) (durationMs . 5000))) 'ok)
+
   (scenario "bundle — legs cross inside params, no price survives")
   ;; a bundle leg's first alist pair CANNOT be a price key — the
   ;; recursive check walks every nested element now

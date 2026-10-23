@@ -132,6 +132,31 @@ await throws("no sources is no instrument",
         /^[0-9a-f]{64}$/.test(receipts[0].outputHash));
 }
 
+// ── the session bound — durationMs is a stream's honest shape ───────────
+// a sustained stream is a bounded sampling session: durationMs converts
+// to ticks on the interval, count names ticks outright
+{
+  receipts.length = 0;
+  await S.runSenseClaim(seam, "home", "claim-sense-dur",
+    { kind: "sense", inputHash: "in:sd",
+      params: { sources: ["machine"], durationMs: 600, intervalMs: 250 } },
+    "did:lender");
+  check("a 600ms session on a 250ms tick meters two readings",
+        receipts[0].usage.unit === "readings" && receipts[0].usage.amount === 2,
+        `${receipts[0].usage.amount}`);
+}
+{
+  // a sub-floor interval clamps to 250ms — the node clamps, it doesn't
+  // fabricate a faster tick (nor refuse a job the envelope committed)
+  receipts.length = 0;
+  await S.runSenseClaim(seam, "home", "c-floor",
+    { kind: "sense", inputHash: "in:f",
+      params: { sources: ["machine"], count: 2, intervalMs: 10 } },
+    "did:lender");
+  check("a sub-floor interval clamps, it doesn't refuse — two readings land",
+        receipts.length === 1 && receipts[0].usage.amount === 2);
+}
+
 // ── the gpu gate — a cap the platform can't honor refuses ───────────────
 {
   dials.gpu = null; resetNav();

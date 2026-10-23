@@ -198,6 +198,28 @@
 (check-error "an envelope with a price is refused"
              (lambda () (alist->job-envelope (env-fields '(price . "1 XMR")))))
 
+;;; the sense profile — a stream is a bounded sampling session
+(let ((env (alist->job-envelope
+            (env-fields '(kind . "sense")
+                        `(params . ((sources . #("battery" "network"))
+                                    (intervalMs . 5000) (count . 3)))))))
+  (check "a sense envelope with vector sources parses"
+         (job-envelope? env) #t))
+(let ((env (alist->job-envelope
+            (env-fields '(kind . "sense")
+                        '(params . ((sources . (machine)) (durationMs . 60000)))))))
+  (check "a sense envelope with symbol sources parses"
+         (job-envelope? env) #t))
+(check-error "a sense envelope with no sources refuses"
+             (lambda () (alist->job-envelope
+                         (env-fields '(kind . "sense")
+                                     '(params . ((count . 3)))))))
+(check-error "a sense envelope with a zero count refuses"
+             (lambda () (alist->job-envelope
+                         (env-fields '(kind . "sense")
+                                     '(params . ((sources . ("machine"))
+                                                 (count . 0)))))))
+
 ;;; the inference profile — params.model commits the artifact
 (let* ((model '((uri . "https://models.example/f.gguf")
                 (sha256 . "0123456789abcdef") (format . gguf-wasm)
