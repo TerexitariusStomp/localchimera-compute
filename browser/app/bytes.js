@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/bytes.ts — bytes as text and back: base64, base64url, hex.
 //
 // One spelling of each, for the pictures and audio that cross the seam as

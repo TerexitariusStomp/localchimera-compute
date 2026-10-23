@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/idb.ts — IndexedDB behind one door.
 //
 // A database here is a SCHEMA (name, version, and the upgrade that builds or

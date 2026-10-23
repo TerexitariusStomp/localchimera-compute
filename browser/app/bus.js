@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/bus.ts — the app's own wires: one topic, many readers.
 //
 // Two kinds of traffic ran over the seam that never crossed a language

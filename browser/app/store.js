@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // app/store.ts — the device's own memory, behind one door.
 //
 // Everything here is `localStorage` with the try/catch put in once. That guard
