@@ -32,6 +32,7 @@
   #:use-module (playnet machine settlement)
   #:use-module (playnet machine binding)
   #:export (payout-binding payout-plan execute-payout %payout-unavailable
+            settlement->member-plan
             payout-row-tx-hash payout-row-asset payout-row-amount payout-row-to))
 
 
@@ -94,3 +95,52 @@
          (let ((to (car plan-row)) (asset (cadr plan-row)) (amt (caddr plan-row)))
            (%make-payout-row (send to amt asset) asset amt to)))
        (payout-plan statement b)))
+
+
+;;; ── the member-level partition — the opt-in pay layer ────────────────────
+;;; The treasury settles the statement; what each lender then receives is
+;;; commune distribution — commons credit by default, token on opt-in.
+;;; The opt-in signature is the dual-signed 'payout AccountLink itself: a
+;;; lender whose LIVE payout binding names a chain account takes the token
+;;; leg — their entries become sends to the BOUND account (never a
+;;; free-form address — the link is what proves the account is theirs).
+;;; Everyone else's entries stay credit rows for the commons ledger, which
+;;; needs nothing of them.
+;;;
+;;; Answers ((token . rows) (credit . entries)) — the caller posts each
+;;; side through its own rail; this module decides the partition, never
+;;; executes it. A member who never binds stays fully in credit, and
+;;; nothing in the wire ever tells them otherwise.
+
+(define* (settlement->member-plan statement
+                                  #:key (binding-of (lambda _ #f))
+                                        (now #f))
+  "Partition STATEMENT's entries by rail: BINDING-OF resolves each entry's
+   lender to their <account-binding> | #f (the entry's lenderAccount or
+   lender identity — the caller knows which key its entries carry). A
+   live 'payout binding → a token row to the bound CAIP-10; anything else
+   → the credit list, unchanged. NOW is the liveness clock."
+  (let loop ((es (settlement-statement-entries statement))
+             (token '()) (credit '()))
+    (if (null? es)
+        `((token . ,(reverse token)) (credit . ,(reverse credit)))
+        (let* ((e (car es))
+               (b (binding-of e)))
+          (if (and b
+                   (binding-live? b now)
+                   (eq? 'payout
+                        (account-link-purpose (account-binding-link b)))
+                   ;; a keri: account is an identity, not a payee — the
+                   ;; same rule the treasury rail keeps
+                   (not (keri-account?
+                         (account-link-account (account-binding-link b)))))
+              (loop (cdr es)
+                    (cons `(("to" . ,(account-link-account
+                                      (account-binding-link b)))
+                            ("asset" . ,(statement-entry-asset e))
+                            ("amount" . ,(statement-entry-amount e))
+                            ("receiptDigest"
+                             . ,(statement-entry-receipt-digest e)))
+                          token)
+                    credit)
+              (loop (cdr es) token (cons e credit)))))))

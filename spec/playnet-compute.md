@@ -97,6 +97,19 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
   payout policy and does NOT appear in the statement.
 - `economy/payouts.scm` is the rail; the Safe binding is a `purpose:payout`
   `AccountLink` on the scope's grant.
+- Member distribution is **mutual credit by default, token by opt-in**:
+  `settlement->member-plan` partitions each reconciled entry by whether
+  the lender holds a LIVE `purpose:payout` `AccountLink` naming a chain
+  account. The dual-signed binding IS the opt-in signature — entries for
+  a bound lender become sends to the bound CAIP-10 (never a free-form
+  address); everyone else's entries post to the commons ledger untouched.
+  Token denominations (GLM, MYST, WBTT, XMR…) exist only as CAIP-19
+  assets at the treasury/member edge — the node wire never prices work
+  and never holds a key.
+- `RateStatement` `{base, quote, rate, at, bridgeSig}` is the exchange
+  reference a commune uses to price credit against an external
+  denomination — a bridge attestation, signed like the statement that
+  settles.
 
 ## §6 Honesty
 
@@ -190,6 +203,18 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
    fulfills/satisfies, inScopeOf) onto the scope observer — hREA's own
    vocabulary. A GraphQL bridge is deliberately out of scope for v1; the
    event model is the interop surface.
+7. Do mutual credit and external token rails (GLM, MYST, WBTT, USDC…)
+   coexist in the same space? — DECIDED, shipped: **credit is the
+   default; token is per-member opt-in.** The options the wire already
+   admitted were (a) credit-only, (b) dual-rail — CAIP-19 statements
+   with txHash evidence at the treasury edge, (c) exchange-priced
+   credit — rate statements as bridge attestations, (d) direct member
+   token payout through the `purpose:payout` AccountLink seam. (b) is
+   the shipped rails model — receipts stay asset-neutral metering
+   facts; (c) lands as `RateStatement`; (d) ships opt-in, gated on the
+   dual-signed `payout` binding (`settlement->member-plan`). A member
+   who never binds stays entirely in credit; tokens live at the
+   treasury/member edge and never enter node trust.
 
 ## Appendix C — inventory rule
 

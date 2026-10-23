@@ -157,10 +157,10 @@
     (make-settlement-statement
      #:period '("2026-10-01" . "2026-10-31")
      #:entries `(((bridgeJobId . ,claim-live) (receiptDigest . ,digest)
-                  (amount . 42) (asset . "compute-credit"))
+                  (amount . 42) (asset . "playnet:commons/credit:compute"))
                  ((bridgeJobId . "bj-ghost") (receiptDigest . "no:such:digest")
-                  (amount . 5) (asset . "compute-credit")))
-     #:payments `(((amount . 42) (asset . "compute-credit")
+                  (amount . 5) (asset . "playnet:commons/credit:compute")))
+     #:payments `(((amount . 42) (asset . "playnet:commons/credit:compute")
                    (to . "safe:treasury") (txHash . "0xabc")))
      #:bridge-sig "sig:bridge"))
 
@@ -255,7 +255,7 @@
         (alist->job-envelope
          (env-fields
           `(params . ((model . ((uri . "u") (sha256 . "h")
-                                (format . 'gguf-wasm)
+                                (format . gguf-wasm)
                                 (temperature . 0.2)))))))) #t)
 
 (check-error "a model with no sha256 is refused"
@@ -762,7 +762,7 @@
   (define stmt-wire
     `((period . "test-period") (bridgeSig . "sig")
       (entries . (((bridgeJobId . ,d2-claim) (receiptDigest . "d1")
-                   (amount . 5) (asset . "XMR"))))
+                   (amount . 5) (asset . "monero:mainnet/slip44:128"))))
       (payments . ())))
   (check "machine-settle reports a disputed entry as held"
          (let ((r ($ gov2 'machine-settle ALICE HOME stmt-wire)))

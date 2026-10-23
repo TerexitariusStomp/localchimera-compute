@@ -27,6 +27,11 @@
             settlement-statement-bridge-sig
             statement-entry-bridge-job-id statement-entry-receipt-digest
             statement-entry-amount statement-entry-asset
+            caip19?
+            <rate-statement> make-rate-statement rate-statement?
+            rate-statement-base rate-statement-quote rate-statement-rate
+            rate-statement-at rate-statement-bridge-sig
+            rate-statement->alist alist->rate-statement
             <account-link> make-account-link account-link?
             account-link-did-key account-link-scope-aid account-link-account
             account-link-purpose account-link-nonce account-link-expiry
@@ -58,18 +63,81 @@
     (error "settlement: payments must be a list of payments" payments))
   (%make-settlement-statement period entries payments bridge-sig))
 
+(define (caip19? s)
+  "The CAIP-19 shape an asset string must take to name a chain asset:
+   chain-ns:chain-ref/asset-ns:asset-ref — \"eip155:1/slip44:60\",
+   \"eip155:100/erc20:0x…\". Loose on purpose (the registries grow) —
+   what it refuses is a bare word that would reconcile as garbage."
+  (and (string? s)
+       (let ((slash (string-index s #\/)))
+         (and slash
+              (let ((chain (substring s 0 slash))
+                    (asset (substring s (1+ slash))))
+                (and (string-index chain #\:)
+                     (string-index asset #\:)
+                     #t))))))
+
 (define (statement-entry? e)
   (and (list? e)
        (assq 'bridgeJobId e) (assq 'receiptDigest e)
-       (assq 'amount e) (assq 'asset e)))
+       (assq 'amount e)
+       ;; asset is the rail the entry settles on — a malformed string
+       ;; would reconcile against nothing a ledger understands
+       (caip19? (assq-ref e 'asset))))
 
 (define (payment? p)
-  (and (list? p) (assq 'txHash p) (assq 'asset p) (assq 'amount p)))
+  (and (list? p) (assq 'txHash p) (caip19? (assq-ref p 'asset))
+       (assq 'amount p)))
 
 (define (statement-entry-bridge-job-id e) (assq-ref e 'bridgeJobId))
 (define (statement-entry-receipt-digest e) (assq-ref e 'receiptDigest))
 (define (statement-entry-amount e)         (assq-ref e 'amount))
 (define (statement-entry-asset e)          (assq-ref e 'asset))
+
+
+;;; ── the rate statement ──────────────────────────────────────────────────
+;;; {base, quote, rate, at, bridgeSig} — an exchange reference a commune
+;;; uses to price credit against an external denomination. "How much GLM
+;;; is a credit" is not a market fact this module invents — it is a
+;;; bridge attestation, signed like the statement that settles. BASE and
+;;; QUOTE name the pair (a CAIP-19 asset, or a commons denomination like
+;;; "hive:credit"); RATE is base per unit of quote, positive or the
+;;; attestation says nothing; the bridge's signature binds it — the same
+;;; trust the settlement statement's own signature carries.
+
+(define-record-type <rate-statement>
+  (%make-rate-statement base quote rate at bridge-sig)
+  rate-statement?
+  (base       rate-statement-base)       ; string — what one unit is priced in
+  (quote      rate-statement-quote)      ; string — the denomination being priced
+  (rate       rate-statement-rate)       ; positive number — base per quote unit
+  (at         rate-statement-at)         ; string — the attestation instant
+  (bridge-sig rate-statement-bridge-sig)) ; string — the bridge's signature
+
+(define* (make-rate-statement #:key base quote rate at bridge-sig)
+  (unless (and (string? base) (string? quote))
+    (error "rate-statement: base and quote name the pair"))
+  (unless (and (number? rate) (positive? rate))
+    (error "rate-statement: a rate must be positive — 0 prices nothing"))
+  (unless (string? bridge-sig)
+    (error "rate-statement: unsigned is no attestation"))
+  (%make-rate-statement base quote rate at bridge-sig))
+
+(define (rate-statement->alist r)
+  `(("base"      . ,(rate-statement-base r))
+    ("quote"     . ,(rate-statement-quote r))
+    ("rate"      . ,(rate-statement-rate r))
+    ("at"        . ,(rate-statement-at r))
+    ("bridgeSig" . ,(rate-statement-bridge-sig r))))
+
+(define (alist->rate-statement a)
+  (make-rate-statement
+   #:base (or (assq-ref a 'base) (assoc-ref a "base"))
+   #:quote (or (assq-ref a 'quote) (assoc-ref a "quote"))
+   #:rate (or (assq-ref a 'rate) (assoc-ref a "rate"))
+   #:at (or (assq-ref a 'at) (assoc-ref a "at"))
+   #:bridge-sig (or (assq-ref a 'bridgeSig) (assoc-ref a "bridgeSig")
+                    (assq-ref a 'bridge-sig))))
 
 
 ;;; ── the account link ────────────────────────────────────────────────────

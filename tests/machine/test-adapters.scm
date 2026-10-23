@@ -97,9 +97,9 @@
   (make-settlement-statement
    #:period "w1"
    #:entries '(((bridgeJobId . "c1") (receiptDigest . "dd1")
-                (amount . 5) (asset . "XMR") (lenderAccount . "alice-acct"))
+                (amount . 5) (asset . "monero:mainnet/slip44:128") (lenderAccount . "alice-acct"))
                ((bridgeJobId . "c2") (receiptDigest . "dd2")
-                (amount . 3) (asset . "XMR") (lenderAccount . "bob-acct")))
+                (amount . 3) (asset . "monero:mainnet/slip44:128") (lenderAccount . "bob-acct")))
    #:payments '() #:bridge-sig "s"))
 
 (check "settlement->ledger-rows: treasury pays, description is the receipt"
