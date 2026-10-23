@@ -44,7 +44,7 @@
              (gnu packages mail)            ; msmtp — hands the commune's mail to its relay
              (gnu packages rsync)
              (gnu packages curl)            ; curl — operator HTTP checks (torsocks-wrapped)
-             (gnu packages base)            ; gnu-make — CI wasm rebuild (`make browser/repl.wasm`)
+             (gnu packages base)            ; gnu-make — CI wasm rebuild (`make browser/day-boot.wasm`)
              (gnu packages commencement)    ; gcc-toolchain — planner kernel build (`make -C module/playnet/solve/kernel`)
              (gnu packages rust-apps)       ; radicle
              (gnu packages version-control)
@@ -77,8 +77,7 @@
              (guix gexp)
              (playnet-gateway-service)
              (playnet-static-service)
-             (playnet-valhalla-service)
-              (live-watch-service))
+             )
 
 (define %this-dir
   (dirname (or (current-filename)
@@ -266,7 +265,7 @@
 ;; clearnet face every request arrives from a CDN edge IP, so
 ;; $binary_remote_addr is the same handful of addresses for the entire
 ;; world: one shared token bucket for all visitors. A single cold page
-;; load is ~60 requests (app.html pulls the whole app/*.js module graph
+;; load is ~60 requests (node.html pulls the whole app/*.js module graph
 ;; in one go), so the shared bucket drains on the first visitor and the
 ;; rest of that load — vendor/noble/*.js among them — comes back 503 with
 ;; an HTML error body, which the browser rejects as a disallowed MIME
@@ -403,10 +402,9 @@
             "limit_req zone=playnet_req burst=10 nodelay;"
             "limit_conn playnet_conn 32;")))
    ;; Radicle HTTP API → the write fork (radicle-http-api, :8089). Backs the
-   ;; Radicle Explorer (served at /radicle/) and the Planning Boards (/boards/):
-   ;; repo/issue/patch reads for everyone, session-gated writes for operators
-   ;; (sessions require the node key). Separate location so the boards' larger
-   ;; JSON bodies and longer reads don't inherit the SPA limits below.
+   ;; Radicle Explorer (served at /radicle/): repo/issue/patch reads for
+   ;; everyone, session-gated writes for operators (sessions require the
+   ;; node key).
    ;;
    ;; EXACT-match the API root: the interface's getNodeInfo() probes
    ;; `/api/v1` (no trailing slash) for the node welcome/version. The fork
@@ -444,20 +442,6 @@
             "proxy_read_timeout 120;"
             "limit_req zone=playnet_req burst=40 nodelay;"
             "limit_conn playnet_conn 32;")))
-   ;; Planning Boards SPA (/boards/) — serve directly from disk with a
-   ;; try_files fallback to the Nuxt index. Routing it through serve-static
-   ;; hangs Guile's web server on the board iframe URL
-   ;; (/boards/<seed:port>/<long-rid>): a parser pathology on that path
-   ;; shape that hangs BEFORE the request reaches our handler (proven by
-   ;; instrumentation — serve-static-file is never called). nginx's static
-   ;; serving is deterministic and reads the playnet-repo tree directly
-   ;; (dirs 0711/0775, files 0644 — readable by the nginx worker). The Nuxt
-   ;; app reads the real route from window.location client-side.
-   (nginx-location-configuration
-    (uri "/boards/")
-    (body (list "root /home/playnet/playnet-repo/browser;"
-                "try_files $uri $uri/ /boards/index.html;"
-                "add_header X-Frame-Options SAMEORIGIN;")))
    ;; The anonymous feedback pool (tier 1 of the issue flow): no account, no
    ;; signature, so the edge is where cost is imposed. It draws on its OWN
    ;; zone, `playnet_feedback` — the app's zone is shared state, so spending
@@ -496,7 +480,7 @@
             "proxy_set_header Host $host;"
             "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
             "proxy_read_timeout 60;"
-            ;; The whole app comes through here. app.html imports the
+            ;; The node page comes through here. node.html imports the
             ;; app/*.js module graph plus vendor/noble/*.js in one
             ;; parallel fan-out — ~60 requests inside a second, before
             ;; any of them can drain the bucket at the sustained rate.
@@ -768,9 +752,7 @@
         ;; playnet-static loads server/serve-static.scm once at exec and
         ;; holds it for the life of the process: an rsync that lands new
         ;; routes leaves the running server answering with the route table
-        ;; it booted with. A route added after the last restart falls
-        ;; through to the SPA fallback, so /tiles/osm/… returns app.html
-        ;; and the map draws markers over empty ground.
+        ;; it booted with — restart picks the new table up.
         "/run/current-system/profile/bin/herd restart playnet-static, "
         "/run/current-system/profile/bin/herd restart dev-bridge, "
         "/run/current-system/profile/bin/herd restart playnet-matrix-bridge, "
@@ -782,7 +764,6 @@
             guile-fibers
             guile-websocket            ; required by (hoot web-server) /repl proxy
             guile-hoot/playnet         ; provides `hoot` CLI + libs
-            inotify-tools              ; live-watch shepherd service depends on inotifywait
             emacs-no-x
             emacs-geiser
             emacs-geiser-guile
@@ -1270,24 +1251,6 @@
                 (clearnet-ws (and %clearnet-domain
                                   (string-append "wss://" %clearnet-domain "/ws")))))
 
-      ;; Self-hosted Valhalla routing engine — Tier-1, offline, no IP leak.
-      ;; Binds tcp://127.0.0.1:8002 (loopback only). serve-static (:8080)
-      ;; reaches it server-to-server via the same-origin /route proxy
-      ;; (server/serve-static.scm handle-route → POST :8002/route); nginx
-      ;; never proxies here, the browser never touches it directly. Engine
-      ;; down → serve-static relays "{}" and the map straight-lines, so a
-      ;; missing/rebuilding tileset degrades gracefully. The engine tree is
-      ;; built out-of-band under /home/playnet/playnet-repo/.valhalla/ (see
-      ;; tools/dev/valhalla-local.sh: `make routing-data`); this service only
-      ;; supervises the already-built valhalla_service binary. Not yet built
-      ;; on a host → the service respawn-loops harmlessly until the atlas
-      ;; (SF + Berlin tiles) is present, and /route degrades meanwhile.
-      (service playnet-valhalla-service-type
-               (playnet-valhalla-configuration
-                (work-dir "/home/playnet/playnet-repo")
-                (threads 2)
-                (user "playnet")))
-
       ;; (Bridges to external chat networks and the headless QGIS worker
       ;; lived here; the compute-only repo carries none of them — see the
       ;; playnet archive for the matrix/telegram/qgis service modules.)
@@ -1323,14 +1286,6 @@
                                       #f))
                              (respawn? #f)
                              (auto-start? #f))))
-
-      ;; Live-watch — inotify loop that pushes saved Scheme files into
-      ;; the running Hoot REPL relay. Manual start; pairs with
-      ;; serve-dev. Watches /home/playnet/dev-checkout/module/.
-      ;;   sudo herd start live-watch
-      ;; See deploy/guix/live-watch-service.scm.
-      (service live-watch-service-type
-               (live-watch-configuration))
 
       ;; Mosquitto MQTT broker — localhost only, password-authenticated.
       ;; Without auth, any local user can inject fake deficit signals
@@ -2243,7 +2198,7 @@ COMMIT
         ;; log-rotation fact) state. Guix's default calendar is Sunday
         ;; 22:00 — the 2026-09-06 ENOSPC was that rotation, a week of logs
         ;; zstd'd at once; an hour's worth at a time keeps the 256M tmpfs
-        ;; far from full now that the gateway and valhalla log there too.
+        ;; far from full now that the gateway logs there too.
         (log-rotation-service-type config =>
           (log-rotation-configuration
            (inherit config)

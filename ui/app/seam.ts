@@ -165,7 +165,19 @@ export interface Inventory {
   resources?: InventoryResource[];
 }
 
-import type { RingItem } from './ring.js';
+// The ring face's event shape — the only thing a ribbon's `_pref` carries.
+// ring.ts itself lives with the deleted dial faces; the type stays here.
+export interface RingItem {
+  id: string;
+  t0: number;
+  t1: number;
+  title?: string;
+  days?: string[];
+  repeat?: boolean;
+  doy?: number | null;
+  committed?: boolean;
+  [key: string]: unknown;
+}
 
 /**
  * A place on an event: the server's location id, with the name and coordinates

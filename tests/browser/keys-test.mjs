@@ -4,9 +4,9 @@
 //   • the migration moves every value kept under a former name to its present
 //     one, copy first, and can be interrupted and run again;
 //   • the table keeps its convention and names nothing twice;
-//   • the readers that cannot import the table — the two Scheme bundles and
-//     app.html's pre-paint script — spell the names as the table has them,
-//     and no module under ui/ passes the store a name of its own.
+//   • the reader that cannot import the table — the Scheme bundle —
+//     spells the names as the table has them, and no module under ui/
+//     passes the store a name of its own.
 //
 // Run: node tests/browser/keys-test.mjs
 
@@ -66,20 +66,14 @@ check('no key sits under the organisations’ prefix', names.every(n => !n.start
 
 section('the readers that spell the names themselves');
 const read = (f) => fs.readFileSync(path.resolve(f), 'utf8');
-const spine = read('hoot/day-boot.scm'), repl = read('hoot/repl.scm'), page = read('browser/app.html');
+const spine = read('hoot/day-boot.scm');
 const quoted = (text, key) => text.includes(`"${key}"`);
 check('the spine: the KEL, the device wire, the mesh seed',
       [K.idKel, K.deviceWire, K.deviceMesh].every(k => quoted(spine, k)));
-check('the REPL page: the hint, the KEL, the device id and its own keys',
-      [K.idHint, K.idKel, K.deviceId, K.replCredentials, K.replContacts, K.replOrgs, K.replPriorities,
-       K.replCalEvents, K.replCalPeople, K.replSyntax].every(k => quoted(repl, k)),
-      [K.idHint, K.idKel, K.deviceId, K.replCredentials, K.replContacts, K.replOrgs, K.replPriorities,
-       K.replCalEvents, K.replCalPeople, K.replSyntax].filter(k => !quoted(repl, k)).join(' '));
-check('the pre-paint script: the three theme keys', [K.theme, K.themeBg, K.themeCss].every(k => quoted(page, k)));
 const former = all.filter(e => e.was).map(e => e.was);
 const stale = (text) => former.filter(w => text.includes(`"${w}"`));
-check('neither Scheme bundle spells a former name', stale(spine).length + stale(repl).length === 0,
-      [...stale(spine), ...stale(repl)].join(' '));
+check('the Scheme bundle spells no former name', stale(spine).length === 0,
+      stale(spine).join(' '));
 
 section('the door is handed names from the table');
 const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap(e =>

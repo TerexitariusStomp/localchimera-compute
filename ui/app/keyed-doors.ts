@@ -7,6 +7,4 @@
 // whose door is keyed, with the index of the token among its arguments (the last).
 
 export const KEYED: Readonly<Record<string, number>> = {
-  recordEffort: 4,
-  recordFlow: 10,
 };

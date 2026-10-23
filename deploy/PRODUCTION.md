@@ -61,7 +61,7 @@ retryable/missing-sref condition until the new one lands).
 
 ## Deploy steps
 
-1. Build artifacts: `make browser/day-boot.wasm browser/repl.wasm`
+1. Build artifacts: `make` (builds `browser/day-boot.wasm`)
    (requires the hoot toolchain — see "Artifacts" below). Re-run
    `tools/wasm/patch-reflect-mime.sh` after **any** wasm rebuild — each
    hoot bundle rewrites `reflect.js` back to the nodejs-detect variant.
@@ -80,8 +80,8 @@ retryable/missing-sref condition until the new one lands).
 - Gateway restart → new Swiss number → `gateway-sref.txt` rewritten →
   live `/entry-points.json` serves the fresh sref. Baked copies on Pages
   go stale but are never authoritative.
-- Verified: gateway bounced mid-suite, page re-discovered through
-  `discoveryUrl`, `lend-ux` 14/14 without redeploying.
+- Verified: gateway bounced mid-suite, the node page re-discovered
+  through `discoveryUrl` without redeploying.
 
 ## Failure modes
 
@@ -89,8 +89,8 @@ retryable/missing-sref condition until the new one lands).
 |---------|-------|----------|
 | `err:sign in first` after signup | signup raced the spine connect | wait for `status: connected` (probe-lib does this) |
 | discovery 503/empty | gateway booting, sref not yet written | retry — the client backoff handles it |
-| `err:refused` on a compute call | session door missing from `(playnet doors protocol)` | `check-declared-heads!` — drift gate |
-| `table index out of bounds` at boot | a quoted registry list over ~150 entries (hoot bundle limit) | split the list — see `day-boot.scm` compute* boundary |
+| `err:refused` on a machine call | session door missing from `(playnet doors protocol)` | `check-declared-heads!` — drift gate |
+| `table index out of bounds` at boot | a quoted registry list over ~150 entries (hoot bundle limit) | split the list — see `day-boot.scm` machine* boundary |
 | OCapN handshake hang | sref's `wsUrl` doesn't reach a live listener | check `PLAYNET_PUBLIC_WS_URL` + mux wiring |
 
 ## Artifacts
@@ -98,20 +98,16 @@ retryable/missing-sref condition until the new one lands).
 | file | status |
 |------|--------|
 | `browser/day-boot.wasm` | required — built via hoot 0.9.0 + 4 flonum patches + `hoot-src` shims |
-| `browser/repl.wasm` | required |
-| `browser/scope.wasm` | built + shipped — the dev-container build needed a correct `length+` in `.hoot-compat/srfi/srfi-1.scm` (Floyd's: hare one ahead, `eq?` = cycle). Raw output is ~25.3 MiB, over the Pages cap; the recipe runs `wasm-opt -O2 --strip-debug` (binaryen ≥133, pinned feature flags — NOT `--all-features`, it emits stringref today's engines reject) → ~23 MiB. `scope-worker.js` also falls back to the gateway's static server when the page origin 404s |
 | `browser/rns_wasm.js` + `rns_wasm_bg.wasm` | built + shipped — crate is the Radicle satellite `rad:z4PbxPfxbFVEjY3nZp8k61NabfH9C` (pin in `deploy/satellites.scm`), checked out at `rns-wasm/` (gitignored). Canonical build `deploy/scripts/build-rns-wasm.sh` (guix); on a plain rustup box: `cargo build --release --target wasm32-unknown-unknown` then `wasm-bindgen` at the Cargo.lock version (0.2.117 — `cargo install wasm-bindgen-cli --version 0.2.117 --locked`) with `--target web --no-typescript`
-| `browser/universal-commune.json` | optional — baked demo seed |
 
 ## Test matrix
 
 | suite | invocation | expected |
 |-------|-----------|----------|
-| e2e scenarios (in-vat) | `make test-e2e-scenarios` | 24+13+… green |
+| e2e scenarios (in-vat) | `make test-e2e-scenarios` | 24+13 green |
 | coverage gate | `make check-e2e-coverage` | no new gaps |
-| deployed boot | `make test-deployed-ux` | 19/19 |
-| deployed lend flow | `make test-lend-ux-deployed` | 14/14 |
-| local lend flow | `make test-lend-ux` | 14/14 |
+| machine suites | `make test-machine` (tests/machine/) | green |
+| browser executor | `make test-machine-executor` | 9/9 |
 
 ## Secrets
 

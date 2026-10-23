@@ -329,7 +329,7 @@
         "properties": {
           "event-key": {
             "type": "string",
-            "description": "a qb64 public key an identity's log carries as a signing key, in an event's k[0] ? the first key a passcode derives is one",
+            "description": "a qb64 public key an identity's log carries as a signing key, in an event's k[0] — the first key a passcode derives is one",
             "x-playnet-shape": "string"
           }
         },
@@ -768,7 +768,7 @@
           },
           "ctx": {
             "type": "string",
-            "description": "the notification channel's destination address for KIND (an email, a push endpoint, ?)",
+            "description": "the notification channel's destination address for KIND (an email, a push endpoint, …)",
             "x-playnet-shape": "string"
           },
           "code": {
@@ -795,7 +795,7 @@
     {
       "name": "session.withdraw-contact-point",
       "title": "identity: withdraw-contact-point",
-      "description": "Erases the (KIND CTX) channel bound under this AID and puts down one still waiting for its code ? the deletion path for a contact point; replies (ok . #t). [identity; callable by an enrolled device]",
+      "description": "Erases the (KIND CTX) channel bound under this AID and puts down one still waiting for its code — the deletion path for a contact point; replies (ok . #t). [identity; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -806,7 +806,7 @@
           },
           "ctx": {
             "type": "string",
-            "description": "the notification channel's destination address for KIND (an email, a push endpoint, ?)",
+            "description": "the notification channel's destination address for KIND (an email, a push endpoint, …)",
             "x-playnet-shape": "string"
           }
         },
@@ -1746,7 +1746,7 @@
           },
           "domain": {
             "type": "string",
-            "description": "on corpus-search a corpus domain name or #f for all; on open the ballot domain (policy, recomposition, ?)",
+            "description": "on corpus-search a corpus domain name or #f for all; on open the ballot domain (policy, recomposition, …)",
             "x-playnet-shape": "string"
           },
           "id": {
@@ -1876,7 +1876,7 @@
     {
       "name": "session.delegation-preimage",
       "title": "governance: delegation-preimage",
-      "description": "Replies (ok fields), the SAID fields of the liquid delegation of FRACTION to DELEGATE-AID ? federation-wide, or scoped to SCOPE-ID when given ? for the client to sign for set-delegation-signed. Pass the SAME SCOPE-ID there: it is baked into this SAID. [governance; callable by an enrolled device]",
+      "description": "Replies (ok fields), the SAID fields of the liquid delegation of FRACTION to DELEGATE-AID — federation-wide, or scoped to SCOPE-ID when given — for the client to sign for set-delegation-signed. Pass the SAME SCOPE-ID there: it is baked into this SAID. [governance; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2065,7 +2065,7 @@
     {
       "name": "session.delegation-mandated-preimage",
       "title": "governance: delegation-mandated-preimage",
-      "description": "Replies (ok fields), the SAID fields of a delegation to DELEGATE-AID carrying the data MANDATE-SPEC ? federation-wide, or scoped to SCOPE-ID when given ? for the client to sign for set-delegation-mandated-signed. [governance; callable by an enrolled device]",
+      "description": "Replies (ok fields), the SAID fields of a delegation to DELEGATE-AID carrying the data MANDATE-SPEC — federation-wide, or scoped to SCOPE-ID when given — for the client to sign for set-delegation-mandated-signed. [governance; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2586,7 +2586,7 @@
     {
       "name": "session.machine-receipt",
       "title": "stock: machine-receipt",
-      "description": "Delivers the executed envelope's receipt W in COMMUNE-AID ? digest, metering (tokens or seconds), the lender's countersignature; replies ok or an error. [stock; callable by an enrolled device]",
+      "description": "Delivers the executed envelope's receipt W in COMMUNE-AID — digest, metering (tokens or seconds), the lender's countersignature; replies ok or an error. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2620,7 +2620,7 @@
     {
       "name": "session.machine-verify",
       "title": "stock: machine-verify",
-      "description": "Replays receipt W's envelope and replies whether the output reproduces ? the proof a wrong-result dispute rides on. [stock; callable by an enrolled device]",
+      "description": "Replays receipt W's envelope and replies whether the output reproduces — the proof a wrong-result dispute rides on. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2681,7 +2681,7 @@
     {
       "name": "session.machine-statements",
       "title": "stock: machine-statements",
-      "description": "Replies COMMUNE-AID's periodic signed settlement statements ? bridgeJobId, receipt digest, amount, asset, total, transaction hash. [stock; callable by an enrolled device]",
+      "description": "Replies COMMUNE-AID's periodic signed settlement statements — bridgeJobId, receipt digest, amount, asset, total, transaction hash. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2708,7 +2708,7 @@
     {
       "name": "session.machine-envelope",
       "title": "stock: machine-envelope",
-      "description": "Replies job envelope W as kept ? the executor fetches it by digest to run; carries no price field. [stock; callable by an enrolled device]",
+      "description": "Replies job envelope W as kept — the executor fetches it by digest to run; carries no price field. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2767,7 +2767,7 @@
     {
       "name": "session.machine-replay",
       "title": "stock: machine-replay",
-      "description": "Replays claim CLAIM-ID's envelope in COMMUNE-AID ? the authoritative answer a wrong-result challenge rides on: receipt digest, reproduced, attestation hash, counter-hash. [stock; callable by an enrolled device]",
+      "description": "Replays claim CLAIM-ID's envelope in COMMUNE-AID — the authoritative answer a wrong-result challenge rides on: receipt digest, reproduced, attestation hash, counter-hash. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2875,7 +2875,7 @@
     {
       "name": "session.machine-disputes",
       "title": "stock: machine-disputes",
-      "description": "Replies the disputes open in COMMUNE-AID ? raised, reviewing, closed. [stock; callable by an enrolled device]",
+      "description": "Replies the disputes open in COMMUNE-AID — raised, reviewing, closed. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2934,7 +2934,7 @@
     {
       "name": "session.machine-bind",
       "title": "stock: machine-bind",
-      "description": "Lands an AccountLink W in COMMUNE-AID ? an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names. [stock; callable by an enrolled device]",
+      "description": "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2968,7 +2968,7 @@
     {
       "name": "session.machine-unbind",
       "title": "stock: machine-unbind",
-      "description": "Ends the AccountLink under KEY in COMMUNE-AID ? either side may unlink, SIDE naming which ('signer the did:key, 'account the EOA); the record stays, marked by who ended it. [stock; callable by an enrolled device]",
+      "description": "Ends the AccountLink under KEY in COMMUNE-AID — either side may unlink, SIDE naming which ('signer the did:key, 'account the EOA); the record stays, marked by who ended it. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3006,7 +3006,7 @@
     {
       "name": "session.machine-bindings",
       "title": "stock: machine-bindings",
-      "description": "Replies COMMUNE-AID's AccountLinks ? didKey, account, purpose, status per row. [stock; callable by an enrolled device]",
+      "description": "Replies COMMUNE-AID's AccountLinks — didKey, account, purpose, status per row. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3033,7 +3033,7 @@
     {
       "name": "session.machine-payout",
       "title": "stock: machine-payout",
-      "description": "Pays statement W's sends in COMMUNE-AID ? every send to the hive treasury Safe the bridge grant binds; no send rail injected answers an honest error, never a phantom payout. [stock; callable by an enrolled device]",
+      "description": "Pays statement W's sends in COMMUNE-AID — every send to the hive treasury Safe the bridge grant binds; no send rail injected answers an honest error, never a phantom payout. [stock; callable by an enrolled device]",
       "inputSchema": {
         "type": "object",
         "properties": {

@@ -37,9 +37,6 @@
                 #:select (cesr-stream-event cesr-stream-kel
                           scm->json-canonical))
   #:use-module ((playnet keri did) #:select (aid->did-keri))
-  #:use-module ((playnet utils pmtiles)
-                #:select (pmtiles-archives pmtiles-tile pmtiles-tile-compression
-                          pmtiles-info pmtiles-path archive-bytes))
   #:use-module ((playnet keri schemas) #:select (schema-document-for-said))
   #:use-module ((playnet identity oobi-host)
                 #:select ((read-oobi-entry-from-dir . read-oobi-entry)
@@ -63,9 +60,6 @@
             handle-pending-grants
             handle-audit
             handle-peer-status
-            handle-osm-tile
-            handle-osm-regions
-            handle-osm-pack
             handle-feedback-post
             handle-feedback-list
             handle-feedback-delete
@@ -73,9 +67,6 @@
             handle-report-list
             handle-report-delete
             handle-operator
-            ;; the /route proxy's request builder: pure, so a test can read what
-            ;; Valhalla would be asked
-            route-request-json
             handle-security-txt))
 
 ;;; The on-disk layout used here is owned by (playnet identity oobi-host); we
@@ -364,313 +355,8 @@
 (define (bad-request)
   (empty-response 400))
 
-;;; ── Offline routing (/route) — Tier 1: self-hosted Valhalla ─────────────────
-;;; Same-origin endpoint so the browser never touches an external router (no IP
-;;; leak; works on Tor / the mesh). A *thin proxy* to a local Valhalla HTTP
-;;; service (default http://127.0.0.1:8002, built from an OSM extract — see
-;;; docs/valhalla/ and tools/dev/valhalla-local.sh). Valhalla is multimodal:
-;;; pedestrian / bicycle / auto / bus / multimodal-transit.
-;;;
-;;; The server stays dumb on purpose: it builds the Valhalla request, POSTs it,
-;;; and relays Valhalla's JSON verbatim. The browser (repl.js `routing.fetch`)
-;;; owns JSON.parse, polyline decode, and the straight-line fallback when
-;;; Valhalla is down — so the map UI works offline today and lights up real
-;;; roads the moment the service is up, with zero server-side JSON parsing
-;;; (which also dodges the (json) module-shadowing under the Hoot dev env).
-;;; Configure via env:
-;;;   PLAYNET_VALHALLA_URL          base URL (default http://127.0.0.1:8002)
-
-(define %valhalla-url
-  (or (getenv "PLAYNET_VALHALLA_URL") "http://127.0.0.1:8002"))
-
-;; The wire speaks Valhalla costing names natively — the browser translates its
-;; UI words (foot/bike/…) at the source (repl.js), and the ENGINE is the sole
-;; authority on which costings exist (an unknown one gets Valhalla's 400, which
-;; relays as "{}" and the client straight-lines: the honest degradation, and
-;; new engine costings work here without touching this file). All the proxy
-;; owns is SYNTAX safety: the profile is spliced into hand-built JSON, so it
-;; must never carry anything beyond a costing-shaped token.
-(define (valhalla-costing profile)
-  (let ((p (string-filter (lambda (c) (or (char-alphabetic? c) (char=? c #\_)))
-                          (or profile ""))))
-    (if (string-null? p) "pedestrian" p)))
-
-(define (parse-latlng s)
-  (let ((i (and s (string-index s #\,))))
-    (and i (let ((lat (string->number (substring s 0 i)))
-                 (lng (string->number (substring s (+ i 1)))))
-             (and lat lng (cons lat lng))))))
-
-;; Optional intermediate waypoints: "lat,lng;lat,lng".
-(define (parse-vias s)
-  (if (or (not s) (string-null? s)) '()
-      (filter-map parse-latlng (string-split s #\;))))
-
-(define (query->alist q)
-  (if (or (not q) (string-null? q)) '()
-      (filter-map
-       (lambda (kv)
-         (let ((i (string-index kv #\=)))
-           (and i (cons (substring kv 0 i) (uri-decode (substring kv (+ i 1)))))))
-       (string-split q #\&))))
-
-;; The optional route parameters ride into hand-built JSON, so each is read
-;; down to the one shape Valhalla takes and anything else is dropped (the
-;; request then asks for less, never for something else).
-(define (digit? c) (and (char>=? c #\0) (char<=? c #\9)))
-
-;; "0".."3" → the integer, else #f.
-(define (route-alternates s)
-  (let ((n (and s (string->number s))))
-    (and n (exact-integer? n) (<= 0 n 3) n)))
-
-;; ISO-8601 to the minute, "YYYY-MM-DDThh:mm" — Valhalla reads it as local
-;; civil time at the place — or #f.
-(define (route-iso-minute s)
-  (and s (= (string-length s) 16)
-       (let loop ((i 0))
-         (or (= i 16)
-             (let ((c (string-ref s i)))
-               (and (case i
-                      ((4 7) (char=? c #\-))
-                      ((10) (char=? c #\T))
-                      ((13) (char=? c #\:))
-                      (else (digit? c)))
-                    (loop (+ i 1))))))
-       s))
-
-;; A language tag: "en", "de-DE" — letters and hyphens, short.
-(define (route-language s)
-  (and s (<= 2 (string-length s) 8)
-       (string-every (lambda (c) (or (char=? c #\-) (and (char-alphabetic? c) (char<? c #\x80)))) s)
-       s))
-
-(define (route-units s)
-  (cond ((member s '("miles" "mi")) "miles")
-        (else "kilometers")))
-
-;; The time the trip is asked at: depart=now → the engine's current time
-;; (type 0); depart=T → leave at T (1); arrive=T → be there by T (2); else
-;; none, and Valhalla routes without a clock. → (type . value-or-#f) or #f.
-(define (route-clock p)
-  (let ((dep (assoc-ref-str p "depart")) (arr (assoc-ref-str p "arrive")))
-    (cond ((equal? dep "now") '(0 . #f))
-          ((route-iso-minute dep) => (lambda (t) (cons 1 t)))
-          ((route-iso-minute arr) => (lambda (t) (cons 2 t)))
-          (else #f))))
-
-;; Build the Valhalla /route request body by hand (numbers + strings only —
-;; no JSON library needed, so nothing to shadow). locs = list of (lat . lng).
-;; Alternates ask for more than one way; Valhalla offers them for a plain
-;; two-point route with no clock, so any other shape asks for none.
-(define* (valhalla-request-json locs costing #:key alternates clock language
-                                (units "kilometers"))
-  (string-append
-   "{\"locations\":["
-   (string-join
-    (map (lambda (ll)
-           (string-append "{\"lat\":" (number->string (car ll))
-                          ",\"lon\":" (number->string (cdr ll)) "}"))
-         locs)
-    ",")
-   "],\"costing\":\"" costing "\""
-   (if (and alternates (> alternates 0) (not clock) (= (length locs) 2))
-       (string-append ",\"alternates\":" (number->string alternates))
-       "")
-   (if clock
-       (string-append ",\"date_time\":{\"type\":" (number->string (car clock))
-                      (if (cdr clock) (string-append ",\"value\":\"" (cdr clock) "\"") "")
-                      "}")
-       "")
-   ",\"directions_options\":{\"units\":\"" units "\""
-   (if language (string-append ",\"language\":\"" language "\"") "")
-   "}}"))
-
-;; The query of a /route call → the Valhalla body, or #f without both ends.
-;;   from=lat,lng  to=lat,lng  [via=lat,lng;lat,lng]  [profile=<costing>]
-;;   [alternates=0..3]  [depart=now|YYYY-MM-DDThh:mm | arrive=YYYY-MM-DDThh:mm]
-;;   [lang=en-US]  [units=km|mi]
-(define (route-request-json query)
-  (let* ((p    (query->alist query))
-         (from (parse-latlng (assoc-ref-str p "from")))
-         (to   (parse-latlng (assoc-ref-str p "to")))
-         (via  (parse-vias (assoc-ref-str p "via"))))
-    (and from to
-         (valhalla-request-json
-          (append (list from) via (list to))
-          (valhalla-costing (or (assoc-ref-str p "profile") "foot"))
-          #:alternates (route-alternates (assoc-ref-str p "alternates"))
-          #:clock (route-clock p)
-          #:language (route-language (assoc-ref-str p "lang"))
-          #:units (route-units (assoc-ref-str p "units"))))))
-
-;; POST a JSON body to a local Valhalla endpoint; return the raw JSON response
-;; body string, or #f if unreachable / non-200.
-(define (valhalla-relay path body-str)
-  (false-if-exception
-   (call-with-values
-     (lambda ()
-       (http-post (string-append %valhalla-url path)
-                  #:body body-str
-                  #:headers '((content-type . (application/json (charset . "utf-8"))))
-                  #:keep-alive? #f))
-     (lambda (resp rbody)
-       (and (= 200 (response-code resp))
-            (if (bytevector? rbody) (utf8->string rbody) rbody))))))
-
-;; Map-matching: the browser's collected GPS trace, relayed verbatim to
-;; trace_route — how the journey ACTUALLY went, snapped to the network. The
-;; body is browser-built Valhalla JSON; the engine is its own validator
-;; (same trust story as /route — relayed "{}" on refusal).
-(define (handle-trace body)
-  ;; cap the relayed trace at 1 MB (~10k GPS points) — locally this is just
-  ;; hygiene; in production nginx caps bodies before they reach us anyway
-  (define (sized? s) (and s (<= (string-length s) 1048576) s))
-  (route-relay
-   (or (valhalla-relay "/trace_route"
-                       (or (sized? (cond ((bytevector? body) (utf8->string body))
-                                         ((string? body) body)
-                                         (else "")))
-                           "{}"))
-       "{}")))
-
-;; Relay a JSON body string to the client (no-store, CORS-open like our other
-;; JSON endpoints). On Valhalla failure we relay "{}" so the client can detect
-;; the empty trip and draw its own straight-line fallback.
-(define (route-relay body-str)
-  (values (build-response
-           #:code 200
-           #:headers (with-headers %security-headers
-                      (append '((content-type . (application/json (charset . "utf-8"))))
-                              %keri-no-cache-headers)))
-          body-str))
-
-(define (handle-route query)
-  (let ((body (route-request-json query)))
-    (if body
-        (route-relay (or (valhalla-relay "/route" body) "{}"))
-        (bad-request))))
-
-(define (assoc-ref-str alist key)
-  (let ((p (assoc key alist))) (and p (cdr p))))
-
 (define (not-found)
   (empty-response 404))
-
-;;; ── Basemap tiles (/tiles/osm/{z}/{x}/{y}) — OpenStreetMap, served from here ──
-;;; The map draws vector tiles cut from OpenStreetMap data (a Protomaps build,
-;;; `make map-tiles`) and held as PMTiles archives under PLAYNET_MAP_DIR, one
-;;; file per region. Nothing upstream is called at request time: a tile is
-;;; a byte range of a local file, found by its Hilbert id, and a tile no
-;;; archive holds is a 404. The browser never contacts a tile provider — no
-;;; per-tile location leak, nothing to proxy, and the map works over the
-;;; onion and with no network at all. Attribution ("© OpenStreetMap
-;;; contributors") is the ODbL's one ask and rides in the style.
-;;;
-;;;   PLAYNET_MAP_DIR   where the *.pmtiles archives live (default data/map)
-(define %map-dir (or (getenv "PLAYNET_MAP_DIR") "data/map"))
-
-;; z/x/y must be bare non-negative integers — nothing else reaches the reader.
-(define (tile-int s)
-  (let ((n (and s (string->number s))))
-    (and (integer? n) (exact? n) (>= n 0) n)))
-
-(define (handle-osm-tile z x y)
-  "Tile Z/X/Y from the first archive (by name) that holds it, as stored —
-gzipped archives answer under Content-Encoding: gzip."
-  (let* ((zn (tile-int z)) (xn (tile-int x)) (yn (tile-int y))
-         ;; (archive . bytes) — found as ONE value, so the search cannot drop
-         ;; the body the way a multi-value return inside `any` would
-         (hit (and zn xn yn
-                   (any (lambda (a)
-                          (let ((bv (pmtiles-tile a zn xn yn)))
-                            (and bv (cons a bv))))
-                        (pmtiles-archives %map-dir)))))
-    (if hit
-        (values (build-response
-                 #:code 200
-                 #:headers
-                 (with-headers %security-headers
-                  `((content-type . (application/vnd.mapbox-vector-tile))
-                    ,@(if (eq? (pmtiles-tile-compression (car hit)) 'gzip)
-                          '((content-encoding . (gzip)))
-                          '())
-                    ;; a build is immutable; a new build is new archives
-                    (cache-control . (public (max-age . 604800) immutable)))))
-                (cdr hit))
-        (not-found))))
-
-(define %pack-chunk (* 8 1024 1024))
-
-(define (handle-osm-pack name request)
-  "The archive NAME (as regions.json lists it, with its .pmtiles suffix), for
-the device's own copy: a Range answers 206 with at most 8 MiB, so a download
-over Tor is a series of resumable slices; no Range answers the whole file.
-A name no archive carries is a 404 — the request never becomes a path."
-  (let ((a (any (lambda (a) (and (string=? (basename (pmtiles-path a)) name) a))
-                (pmtiles-archives %map-dir))))
-    (if (not a)
-        (not-found)
-        (let* ((size  (assq-ref (pmtiles-info a) 'bytes))
-               (range (request-range request))
-               (span  (and (pair? range) (eq? (car range) 'bytes)
-                           (pair? (cdr range)) (pair? (cadr range))
-                           (cadr range)))
-               (start (and span (car span)))
-               (end   (and span (min (- size 1)
-                                     (or (cdr span) (- size 1))
-                                     (+ start %pack-chunk -1)))))
-          (cond
-           ((and span (or (not (integer? start)) (>= start size) (< end start)))
-            (values (build-response #:code 416
-                                    #:headers (with-headers %security-headers
-                                               `((content-range . (bytes * ,size)))))
-                    ""))
-           (span
-            (let ((bv (archive-bytes a start (+ 1 (- end start)))))
-              (if bv
-                  (values (build-response
-                           #:code 206
-                           #:headers (with-headers %security-headers
-                                      `((content-type . (application/octet-stream))
-                                        (content-range . (bytes (,start . ,end) ,size))
-                                        (accept-ranges . (bytes))
-                                        (cache-control . (public (max-age . 604800) immutable)))))
-                          bv)
-                  ;; the file shrank under us (an archive being replaced): say so, never a half body
-                  (values (build-response #:code 416
-                                          #:headers (with-headers %security-headers
-                                                     `((content-range . (bytes * ,size)))))
-                          ""))))
-           (else
-            (values (build-response
-                     #:code 200
-                     #:headers (with-headers %security-headers
-                                `((content-type . (application/octet-stream))
-                                  (accept-ranges . (bytes))
-                                  (cache-control . (public (max-age . 604800) immutable)))))
-                    (archive-bytes a 0 size))))))))
-
-(define (handle-osm-regions)
-  "The archives on offer — name, bounds, zooms, size — for the map's region
-list and the offline-pack chooser."
-  (values (build-response
-           #:code 200
-           #:headers (with-headers %security-headers
-                      '((content-type . (application/json (charset . "utf-8")))
-                        (cache-control . (no-cache)))))
-          (scm->json-canonical
-           (list->vector
-            (map (lambda (a)
-                   (let ((info (pmtiles-info a)))
-                     `(("name" . ,(assq-ref info 'name))
-                       ("bounds" . ,(list->vector (assq-ref info 'bounds)))
-                       ("minZoom" . ,(assq-ref info 'min-zoom))
-                       ("maxZoom" . ,(assq-ref info 'max-zoom))
-                       ("bytes" . ,(assq-ref info 'bytes))
-                       ;; the OSM data's date — null when the archive says none
-                       ("build" . ,(or (assq-ref info 'build) 'null)))))
-                 (pmtiles-archives %map-dir))))))
 
 (define (forbidden-component? c)
   ;; Block path traversal AND hidden files / dirs (the old nginx
@@ -1770,18 +1456,6 @@ list and the offline-pack chooser."
                           (string-drop-right aid 5)
                           aid)))
        (handle-audit aid-clean)))
-    (('GET "route")
-     (handle-route (uri-query (request-uri request))))
-    (('GET "tiles" "osm" "regions.json")
-     (handle-osm-regions))
-    (('GET "tiles" "osm" pack)
-     (if (string-suffix? ".pmtiles" pack)
-         (handle-osm-pack pack request)
-         (not-found)))
-    (('GET "tiles" "osm" z x y)
-     (handle-osm-tile z x y))
-    (('POST "trace")
-     (handle-trace body))
     (('POST "feedback")
      (handle-feedback-post request body))
     (('GET "feedback.json")
@@ -1815,10 +1489,6 @@ list and the offline-pack chooser."
   (format #t "  /peer-status.json             → per-contact KERIA reachability~%")
   (format #t "  /pending-grants.json          → IPEX retry-queue contents~%")
   (format #t "  /audit/{aid}.json             → most recent audit cycle for federation~%")
-  (format #t "  /route?from=&to=&profile=     → Valhalla route proxy (GeoJSON-ish)~%")
-  (format #t "  /tiles/osm/{z}/{x}/{y}        → OpenStreetMap vector tiles from ~a/*.pmtiles~%" %map-dir)
-  (format #t "  /tiles/osm/regions.json       → the archives on offer~%")
-  (format #t "  /tiles/osm/{name}.pmtiles     → one archive, by Range, for a device's offline copy~%")
   (format #t "  /feedback (POST)              → anonymous feedback pool (tier 1 of the issue flow)~%")
   (format #t "  /report (POST)                → reports of unlawful or harmful content, kept apart from feedback~%")
   (format #t "  (else)                        → static files from ~a~%~%"

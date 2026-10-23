@@ -871,7 +871,7 @@
                 "properties": {
                   "event-key": {
                     "type": "string",
-                    "description": "a qb64 public key an identity's log carries as a signing key, in an event's k[0] ? the first key a passcode derives is one",
+                    "description": "a qb64 public key an identity's log carries as a signing key, in an event's k[0] — the first key a passcode derives is one",
                     "x-playnet-shape": "string"
                   }
                 },
@@ -1918,7 +1918,7 @@
                   },
                   "ctx": {
                     "type": "string",
-                    "description": "the notification channel's destination address for KIND (an email, a push endpoint, ?)",
+                    "description": "the notification channel's destination address for KIND (an email, a push endpoint, …)",
                     "x-playnet-shape": "string"
                   },
                   "code": {
@@ -1998,8 +1998,8 @@
     "/api/session/withdraw-contact-point": {
       "post": {
         "operationId": "session.withdraw-contact-point",
-        "summary": "Erases the (KIND CTX) channel bound under this AID and puts down one still waiting for its code ? the deletion path for a contact point; replies (ok . #t).",
-        "description": "Erases the (KIND CTX) channel bound under this AID and puts down one still waiting for its code ? the deletion path for a contact point; replies (ok . #t).\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "summary": "Erases the (KIND CTX) channel bound under this AID and puts down one still waiting for its code — the deletion path for a contact point; replies (ok . #t).",
+        "description": "Erases the (KIND CTX) channel bound under this AID and puts down one still waiting for its code — the deletion path for a contact point; replies (ok . #t).\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
         "tags": [
           "identity"
         ],
@@ -2027,7 +2027,7 @@
                   },
                   "ctx": {
                     "type": "string",
-                    "description": "the notification channel's destination address for KIND (an email, a push endpoint, ?)",
+                    "description": "the notification channel's destination address for KIND (an email, a push endpoint, …)",
                     "x-playnet-shape": "string"
                   }
                 },
@@ -5120,7 +5120,7 @@
                   },
                   "domain": {
                     "type": "string",
-                    "description": "on corpus-search a corpus domain name or #f for all; on open the ballot domain (policy, recomposition, ?)",
+                    "description": "on corpus-search a corpus domain name or #f for all; on open the ballot domain (policy, recomposition, …)",
                     "x-playnet-shape": "string"
                   },
                   "id": {
@@ -5513,8 +5513,8 @@
     "/api/session/delegation-preimage": {
       "post": {
         "operationId": "session.delegation-preimage",
-        "summary": "Replies (ok fields), the SAID fields of the liquid delegation of FRACTION to DELEGATE-AID ? federation-wide, or scoped to SCOPE-ID when given ? for the client to sign for set-delegation-signed. Pass the SAME SCOPE-ID there: it is baked into this SAID.",
-        "description": "Replies (ok fields), the SAID fields of the liquid delegation of FRACTION to DELEGATE-AID ? federation-wide, or scoped to SCOPE-ID when given ? for the client to sign for set-delegation-signed. Pass the SAME SCOPE-ID there: it is baked into this SAID.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "summary": "Replies (ok fields), the SAID fields of the liquid delegation of FRACTION to DELEGATE-AID — federation-wide, or scoped to SCOPE-ID when given — for the client to sign for set-delegation-signed. Pass the SAME SCOPE-ID there: it is baked into this SAID.",
+        "description": "Replies (ok fields), the SAID fields of the liquid delegation of FRACTION to DELEGATE-AID — federation-wide, or scoped to SCOPE-ID when given — for the client to sign for set-delegation-signed. Pass the SAME SCOPE-ID there: it is baked into this SAID.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
         "tags": [
           "governance"
         ],
@@ -6052,8 +6052,8 @@
     "/api/session/delegation-mandated-preimage": {
       "post": {
         "operationId": "session.delegation-mandated-preimage",
-        "summary": "Replies (ok fields), the SAID fields of a delegation to DELEGATE-AID carrying the data MANDATE-SPEC ? federation-wide, or scoped to SCOPE-ID when given ? for the client to sign for set-delegation-mandated-signed.",
-        "description": "Replies (ok fields), the SAID fields of a delegation to DELEGATE-AID carrying the data MANDATE-SPEC ? federation-wide, or scoped to SCOPE-ID when given ? for the client to sign for set-delegation-mandated-signed.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
+        "summary": "Replies (ok fields), the SAID fields of a delegation to DELEGATE-AID carrying the data MANDATE-SPEC — federation-wide, or scoped to SCOPE-ID when given — for the client to sign for set-delegation-mandated-signed.",
+        "description": "Replies (ok fields), the SAID fields of a delegation to DELEGATE-AID carrying the data MANDATE-SPEC — federation-wide, or scoped to SCOPE-ID when given — for the client to sign for set-delegation-mandated-signed.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `ok-or-error`.",
         "tags": [
           "governance"
         ],
@@ -7565,8 +7565,8 @@
     "/api/session/machine-receipt": {
       "post": {
         "operationId": "session.machine-receipt",
-        "summary": "Delivers the executed envelope's receipt W in COMMUNE-AID ? digest, metering (tokens or seconds), the lender's countersignature; replies ok or an error.",
-        "description": "Delivers the executed envelope's receipt W in COMMUNE-AID ? digest, metering (tokens or seconds), the lender's countersignature; replies ok or an error.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Delivers the executed envelope's receipt W in COMMUNE-AID — digest, metering (tokens or seconds), the lender's countersignature; replies ok or an error.",
+        "description": "Delivers the executed envelope's receipt W in COMMUNE-AID — digest, metering (tokens or seconds), the lender's countersignature; replies ok or an error.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -7670,8 +7670,8 @@
     "/api/session/machine-verify": {
       "post": {
         "operationId": "session.machine-verify",
-        "summary": "Replays receipt W's envelope and replies whether the output reproduces ? the proof a wrong-result dispute rides on.",
-        "description": "Replays receipt W's envelope and replies whether the output reproduces ? the proof a wrong-result dispute rides on.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Replays receipt W's envelope and replies whether the output reproduces — the proof a wrong-result dispute rides on.",
+        "description": "Replays receipt W's envelope and replies whether the output reproduces — the proof a wrong-result dispute rides on.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -7873,8 +7873,8 @@
     "/api/session/machine-statements": {
       "post": {
         "operationId": "session.machine-statements",
-        "summary": "Replies COMMUNE-AID's periodic signed settlement statements ? bridgeJobId, receipt digest, amount, asset, total, transaction hash.",
-        "description": "Replies COMMUNE-AID's periodic signed settlement statements ? bridgeJobId, receipt digest, amount, asset, total, transaction hash.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Replies COMMUNE-AID's periodic signed settlement statements — bridgeJobId, receipt digest, amount, asset, total, transaction hash.",
+        "description": "Replies COMMUNE-AID's periodic signed settlement statements — bridgeJobId, receipt digest, amount, asset, total, transaction hash.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -7971,8 +7971,8 @@
     "/api/session/machine-envelope": {
       "post": {
         "operationId": "session.machine-envelope",
-        "summary": "Replies job envelope W as kept ? the executor fetches it by digest to run; carries no price field.",
-        "description": "Replies job envelope W as kept ? the executor fetches it by digest to run; carries no price field.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Replies job envelope W as kept — the executor fetches it by digest to run; carries no price field.",
+        "description": "Replies job envelope W as kept — the executor fetches it by digest to run; carries no price field.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -8172,8 +8172,8 @@
     "/api/session/machine-replay": {
       "post": {
         "operationId": "session.machine-replay",
-        "summary": "Replays claim CLAIM-ID's envelope in COMMUNE-AID ? the authoritative answer a wrong-result challenge rides on: receipt digest, reproduced, attestation hash, counter-hash.",
-        "description": "Replays claim CLAIM-ID's envelope in COMMUNE-AID ? the authoritative answer a wrong-result challenge rides on: receipt digest, reproduced, attestation hash, counter-hash.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Replays claim CLAIM-ID's envelope in COMMUNE-AID — the authoritative answer a wrong-result challenge rides on: receipt digest, reproduced, attestation hash, counter-hash.",
+        "description": "Replays claim CLAIM-ID's envelope in COMMUNE-AID — the authoritative answer a wrong-result challenge rides on: receipt digest, reproduced, attestation hash, counter-hash.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -8493,8 +8493,8 @@
     "/api/session/machine-disputes": {
       "post": {
         "operationId": "session.machine-disputes",
-        "summary": "Replies the disputes open in COMMUNE-AID ? raised, reviewing, closed.",
-        "description": "Replies the disputes open in COMMUNE-AID ? raised, reviewing, closed.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Replies the disputes open in COMMUNE-AID — raised, reviewing, closed.",
+        "description": "Replies the disputes open in COMMUNE-AID — raised, reviewing, closed.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -8694,8 +8694,8 @@
     "/api/session/machine-bind": {
       "post": {
         "operationId": "session.machine-bind",
-        "summary": "Lands an AccountLink W in COMMUNE-AID ? an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.",
-        "description": "Lands an AccountLink W in COMMUNE-AID ? an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.",
+        "description": "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -8799,8 +8799,8 @@
     "/api/session/machine-unbind": {
       "post": {
         "operationId": "session.machine-unbind",
-        "summary": "Ends the AccountLink under KEY in COMMUNE-AID ? either side may unlink, SIDE naming which ('signer the did:key, 'account the EOA); the record stays, marked by who ended it.",
-        "description": "Ends the AccountLink under KEY in COMMUNE-AID ? either side may unlink, SIDE naming which ('signer the did:key, 'account the EOA); the record stays, marked by who ended it.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Ends the AccountLink under KEY in COMMUNE-AID — either side may unlink, SIDE naming which ('signer the did:key, 'account the EOA); the record stays, marked by who ended it.",
+        "description": "Ends the AccountLink under KEY in COMMUNE-AID — either side may unlink, SIDE naming which ('signer the did:key, 'account the EOA); the record stays, marked by who ended it.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -8908,8 +8908,8 @@
     "/api/session/machine-bindings": {
       "post": {
         "operationId": "session.machine-bindings",
-        "summary": "Replies COMMUNE-AID's AccountLinks ? didKey, account, purpose, status per row.",
-        "description": "Replies COMMUNE-AID's AccountLinks ? didKey, account, purpose, status per row.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Replies COMMUNE-AID's AccountLinks — didKey, account, purpose, status per row.",
+        "description": "Replies COMMUNE-AID's AccountLinks — didKey, account, purpose, status per row.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -9006,8 +9006,8 @@
     "/api/session/machine-payout": {
       "post": {
         "operationId": "session.machine-payout",
-        "summary": "Pays statement W's sends in COMMUNE-AID ? every send to the hive treasury Safe the bridge grant binds; no send rail injected answers an honest error, never a phantom payout.",
-        "description": "Pays statement W's sends in COMMUNE-AID ? every send to the hive treasury Safe the bridge grant binds; no send rail injected answers an honest error, never a phantom payout.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
+        "summary": "Pays statement W's sends in COMMUNE-AID — every send to the hive treasury Safe the bridge grant binds; no send rail injected answers an honest error, never a phantom payout.",
+        "description": "Pays statement W's sends in COMMUNE-AID — every send to the hive treasury Safe the bridge grant binds; no send rail injected answers an honest error, never a phantom payout.\n\nObject: `session`. Callable by an enrolled device. Reply shape: `promise:ok-or-error`.",
         "tags": [
           "stock"
         ],
@@ -9164,7 +9164,7 @@
       "auth": "root",
       "topic": "identity",
       "x-playnet-transport": "captp",
-      "summary": "Erases every record of this gateway's own keyed by this AID ? bindings, push subscriptions, contact points, devices, cards, user files, mailboxes, spooled mail ? and last the member record and AID-to-handle index, leaving the key log as data about a pseudonym; replies the receipt (what went, by kind and count, and what stays), refuses a device-tier session, and this session cap refuses everything from then on."
+      "summary": "Erases every record of this gateway's own keyed by this AID — bindings, push subscriptions, contact points, devices, cards, user files, mailboxes, spooled mail — and last the member record and AID-to-handle index, leaving the key log as data about a pseudonym; replies the receipt (what went, by kind and count, and what stays), refuses a device-tier session, and this session cap refuses everything from then on."
     },
     {
       "object": "session",

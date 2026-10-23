@@ -242,9 +242,7 @@ or after START; returns (words . index-after-table)."
 ;;; ── Main ────────────────────────────────────────────────────────────────────
 
 (define (main args)
-  (let* ((docs (if (null? (cdr args))
-                   '("docs/planning/federation/federation-flow-map.md")
-                   (cdr args)))
+  (let* ((docs (cdr args))
          (refusals (append-map (lambda (d) (append (check-cites d) (check-tables d))) docs)))
     (for-each (lambda (r) (format #t "~a\n" r)) refusals)
     (format #t "doc-cites: ~a document(s), ~a refusal(s)\n" (length docs) (length refusals))

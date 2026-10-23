@@ -86,7 +86,7 @@
 (define (bs-place b)
   (string-append "bz-" (string-downcase
                          (string-map (lambda (c)
-                                       (case c ((#\ä) #\a) ((#\ö) #\o) ((#\ü) #\u) ((#\ß) #\s)
+                                       (case c ((#\x00e4) #\a) ((#\x00f6) #\o) ((#\x00fc) #\u) ((#\x00df) #\s)
                                              ((#\space) #\-) (else c)))
                                      (bs-name b)))))
 

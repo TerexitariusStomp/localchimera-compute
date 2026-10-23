@@ -81,31 +81,27 @@
  (stays "voice" 6 "ballots, expressions, delegation, the voice signer, the voice snapshot, affected interest, the index oracle")
 
  ;; ── rank 7: what a caller reaches, and the channels ──
+ (stays "machine" 7 "the machine-resource port: specs, registry, bindings, executors, hrea events, receipts, replay, settlement, payouts")
  (stays "doors" 7 "what a caller reaches: the lobby and the session, the planner's reads, the identity doors, the governance doors as fragments, the door declarations, HTTP and MCP")
  (stays "gateway" 7 "the gateway's services: presence, mailboxes, terminal, the LLM service, the HTTP listener, evidence, allotment, the corpus service")
  (stays "interface" 7 "the chat channels: Matrix, Telegram, email, the browser, the router")
  (stays "notify" 7 "notifications: recipients, the registry, rendering, the router")
  (stays "push" 7 "web push: the adapter, VAPID, subscriptions, templates")
- (stays "calendar" 7 "iCal, invitations, the mailer")
- (stays "comms" 7 "communications derived from the plan, built and awaiting integration")
  (stays "bridge" 7 "MQTT: the signal publisher, the codec")
  (stays "ai" 7 "the LLM bridge, the key pool, conform, embeddings, TEE attestation")
  (stays "monero" 7 "the wallet, payouts, top-ups, the poller, the policy")
  (stays "fleet" 7 "the fleet: providers, the keeper, the reconciler, the CDN")
- (stays "ui" 7 "the SXML faces for Hoot")
  (stays "org" 7 "the organisation's actors, the Play Store listing")
  (stays "dev" 7 "the development scope: its recipes, ledger, plan and Radicle issues")
- (stays "sms" 7 "SMS")
- (stays "exo" 7 "the cosmic script")
 
  ;; ── rank 8: the composition root ──
  (stays "boot" 8 "the composition root: one module per vat the gateway starts, and the operator REPL's prelude")
 
  ;; ── unranked ──
- (stays "bench" #f "benchmarks")
  (stays "test" #f "the harness library")
 
  ;; ── not library modules ──
+ (file "delegates" "doors")                     ; the adapter seams the doors open
  (file "utils/repl-client" #f)            ; a tool: tools/ of the repository
  (file "utils/ts-emit" #f)                ; a tool: tools/ of the repository
  )

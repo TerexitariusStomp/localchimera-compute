@@ -9,15 +9,4 @@
 
 export type OfflineKind = "act" | "read";
 export const OFFLINE: Readonly<Record<string, { kind: OfflineKind; at: number | null }>> = {
-  countHistory: { kind: "read", at: null },
-  countSchedule: { kind: "read", at: null },
-  countStock: { kind: "act", at: 5 },
-  declareMeans: { kind: "act", at: null },
-  declareNeed: { kind: "act", at: null },
-  logObserve: { kind: "act", at: 5 },
-  mySlots: { kind: "read", at: null },
-  readingsBetween: { kind: "read", at: null },
-  recordEffort: { kind: "act", at: null },
-  recordFlow: { kind: "act", at: null },
-  scopeReadings: { kind: "read", at: null },
 };

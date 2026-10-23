@@ -3,7 +3,7 @@
 #
 # Starts a real gateway (no KERIA — same shape as tests/ux/ux-full.sh) with
 # a persistent state dir, waits for its sturdyref, and prints the
-# app.html URL with ?gateway=<sref> spliced in — the page's highest-
+# node.html URL with ?gateway=<sref> spliced in — the page's highest-
 # priority discovery source, so the stale /var/lib sref is bypassed.
 #
 # ONE COMMAND, WHOLE STACK: it also brings up the static server if nothing
@@ -36,7 +36,7 @@ rm -f "$SREF_FILE"
 # LOCAL gateway's sref and /oobi serves the KELs this gateway actually wrote —
 # without it the dev page describes production while talking to localhost.
 STATIC_PGID=""
-if curl -sf -o /dev/null "http://127.0.0.1:$STATIC_PORT/app.html" 2>/dev/null; then
+if curl -sf -o /dev/null "http://127.0.0.1:$STATIC_PORT/node.html" 2>/dev/null; then
   echo "== reusing the static server already on :$STATIC_PORT =="
   echo "   (NOTE: started outside this script, so it may point at another"
   echo "    data dir — restart it under 'make dev' if /oobi looks wrong)"
@@ -47,10 +47,10 @@ else
     > "$DATA/static.log" 2>&1 < /dev/null &
   STATIC_PGID=$!
   for i in $(seq 1 40); do
-    curl -sf -o /dev/null "http://127.0.0.1:$STATIC_PORT/app.html" 2>/dev/null && break
+    curl -sf -o /dev/null "http://127.0.0.1:$STATIC_PORT/node.html" 2>/dev/null && break
     sleep 1
   done
-  if curl -sf -o /dev/null "http://127.0.0.1:$STATIC_PORT/app.html" 2>/dev/null; then
+  if curl -sf -o /dev/null "http://127.0.0.1:$STATIC_PORT/node.html" 2>/dev/null; then
     echo "  static server up"
   else
     echo "ERROR: static server didn't come up"; tail -10 "$DATA/static.log"; exit 1
@@ -133,7 +133,7 @@ echo "  gateway up"
 
 # dev=1: the page tears its service worker down and polls the live-reload
 # token — every refresh serves this checkout's files, never a cached build
-URL="http://127.0.0.1:$STATIC_PORT/app.html?dev=1&gateway=$ENC"
+URL="http://127.0.0.1:$STATIC_PORT/node.html?dev=1&gateway=$ENC"
 echo
 echo "  the dial, live:"
 echo "    $URL"

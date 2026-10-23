@@ -43,7 +43,7 @@
   (package   playnet-static-configuration-package)
   (port      playnet-static-configuration-port      (default 8080))
   (user      playnet-static-configuration-user      (default "playnet"))
-  ;; Directory of SPA assets (index.html, repl.wasm, etc.). Defaults
+  ;; Directory of static assets (node.html, day-boot.wasm, etc.). Defaults
   ;; to the mutable checkout's browser/ so `rad pull` propagates.
   (work-dir  playnet-static-configuration-work-dir
              (default "/home/playnet/playnet-repo/browser"))

@@ -1,4 +1,4 @@
-all: browser/repl.wasm browser/day-boot.wasm
+all: browser/day-boot.wasm
 
 # The wasm toolchain's identity stamp (rule and rationale at HOOT_TOOLCHAIN_ID).
 # A rule's prerequisites expand where the rule is READ, so the name is defined
@@ -11,16 +11,15 @@ HOOT_TOOLCHAIN_STAMP = .hoot-toolchain
 # read, so the include stands above every wasm rule.
 include tools/wasm-deps.mk
 
-# ── The day dial ─────────────────────────────────────────────────────────────
-# A SEPARATE app, deliberately apart from the repl: browser/app.html is
-# CANONICAL — edited in place, served as-is, no build step, no coupling to
-# repl.scm. Its vendored libs (d3, topojson, land-*.json, inter fonts)
-# live beside it in browser/. (It began as docs/social-time-dial.html and
-# was copied over by make; that indirection ate live edits — gone now.)
+# ── The machine node ─────────────────────────────────────────────────────────
+# browser/node.html is CANONICAL — edited in place, served as-is, no build
+# step. A browser tab is a machine-resource node: it signs in (KERI), offers
+# capacity, claims work, executes it in the sandboxed executor and returns
+# receipts.
 
-# The dial's capability spine: a SLIM Hoot program — gateway CapTP,
-# KERI unlock/authenticate, lobby transcribe + ai-complete — loaded by
-# day-boot.js into the same page. No UI, no tabs: app.html is the shell.
+# The node's capability spine: a SLIM Hoot program — gateway CapTP,
+# KERI unlock/authenticate, machine offer/claim/execute/receipt — loaded by
+# day-boot.js into the same page.
 # Its prerequisites are the import closure of hoot/day-boot.scm (tools/wasm-deps.mk).
 DAY_BOOT_WASM_EXTRA =
 DAY_BOOT_WASM_DEPS = $(DAY_BOOT_WASM_CLOSURE) $(DAY_BOOT_WASM_EXTRA)
@@ -32,101 +31,11 @@ browser/day-boot.wasm: hoot/day-boot.scm $(DAY_BOOT_WASM_DEPS) $(HOOT_TOOLCHAIN_
 	    --bundle -o browser/day-boot.wasm hoot/day-boot.scm
 	./tools/dev/patch-reflect-mime.sh
 
-# ── The planner under Hoot ───────────────────────────────────────────────────
-# `guild compile-wasm` builds a whole program and refuses a module that may be
-# redefined from outside. The engine and the calendar are declarative, their
-# caller-written state in context cells (the note above define-module in
-# module/playnet/solve/engine.scm), so the household bundle builds from the
-# tree's own files; $(HOOT_SRC) holds the probe bundles.
-HOOT_SRC = .hoot-src
-# live.scm is `#:declarative? #f` (it loads the engine at module init), and a
-# whole scope reaches it: a copy with the flag turned on is built only for the
-# scope's own targets, under a directory of its own, searched first (a later
-# -L is searched first), so the household build never reads it.
-HOOT_SCOPE_SRC = .hoot-src/scope
-$(HOOT_SCOPE_SRC)/playnet/scope/live.scm: module/playnet/scope/live.scm
-	@mkdir -p $(dir $@)
-	sed 's/^  #:declarative? #f/  #:declarative? #t/' $< > $@
-	@grep -q '^  #:declarative? #t' $@ || { echo "live.scm: no '#:declarative? #f' line to turn on"; rm -f $@; exit 1; }
-
 # Goblins and fibers come from their own pinned prefixes: the toolchain
 # profile's whole site directory would also expose Hoot's host-side modules
 # (hoot/primitives.scm is `#:declarative? #f`), which the library-group linker
 # refuses to load as a wasm library.
-HOOT_PLANNER_ARGS = -L module -L $(GOBLINS_LOAD_PATH) -L $(FIBERS_LOAD_PATH)
 
-.PHONY: check-hoot-planner hoot-probe-family hoot-probe-admm hoot-probe-async
-check-hoot-planner:
-	@mkdir -p $(HOOT_SRC)
-	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/family-probe.wasm hoot/family-probe.scm'
-
-# runs the probe under node; the wasm imports goblins' crypto, which a solve never calls
-hoot-probe-family: check-hoot-planner
-	node tools/test/run-wasm.cjs $(HOOT_SRC)/family-probe.wasm
-# A whole scope for the page: a scope root with its observer and stores, the demo
-# neighbourhood seeded into it, a count through the count door (hoot/scope-probe.scm).
-# Every module it reaches states its imports in its define-module
-# (tools/edit/hoist-use-modules.py --check) and keeps host-only calls behind cond-expand.
-.PHONY: check-hoot-scope hoot-probe-scope
-check-hoot-scope: $(HOOT_SCOPE_SRC)/playnet/scope/live.scm
-	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o $(HOOT_SRC)/scope-probe.wasm hoot/scope-probe.scm'
-hoot-probe-scope: check-hoot-scope
-	node tools/test/run-wasm.cjs $(HOOT_SRC)/scope-probe.wasm
-
-# the federated solve (solve-decomposed) through the browser build: each scope on the reference core
-hoot-probe-admm:
-	@mkdir -p $(HOOT_SRC)
-	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/admm-probe.wasm hoot/admm-probe.scm'
-	node tools/test/run-wasm.cjs $(HOOT_SRC)/admm-probe.wasm
-
-# the coordinator-free solve: peers over a simulated network, each on the reference core
-hoot-probe-async:
-	@mkdir -p $(HOOT_SRC)
-	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o $(HOOT_SRC)/async-probe.wasm hoot/async-probe.scm'
-	node tools/test/run-wasm.cjs $(HOOT_SRC)/async-probe.wasm
-
-# ── The household's solve on the device ─────────────────────────────────────
-# browser/family.wasm is the planner's family solve for the browser, run in
-# browser/family-worker.js so the ledger never leaves the page. A gitignored
-# build product like day-boot.wasm; the box builds its own on deploy.
-# Its prerequisites are the import closure of hoot/family-worker.scm (tools/wasm-deps.mk).
-# declared by hand: the static walk does not reach these (check-wasm-deps notes them); kept as they stood
-FAMILY_WASM_EXTRA = \
-  module/playnet/solve/decomposed.scm \
-  module/playnet/solve/federation-oracle.scm \
-  module/playnet/solve/federation-solve.scm
-FAMILY_WASM_DEPS = $(FAMILY_WASM_CLOSURE) $(FAMILY_WASM_EXTRA)
-
-browser/family.wasm: hoot/family-worker.scm $(FAMILY_WASM_DEPS) $(HOOT_TOOLCHAIN_STAMP)
-	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -o browser/family.wasm hoot/family-worker.scm'
-
-# boots browser/family.wasm under node, through the page's own boot module, and
-# asks it the demo week: the same answer the planner test measured
-.PHONY: check-family-worker
-check-family-worker: browser/family.wasm
-	node tools/test/check-family-worker.cjs
-
-# ── A scope on the device ───────────────────────────────────────────────────
-# browser/scope.wasm is a whole scope for the page (hoot/scope-worker.scm over
-# (playnet doors page-scope)): the demo neighbourhood's books and a person's
-# own, answering the doors a gateway answers, run in browser/scope-worker.js. A
-# gitignored build product like family.wasm.
-# Its prerequisites are the import closure of hoot/scope-worker.scm (tools/wasm-deps.mk).
-# declared by hand: the static walk does not reach these (check-wasm-deps notes them); kept as they stood
-SCOPE_WASM_EXTRA = \
-  module/playnet/keri/acdc.scm \
-  module/playnet/keri/cesr.scm \
-  module/playnet/keri/crypto-primitives.scm \
-  module/playnet/keri/said-portable.scm \
-  module/playnet/keri/said.scm \
-  module/playnet/legal/adapters.scm \
-  module/playnet/observation/convert.scm \
-  module/playnet/solve/federation-oracle.scm \
-  module/playnet/vf/facts/validity.scm
-SCOPE_WASM_DEPS = $(SCOPE_WASM_CLOSURE) $(SCOPE_WASM_EXTRA)
-
-# scope.wasm outweighs the Pages per-file cap (~25 MiB) straight off hoot, so
-# the recipe runs wasm-opt (binaryen) when it is on PATH — WASM_OPT= to skip.
 # Feature flags are the minimum the hoot output needs; --all-features must NOT
 # be used (it lets passes emit stringref ops today's engines don't take).
 WASM_OPT ?= wasm-opt
@@ -134,17 +43,6 @@ WASM_OPT_FEATURES = --enable-gc --enable-exception-handling --enable-tail-call \
   --enable-reference-types --enable-bulk-memory --enable-multivalue \
   --enable-sign-ext --enable-mutable-globals
 
-browser/scope.wasm: hoot/scope-worker.scm $(SCOPE_WASM_DEPS) $(HOOT_SCOPE_SRC)/playnet/scope/live.scm $(HOOT_TOOLCHAIN_STAMP)
-	$(HOOT_BUILD_DEV) bash -c 'guild compile-wasm $(HOOT_PLANNER_ARGS) -L $(HOOT_SCOPE_SRC) -o browser/scope.wasm hoot/scope-worker.scm'
-	@if command -v $(WASM_OPT) >/dev/null 2>&1; then \
-	  $(WASM_OPT) -O2 --strip-debug $(WASM_OPT_FEATURES) browser/scope.wasm -o browser/scope.wasm.opt \
-	    && mv browser/scope.wasm.opt browser/scope.wasm; \
-	else echo "note: wasm-opt not on PATH — scope.wasm left unoptimized (may exceed the Pages 25MiB cap)"; fi
-# boots browser/scope.wasm under node, through the page's own boot module, and
-# asks its doors what the planner service answers of the same acts
-.PHONY: check-scope-worker
-check-scope-worker: browser/scope.wasm
-	node tools/test/check-scope-worker.cjs
 
 # ── Git hooks (versioned, install via symlinks) ─────────────────────────────
 # Hooks live under deploy/scripts/git-hooks/ so they ride in the repo.
@@ -193,14 +91,6 @@ link-satellites:
 # then link it in. SAT="explorer rns-bridge" limits it to those.
 workspace:
 	@GUILE_AUTO_COMPILE=0 deploy/scripts/satellite-pins.scm workspace "$(CURDIR)" $(SAT)
-
-# Re-apply the self-hosting fixes to the vendored radicle-planning-boards
-# app (browser/boards/) — same-origin API base, runtime-config load order,
-# CSP/SRI hashes. The deploy pipeline runs this automatically on every
-# deploy (deploy/scripts/radicle-ci-hook.sh); this target is for after
-# manually dropping in a freshly-fetched upstream copy locally.
-patch-boards:
-	@GUILE_AUTO_COMPILE=0 guile -L module deploy/scripts/patch-boards-app.scm "$(CURDIR)/browser/boards"
 
 # Carry a satellite's Radicle storage to the box over SSH (the two nodes do
 # not gossip; see deploy/scripts/carry-satellite.sh). Same box/Tor convention
@@ -545,7 +435,7 @@ GOBLINS_PREFIX = $(shell guix time-machine --commit=$(GUIX_CHANNEL_PIN) -- build
 GOBLINS_LOAD_PATH = $(GOBLINS_PREFIX)/share/guile/site/3.0
 GOBLINS_CCACHE    = $(GOBLINS_PREFIX)/lib/guile/3.0/site-ccache
 
-# hoot/repl.scm imports (fibers channels) and (fibers conditions), and
+# hoot/day-boot.scm imports (fibers channels) and (fibers conditions), and
 # compile-wasm reads imports ONLY from -L (see the note above the wasm
 # rules). Resolve fibers from the same pin as goblins, for the same reason
 # and by the same mechanism, so a checkout needs no local symlink farm to
@@ -558,8 +448,7 @@ FIBERS_LOAD_PATH = $(FIBERS_PREFIX)/share/guile/site/3.0
 # guile-goblins` can resolve to a different version, and the OCapN websocket
 # handshake is NOT compatible across versions — it fails as "WebSocket
 # designator verification failed" in the browser and "invalid client
-# verification message" in the gateway log. tests/ux/ux-full.sh and
-# tools/dev/dev.sh both read these via `make -s print-goblins-path`.
+# verification message" in the gateway log. tools/dev/dev.sh reads these via `make -s print-goblins-path`.
 .PHONY: print-goblins-path
 print-goblins-path:
 	@echo "$(GOBLINS_LOAD_PATH):$(GOBLINS_CCACHE)"
@@ -575,39 +464,15 @@ print-fibers-path:
 repl:
 	$(GUILE_RUN) -L module server/repl.scm
 
-quick-repl:
-	$(GUILE_RUN) -L module server/play-repl.scm
-
 # ── Wasm builds ──────────────────────────────────────────────────────────────
 
-# Prerequisites are the transitive (playnet …) import closure of hoot/repl.scm
-# (tools/wasm-deps.mk, generated: a MISSING entry is the dangerous direction,
-# because make then reports a stale wasm as up to date and a broken module never
-# rebuilds, so the list is written by the walker and not by hand).
-# declared by hand: the static walk does not reach these (check-wasm-deps notes them); kept as they stood
-REPL_WASM_EXTRA = \
-  module/playnet/keri/did.scm
-REPL_WASM_DEPS = $(REPL_WASM_CLOSURE) $(REPL_WASM_EXTRA)
 
-browser/repl.wasm: hoot/repl.scm $(REPL_WASM_DEPS) $(HOOT_TOOLCHAIN_STAMP)
-	$(HOOT_BUILD_DEV) \
-	  guild compile-wasm -L module -L $(FIBERS_LOAD_PATH) \
-	    -L $(GOBLINS_LOAD_PATH) \
-	    --bundle -o browser/repl.wasm hoot/repl.scm
-	./tools/dev/patch-reflect-mime.sh
-
-# `serve` just runs the server — it does NOT build anything. The wasms
-# (day-boot.wasm, repl.wasm) are gitignored BUILD PRODUCTS (the box builds
-# its own on deploy), so a fresh clone has none until you run `make`. Making
-# serve depend on repl.wasm meant every `git` op (which bumps source mtimes)
-# triggered a spurious multi-minute wasm recompile before the server would
-# start, so serve only CHECKS they exist and says how to build them. Build
-# explicitly when you change their sources: `make browser/repl.wasm` /
-# `make browser/day-boot.wasm` (or `make` for both).
+# `serve` just runs the server — it does NOT build anything. The wasm
+# (browser/day-boot.wasm) is a gitignored BUILD PRODUCT (the box builds its
+# own on deploy), so a fresh clone has none until you run `make`. serve only
+# CHECKS it exists and says how to build it: `make` or `make browser/day-boot.wasm`.
 serve:
-	@for w in browser/repl.wasm browser/day-boot.wasm; do \
-	  [ -f $$w ] || echo "make serve: $$w is absent (build product) — the dial needs it: run \`make $$w\` (or \`make\` for both)"; \
-	done
+	@[ -f browser/day-boot.wasm ] || echo "make serve: browser/day-boot.wasm is absent (build product) — the node needs it: run \`make\`";
 	@P="$(if $(PORT),$(PORT),8080)"; \
 	if command -v ss >/dev/null 2>&1 && ss -ltn 2>/dev/null | grep -q ":$$P "; then \
 	  echo "make serve: port $$P is already in use — a stray server is squatting on it."; \
@@ -623,10 +488,10 @@ serve:
 # Wayland/snap confinement from a non-login shell, so we don't use it. Needs
 # `make serve` running. Writes outside the repo by default.
 #   make shot                                  # the share face → ~/playnet-dev-shots/shot.png
-#   make shot URL='http://127.0.0.1:8080/app.html?face=cal' OUT=/tmp/cal.png W=420 H=800
+#   make shot URL='http://127.0.0.1:8080/node.html' OUT=/tmp/cal.png W=420 H=800
 .PHONY: shot
 shot:
-	bash tools/dev/shot.sh "$(if $(URL),$(URL),http://127.0.0.1:8080/app.html?face=share)" \
+	bash tools/dev/shot.sh "$(if $(URL),$(URL),http://127.0.0.1:8080/node.html)" \
 	  "$(if $(OUT),$(OUT),$(HOME)/playnet-dev-shots/shot.png)" $(if $(W),$(W),1400) $(if $(H),$(H),900)
 
 # The day dial, LIVE: the whole local stack in ONE command — a real gateway
@@ -777,7 +642,7 @@ $(KERNEL_SO): $(KERNEL_SRC) module/playnet/solve/kernel/Makefile
 	  make -C module/playnet/solve/kernel
 
 # The source lints every gate runs, and the one way the suite is run.
-LINTS = lint-parens lint-law lint-layers lint-verbs lint-ids lint-compile
+LINTS = lint-parens lint-layers lint-verbs lint-ids lint-compile
 SUITE = $(TEST_ENV) RED_BASELINE=$(RED_BASELINE) bash tools/test/run-scm-tests.sh
 
 .PHONY: test test-all test-fast
@@ -789,10 +654,10 @@ test test-all: $(LINTS) freshen-ccache $(KERNEL_SO) ci-env
 # ── THE GATE: what a commit passes ───────────────────────────────────────────
 # One list, written once. `make gate` is the lints, the wiring and protocol
 # checks, every generated file's freshness, the wasm prerequisites, and the
-# suite (the same run as `make test`); `gate-hoot` adds the two wasm bundles, the
+# suite (the same run as `make test`); `` adds the two wasm bundles, the
 # slow part. `gate-local` is what needs files ignored by path (the docs, the legal
 # contexts), so it runs where they are, in the shared tree. `make test` stays what
-# CI runs. tools/dev/commit-clean.py --gate runs `make emit-all gate gate-hoot`
+# CI runs. tools/dev/commit-clean.py --gate runs `make emit-all gate `
 # in a clean worktree before it commits.
 #
 # FRESH_CHECKS and FRESH_LOCAL are every `check-*-fresh` target but the ones
@@ -801,27 +666,22 @@ test test-all: $(LINTS) freshen-ccache $(KERNEL_SO) ci-env
 # EMITS regenerates the portable ones in dependency order (`ui` last: tsc reads the
 # .ts files the other emits write); `make emit-all` is for a clean worktree,
 # where it reads that tree alone.
-FRESH_CHECKS = check-protocol-fresh check-wire-types-fresh check-nutrition-fresh \
-  check-product-law-fresh check-attribution-fresh check-notice-facts-fresh \
+FRESH_CHECKS = check-protocol-fresh check-wire-types-fresh \
+  check-attribution-fresh check-notice-facts-fresh \
   check-de-fresh check-fdc-fresh \
-  check-housing-fresh check-count-fresh check-rel-fresh check-limits-fresh \
-  check-reach-fresh check-actions-fresh check-units-fresh check-rest-fresh \
-  check-matter-fresh check-fragility-fresh check-demo-fresh check-recipe-demo-fresh \
   check-wasm-deps-fresh check-keyed-fresh check-offline-fresh check-ui-fresh
 # these read files ignored by path (the legal contexts, the physics register): a clean
 # worktree has none, so they run where the files are, in `gate-local`
-FRESH_LOCAL = check-na-fresh check-law-fresh check-physics-fresh
+FRESH_LOCAL = check-na-fresh
 # for the reader, not the gate (see module-map)
 FRESH_EXEMPT = check-module-map-fresh
 # fdc-snapshot needs a 6 MB cache the repo does not carry; check-fdc-fresh skips without it
-EMITS = wasm-deps-emit protocol-emit keyed-emit offline-emit wire-types-emit nutrition-emit product-law-emit attribution-emit \
-  notice-facts-emit de-pack housing-emit count-emit \
-  rel-emit limits-emit reach-emit actions-emit units-emit rest-emit matter-snapshot \
-  fragility-snapshot demo-emit recipe-demo-emit ui
-# na-packs before law-snapshot: the snapshot reads the packs
-EMITS_LOCAL = na-packs law-snapshot physics-emit
+EMITS = wasm-deps-emit protocol-emit keyed-emit offline-emit wire-types-emit attribution-emit \
+  notice-facts-emit de-pack ui
+# na-packs before : the snapshot reads the packs
+EMITS_LOCAL = na-packs
 
-.PHONY: check-fresh check-fresh-local emit-all emit-local gate gate-static gate-hoot gate-local print-fresh-checks
+.PHONY: check-fresh check-fresh-local emit-all emit-local gate gate-static gate-local print-fresh-checks
 check-fresh: $(FRESH_CHECKS)
 check-fresh-local: $(FRESH_LOCAL)
 emit-all:
@@ -833,7 +693,6 @@ print-fresh-checks:
 gate-static: $(LINTS) check-test-wiring check-protocol check-fresh check-wasm-deps
 gate: gate-static freshen-ccache $(KERNEL_SO) ci-env
 	$(SUITE)
-gate-hoot: check-hoot-scope check-hoot-planner
 gate-local: lint-docs check-crossing-catalogue check-fresh-local
 
 # run-scm-tests.sh leaves auto-compile ON because "a stale .go is worse than a
@@ -846,13 +705,13 @@ gate-local: lint-docs check-crossing-catalogue check-fresh-local
 freshen-ccache:
 	@bash tools/test/freshen-ccache.sh
 
-test-fast: lint-parens lint-law lint-docs check-wasm-deps check-ui-fresh test-gplay test-knowledge test-notify-registry test-notify-adapters test-push-adapter \
-      test-recipient-registry test-notify-router test-email-transport check-provenance test-provenance \
-      test-vault test-keystore test-handler-bridge test-capabilities test-pwa lint-sw test-rest test-bytes test-keys test-attention test-push test-rpc test-store test-idb test-log-bound test-rns-identity test-containment-fold test-reactive test-room-model test-mesh-plan test-ice-servers test-units-fallback test-utter test-count test-qr test-scan-fallback test-labels test-store-tree test-stock test-photo test-look test-lend test-contest test-store-view test-held test-demo-store test-demo-world test-symbols test-reach test-queue test-allotment-ui test-fuzzy test-route-data test-route-facts test-route-shape test-route-lines test-position test-route-nav test-route-steps test-route-reroute test-route-ledger test-route-modes test-route-camera test-awake test-route-request test-conform-ui test-caption-window test-refsel test-diag-redact test-offers test-ring test-sky test-runway test-partition test-regions test-nutrition test-housing-ui test-declarations test-bran-derivations \
-      test-contact-binding test-body-doors test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-lint-records-door test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-declare-arg-split test-offer-work-drift-door test-plan-materialize-opts-door test-count-stock test-count-anchor test-count-anchor-2 test-count-expected test-wire-snapshot test-observation-evidence test-labels-containers test-counting test-planned-counts test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-nutrition-fresh check-product-law-fresh check-attribution-fresh check-notice-facts-fresh check-rid-mentions test-calendar-mail check-de-fresh check-na-fresh check-law-fresh check-physics-fresh check-housing-fresh check-count-fresh check-rel-fresh check-reach-fresh check-units-fresh check-rest-fresh check-matter-fresh check-fragility-fresh check-actions-fresh check-limits-fresh check-recipe-demo-fresh check-demo-fresh test-demo-neighbourhood test-adjustment test-counts check-test-wiring check-atlas
+test-fast: lint-parens lint-docs check-wasm-deps check-ui-fresh test-gplay test-notify-registry test-notify-adapters \
+ test-recipient-registry test-notify-router \
+ test-keystore test-handler-bridge test-capabilities test-bytes test-keys test-store test-idb test-rns-identity test-reactive test-mesh-plan test-ice-servers test-units-fallback test-bran-derivations \
+ test-contact-binding test-cards test-planner-facet test-declared-dispatch test-http-door test-mcp-door test-device-doors test-vf-lint test-issue-revoke-credential test-admit-commune-door test-delegation-scope-arg test-lobby-arg-split test-websocket-fragments test-websocket-masking test-observation-evidence test-counting test-allotment test-see-door test-contest-count test-evidence-door check-protocol check-protocol-fresh check-wire-types-fresh check-crossing-catalogue check-attribution-fresh check-notice-facts-fresh check-rid-mentions check-de-fresh check-na-fresh test-adjustment check-test-wiring check-atlas
 
 # every generated file's freshness, from the gate's own list; and the committer's own test
-test-fast: check-fresh test-commit-clean test-outbox
+test-fast: check-fresh test-commit-clean 
 
 # Every tracked .scm reads to EOF. ~3s over ~1070 files, so it can sit in
 # front of the whole suite rather than off to the side.
@@ -870,17 +729,8 @@ lint-parens:
 	@LC_ALL=C.UTF-8 guile --no-auto-compile tools/lint/lint-parens.scm
 
 # A planning map "read off the code" is a set of claims that a name lives at a
-# line of a file. Every cite in the flow map and its companions resolves
-# against the tree, and the map's fold/descent tables are pinned to
-# <scope-nodes>' fields, so each document's date is a reading the tree checks.
-LINTED_DOCS = docs/planning/federation/federation-flow-map.md docs/planning/federation/three-trees.md \
-      docs/planning/federation/patchwork-scopes-containment.md docs/planning/federation/means-pool-uc-allocation.md \
-      docs/planning/federation/labour-aggregation-architecture.md docs/planning/federation/FEDERATED-SOLVE.md \
-      docs/planning/federation/federation-identity-and-folds.md \
-      docs/planning/socialization/temporary-socialization.md docs/planning/voice/README.md \
-      docs/observation/README.md docs/observation/measure.md docs/observation/observe.md \
-      docs/observation/observe-wiring.md docs/observation/capture.md docs/observation/ngsi-ld.md docs/observation/readings-are-counts.md \
-      docs/observation/physics.md docs/observation/physics-register.md docs/the-plan-and-the-laws.typ
+# line of a file. Every cite resolves against the tree.
+LINTED_DOCS =
 .PHONY: lint-docs
 lint-docs:
 	@LC_ALL=C.UTF-8 guile --no-auto-compile tools/lint/doc-cites.scm $(LINTED_DOCS)
@@ -898,17 +748,6 @@ lint-docs:
 .PHONY: check-crossing-catalogue
 check-crossing-catalogue:
 	@$(GUILE_TEST_DEV) -L module tools/lint/check-crossing-catalogue.scm
-
-.PHONY: lint-law
-lint-law:
-	@$(GUILE_TEST_DEV) -L module tools/lint/lint-law-packs.scm
-
-# Every recipe in the tree as ValueFlows the planner can run: one store, every
-# seeder, (playnet knowledge dsl vf-lint) over it. Errors fail; warnings
-# and info print. tools/lint/lint-recipes.scm.
-.PHONY: lint-recipes
-lint-recipes:
-	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/lint/lint-recipes.scm
 
 # Every tracked mention of the core RID (read live via `rad inspect`) or a
 # satellite's (deploy/satellites.scm) — a transition checklist, not an
@@ -936,8 +775,8 @@ sbom:
 
 # The RID token in LICENSE-ADDITIONAL-TERMS.md's attribution quote and the
 # bare token in both HTML footers, kept to knowledge/law/product.scm's
-# `attribution` notice (the same source ui/app/legal-product.ts already
-# reads) — only the token, never the prose around it in each file.
+# `attribution` notice — only the token, never the prose around it in each
+# file.
 .PHONY: attribution-emit check-attribution-fresh
 attribution-emit:
 	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit/emit-attribution-notices.scm write
@@ -1026,9 +865,6 @@ test-dev-ledger:
 test-vf-lint:
 	$(GUILE_TEST_DEV) -L module -L tests tests/scope/test-vf-lint.scm
 
-test-lint-records-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-lint-records-door.scm
-
 test-issue-revoke-credential:
 	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-issue-revoke-credential.scm
 
@@ -1052,42 +888,6 @@ test-websocket-fragments:
 test-websocket-masking:
 	$(GUILE_TEST_DEV) -L module -L tests tests/gateway/test-websocket-masking.scm
 
-test-declare-arg-split:
-	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-declare-arg-split.scm
-
-test-offer-work-drift-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-offer-work-drift-door.scm
-
-test-plan-materialize-opts-door:
-	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-plan-materialize-opts-door.scm
-
-# A count of a stock: the difference lands on the stock, with its technique,
-# place, instant and evidence; a planned count's record fulfils its commitment
-# (docs/observation/capture.md §3).
-test-count-stock:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-count-stock.scm
-
-test-wire-snapshot:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-wire-snapshot.scm
-
-# The calendar email round-trip: an iCal invitation sent by real email
-# (a file-drop transport here), its METHOD:REPLY read back, the bookkeeping
-# row updated, and the real accept-invite door fired — no network needed.
-test-calendar-mail:
-	$(GUILE_TEST_DEV) -L module tests/calendar/test-calendar-mail.scm
-
-test-demo-neighbourhood:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-demo-neighbourhood.scm
-
-test-count-anchor:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-count-anchor.scm
-
-test-count-anchor-2:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-count-anchor-2.scm
-
-test-count-expected:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-count-expected.scm
-
 # The picture a photo read was made from rides the observation credential as a
 # claim of its own: the golden SAIDs of a record with none, the tag grammar, and
 # the bridge's issue (governance/credentials.scm, observation/evidence.scm).
@@ -1099,9 +899,6 @@ test-observation-evidence:
 # (planner/observation/adjustment.scm).
 test-adjustment:
 	$(GUILE_TEST_DEV) -L module tests/observation/test-adjustment.scm
-
-test-counts:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-counts.scm
 
 # The Tier-2 adapter seams (module/playnet/delegates.scm): wire shapes
 # pinned, fail-closed defaults refuse, injected transports answer.
@@ -1117,7 +914,7 @@ test-parity:
 
 # ── e2e: scenario suites + the coverage gate + the live-stack run ─────────
 # tests/e2e/*.scm walk whole stories through the door layer (not one act —
-# the chain). test-e2e keeps to in-vat suites so it runs in the dev loop;
+# the chain). keeps to in-vat suites so it runs in the dev loop;
 # test-e2e-stack is the adopted-stack leg (see tests/e2e/run-stack.sh).
 .PHONY: test-e2e-machine test-e2e-scenarios check-e2e-coverage test-e2e-stack
 
@@ -1126,29 +923,27 @@ test-e2e-scenarios:
 	  echo "== $$t"; $(GUILE_TEST_DEV) -L module -L tests $$t || exit 1; done
 
 # The completeness gate: every declared door named in a test, every dispatch
-# handler named in a browser/ux test, every delegate wire+parity-covered.
+# handler named in a browser test, every delegate wire+parity-covered.
 # Ratchet style — baseline holds the known debt, new gaps fail.
 check-e2e-coverage:
 	@python3 tools/lint/check-e2e-coverage.py
+
+# The machine layer itself: adapters, receipts, the registry.
+.PHONY: test-machine
+test-machine:
+	@for t in tests/machine/*.scm; do \
+	  echo "== $$t"; $(GUILE_TEST_DEV) -L module -L tests $$t || exit 1; done
 
 # The adopted stack, end to end: bring services up (or find them running),
 # export PLAYNET_*_URL, run the parity suites plus stack-integration.scm.
 test-e2e-stack:
 	@bash tests/e2e/run-stack.sh
 
-# Places inside places, the code a thing is known by, a container that moves
-# with what is in it, and the lot's date (docs/observation/capture.md §6).
-test-labels-containers:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-labels-containers.scm
-
 # The planned count's cadence, regime and process grammar (planner/formulas/counting.scm),
 # and the schedule, the offers, the accept and the count over the real service
 # (docs/observation/capture.md §4).
 test-counting:
 	$(GUILE_TEST_DEV) -L module tests/vf/test-counting.scm
-
-test-planned-counts:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-planned-counts.scm
 
 # The week's unplanned photo reads, and a picture read at the seat: parts,
 # bounds, the allotment spent and given back, a planned count drawing on the
@@ -1175,11 +970,6 @@ test-evidence-door:
 .PHONY: test-commit-clean
 test-commit-clean:
 	bash tests/tools/test-commit-clean.sh
-
-# acts made with no gateway in reach, and a keyed act's token (ui/app/outbox.ts, keyed-doors.ts)
-.PHONY: test-outbox
-test-outbox:
-	node tests/browser/outbox-test.mjs
 
 # Guard against the real rot: a test nobody runs. Asserts every
 # tests/ux/*-ux.mjs has a reachable `make` target. Cheap (make -n), no browser,
@@ -1208,10 +998,7 @@ check-wasm-deps-fresh:
 
 .PHONY: check-wasm-deps
 check-wasm-deps:
-	@bash tools/lint/check-wasm-deps.sh hoot/repl.scm     "$(REPL_WASM_DEPS)"
 	@bash tools/lint/check-wasm-deps.sh hoot/day-boot.scm "$(DAY_BOOT_WASM_DEPS)"
-	@bash tools/lint/check-wasm-deps.sh hoot/family-worker.scm "$(FAMILY_WASM_DEPS)"
-	@bash tools/lint/check-wasm-deps.sh hoot/scope-worker.scm "$(SCOPE_WASM_DEPS)"
 
 # ── TypeScript: ui/ → browser/ ──────────────────────────────────────────────
 # Sources live OUTSIDE the document root (like hoot/ and rns-wasm/) and emit
@@ -1254,36 +1041,14 @@ check-ui-staged:
 	@$(UI_ENV) bash tools/lint/check-ui-fresh.sh --staged
 
 # ── Browser test aggregates ─────────────────────────────────────────────────
-# test-browser: self-contained dial suites — chromium, no gateway (~2 min).
-# test-e2e:     full-stack suites — each starts a real gateway (slow).
-# Kept out of `make test` so CI stays fast; run them before a release or when
-# touching browser/, and see check-test-wiring above for why they must at
-# least remain reachable.
-.PHONY: test-browser test-e2e
-test-browser: test-app-ux
-test-e2e: test-keri-signup-ux test-credential-sync-ux test-recovery-ux \
-          test-signup-live-ux test-room-join-live-ux test-enroll-live-ux test-cast-ux \
-          test-device-live-ux test-identity-portability-live-ux test-passcode-change-live-ux \
-          test-calendar-ux test-browser-ux test-lend-ux
-
-# The repl's general UX pass (drives index.html against a live gateway).
-.PHONY: test-browser-ux
-test-browser-ux: browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/browser-ux.mjs
-
-# The calendar tab driven as a user would: pick a scope, share location,
-# mark willingness on a need. Its own header documents this runner.
-.PHONY: test-calendar-ux
-test-calendar-ux: browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/calendar-ux.mjs
-
-# The at-rest blob cipher (browser/lib/vault.js). Plain WebCrypto, no DOM, so
-# node exercises the real code rather than a reimplementation.
-test-vault:
-	node tests/browser/vault-test.mjs
+# test-browser: the node page's JS suites — node, no gateway.
+.PHONY: test-browser
+test-browser: test-machine-executor test-store test-keys test-bytes \
+          test-idb test-keystore test-handler-bridge test-mesh-plan \
+          test-capabilities test-rns-identity test-reactive 
 
 # The browser executor — the sandbox, the cap denial, the timeout, and the
-# canonical digest the Scheme verifier recomputes (ui/app/machine-executor.ts).
+# canonical digest the Scheme verifier recomputes (browser/app/machine-executor.js).
 .PHONY: test-machine-executor
 test-machine-executor:
 	node tests/browser/machine-executor-test.mjs
@@ -1301,29 +1066,12 @@ test-keystore:
 test-handler-bridge:
 	node tests/browser/handler-bridge-test.mjs
 
-# The map's containment forest + its fold (browser/app/tabs/containers.js).
-# Pure functions, so node runs the real code. Pins the line that keeps a place
-# holding a box from reading as a place with nothing wrong with it, the AM–GM
-# claim the geometric mean is chosen for, and point-in-polygon — which decides
-# which published ecoregion boundary a leaf's contained-in is DERIVED from.
-.PHONY: test-containment-fold
-test-containment-fold:
-	node tests/browser/containment-fold-test.mjs
-
 # The reactive core (browser/app/reactive.js). Twenty-one modules import it and
 # none could see it fail: batching, dependency RE-tracking and identity dedup are
 # invisible when they hold and near-impossible to debug when they do not.
 .PHONY: test-reactive
 test-reactive:
 	node tests/browser/reactive-test.mjs
-
-# The room model (app/voice/room-model.ts): the live state as one union and one
-# reducer, and the topic codec. Properties over every path — talk, camera and
-# screen only while live, live always names its room — plus the room hop, where
-# the spine's `left` for the old room lands between the ask and the answer.
-.PHONY: test-room-model
-test-room-model:
-	node tests/browser/room-model-test.mjs
 
 # The mesh's video budget (app/voice/mesh-plan.ts): the streams a person sends
 # stay within the budget at every room size, and the ceiling is the one the
@@ -1344,271 +1092,11 @@ test-ice-servers:
 test-units-fallback:
 	$(GUILE_TEST_DEV) -L module tests/utils/test-units-fallback.scm
 
-# The utterance parser (app/utter.ts): one sentence → [locus-delta] [act],
-# ranked. Pure and context-injected, so node reads the same sentences the page
-# does — the bangs, the faces, weekdays against a fixed clock, the residual.
-.PHONY: test-utter
-test-utter:
-	node tests/browser/utter-test.mjs
-
-# A count of a stock as the faces speak it (app/count.ts): the figure read out
-# of what was typed or said, the gateway's reply, and the verdict's sentence.
-test-count:
-	node tests/browser/count-test.mjs
-
-# The QR encoder a label is printed with (app/qr.ts), read back by a reader
-# written apart from it: sizes, format bits, Reed–Solomon, every version and mask.
-test-qr:
-	node tests/browser/qr-test.mjs
-
-# A person's code read where the browser has no reader: jsQR (browser/vendor/jsQR.js)
-# against our own encoder, and what the reading means (app/scan.ts, app/symbols.ts).
-test-scan-fallback:
-	node tests/browser/scan-fallback-test.mjs
-
-# A label's code and the three prints (app/labels.ts).
-test-labels:
-	node tests/browser/labels-test.mjs
-
-# A photograph taken on the device: how it is fitted, how it crosses the seam
-# and is hashed, and the store that keeps it (app/photo.ts).
-test-photo:
-	node tests/browser/photo-test.mjs
-
-# A thing on the books, read off the wire once: the row's fields, the places
-# table, a lot's date, what is inside a container (app/stock.ts).
-test-stock:
-	node tests/browser/stock-test.mjs
-
-# A store as it is arranged: a place's path, things inside things (app/store-tree.ts).
-test-store-tree:
-	node tests/browser/store-tree-test.mjs
-
-# The store as it is arranged for its face: places, containers, stock, the
-# filters, the badges, the ledger line and the order counts are worked in
-# (app/store-view.ts).
-test-store-view:
-	node tests/browser/store-view-test.mjs
-
-# Where a good is held, stock by stock: the join the Resources face counts
-# through (app/held.ts).
-test-held:
-	node tests/browser/held-test.mjs
-
-# The demo world holds together: every id its tables name exists, and the store's
-# stocks sit at its places and sum to its goods' figures (app/demo/world.ts).
-test-demo-world:
-	node tests/browser/demo-world-test.mjs
-
-# The offline store keeps its own books: every id it names is a stock it
-# holds, every place exists, the dates hang off the day (app/demo/store.ts).
-test-demo-store:
-	node tests/browser/demo-store-test.mjs
-
-# What a symbol the camera read means: a label, a product, text; and a
-# barcode paired with a stock (app/symbols.ts, app/barcodes.ts).
-test-symbols:
-	node tests/browser/symbols-test.mjs
-
-# A person's ways to be reached, kept on the device, and the card that carries
-# some of them: what is refused, what a value opens as, how a card reads (app/reach.ts).
-test-reach:
-	node tests/browser/reach-test.mjs
-
-# Photographs waiting to be read, and the sheet of several shots
-# (app/queue.ts, app/photo.ts).
-test-queue:
-	node tests/browser/queue-test.mjs
-
-# The week's photo reads, as a face says them (app/allotment.ts).
-test-allotment-ui:
-	node tests/browser/allotment-test.mjs
-
-# The counts of a stock and the contests of them, as the sheet reads and says
-# them (app/contest.ts).
-test-contest:
-	node tests/browser/contest-test.mjs
-
-# A lend into the commons, as far as it is words and a door: the audience and
-# its rule, who it admits, the socialize call, the kept-back, the recall (app/lend-core.ts).
-test-lend:
-	node tests/browser/lend-test.mjs
-
-# A picture read into rows: what the model is asked, and what is made of its answer (app/look.ts).
-test-look:
-	node tests/browser/look-test.mjs
-
-# The fuzzy-match primitive (app/fuzzy.ts) utter.ts's floor falls back to for
-# a typo'd or truncated place/spec/scope name — Sørensen–Dice over bigrams,
-# an overlap coefficient for containment, and tie detection so two equally-
-# plausible candidates resolve to nothing rather than an arbitrary winner.
-.PHONY: test-fuzzy
-test-fuzzy:
-	node tests/browser/fuzzy-test.mjs
-
-# The one reader of /route's reply (app/route/data.ts): polyline, trip →
-# Route with alternates and transit legs, the mode's query, the shared cache.
-# Replies are synthesised in Valhalla's documented shape; no engine runs.
-.PHONY: test-route-data
-test-route-data:
-	node tests/browser/route-data-test.mjs
-
-# What a route says in words (app/route/facts.ts): durations, distances, the
-# lines a transit route rides, the arrival clock, the REPL page's trip, and ⇅.
-.PHONY: test-route-facts
-test-route-facts:
-	node tests/browser/route-facts-test.mjs
-
-# The geometry of a route's shape (app/route/shape.ts): the box that holds every
-# way, where a time pill sits, where you are ON a route and what is left of it,
-# a point along the way and the way it is heading there.
-.PHONY: test-route-shape
-test-route-shape:
-	node tests/browser/route-shape-test.mjs
-
-# A route on the map (app/route/lines.ts): which lines a spec draws and in
-# which kind — the chosen way, its alternatives, what is behind you, a ride's
-# dotted walks, the bearing. The pure half; no map.
-.PHONY: test-route-lines
-test-route-lines:
-	node tests/browser/route-lines-test.mjs
-
-# Where you are, from ONE source (app/position.ts): a fix moves USER and is
-# heard by every observer, the device watch follows its listeners, a rehearsed
-# drive sets the device aside.
-.PHONY: test-position
-test-position:
-	node tests/browser/position-test.mjs
-
-# A journey under way, stated without a map or a device: the camera's math
-# (app/route/follow.ts), the words on the card (banner.ts) and a rehearsed
-# drive along a route (drive-sim.ts).
-.PHONY: test-route-nav
-test-route-nav:
-	node tests/browser/route-nav-test.mjs
-
-# The way turn by turn (app/route/steps.ts): which rows are left from where you
-# are, the chips for what a stretch passes through, the distances between rows,
-# the door and its side of the street.
-.PHONY: test-route-steps
-test-route-steps:
-	node tests/browser/route-steps-test.mjs
-
-# When you have left the way (app/route/reroute.ts): beyond reach for several
-# fixes running, the reach widening with a fix's own doubt, a pause after
-# asking, and never on a vehicle.
-.PHONY: test-route-reroute
-test-route-reroute:
-	node tests/browser/route-reroute-test.mjs
-
-# A journey as a fact of the ledger (app/route/ledger.ts): begin names from, to
-# and the way; end names where, once, with the commitment begin minted; a
-# refusal records nothing.
-.PHONY: test-route-ledger
-test-route-ledger:
-	node tests/browser/route-ledger-test.mjs
-
-# The ways of travelling (app/route/modes.ts): THE table, the glyph for how a
-# stretch is travelled, the UI words that become costings, the default.
-.PHONY: test-route-modes
-test-route-modes:
-	node tests/browser/route-modes-test.mjs
-
-# Framing a box exactly (app/route/camera.ts): the camera's standing padding is
-# cleared, then the box is framed with the asked-for padding and nothing else.
-.PHONY: test-route-camera
-test-route-camera:
-	node tests/browser/route-camera-test.mjs
-
-# Keeping the screen on (app/awake.ts): asked for, given back, taken again when
-# the page returns, and no fault where there is no lock or it is refused.
-.PHONY: test-awake
-test-awake:
-	node tests/browser/awake-test.mjs
-
-# The browser's ask-for-a-shape door (app/conform.ts): read → check → re-ask
-# with the reason → floor. Twin of (playnet ai conform), whose suite is
-# tests/ai/test-conform.scm under `make test`. Pure, no gateway.
-test-conform-ui:
-	node tests/browser/conform-test.mjs
-
-# The live-caption commit ratchet (app/voice/caption-window.ts): bounds what
-# whisper re-reads each ~1.4s tick while the mic is held, so a long hold's
-# per-tick cost stays flat instead of growing with how long someone speaks.
-.PHONY: test-caption-window
-test-caption-window:
-	node tests/browser/caption-window-test.mjs
-
-# The local Moonshine worker's first call downloads model weights from a CDN
-# with no bound of its own — a stalled fetch (slow network, blocked host)
-# left every awaiting call hanging forever. withTimeout (app/voice/audio.ts)
-# bounds every such call so a stall surfaces as a real, visible error.
-.PHONY: test-audio-timeout test-slots-model test-inline-text
-test-audio-timeout:
-	node tests/browser/audio-timeout-test.mjs
-
-test-slots-model:
-	node tests/browser/slots-model-test.mjs
-
-test-inline-text:
-	node tests/browser/inline-text-test.mjs
-
-# The feedback lane lets someone point at an element and speak about it; the
-# reference has to survive as text and come back through querySelector. An id
-# or class CSS cannot address (a colon, a slash, a leading digit) spliced into
-# a selector makes querySelector THROW inside the chip's click handler — so
-# refsel drops what it cannot address, and this holds that refusal.
-.PHONY: test-refsel
-test-refsel:
-	node tests/browser/refsel-test.mjs
-
-# The feedback lane can attach what the page said about itself, and the dial
-# logs its OCapN sturdyref on every connect — a BEARER capability. The ring
-# scrubs at capture so it never holds one; this holds that scrub, and holds
-# that it still leaves an ordinary error message readable.
-.PHONY: test-diag-redact
-test-diag-redact:
-	node tests/browser/diag-redact-test.mjs
-
-# Every --t-XXXXXX token app.html's stylesheet var()-references must also be
-# declared in a :root block, or theme.js's readTokens() never learns it
-# exists and the declaration that references it does nothing. Caught 16 real
-# dangling tokens this way (mic-recording tint, log/share-bar chips, a
-# calendar out-cell, the AI-reading pill, several borders) — none painted
-# the color their own rule named.
-.PHONY: test-palette-tokens
-test-palette-tokens:
-	node tests/browser/palette-tokens-test.mjs
-
-# A real upstream Hoot/CapTP transport bug (deploy/UPSTREAM-ISSUES.md #14):
-# a gateway RPC carrying a payload larger than any prior one on the same
-# connection never gets a reply — no error, just an unbounded hang.
-# transcribePcm() (app/voice/audio.ts) bounds the gateway call so a hang
-# falls through to the local worker instead of blocking forever.
-.PHONY: test-transcribe-fallback
-test-transcribe-fallback:
-	node tests/browser/transcribe-fallback-test.mjs
-
 # lib/capabilities.js: the probes read the engine (a real V8 with a feature switched on and
-# off), and the words and banner stay generic. The page-level case is tests/ux/capabilities-ux.mjs.
+# off), and the words and banner stay generic.
 .PHONY: test-capabilities
 test-capabilities:
 	node tests/browser/capabilities-test.mjs
-
-# app/pwa.ts: which origins are live-editing (the worker torn down, its caches
-# cleared) and which caches are the worker's to clear. The Capacitor shell's
-# https://localhost is a production origin. The browser-level case is
-# tests/ux/sw-offline-ux.mjs.
-.PHONY: test-pwa
-test-pwa:
-	node tests/browser/pwa-test.mjs
-
-# The unit tests' harness is tests/browser/assert.mjs: one counter, one line
-# format, one exit. rest-test holds app/rest.ts to the figures the Scheme
-# rest catalogue's own test pins.
-.PHONY: test-rest
-test-rest:
-	node tests/browser/rest-test.mjs
 
 # app/bytes.ts: base64, base64url and hex round-trip every byte; hex refuses
 # what is not hex.
@@ -1623,24 +1111,6 @@ test-bytes:
 test-keys:
 	node tests/browser/keys-test.mjs
 
-# app/attention.ts: the standing list of what is waiting on this device — a
-# build to reload onto, a write the storage refused.
-.PHONY: test-attention
-test-attention:
-	node tests/browser/attention-test.mjs
-
-# app/push.ts: enabling asks, subscribes with the commune's key and tells the
-# commune under this device's id; the commune is told again at each seating.
-.PHONY: test-push
-test-push:
-	node tests/browser/push-test.mjs
-
-# app/rpc.ts: a question asked of a worker always ends — answered by id, or
-# rejected when the worker dies, with a fresh worker on the next ask.
-.PHONY: test-rpc
-test-rpc:
-	node tests/browser/rpc-test.mjs
-
 # app/store.ts: a refused localStorage write answers false and raises a fault
 # (full store, blocked store); a refused read is the default.
 .PHONY: test-store
@@ -1653,106 +1123,15 @@ test-store:
 test-idb:
 	node tests/browser/idb-test.mjs
 
-# app/tabs/social/log-bound.ts: the newest log entries that fit a store's
-# budget, measured as the gateway measures its 512 KiB cap.
-.PHONY: test-log-bound
-test-log-bound:
-	node tests/browser/log-bound-test.mjs
-
 # lib/rns-identity.js: the Reticulum mesh key is held sealed under the origin's
 # non-extractable seal key; a key stored before sealing is sealed on first read.
 .PHONY: test-rns-identity
 test-rns-identity:
 	node tests/browser/rns-identity-test.mjs
 
-# browser/sw.js against the tree: every PRECACHE path and notification icon is
-# a file (install is all-or-nothing over the list), and tools/emit/sw-stamp.sh
-# gives one tree one stamp.
-.PHONY: lint-sw
-lint-sw:
-	@node tools/lint/lint-sw.mjs
-
-# The raster icons the manifest, the pages and the worker's notifications
-# name, drawn from browser/assets/icons/{icon,icon-maskable}.svg. Committed;
-# rerun after editing a source.
 .PHONY: icons
 icons:
 	guix shell --pure librsvg font-dejavu fontconfig bash coreutils -- bash tools/emit/make-icons.sh
-
-# The offer field (browser/app/offers.js). The rim and the map show ONE set,
-# and this is why: both ask the same two questions of every offer. Pins the
-# at-or-under rule against BOTH spine sources (flat term-ids through the
-# descendant index, legacy slash paths through the prefix rule), the
-# multi-valued tag that must show under either branch, and the turn window's
-# real claim — that a daily routine is in a week-scale turn because it recurs
-# on each of its days, not because one instance landed inside.
-.PHONY: test-offers
-test-offers:
-	node tests/browser/offers-test.mjs
-
-# The scope's three declarations as the cards speak them
-# (browser/app/slots/declarations.js): the regime's reading, the ceiling's
-# parse, the reply's reading, the sentences.
-.PHONY: test-declarations
-test-declarations:
-	node tests/browser/declarations-test.mjs
-
-# The editable rings (browser/app/ring.js) — the hours they are drawn in, and
-# the interval algebra NET availability rests on. The end-to-end suite proves
-# the wire's shape; this proves the case that produces a shape it never sees:
-# a committed event strictly inside a window does not shorten it, it SPLITS it.
-# An offer of hours you are not free is a commitment the solver will fill.
-.PHONY: test-ring
-test-ring:
-	node tests/browser/ring-test.mjs
-
-# The sun, from where you stand (browser/app/sky.js). The rim wears the day's
-# own light, and the astronomy is exact rather than a plausible gradient — so
-# its claims are checkable against the world: the sun rises due east at an
-# equinox from EVERY latitude, midsummer in Berlin runs about sixteen and a half
-# hours, and above the Arctic circle midwinter has no sunrise to report at all.
-# That last one matters: answering nothing is different from answering an hour.
-.PHONY: test-sky
-test-sky:
-	node tests/browser/sky-test.mjs
-
-# The socialized purse over time (browser/app/runway.js). One pool stepped a
-# month at a time: a flat outflow runs it dry in exactly capital/outflow
-# months, an `until` stops a cost in that month and not the one before, a
-# one-off lands in its month alone, and a gift between two members of the
-# pool is not a movement of the pool at all. The life integral is end minus
-# today; what must be earned is the depth of the lowest point.
-.PHONY: test-runway
-test-runway:
-	node tests/browser/runway-test.mjs
-
-# A household as a set, its members and groups as blocks (browser/app/
-# partition.js). `all` is the whole, a name a singleton, "a+b" or a named
-# group the block between; the icon is the rounded shape through the block's
-# vertices, and the sort orders rank blocks. Pinned: who resolves to whom,
-# every order's ranking, and that two vertices are a segment, never a polygon.
-.PHONY: test-partition
-test-partition:
-	node tests/browser/partition-test.mjs
-
-# The containment forest the map draws (browser/app/regions.js). Its claim is
-# that the region drawn around a scope is the SAME object, by id, the planner
-# reasons about — because containment is DERIVED from a published polygon. Two
-# rules carry it and both are invisible when they hold: the DEEPEST region wins
-# (a district beats its ecoregion beats its bioregion), and an asserted parent
-# wins over geography only when the forest actually has it.
-.PHONY: test-regions
-test-regions:
-	node tests/browser/regions-test.mjs
-
-# The reproduction-of-labour-power fold (browser/app/nutrition.js). Holds the
-# numbers the module states in prose — the sweat curve's anchor, the derived
-# per-region rates — and the two claims its LAYER ORDER makes: geography may
-# raise the species floor but never sink below it, and the historical-moral
-# standard may only lift.
-.PHONY: test-nutrition nutrition-emit check-nutrition-fresh
-test-nutrition:
-	node tests/browser/nutrition-test.mjs
 
 # Everything hanging off the bran: determinism, domain separation, and the
 # rotation-independence the encrypted backup depends on.
@@ -1763,11 +1142,6 @@ test-bran-derivations:
 # notification router, and the erasure path back off it.
 test-contact-binding:
 	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-contact-binding.scm
-
-# the body doors: declare, stewards, the k-of-n inception signed from the seat,
-# holdings, the read and admission — over a stub body service
-test-body-doors:
-	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-body-doors.scm
 
 # Cards on ^lobby-session — how to reach one person, handed to another:
 # signed by the giver, sealed to the receiver, one per pair, erased on withdrawal.
@@ -1804,13 +1178,6 @@ protocol-emit:
 	$(GUILE_TEST_DEV) -L module tools/emit/protocol-emit.scm mcp browser/api/mcp-tools.json
 	$(GUILE_TEST_DEV) -L module tools/emit/protocol-emit.scm seam ui/app/seam-wire.ts
 
-# The subsistence catalogue's tables, emitted for the browser. The catalogue
-# (module/playnet/knowledge/catalogues/subsistence.scm) states every
-# nutrient band once; ui/app/nutrition-catalogue.ts is its generated copy,
-# committed like seam-wire.ts, and a stale copy is refused the same way.
-nutrition-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/nutrition-emit.scm ui/app/nutrition-catalogue.ts
-
 # The page's row types, generated from the wire tables (module/playnet/wire/
 # rows.scm registry): one interface per table, so the page's types are what
 # the server states. ui/app/wire-rows.ts is committed like seam-wire.ts and a
@@ -1819,27 +1186,6 @@ wire-types-emit:
 	$(GUILE_TEST_DEV) -L module tools/emit/wire-types-emit.scm ui/app/wire-rows.ts
 check-wire-types-fresh:
 	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-wire-types-fresh ui/app/wire-rows.ts wire-types-emit tools/emit/wire-types-emit.scm
-
-check-nutrition-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-nutrition-fresh ui/app/nutrition-catalogue.ts nutrition-emit tools/emit/nutrition-emit.scm
-
-# The product's own law (knowledge/product-law.scm: its crossings, the features
-# that trip them, the consent version, licence line and attribution) is the
-# source; ui/app/legal-product.ts is the browser's generated copy.
-.PHONY: product-law-emit check-product-law-fresh
-product-law-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/emit-product-law.scm ui/app/legal-product.ts
-
-check-product-law-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-product-law-fresh ui/app/legal-product.ts product-law-emit tools/emit/emit-product-law.scm
-
-# The law face's snapshot the same way: the legal fold (legal-registry.scm over
-# the packs in docs/legal/contexts/) is the source, browser/data/snapshots/
-# law-snapshot.json its generated copy — the offline fallback of the planner's
-# live `legal-snapshot` — and a stale copy is refused.
-.PHONY: law-snapshot check-law-fresh de-pack check-de-fresh na-packs check-na-fresh
-law-snapshot:
-	$(GUILE_TEST_DEV) -L module tools/emit/emit-law-snapshot.scm browser/data/snapshots/law-snapshot.json
 
 # Germany's context pack is generated too (tools/emit/emit-de-context.scm holds its
 # places, rules and words for aspects); the snapshot above folds it, so the pack
@@ -1863,24 +1209,6 @@ check-na-fresh:
 	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-na-fresh docs/legal/contexts/$$n.sexp na-packs tools/emit/emit-na-context.scm $$n || ok=0; \
 	done; [ "$$ok" = 1 ]
 
-check-law-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-law-fresh browser/data/snapshots/law-snapshot.json law-snapshot tools/emit/emit-law-snapshot.scm
-
-# The physics register the same way: knowledge/substances.scm declares the
-# conserved leaves, carriers, molecules and channels once; docs/observation/
-# physics-register.md is their generated reading, beside the prose of physics.md.
-.PHONY: physics-emit check-physics-fresh
-physics-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/physics-emit.scm docs/observation/physics-register.md
-
-check-physics-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-physics-fresh docs/observation/physics-register.md physics-emit tools/emit/physics-emit.scm
-
-# The housing standard and closure the same way: knowledge/housing-catalogue.scm
-# + catalogues/housing-substance.scm state the rows and the type table once;
-# ui/app/housing-catalogue.ts is the generated copy. test-housing-ui pins the
-# person layer ui/app/housing.ts ports (the elder's 20 °C, the child's half
-# room, the step-free gate) to the catalogue's own figures.
 # ── food composition: USDA FoodData Central (SR Legacy), sliced ─────────────
 # The composition rows a food spec carries are read off the pinned SR Legacy
 # release (knowledge/food-sources.scm binds spec → FDC food; the slice lives in
@@ -1906,82 +1234,6 @@ check-fdc-fresh:
 	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-fdc-fresh $(FDC_SLICE) fdc-snapshot tools/emit/fdc-snapshot.scm $(FDC_CACHE)/$(FDC_RELEASE); \
 	else echo "check-fdc-fresh: no cached release at $(FDC_CACHE) — run: make fdc-snapshot (fetches 6 MB)"; fi
 
-.PHONY: test-housing-ui housing-emit check-housing-fresh
-test-housing-ui:
-	node tests/browser/housing-test.mjs
-
-housing-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/housing-emit.scm ui/app/housing-catalogue.ts
-
-check-housing-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-housing-fresh ui/app/housing-catalogue.ts housing-emit tools/emit/housing-emit.scm
-
-# The counting rules the page reads the same way: counting.scm (the process
-# grammar, the regimes, the techniques), labels.scm (the code's alphabet) and
-# adjustment.scm (the tolerance) state them once; ui/app/count-catalogue.ts is
-# the generated copy that count.ts and labels.ts import.
-.PHONY: count-emit check-count-fresh
-count-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/count-emit.scm ui/app/count-catalogue.ts
-
-check-count-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-count-fresh ui/app/count-catalogue.ts count-emit tools/emit/count-emit.scm
-
-# The kinds a relationship is named by — a contact's tag, a vouch's type, a
-# lens, a group: social/relationship-kinds.scm states them once;
-# ui/app/rel-catalogue.ts is the generated copy the page reads.
-.PHONY: rel-emit check-rel-fresh
-rel-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/rel-emit.scm ui/app/rel-catalogue.ts
-
-check-rel-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-rel-fresh ui/app/rel-catalogue.ts rel-emit tools/emit/rel-emit.scm
-
-.PHONY: limits-emit check-limits-fresh
-# The sizes the gateway refuses past (vf/facts/limits.scm): the page sizes what
-# it sends against the generated copy, ui/app/limits-catalogue.ts.
-limits-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/limits-emit.scm ui/app/limits-catalogue.ts
-
-check-limits-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-limits-fresh ui/app/limits-catalogue.ts limits-emit tools/emit/limits-emit.scm
-
-# The kinds of way a person is reached — on their own list, told to a
-# commune, put on a card: identity/reach-kinds.scm states them once;
-# ui/app/reach-catalogue.ts is the generated copy the page reads.
-.PHONY: reach-emit check-reach-fresh
-reach-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/reach-emit.scm ui/app/reach-catalogue.ts
-
-check-reach-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-reach-fresh ui/app/reach-catalogue.ts reach-emit tools/emit/reach-emit.scm
-
-# The action table's readings — vf/schemas.scm and vf/formulas/actions.scm state
-# them once; ui/app/actions-catalogue.ts is the generated copy the page reads, so
-# the page asks of a verb what the planner asks and spells no verb set by hand.
-.PHONY: actions-emit check-actions-fresh
-actions-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/actions-emit.scm ui/app/actions-catalogue.ts
-
-check-actions-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-actions-fresh ui/app/actions-catalogue.ts actions-emit tools/emit/actions-emit.scm
-
-# The units the planner writes and the questions it asks of one — utils/units.scm
-# states them once; ui/app/units-catalogue.ts is the generated copy the page reads.
-.PHONY: units-emit check-units-fresh
-units-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/units-emit.scm ui/app/units-catalogue.ts
-
-check-units-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-units-fresh ui/app/units-catalogue.ts units-emit tools/emit/units-emit.scm
-
-# the rest catalogue (sleep bands, personal hours) the page's rest layer reads
-.PHONY: rest-emit check-rest-fresh
-rest-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/rest-emit.scm ui/app/rest-catalogue.ts
-check-rest-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-rest-fresh ui/app/rest-catalogue.ts rest-emit tools/emit/rest-emit.scm
-
 # the doors declared #:keyed (doors/protocol.scm), as the page reads them: each seam
 # handler whose act carries a token minted once per act, with the token's index
 keyed-emit:
@@ -1996,36 +1248,6 @@ offline-emit:
 check-offline-fresh:
 	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-offline-fresh ui/app/offline-doors.ts offline-emit tools/emit/offline-emit.scm
 
-# the offline fallbacks of the matter and fragility faces, written by the same
-# wire the live gateway answers with
-.PHONY: matter-snapshot check-matter-fresh fragility-snapshot check-fragility-fresh
-matter-snapshot:
-	$(GUILE_TEST_DEV) -L module tools/emit/emit-matter-snapshot.scm browser/data/snapshots/matter-snapshot.json
-check-matter-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-matter-fresh browser/data/snapshots/matter-snapshot.json matter-snapshot tools/emit/emit-matter-snapshot.scm
-fragility-snapshot:
-	$(GUILE_TEST_DEV) -L module tools/emit/emit-fragility-snapshot.scm browser/data/snapshots/fragility-snapshot.json
-check-fragility-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-fragility-fresh browser/data/snapshots/fragility-snapshot.json fragility-snapshot tools/emit/emit-fragility-snapshot.scm
-
-# The demo recipes' standing is read off their runs by the functions a live
-# scope's is (planner/solve/recipe-response.scm, doors/record-rows.scm's recipe-response table), so
-# the page holds no copy of the reading. ui/app/recipe-demo-standing.ts is
-# the generated copy the demo reads.
-# The offline demo, as a recording of the demo neighbourhood standing in a real
-# scope (tools/emit/demo-emit.scm): what the page plays where no gateway stands.
-.PHONY: demo-emit check-demo-fresh
-demo-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/demo-emit.scm ui/app/demo/recording.ts
-check-demo-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-demo-fresh ui/app/demo/recording.ts demo-emit tools/emit/demo-emit.scm
-
-.PHONY: recipe-demo-emit check-recipe-demo-fresh
-recipe-demo-emit:
-	$(GUILE_TEST_DEV) -L module tools/emit/recipe-demo-emit.scm ui/app/recipe-demo-standing.ts
-check-recipe-demo-fresh:
-	@EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-recipe-demo-fresh ui/app/recipe-demo-standing.ts recipe-demo-emit tools/emit/recipe-demo-emit.scm
-
 check-protocol-fresh:
 	@ok=1; for pair in openapi:browser/api/openapi.json mcp:browser/api/mcp-tools.json seam:ui/app/seam-wire.ts; do \
 	  EMIT_CMD="$(GUILE_TEST_DEV)" tools/lint/check-emit-fresh.sh check-protocol-fresh "$${pair#*:}" protocol-emit tools/emit/protocol-emit.scm "$${pair%%:*}" || ok=0; \
@@ -2038,70 +1260,17 @@ check-protocol-fresh:
 test-scope-graph:
 	$(GUILE_TEST_DEV) -L module -L tests tests/federation/test-scope-graph.scm
 
-# The Guile-native WordPiece tokenizer (docs/planning/faces/corpus-guile-native.md
-# phase 1): every case is real ground truth from HF's own tokenizer on the
-# same tokenizer.json, not hand-derived.
-.PHONY: test-wordpiece
-test-wordpiece:
-	$(GUILE_TEST_DEV) -L module -L tests tests/ai/test-wordpiece.scm
-
 # Phase 2: guile-sqlite3 against a REAL corpus .db (permaculture, already
 # built) — BLOB vector round-trip + FTS5 MATCH, before phase 4 wires a door.
 .PHONY: test-corpus-sqlite-spike
 test-corpus-sqlite-spike:
 	$(GUILE_TEST_DEV) -L module -L tests tests/ai/test-corpus-sqlite-spike.scm
 
-# Phase 3: the ONNX Runtime FFI kernel (module/playnet/ai/onnx-embed.scm) —
-# a sentence embedding, in-process, verified against the Node pipeline's own
-# output by cosine similarity. onnxruntime is a heavier, spike-specific
-# dependency (not in dev-test-manifest — this is the one test that needs it,
-# and it self-skips when the library or the cached model isn't present).
-.PHONY: test-onnx-embed
-test-onnx-embed:
-	guix shell --pure -L deploy/guix coreutils guile guile-json onnxruntime -- \
-	  env LC_ALL=C.UTF-8 guile --no-auto-compile -L module -L tests tests/ai/test-onnx-embed.scm
-
-# Phase 4: hybrid (BM25 + dense) search, entirely in Guile, over the real
-# built permaculture corpus — checked against a real question's real answer,
-# not just "returns something".
-.PHONY: test-corpus-search
-test-corpus-search:
-	guix shell --pure -L deploy/guix coreutils guile guile-json guile-sqlite3 onnxruntime -- \
-	  env LC_ALL=C.UTF-8 guile --no-auto-compile -L module -L tests tests/ai/test-corpus-search.scm
-
-# ^lobby's corpus-search/corpus-domains doors with NO ^corpus-service
-# configured — the soft-degrade path a box with no onnxruntime/
-# guile-sqlite3 actually takes. A real reply-shape bug lived here (found
-# by testing this exact path, not by review): fixed, and this test is
-# what would have caught it. Needs no onnxruntime/guile-sqlite3 itself —
-# it never reaches ^corpus-service.
-.PHONY: test-corpus-search-degrade
-test-corpus-search-degrade:
-	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-corpus-search-degrade.scm
-
 test-universal-commune-kind:
 	$(GUILE_TEST_DEV) -L module -L tests tests/federation/test-universal-commune-kind.scm
 
 test-gplay:
 	$(GUILE_TEST_DEV) -L module tests/org/test-gplay.scm
-
-test-knowledge:
-	$(GUILE_TEST_DEV) -L module tests/lang/test-knowledge.scm
-
-# Provenance bridge: prose⇄computation graph. check-provenance fails on any
-# dangling tag (the graph is a proof obligation); test-provenance runs the
-# relational + trace queries. extract/render regenerate the facts and the picture.
-check-provenance:
-	$(GUILE_TEST_DEV) docs/_scripts/check-provenance.scm
-
-test-provenance:
-	$(GUILE_TEST_DEV) -L module tests/doors/test-provenance.scm
-
-extract-provenance:
-	$(GUILE_TEST_DEV) docs/_scripts/extract-provenance.scm --write
-
-render-provenance:
-	$(GUILE_TEST_DEV) docs/_scripts/render-provenance.scm
 
 # docs/playnet.pdf + docs/playnet.epub — the scroll's "the latest spec"
 # download links. Both are gitignored build products; CI runs the same
@@ -2144,11 +1313,6 @@ test-federation-peer: $(KERNEL_SO)
 test-federation-peer-procs: $(KERNEL_SO)
 	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-peer-procs.scm
 
-# The planner service's record door: what a gateway's peer of the federated
-# solve is built over (federation/federate.scm).
-test-federation-scope-record: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-federation-scope-record.scm
-
 # One column for a good that crosses either way (solver.scm `offset-column`,
 # `give-bound`, `detach-column`), and the direction a good crosses decided by
 # the solve: the stock moved, the twin economy, goods nobody can supply.
@@ -2158,48 +1322,10 @@ test-crossing-column: $(KERNEL_SO)
 test-federation-direction: $(KERNEL_SO)
 	$(GUILE_TEST_DEV) -L module tests/federation/test-federation-direction.scm
 
-# The communes of one solve partition the economy: a scope beside its own
-# member, or a body in two programs, is refused at the entry of federated-plan.
-test-one-citizen: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-one-citizen.scm
-
-# Every planner door that takes a person is classed: it states their standing
-# (routed to the home) or acts at the scope the call names.
-test-person-doors: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-person-doors.scm
-
-# Who is there to witness work is the scope's community: its agents, the people
-# homed there and the people who took part in an event recorded there.
-test-witness-roster: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-witness-roster.scm
-
-# Credit is earned anywhere and spent anywhere: the claim guard, the claim's reply
-# and the shop header read the roster's account stores, one reading.
-test-credit-spend: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-credit-spend.scm
-
-# The audit of a ratified kind reads what a person took anywhere on the roster.
-test-audit-person: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-audit-person.scm
-
-# A person's practice is theirs wherever they worked: competence, conformance
-# hours and the profile read the join of every scope's work events by event id.
-test-practice-join: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-practice-join.scm
-
-# Live location is a consented lease: the mode is declared at the home, a fix
-# counts while fresh, off ends it and refuses the next.
-test-location-lease: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-location-lease.scm
-
 # A person's day is offered once in the solve as in the roster: overlapping
 # ranges are one stretch.
 test-window-union: $(KERNEL_SO)
 	$(GUILE_TEST_DEV) -L module tests/solve/test-window-union.scm
-
-# Which goods cross is read off the records: at least two scopes deal in it.
-test-crossing-set: $(KERNEL_SO)
-	$(GUILE_TEST_DEV) -L module tests/doors/test-crossing-set.scm
 
 # A body has one week: the pool counts a person once, deployment spends one budget
 # across their skills, and a day offered twice is offered once.
@@ -2253,9 +1379,6 @@ test-governed:
 test-signatures:
 	$(GUILE_TEST_DEV) -L module tests/org/test-history-signatures.scm
 
-test-wisp:
-	$(GUILE_TEST_DEV) -L module tests/lang/test-wisp.scm
-
 test-endorsement:
 	$(GUILE_TEST_DEV) -L module tests/org/test-endorsement.scm
 
@@ -2271,18 +1394,8 @@ test-notify-registry:
 test-notify-adapters:
 	$(GUILE_TEST_DEV) -L module tests/notify/test-notify-adapters.scm
 
-# Web Push: the browser's subscription is kept parsed, a delivery addressed to
-# a device reaches that device, and an expired subscription is removed by it.
-test-push-adapter:
-	$(GUILE_TEST_DEV) -L module tests/push/test-push-adapter.scm
-
 test-recipient-registry:
 	$(GUILE_TEST_DEV) -L module tests/notify/test-recipient-registry.scm
-
-# Where the email adapter's mail goes: msmtp to the box's relay, run against a
-# stand-in that records its arguments and its input.
-test-email-transport:
-	$(GUILE_TEST_DEV) -L module -L tests tests/interface/test-email-transport.scm
 
 test-notify-router:
 	$(GUILE_TEST_DEV) -L module tests/notify/test-notify-router.scm
@@ -2417,247 +1530,14 @@ lint-discipline:
 test-netlayer:
 	$(GUILE_TEST_DEV) -L module tests/gateway/test-netlayer-substitute.scm
 
-# Pure-SXML calendar willingness UI (offer band + the detail panel's
-# three-way response: willing / commit / reject). Deterministic, no vat.
-.PHONY: test-calendar-willingness
-test-calendar-willingness:
-	$(GUILE_TEST_DEV) -L module -L tests tests/ui/test-calendar-willingness.scm
-
-test-browser: test-calendar-willingness
-	# Uses plain `guix shell -L deploy/guix -m ...` rather than
-	# $(TIME_MACHINE), matching deploy/manifests/keri-test-manifest.scm.
-	# The playnet channel pin can't authenticate via the Radicle HTTPS
-	# gateway: Heartwood only canonicalizes the project's defaultBranch
-	# (main), so `refs/heads/keyring` — required by guix's (introduction)
-	# verification — isn't exposed at the top level, only as
-	# refs/namespaces/<NID>/refs/heads/keyring. The dev test environments
-	# accept per-host non-reproducibility in exchange for being able to
-	# build at all; the deploy path (guix deploy) keeps the channel pin
-	# because that's where reproducibility actually matters.
-	guix shell -m deploy/manifests/browser-test-manifest.scm -- \
-	  sh tests/ux/ux-test.sh
-
-# Generic browser e2e: start a gateway (no KERIA), load the real WASM in
-# headless Chromium, connect over OCapN through a /ws proxy, run a Playwright
-# test. Self-contained (starts + stops the gateway). See tests/ux/README-ux-e2e.md.
-#   make test-ux TEST=tests/<feature>-ux.mjs
-.PHONY: test-ux
-test-ux: browser/repl.wasm
-	bash tests/ux/ux-full.sh $(or $(TEST),tests/ux/willingness-ux.mjs)
-
-# ── Dial (app.html) browser tests ────────────────────────────────────────────
-#
-# Every tests/ux/*-ux.mjs below is SELF-CONTAINED: it starts its own static server
-# and stubs the capability seam via the harness's window.__seam, so none of them needs a
-# gateway. They used to run through tests/ux/ux-run.sh, which REQUIRES a gateway
-# sref and aborts without one — so `make test-respond-ux` and
-# `test-nav-ux` could not pass on a clean checkout. One pattern rule now
-# runs them all the same (correct) way.
-#
-#   make test-signup-ux        identity chip: popover, one-tap, sign-in
-#   make test-nav-ux           navigation home / centre-disc ascent
-#   make test-respond-ux       willing / commit / decline on a proposal
-#   make test-events-ux        event wedges, resize, overlapping lanes
-#   make test-pribar-ux        the priority bar: stack, hold, tap routing
-#   make test-hand-ux          the hand, the scrub, the wipe, 0/τ crossing
-#   make test-chrome-ux        the rim's marks: hours, τ fractions, bearings
-#   make test-earth-ux         the reveal: dilate, fade, fall — and back
-#   make test-faces-ux         every route into every face, and the aliases
-#   make test-law-ux           the law face: activity × place × way, the program by place
-#   make test-deeplink-ux      ?focus=<need> — the boot links that aren't faces
-#   make test-sw-offline-ux    the service worker: offline boot, one build per page, update on tap
-#   make test-wheel-ux         bands, zoom, the rhythm glyph, spend mode
-#   make test-availability-ux  availability windows + persistence
-#   make test-recipe-ux        dial⇄recipe process-timeline toggle
-#   make test-web-ux           the recipe web: folded sectors, hulls, traces, open ends
-#   make test-recipeface-ux    the recipe library: computed standing, suggesting a recipe
-#   make test-responsive-ux    the shell fits one screen on every device × face
-#
-# For the dial against a REAL gateway see test-signup-live-ux.
-# NB: the per-test targets must NOT be .PHONY — GNU Make skips implicit-rule
-# search for phony targets, so the pattern rule below would never fire.
-DIAL_UX = bodies signup identity-card account-pages nav navcard route-data route-preview route-nav respond events availability recipe web recipeface walkie room settings share-bar share-sheet share-hear account-sheet face-dock feedback withholding log toast match pribar hand chrome earth faces wheel deeplink forum observe spacetime family corpus shop count labels planned-count law responsive sw-offline
-.PHONY: test-app-ux
-test-app-ux: $(addprefix test-,$(addsuffix -ux,$(DIAL_UX)))
-
-# the family face solves on the device: its test needs the household's wasm too
-test-family-ux: browser/family.wasm
-test-device-scope-ux: browser/scope.wasm
-
-test-%-ux: browser/day-boot.wasm
-	guix shell -m deploy/manifests/browser-test-manifest.scm -- bash -c '\
-	  if [ -d "$$GUIX_ENVIRONMENT/lib/node_modules" ] && [ ! -e node_modules ]; then \
-	    ln -s "$$GUIX_ENVIRONMENT/lib/node_modules" node_modules; CLEAN=1; fi; \
-	  export CHROMIUM_PATH="$$(command -v chromium || true)"; \
-	  node tests/ux/$*-ux.mjs; rc=$$?; \
-	  [ -n "$$CLEAN" ] && rm -f node_modules; exit $$rc'
-
-# The responsive matrix under every engine guix carries — chromium (Playwright
-# over CDP), icecat (WebDriver BiDi) and webkitgtk (WebDriver, MiniBrowser under
-# xvfb) — all substitutes, nothing vendored, so this runs on the box exactly
-# as it runs here. WebKit is what every iPhone renders with: a layout green
-# only on chromium has not been shown to fit a phone.
-.PHONY: test-responsive-engines-ux
-test-responsive-engines-ux: browser/day-boot.wasm
-	guix shell -m deploy/manifests/browser-engines-manifest.scm -- bash -c '\
-	  if [ -d "$$GUIX_ENVIRONMENT/lib/node_modules" ] && [ ! -e node_modules ]; then \
-	    ln -s "$$GUIX_ENVIRONMENT/lib/node_modules" node_modules; CLEAN=1; fi; \
-	  export CHROMIUM_PATH="$$(command -v chromium || true)"; rc=0; \
-	  for b in chromium firefox webkit; do echo "== BROWSER=$$b"; \
-	    BROWSER=$$b node tests/ux/responsive-ux.mjs || rc=1; done; \
-	  [ -n "$$CLEAN" ] && rm -f node_modules; exit $$rc'
-
-# The willingness loop e2e (the worked example). Gates on WASM-load + connect.
-.PHONY: test-willingness-ux
-test-willingness-ux: browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/willingness-ux.mjs
-
 # ── the deployed tier ────────────────────────────────────────────────────
 # The static shell on Cloudflare Pages. deploy-pages ships browser/ as-is —
-# run 'make' first for a FUNCTIONAL deploy (repl.wasm, day-boot.wasm and
-# their glue are hoot-toolchain artifacts; without them the REPL page
-# honestly reports its wasm-error, which the e2e asserts).
-.PHONY: deploy-pages test-deployed-ux
+# run 'make' first for a FUNCTIONAL deploy (day-boot.wasm is a hoot-toolchain
+# artifact; without it the node page honestly reports its wasm-error).
+.PHONY: deploy-pages 
 deploy-pages:
 	CLOUDFLARE_ACCOUNT_ID=$${CLOUDFLARE_ACCOUNT_ID:?set in env} \
 	wrangler pages deploy browser/ --project-name=$${PAGES_PROJECT:-chimera-playnet}
-
-# e2e the LIVE deployment — committed assets serve, the dial shell renders,
-# absent build artifacts fail honestly. Needs playwright-core on NODE_PATH
-# and a chromium (CHROMIUM_PATH or the playwright cache).
-test-deployed-ux:
-	NODE_PATH=$${NODE_PATH:-node_modules} \
-	DEPLOYED_BASE=$${DEPLOYED_BASE:-https://chimera-playnet.pages.dev} \
-	node tests/ux/deployed-ux.mjs
-
-# The lend face e2e — a browser tab as a compute node: two identities on a
-# real gateway, offer/submit/claim through the session, the shipped
-# machine-executor runs the envelope, the receipt lands on the book.
-# PLAYNET_SEED_DEMO seeds the commune both join.
-.PHONY: test-lend-ux
-test-lend-ux: browser/repl.wasm
-	PLAYNET_SEED_DEMO=1 bash tests/ux/ux-full.sh tests/ux/lend-ux.mjs
-
-# Same flow against the deployed site: the page discovers the gateway via
-# entry-points.json/discoveryUrl, so the live sref must be reachable through
-# DEPLOYED_BASE's discovery chain.
-.PHONY: test-lend-ux-deployed
-test-lend-ux-deployed:
-	NODE_PATH=$${NODE_PATH:-node_modules} \
-	node tests/ux/lend-ux.mjs $${DEPLOYED_BASE:-https://chimera-playnet.pages.dev}
-
-# KERI signup e2e: real repl.wasm creates an identity in Chromium, ships
-# icp + OKEA endpoint replies to a live gateway, and the REAL /oobi route
-# (serve-static against the gateway's oobi-host dir) must serve
-# KEL + /end/role/add + /loc/scheme — what a KERIA resolver fetches.
-.PHONY: test-keri-signup-ux
-test-keri-signup-ux: browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/keri-signup-ux.mjs
-
-# The encrypted credential backup, end to end: the browser seals it, the
-# gateway stores ciphertext, and the test decrypts it from the passcode
-# alone. Covers the Scheme<->JS seam the unit tests cannot reach.
-test-credential-sync-ux: browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/credential-sync-ux.mjs
-
-# New device, nothing but the passcode: wipe localStorage + IndexedDB, then
-# recover the identity from bran + AID and open the gateway's encrypted
-# backup. The property the whole recovery design rests on.
-.PHONY: test-recovery-ux
-test-recovery-ux: browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/recovery-ux.mjs
-
-# The DIAL's SIGNED governance cast, end-to-end (app.html → gateway). Opening a
-# ballot needs a governor, and the browser's AID (SAID of an ICP that anchors a
-# browser-side reticulum key) can't be cheaply pre-known — so the gateway runs
-# with PLAYNET_TEST_OPEN_GOVERNANCE=1, a documented test-only flag that gates
-# ONLY ballot open/close, never the cast signature check. The cast the test
-# actually asserts still goes through the real cast-signed + verify path.
-.PHONY: test-cast-ux
-test-cast-ux: browser/day-boot.wasm browser/repl.wasm
-	PLAYNET_TEST_OPEN_GOVERNANCE=1 bash tests/ux/ux-full.sh tests/ux/cast-ux.mjs
-
-# The DIAL's signup against a real gateway (signup-ux covers the same chip
-# with the seam stubbed; this proves the arguments actually reach a gateway and
-# mint an identity whose KEL the /oobi route then serves).
-.PHONY: test-signup-live-ux
-test-signup-live-ux: browser/day-boot.wasm browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/signup-live-ux.mjs
-
-# A room joined through a real gateway: the spine boots with every import its wasm
-# declares, the ice-servers door answers at the join, the list reaches the page
-# before any peer connection, and the join runs without a Goblins exception.
-.PHONY: test-room-join-live-ux
-test-room-join-live-ux: browser/day-boot.wasm browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/room-join-live-ux.mjs
-
-# a refresh keeps you signed in under a root-authorized device key; the
-# passcode stays cold (docs/planning/identity/device-keys.md)
-# a severed gateway connection: on-sever drops the dead refs, the page
-# reconnects with backoff, the enliven re-seats (docs/planning/faces/spine-worker.md)
-.PHONY: test-reconnect-live-ux
-test-reconnect-live-ux: browser/day-boot.wasm browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/reconnect-live-ux.mjs
-
-.PHONY: test-device-live-ux
-test-device-live-ux: browser/day-boot.wasm browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/device-live-ux.mjs
-
-# One identity across five devices and a gateway restart: AID + passcode on a
-# device that holds nothing, a device retired from another, recovery friends,
-# half the browser's storage evicted, the gateway killed and started again on
-# the same data, sign-out. Every assertion gates.
-.PHONY: test-identity-portability-live-ux
-test-identity-portability-live-ux: browser/day-boot.wasm browser/repl.wasm
-	PLAYNET_SCOPES_DURABLE=1 bash tests/ux/ux-full.sh tests/ux/identity-portability-live-ux.mjs
-
-# The passcode, changed in settings: two rotations as one act, every device
-# retired and this one authorized afresh, the old passcode told so on a
-# device beside it and on one that holds nothing, and a second change.
-.PHONY: test-passcode-change-live-ux
-test-passcode-change-live-ux: browser/day-boot.wasm browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/passcode-change-live-ux.mjs
-
-# The same account on Gecko (icecat) and WebKit (webkitgtk): created on one,
-# signed in on the other, each kept across a reload.
-.PHONY: test-identity-engines-live-ux
-test-identity-engines-live-ux: browser/day-boot.wasm browser/repl.wasm
-	UX_MANIFEST=deploy/manifests/browser-engines-manifest.scm bash tests/ux/ux-full.sh tests/ux/identity-engines-live-ux.mjs
-
-# An identity made at one commune takes a seat at another, carrying its own
-# KEL: two real gateways (SECOND_GATEWAY=1), each with its own oobi-host.
-# The profile's skills over a real gateway: a degree stated, restated below
-# zero, offered to the roster, noted — each read back through my-skill-standing,
-# and kept across a reload.
-.PHONY: test-skill-standing-live-ux
-test-skill-standing-live-ux: browser/day-boot.wasm browser/repl.wasm
-	bash tests/ux/ux-full.sh tests/ux/skill-standing-live-ux.mjs
-
-.PHONY: test-join-live-ux
-test-join-live-ux: browser/day-boot.wasm browser/repl.wasm
-	SECOND_GATEWAY=1 bash tests/ux/ux-full.sh tests/ux/join-live-ux.mjs
-
-# A vouch that travels: two real gateways polling each other's witness rail;
-# Alice's signed relationship for Tia counts at commune B, whose store never
-# held it, and Tia witnesses an ask at A from B with a key A never saw.
-.PHONY: test-vouch-carry-live-ux
-test-vouch-carry-live-ux: browser/day-boot.wasm browser/repl.wasm
-	SECOND_GATEWAY=1 PLAYNET_SCOPES_DURABLE=1 PLAYNET_TEST_OPEN_GOVERNANCE=1 bash tests/ux/ux-full.sh tests/ux/vouch-carry-live-ux.mjs
-
-# The contact row, live: two people at one gateway connect by link, witness an
-# ask from its row, and walk a row through tag, vouch, mutual, withdraw, forget;
-# one tells the commune an address (the code read from the mail directory) and
-# gives the other a card the commune keeps as ciphertext.
-.PHONY: test-contacts-live-ux
-test-contacts-live-ux: browser/day-boot.wasm browser/repl.wasm
-	PLAYNET_TEST_OPEN_GOVERNANCE=1 PLAYNET_MAIL_DIR=$(CURDIR)/.ux-e2e-data/mail bash tests/ux/ux-full.sh tests/ux/contacts-live-ux.mjs
-
-# The witnessed enrollment mile against a real gateway: two browser contexts
-# as two citizens — signup, recognition queue, k-of-n ceremony open, the
-# witness inbox, the in-browser vouch signature, and the candidate's PHC.
-.PHONY: test-enroll-live-ux
-test-enroll-live-ux: browser/day-boot.wasm browser/repl.wasm
-	PLAYNET_TEST_OPEN_GOVERNANCE=1 bash tests/ux/ux-full.sh tests/ux/enroll-live-ux.mjs
 
 # ── KERI mock-based unit tests ───────────────────────────────────────────────
 # Fast unit tests against an in-process mock KERIA HTTP server. Cover the
@@ -2729,12 +1609,6 @@ test-mesh-mailbox:
 test-mesh-smoke:
 	timeout 120 $(GUILE_TEST_DEV) -L module -L tests tests/keri/integration/test-mesh-smoke.scm
 
-# Browser e2e WITH a real mesh hop: persona announces through a live
-# bridge pair, LXMF mail injected at the far bridge routes back and is
-# decrypted in the browser. The full no-mocks round trip.
-test-keri-mesh-ux: browser/repl.wasm
-	bash tests/ux/ux-mesh.sh
-
 # OKEA endpoint replies in OOBI bodies. Needs the KERI manifest (not the
 # dev one): the authoritative third ring parses our served body with
 # keripy itself and asserts the endpoint registers in db.locs.
@@ -2794,41 +1668,6 @@ test-pending-grants-fiber-inheritance:
 test-observability-endpoints:
 	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-observability-endpoints.scm
 
-# The basemap's tile source: the PMTiles reader and the /tiles/osm routes,
-# against the committed fixture (tools/emit/pmtiles-tiny.scm writes it).
-test-pmtiles:
-	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-pmtiles.scm
-
-# The /route proxy's request builder: what a query may ask of Valhalla (two
-# ends, waypoints, a costing token, alternates, a clock, a language, a unit)
-# and what is read away. Pure — no engine runs.
-.PHONY: test-route-request
-test-route-request:
-	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-route-request.scm
-
-# The device-side reader (browser/app/pmtiles.js) against the same fixture, so
-# a region kept on a phone reads exactly as the gateway reads it.
-.PHONY: test-pmtiles-browser
-test-pmtiles-browser:
-	node tests/browser/pmtiles-test.mjs
-
-# A region kept on the device, end to end, in a real browser: the dev server is
-# started over the fixture map directory, the page downloads the fixture region
-# in Range slices into IndexedDB, and the osm:// protocol answers a tile off
-# the device with the gateway's tiles cut. Needs the browser-test shell
-# (chromium + playwright); the server is `serve` on its own port and map dir,
-# spelled out rather than recursed into ($(MAKE) in a recipe runs even under -n).
-.PHONY: test-map-packs-ux
-test-map-packs-ux:
-	@log=$$(mktemp); \
-	setsid env PLAYNET_DEV=1 PLAYNET_FIBERS=1 PLAYNET_MAP_DIR=tests/fixtures/map $(HOOT_RUN_DEV) -L . -L module \
-	  -c '((@ (server serve-static) run-static-server) #:work-dir "browser" #:oobi-dir "data/oobi-host" #:port 8092)' >$$log 2>&1 & pid=$$!; \
-	for i in $$(seq 1 120); do curl -sf http://127.0.0.1:8092/tiles/osm/regions.json >/dev/null && break; sleep 1; done; \
-	curl -sf http://127.0.0.1:8092/tiles/osm/regions.json >/dev/null || { echo "test-map-packs-ux: the server did not come up"; cat $$log; kill -- -$$pid 2>/dev/null; exit 1; }; \
-	UX_BASE=http://127.0.0.1:8092 guix shell -L deploy/guix -m deploy/manifests/browser-test-manifest.scm -- \
-	  sh -c '[ -e node_modules ] || ln -s "$$GUIX_ENVIRONMENT/lib/node_modules" node_modules; export CHROMIUM_PATH=$$(command -v chromium); node tests/ux/map-packs-ux.mjs'; rc=$$?; \
-	kill -- -$$pid 2>/dev/null; rm -f $$log; exit $$rc
-
 test-playnet-scope:
 	$(GUILE_TEST_DEV) -L module -L tests tests/tools/test-playnet-scope.scm
 
@@ -2879,20 +1718,7 @@ test-schemas:
 
 test-keri: test-keri-blake3 test-keri-signify test-keri-signify-portable test-keri-oobi-replies test-keri-signify-integration test-keri-signup-with-icp test-keri-signup-with-kel test-keri-lobby-seat-gate test-keri-signup-disabled-gate test-keri-forget test-identity-kel test-identity-body-ceremony test-governance-body-role-credential test-recovery-share test-keri-reticulum-binding test-mesh-mailbox test-did-keri test-keri-bridge test-keri-bridge-extra test-keri-credentials test-keri-credentials-ipex test-ipex-policy test-ipex-grant-handler test-keri-witnesses test-keri-notifications test-keri-recovery test-keri-lobby-auth test-schemas
 
-# ── SMS Wall ───────────────────────────────────────────────────────────────────
-# Smoke test for the WALLS.RIP API client module
-.PHONY: test-sms-wall
-test-sms-wall:
-	$(GUILE_TEST_DEV) -L module -L tests tests/sms/test-walls-rip.scm
-
-# Pack the SMS wall tool as a portable Docker image
-.PHONY: pack-sms-wall
-pack-sms-wall:
-	guix pack -f docker -C gzip -S /bin=bin -S /share=share \
-	  -m deploy/manifests/sms-wall-manifest.scm \
-	  --entry-point=bin/sms-verify
-
-test-all: test-gplay test-knowledge test-kanren-goblins test-vat-federation test-federation-a test-federation-b test-plan-actor test-federation-result test-elegance-wins test-resilient-federation test-federation-tree test-federation-tree-async test-federation-ocapn test-governed test-signatures test-wisp test-endorsement test-output-cap test-output-port test-persistence test-planner test-governance test-relational test-netlayer test-browser test-keri test-sms-wall
+test-all: test-gplay test-governed test-signatures test-endorsement test-output-cap test-output-port test-persistence test-planner test-governance test-netlayer test-keri
 
 # ── test-all-pinned ──────────────────────────────────────────────────────────
 # Reproducibility canary. Same suite as test-all, but every guile invocation
@@ -2904,10 +1730,8 @@ test-all: test-gplay test-knowledge test-kanren-goblins test-vat-federation test
 # point, it's the canary, not the daily target.
 test-all-pinned:
 	$(GUILE_TEST) -L module tests/org/test-gplay.scm
-	$(GUILE_TEST) -L module tests/lang/test-knowledge.scm
 	$(GUILE_TEST) -L module tests/org/test-governed-org.scm
 	$(GUILE_TEST) -L module tests/org/test-history-signatures.scm
-	$(GUILE_TEST) -L module tests/lang/test-wisp.scm
 	$(GUILE_TEST) -L module tests/org/test-endorsement.scm
 	$(GUILE_TEST) -L module tests/org/test-persistence.scm
 	$(GUILE_TEST) -L module tests/gateway/test-netlayer-substitute.scm
@@ -2977,89 +1801,6 @@ test-ipex-cross-gateway:
 # both stop such a bundle at start-up today (UPSTREAM-ISSUES #17, #18); the
 # state is in docs/dev/LIVE_HACKING.md.
 #
-# Dev output lives in browser/.dev/ (gitignored) so the dev bundle NEVER
-# overwrites the prod browser/repl.wasm that GitHub Pages serves. The dev
-# dir holds symlinks to non-wasm assets (HTML/JS/CSS/etc.) plus the dev
-# wasm as a real file. DO NOT DEPLOY dev bundles — they are several times
-# larger and dial the page's own origin on startup.
-
-browser/.dev:
-	mkdir -p browser/.dev
-
-# Populate browser/.dev with symlinks to every sibling file in browser/
-# EXCEPT repl.wasm, which is written directly as the dev bundle and must not
-# be a symlink or the build would clobber the prod wasm. (The Hoot sources
-# live in hoot/, outside the served tree, so there is nothing else to skip.)
-browser/.dev/.stamp-assets: | browser/.dev
-	@cd browser && for f in *; do \
-	  case "$$f" in \
-	    .dev|repl.wasm) ;; \
-	    *) ln -sfn "../$$f" ".dev/$$f" ;; \
-	  esac; \
-	done
-	@touch $@
-
-# The dev wrapper file (hoot/repl-dev.scm) is a *tail fragment* — it only
-# contains the (run-web-repl) call (and an optional parameterize override of
-# current-repl-server). We build the
-# actual compilation input by:
-#
-#   1. Cloning the prod entry point and injecting (hoot web-repl) into its
-#      top-level (use-modules ...) form. Hoot's library-group compiler
-#      requires use-modules to be the first AND ONLY top-level imports
-#      form, so we can't simply prepend a second one.
-#   2. Appending the dev tail.
-#
-# The result starts the prod entry point's full init flow (FFI, refresh!,
-# register-callbacks!, OCapN bootstrap), then hands control to
-# run-web-repl which dials the dev server's WebSocket relay.
-#
-# We can't (include …) the prod source from a separate wrapper because
-# Hoot's library-group compiler forbids top-level include clauses.
-
-browser/.dev/repl-live.scm: hoot/repl.scm hoot/repl-dev.scm \
-                            | browser/.dev
-	sed '0,/(use-modules /s//(use-modules (hoot web-repl) /' \
-	    hoot/repl.scm > $@
-	cat hoot/repl-dev.scm >> $@
-
-browser/.dev/repl.wasm: browser/.dev/repl-live.scm \
-                       module/playnet/org/gplay.scm module/playnet/lang/wisp.scm \
-                       module/playnet/ui/map.scm \
-                       browser/.dev/.stamp-assets $(HOOT_TOOLCHAIN_STAMP)
-	$(HOOT_BUILD_DEV) \
-	  guild compile-wasm -g2 -fruntime-modules -fmutable-defs -L module -L $(FIBERS_LOAD_PATH) \
-	    -L $(GOBLINS_LOAD_PATH) \
-	    --bundle -o browser/.dev/repl.wasm browser/.dev/repl-live.scm
-
-# `make serve-dev` — rebuild the REPL UI dev bundle and serve it with
-# (hoot web-server), which exposes /repl as the WebSocket proxy for Geiser.
-# HTTP on 127.0.0.1:8080 and the editor relay on 127.0.0.1:37146, the same
-# 8080 `make dev` and `make serve` use; PORT and REPL_PORT move them
-# (`PORT=8090 REPL_PORT=37199 make serve-dev`).
-serve-dev: browser/.dev/repl.wasm
-	$(HOOT_RUN_DEV) -L module \
-	  -c '((@ (hoot web-server) serve) #:work-dir "browser/.dev" #:port $(if $(PORT),$(PORT),8080) #:repl-port $(if $(REPL_PORT),$(REPL_PORT),37146))'
-
-# `make live-watch` — auto-reload on save.
-#
-# Run alongside `make serve-dev`: edit a Scheme
-# file under module/, this watches for the save and pushes the new
-# definitions into the running browser tab via the REPL relay on
-# 127.0.0.1:37146. No page reload, no rebuild.
-#
-# Defaults to watching ./module. Pass extra paths after `--`:
-#   make live-watch ARGS="server module/playnet"
-#
-# Pulls inotify-tools, bash AND guile-next through guix so the script
-# works from a clean checkout — the bash loop calls tools/dev/live-reload.scm
-# which in turn calls /usr/bin/env guile, so guile must be on PATH inside
-# the shell. The bootstrap VPS provider VM gets the same packages via the live-watch
-# shepherd service.
-live-watch:
-	$(TIME_MACHINE) shell inotify-tools coreutils bash guile-next -- \
-	  ./tools/dev/live-watch.sh $(ARGS)
-
 # ── Wisp editor tooling ─────────────────────────────────────────────────────
 # Syntax highlighting / indentation for .w (Wisp) files. Two targets, two
 # editor camps — see tooling/README.md.
@@ -3093,9 +1834,7 @@ wisp-ts:
 	cd tooling/tree-sitter-wisp && ./build.sh test
 
 clean:
-	rm -f browser/repl.wasm \
-	      browser/.dev/repl.wasm browser/.dev/repl-live.scm \
-	      browser/.dev/.stamp-assets
+	rm -f browser/day-boot.wasm
 
 # The two-box witness harness: two processes, two state dirs, two static
 # tiers, HTTP-only between them — live cross-gateway witness delivery.
@@ -3107,44 +1846,18 @@ test-witness-two-box:
 # browser signup → dial Berlin → offer hours → declare a need → the solve's
 # schedule lands in the calendar's wire-only source. A probe, not a suite —
 # it writes durable state into .dev-data on every run.
-# The truth-telling arc, every suite in one run (docs/planning/identity/truth-telling.md):
-# the law (emphasis), the meter (externality), the audit, the family solve,
-# the fold, the service doors, a want on the citizen's own good, the fold's
-# prices between scopes, and the credit fold's persons. Kernel suites need
+# The truth-telling arc: emphasis, externality, the audit, federated repro,
+# eisenberg-gale, the demand fold, owned delivery. Kernel suites need
 # libplanner_kernel (make -C module/playnet/solve/kernel).
 .PHONY: test-truth-telling
 test-truth-telling: $(KERNEL_SO)
-	@for t in emphasis externality audit family-money-harmony federated-repro eisenberg-gale; do \
+	@for t in emphasis externality audit federated-repro eisenberg-gale; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
 	    guile --no-auto-compile -L module -L tests tests/*/test-$$t.scm || exit 1; \
 	done
-	@for t in tests/economy/test-demand-fold.scm tests/doors/test-slots-service.scm \
-	          tests/economy/test-owned-delivery.scm tests/doors/test-credit-fold.scm; do \
+	@for t in tests/economy/test-demand-fold.scm tests/economy/test-owned-delivery.scm; do \
 	  echo "=== $$t ==="; \
 	  $(TEST_ENV) \
 	    guile --no-auto-compile -L module -L tests $$t || exit 1; \
 	done
-
-# The truth-telling loop on the wire (make dev running): a want with a
-# voice, the ratification rite, my-slots' voice readback, the burn-meter.
-.PHONY: probe-emphasis
-probe-emphasis:
-	GATEWAY_PORT=9099 GATEWAY_SREF_FILE=.dev-data/gateway-sref.txt \
-	UX_TEST_PORT=8091 guix shell -m deploy/manifests/browser-test-manifest.scm -- \
-	  sh tests/ux/ux-run.sh tests/ux/emphasis-live-probe.mjs
-
-.PHONY: probe-live-sources
-probe-live-sources:
-	GATEWAY_PORT=9099 GATEWAY_SREF_FILE=.dev-data/gateway-sref.txt \
-	UX_TEST_PORT=8091 guix shell -m deploy/manifests/browser-test-manifest.scm -- \
-	  sh tests/ux/ux-run.sh tests/ux/live-sources-probe.mjs
-
-# The witness ceremony to QUORUM as two real browsers (two isolated contexts =
-# two identities): A records work + opens, B finds it in the inbox, co-signs
-# from its own key, the credential strengthens at the floor. Same live stack.
-.PHONY: probe-witness-quorum
-probe-witness-quorum:
-	GATEWAY_PORT=9099 GATEWAY_SREF_FILE=.dev-data/gateway-sref.txt \
-	UX_TEST_PORT=8092 guix shell -m deploy/manifests/browser-test-manifest.scm -- \
-	  sh tests/ux/ux-run.sh tests/ux/witness-quorum-probe.mjs

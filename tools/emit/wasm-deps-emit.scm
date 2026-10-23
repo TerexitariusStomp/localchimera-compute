@@ -14,10 +14,7 @@
 (load (string-append (getcwd) "/tools/lint/wasm-deps.scm"))   ; `closure`, and the opaque-form record (relative to the repo root)
 
 (define %bundles
-  '(("REPL_WASM_CLOSURE"      . "hoot/repl.scm")
-    ("DAY_BOOT_WASM_CLOSURE"  . "hoot/day-boot.scm")
-    ("FAMILY_WASM_CLOSURE"    . "hoot/family-worker.scm")
-    ("SCOPE_WASM_CLOSURE"     . "hoot/scope-worker.scm")))
+  '(("DAY_BOOT_WASM_CLOSURE"  . "hoot/day-boot.scm")))
 
 (define (emit out)
   (call-with-output-file out

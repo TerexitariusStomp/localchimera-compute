@@ -80,8 +80,6 @@
              ;; with the demo recorder, so a recording is what a gateway sends
              (playnet wire rows)
              ((playnet wire snapshot) #:select (fold-snapshots))
-             ;; the reply's JSON shape, the same one the page's own solve worker speaks
-             ((playnet doors family wire) #:select (family-split->json-alist family-bills->json-alist))
              ;; Shared SAID derivation — the SAME code the server uses, so a
              ;; stance we sign here derives the identical SAID there. Without
              ;; this the client could only blind-sign whatever SAID the server
@@ -3991,35 +3989,6 @@
           (reply! cb (scm->json-canonical
                       `(("claimed" . ,(wire-value 'num (alist-ref v 'claimed) #f))
                         ("balance" . ,(wire-value 'num (alist-ref v 'balance) #f)))))))))))
-
-;; Family: a household purse split across its members' stated needs by
-;; harmony (doors/family/solve.scm through the lobby). Scope-free and AID-free —
-;; the needs and the purse are the face's own statement and nothing is
-;; written — so only a session is required. NEEDS-JSON is the face's rows as
-;; it holds them; the reply is the solve's rows with `met` per need.
-;; MEMBERS-JSON: the household's own consumer voice (playnet.typ §The credit
-;; identity, family.scm family-voice-of) — each declared member's capacity
-;; to labour and hours contributed this week, as {person,capacity,hours}
-;; rows. "[]" (the face's default) reads every owner as an equal citizen,
-;; unchanged from before this existed.
-(define (handle-family-split needs-json purse labour-h weighted members-json per-citizen-hours cb)
-  (if (not *session*)
-      (reply! cb "err:sign in first")
-      (planner-call cb (<- *session* 'family-split (arg-str needs-json)
-                           (arg-num purse) (arg-num labour-h)
-                           (not (equal? weighted "false"))
-                           (arg-str members-json) (arg-num per-citizen-hours))
-        (lambda (v) (reply! cb (scm->json-canonical (family-split->json-alist v)))))))
-
-(define (handle-family-bills needs-json purse labour-h weighted eur-per-hour members-json per-citizen-hours cb)
-  (if (not *session*)
-      (reply! cb "err:sign in first")
-      (planner-call cb (<- *session* 'family-bills (arg-str needs-json)
-                           (arg-num purse) (arg-num labour-h)
-                           (not (equal? weighted "false"))
-                           (arg-num eur-per-hour)
-                           (arg-str members-json) (arg-num per-citizen-hours))
-        (lambda (v) (reply! cb (scm->json-canonical (family-bills->json-alist v)))))))
 
 ;; one registry — every dial handler in one place (all defined above)
 (for-each (lambda (entry)

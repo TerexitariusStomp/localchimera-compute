@@ -84,11 +84,8 @@ maybe_reexec_self() {
 # --- Operations ---
 
 sync_application_code() {
-    # Runs BEFORE the rsync (like build_browser_wasm/build_planner_kernel in
-    # their own branches) so a freshly-built PDF/EPUB rides this same sync —
-    # content-stamped internally, so this is a fast no-op on every deploy
-    # that doesn't touch docs/playnet.typ.
-    build_docs_epub
+    # Runs BEFORE the rsync so anything it builds rides this same sync —
+    # content-stamped internally, a fast no-op on every deploy
 
     log "Syncing application code to $DEPLOY_DIR"
     # We already run as the `playnet` user (per shepherd-radicle-ci.scm
@@ -108,7 +105,7 @@ sync_application_code() {
     # deploy/providers/provider-1.scm (real-IP config used for on-box
     # reconfigures); with only a P rule, rsync still tries to open it →
     # "Permission denied" → exit 23 → under set -e the whole sync
-    # aborts before the sw.js stamp. Excluding also guarantees the
+    # aborts the sync. Excluding also guarantees the
     # secret file can never be copied into the served tree.
     rsync -a --delete \
         --exclude='deploy/providers/*.scm' \
@@ -120,7 +117,6 @@ sync_application_code() {
         --filter='P browser/rns_wasm_bg.wasm' \
         --filter='P browser/.rns-wasm-stamp' \
         --filter='P .rns-wasm-tools' \
-        --filter='P browser/repl.wasm' \
         --filter='P browser/day-boot.wasm' \
         --filter='P browser/radicle/***' \
         --filter='P rns-wasm/***' \
@@ -130,7 +126,6 @@ sync_application_code() {
         --include='module/***' \
         --include='server/***' \
         --include='planner/***' \
-        --exclude='browser/sw.js' \
         --include='browser/***' \
         --include='rns-wasm/***' \
         --include='hoot/***' \
@@ -169,8 +164,7 @@ sync_application_code() {
     # commit and hash-verified before it replaces the old copy. A
     # rsync P-filter above keeps --delete off browser/radicle, so a deploy
     # whose seed is not synced yet leaves the last placed tree serving.
-    # MUST precede build-rns-wasm.sh (it builds the placed crate) and the
-    # sw.js stamp (a new explorer changes the fingerprint).
+    # MUST precede build-rns-wasm.sh (it builds the placed crate).
     # Same guile invocation shape as run_planner_seeder: shepherd's exec
     # env carries no GUILE_LOAD_PATH.
     # Placed into BOTH trees: DEPLOY_DIR is what nginx serves and what
@@ -190,28 +184,9 @@ sync_application_code() {
         done
     fi
 
-    # Self-heal the vendored radicle-planning-boards app (browser/boards/):
-    # its hardcoded localhost API fallback, load-order-sensitive runtime
-    # config, and CSP/SRI content hashes all break the moment anyone drops
-    # in a freshly-fetched copy, and have needed hand-reapplying seven times
-    # (see deploy/scripts/patch-boards-app.scm's header). Runs against
-    # DEPLOY_DIR (the served copy), not REPO_DIR (the checkout/canonical
-    # git history stays the raw upstream drop). Idempotent and a fast no-op
-    # once already patched, so unconditional on every deploy is fine — and
-    # MUST precede the sw.js bhash fingerprint below, or a boards fix ships
-    # without the cache-bust that makes returning visitors pick it up.
-    if [ -x "$REPO_DIR/deploy/scripts/patch-boards-app.scm" ]; then
-        GUILE_AUTO_COMPILE=0 guile -L "$REPO_DIR/module" \
-            "$REPO_DIR/deploy/scripts/patch-boards-app.scm" \
-            "$DEPLOY_DIR/browser/boards" \
-            2>&1 | while IFS= read -r line; do log "$line"; done \
-            || log "patch-boards-app failed (non-fatal) — boards app may be stale/broken"
-    fi
-
     # Build the Reticulum wasm artifacts (gitignored build products —
     # the rsync above never delivers them; without this the mesh
-    # browser leg is inert). MUST precede the sw.js stamp below so
-    # fresh artifacts change the fingerprint and tabs reinstall.
+    # browser leg is inert).
     # Skips politely (unchanged sources / no guix) and never
     # fails the deploy.
     if [ -x "$DEPLOY_DIR/deploy/scripts/build-rns-wasm.sh" ]; then
@@ -219,27 +194,9 @@ sync_application_code() {
             || log "rns-wasm build failed (non-fatal) — mesh browser leg stays stale"
     fi
 
-    # Stamp the deployed sw.js (tools/emit/sw-stamp.sh says what the stamp is and
-    # how it is written). Two properties this deploy relies on: the stamp is
-    # a fingerprint of the dial's served bytes, so a deploy that changes none
-    # of them leaves sw.js byte-identical and no browser reinstalls; and
-    # sw.js is --exclude'd from the rsync above and written here by rename
-    # from the SOURCE sw.js, so the deployed file flips old-stamp -> new-stamp
-    # in one step.
-    local bhash
-    if [ -f "$REPO_DIR/browser/sw.js" ] \
-       && bhash=$(bash "$REPO_DIR/tools/emit/sw-stamp.sh" "$DEPLOY_DIR/browser" \
-                       "$REPO_DIR/browser/sw.js" 2>/dev/null) \
-       && [ -n "$bhash" ]; then
-        log "Stamped sw.js CACHE = playnet-${bhash} (browser-asset fingerprint)"
-    else
-        log "WARNING: sw.js stamp failed; the deployed sw.js keeps its previous stamp"
-    fi
-
     # Record the deployed commit in a separate marker for the local-push
-    # backstop. The sw.js CACHE used to double as this marker; now that
-    # it's a content hash rather than a git SHA, the backstop needs its
-    # own record of which commit is live to detect on-box pushes.
+    # backstop needs a record of which commit is live to detect on-box
+    # pushes.
     # Dotfile at DEPLOY_DIR top level → matched by the rsync's final
     # --exclude='*', so --delete leaves it alone.
     (cd "$REPO_DIR" && git rev-parse --short HEAD 2>/dev/null) \
@@ -255,7 +212,7 @@ sync_application_code() {
 }
 
 build_browser_wasm() {
-    # Compile browser/repl.wasm + browser/day-boot.wasm from their .scm
+    # Compile browser/day-boot.wasm from its .scm
     # sources. The Makefile targets handle the time-machine + guix shell +
     # guild compile-wasm dance. Tor-routed (every guix outbound goes
     # through torsocks per the project posture).
@@ -272,14 +229,14 @@ build_browser_wasm() {
         return 1
     fi
 
-    log "Rebuilding browser/repl.wasm + browser/day-boot.wasm (torsocks-wrapped guix shell + guild compile-wasm)"
+    log "Rebuilding browser/day-boot.wasm (torsocks-wrapped guix shell + guild compile-wasm)"
     (
         cd "$REPO_DIR"
         # Pin the toolchain's closure as a GC root first (Makefile: hoot-warm),
         # so the deploy-time `guix gc` below never collects the patched Hoot
         # and the next build never spends ten minutes compiling it again.
         $TOR make hoot-warm >/dev/null 2>&1 || log "  (hoot-warm failed — the toolchain is unrooted until the next build)"
-        $TOR make browser/repl.wasm browser/day-boot.wasm
+        $TOR make browser/day-boot.wasm
     ) 2>&1 | tee >(while IFS= read -r line; do log "wasm: $line"; done >&2) | tail -3 || {
         log "WARNING: wasm rebuild failed — syncing the committed .wasm as-is"
         return 0
@@ -319,25 +276,11 @@ build_planner_kernel() {
     log "planner kernel rebuild OK"
 }
 
-build_docs_epub() {
-    # Compile docs/playnet.typ → docs/playnet.pdf + docs/playnet.epub — the
-    # scroll's "the latest spec" links (browser/app.html). Both are
-    # gitignored build products (like the wasm artifacts); the rsync never
-    # delivers them on its own. Content-stamped inside the script, so a
-    # deploy that doesn't touch docs/playnet.typ is a no-op here. Non-fatal:
-    # a stale or missing PDF/EPUB must never take down the gateway restart.
-    if [ -x "$REPO_DIR/deploy/scripts/build-docs-epub.sh" ]; then
-        "$REPO_DIR/deploy/scripts/build-docs-epub.sh" "$REPO_DIR" \
-            || log "build-docs-epub failed (non-fatal) — spec download links may be stale/missing"
-    fi
-}
-
 purge_cdn_cache() {
     # After deploying new browser assets (wasm, JS, CSS, etc.), the CDN's
     # edges drop their now-stale copies. Without this, users keep getting
     # served the old wasm/JS for the edge's cache lifetime (which can be
-    # days) — and our auto-stamp on sw.js (commit SHA in CACHE) is defeated
-    # because they never even reach the new sw.js to re-install.
+    # days).
     #
     # Which CDN, which zone and which key are this box's own facts
     # (/etc/playnet/cdn.conf, written at reconfigure from the provider

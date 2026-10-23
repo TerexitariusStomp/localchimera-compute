@@ -14,8 +14,7 @@
 #   3. Push to a per-agent transfer ref (incoming-<agent>, NEVER the
 #      shared incoming-main — two agents collided on it 2026-06-06);
 #      the box's pre-receive hook authenticates the signed chain.
-#   4. On-box: reset the hook-rebuilt browser/repl.wasm (a dirty copy
-#      blocks the ff), ff main, drop the transfer ref ONLY after the
+#   4. On-box: ff main, drop the transfer ref ONLY after the
 #      ff succeeded, rad push.
 #
 # Tor-only: every remote touch is Tor-routed. By default we wrap ssh/git/scp in
@@ -59,8 +58,8 @@ if [ -z "$REWRITE" ] && ! git merge-base --is-ancestor "$tip" "$SHA"; then
     exit 1
 fi
 
-# The wasm artifacts (browser/repl.wasm, browser/day-boot.wasm) are
-# gitignored build products: the box builds them on deploy
+# The wasm artifact (browser/day-boot.wasm) is a
+# gitignored build product: the box builds them on deploy
 # (radicle-ci-hook.sh build_browser_wasm, triggered by browser/ and hoot/
 # changes) and the rsync P-filters keep the last-built copies in
 # DEPLOY_DIR. A promotion carries only sources — the served wasm always
@@ -157,7 +156,6 @@ fi
 echo "[promote] on-box: ff main + rad push"
 ONBOX_LOG=$(mktemp /tmp/promote-onbox.XXXXXX.log)
 $TS ssh "$BOX" "
-  sudo -u playnet git -C $CO checkout -- browser/repl.wasm 2>/dev/null || true
   # The checkout IS main: nothing else may live in its index or tree. A ship
   # whose SSH leg was cut mid-merge (2026-09-13) left the index carrying the
   # incoming files while HEAD stayed put, and every later ff refused to
