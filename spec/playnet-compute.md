@@ -42,8 +42,21 @@ KE?
   `lane`, `reproMode` ∈ `exact|deterministic|none`.
 - A job is an `Intent` against a compute spec. Dispatch claim is a
   `Commitment`. The `SignedReceipt` is the `EconomicEvent` — `usage`
-  (`{unit: tokens|seconds, amount}`) is its quantity, `repro` its committed
-  replay parameters.
+  (`{unit: tokens|seconds|bytes|byte-seconds|readings|node-hours, amount}`)
+  is its quantity, `repro` its committed replay parameters.
+- An envelope declares a `kind` — `exec` (image + entrypoint in a worker
+  sandbox), `store` (hold `inputHash` for `ttlSeconds`; answer
+  `sha256(nonce ∥ content)` retention challenges), `relay` (move bytes on
+  `params.inUrl→outUrl` HTTP legs or a DataChannel negotiated over the
+  claim's own signal log; `params.probe` is the canary), `sense` (emit
+  platform readings on `params.intervalMs × count`), `bundle`
+  (`params.legs` — sub-envelopes run in order, one level deep). Kind
+  fields ride `params` — price keys are refused recursively at parse.
+- The meters: `seconds`/`tokens` (exec), `bytes` (relay), `byte-seconds`
+  (store retention), `readings` (sense), `seconds` (bundle — the only
+  honest cross-kind sum; per-leg meters ride the digest's preimage).
+- A `webgpu` cap on an exec envelope requires an adapter at run time;
+  none means the run refuses — the cap is a promise, not a wish.
 - The receipt digest is byte-identical to `naoms-compute-receipt/v1`:
   `sha256("naoms-compute-receipt/v1" || 0x00 || canonicalJSON(fields))`.
   Lender signs first, coordinator/scope countersigns. Golden vectors are shared

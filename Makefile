@@ -669,7 +669,8 @@ test test-all: $(LINTS) freshen-ccache $(KERNEL_SO) ci-env
 FRESH_CHECKS = check-protocol-fresh check-wire-types-fresh \
   check-attribution-fresh check-notice-facts-fresh \
   check-de-fresh check-fdc-fresh \
-  check-wasm-deps-fresh check-keyed-fresh check-offline-fresh check-ui-fresh
+  check-wasm-deps-fresh check-keyed-fresh check-offline-fresh check-ui-fresh \
+  check-sbom-fresh
 # these read files ignored by path (the legal contexts, the physics register): a clean
 # worktree has none, so they run where the files are, in `gate-local`
 FRESH_LOCAL = check-na-fresh
@@ -772,6 +773,15 @@ check-parity:
 	@tools/lint/check-parity.sh
 sbom:
 	@tools/sbom.sh
+
+# the committed SBOM is a proof artifact — it must answer the manifest it
+# was generated from, or the composition document lies about what ships.
+.PHONY: check-sbom-fresh
+check-sbom-fresh:
+	@tmp=$$(mktemp); ok=1; tools/sbom.sh $$tmp >/dev/null 2>&1 || { echo "check-sbom-fresh: sbom.sh failed"; rm -f $$tmp; exit 1; }; \
+	if diff -q $$tmp sbom.json >/dev/null; then echo "check-sbom-fresh: sbom.json matches oss-adopted.txt"; else \
+	  echo "check-sbom-fresh: sbom.json is stale — run: make sbom"; diff $$tmp sbom.json | head -12; ok=0; fi; \
+	rm -f $$tmp; [ $$ok = 1 ]
 
 # The RID token in LICENSE-ADDITIONAL-TERMS.md's attribution quote and the
 # bare token in both HTML footers, kept to knowledge/law/product.scm's

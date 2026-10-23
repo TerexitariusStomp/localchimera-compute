@@ -104,10 +104,12 @@ retryable/missing-sref condition until the new one lands).
 
 | suite | invocation | expected |
 |-------|-----------|----------|
-| e2e scenarios (in-vat) | `make test-e2e-scenarios` | 24+13 green |
+| e2e scenarios (in-vat) | `make test-e2e-scenarios` | lifecycle 24 + disputes 13 + kinds 14 green |
 | coverage gate | `make check-e2e-coverage` | no new gaps |
-| machine suites | `make test-machine` (tests/machine/) | green |
-| browser executor | `make test-machine-executor` | 9/9 |
+| machine suites | `make test-machine` (tests/machine/) | 237 green |
+| browser legs | `make test-browser` | 14 suites green — executor, store, relay, sense/bundle/policy + substrate |
+| licenses + budget | `make check-licenses check-custom-budget` | allowlisted; ≤ baseline |
+| SBOM | `make sbom` | `sbom.json`, CycloneDX 1.5 |
 
 ## Secrets
 
