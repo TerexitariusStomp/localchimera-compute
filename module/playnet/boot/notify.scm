@@ -37,7 +37,7 @@
   #:export (<notify> notify? notify-vapid-key notify-vapid-public-b64 notify-push-store
             notify-push-adapter notify-telegram-backend notify-alert-sink notify-browser-adapter
             notify-presence notify-recipient-registry notify-email-adapter notify-router
-            notify-contact-desk spawn-notifications!))
+            notify-contact-desk spawn-notifications! spawn-notifications-slim!))
 
 (define-record-type <notify>
   (make-notify vapid-key vapid-public-b64 push-store push-adapter telegram-backend alert-sink
@@ -200,5 +200,85 @@ through it. The <notify> record of what the lobby and the sessions reach."
            ;; No recipient AID on the event → legacy broadcast path.
            (<-np presence-actor 'notify-event event-alist)))))
   (make-notify vapid-key vapid-public-b64 push-store push-adapter telegram-backend alert-sink
+               browser-adapter presence-actor recipient-registry email-adapter notify-router
+               contact-desk))
+
+;; ── The machine build's layer ────────────────────────────────────────
+;; spawn-notifications-slim! stands the same adapters, presence, push,
+;; recipient registry, router and contact desk — none of the per-scope
+;; handlers, commune router or alert sink the commons build carried
+;; (there are no scopes to watch). IPEX events without a recipient fall
+;; away: no legacy sink exists to catch them.
+(define* (spawn-notifications-slim! #:key gateway-vat)
+  "The notification layer for the machine gateway: the adapters in
+GATEWAY-VAT, one router over them, presence, the recipient registry and
+the contact-point desk. Returns the <notify> record; telegram-backend,
+alert-sink and the scope router are #f."
+  (define vapid-key (load-or-generate-vapid-key! (playnet-data-dir)))
+  (define vapid-public-b64
+    (b64url-encode (vapid-public-key-bytes vapid-key)))
+  (define push-store
+    (with-vat gateway-vat
+      (spawn ^push-subscription-store '())))
+  (define push-adapter
+    (with-vat gateway-vat
+      (spawn ^push-adapter vapid-key push-store)))
+  (define browser-adapter
+    (with-vat gateway-vat (spawn ^browser-adapter)))
+  (define presence-actor
+    (with-vat gateway-vat
+      (spawn ^presence (hashmap) #f browser-adapter)))
+  (define recipients-file (data-path "recipients.scm"))
+  (define (keep-recipients! durable-table)
+    (let ((tmp (string-append recipients-file ".tmp")))
+      (call-with-output-file tmp
+        (lambda (p) (write (recipient-table->datum durable-table) p) (newline p)))
+      (rename-file tmp recipients-file)))
+  (define recipient-registry
+    (with-vat gateway-vat
+      (spawn ^recipient-registry
+             (datum->recipient-table
+              (catch #t
+                (lambda () (if (file-exists? recipients-file)
+                               (call-with-input-file recipients-file read)
+                               '()))
+                (lambda _ '())))
+             keep-recipients!)))
+  (define email-adapter
+    (and (email-transport?) (with-vat gateway-vat (spawn ^email-adapter))))
+  (define ntfy-adapter
+    (and (ntfy-transport?) (with-vat gateway-vat (spawn ^ntfy-adapter))))
+  (define notify-router
+    (with-vat gateway-vat
+      (spawn ^notify-router recipient-registry
+             `((browser . ,browser-adapter)
+               (push    . ,push-adapter)
+               ,@(if email-adapter `((email . ,email-adapter)) '())
+               ,@(if ntfy-adapter `((ntfy . ,ntfy-adapter)) '()))
+             '()
+             #f)))
+  (define contact-desk
+    (make-contact-point-desk
+     (append
+      (if email-adapter
+          `((email . ,(lambda (ctx title body)
+                        (<-np email-adapter 'deliver ctx
+                              (rendered-notification 'info title body "confirm-contact-point")))))
+          '())
+      (if ntfy-adapter
+          `((ntfy . ,(lambda (ctx title body)
+                       (<-np ntfy-adapter 'deliver ctx
+                             (rendered-notification 'info title body "confirm-contact-point")))))
+          '()))))
+  (log! "  [gateway] contact points: delivers on ~a~%" (contact-desk 'delivers))
+  ;; IPEX events WITH a recipient AID still route per-recipient; events
+  ;; without one fall away — the legacy broadcast sink belonged to the
+  ;; scope world.
+  (set-notification-callback!
+   (lambda (event-alist)
+     (let ((recipient (assq-ref event-alist 'recipient)))
+       (when recipient
+         (<-np notify-router 'notify recipient event-alist)))))
+  (make-notify vapid-key vapid-public-b64 push-store push-adapter #f #f
                browser-adapter presence-actor recipient-registry email-adapter notify-router
                contact-desk))

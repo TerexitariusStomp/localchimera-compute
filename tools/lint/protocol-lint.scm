@@ -26,7 +26,7 @@
              (playnet protocol shapes)
              (playnet protocol seam)
              ((playnet wire rows) #:select (reply-table-ref))
-             (playnet wire replies) (playnet doors record-rows)   ; the reply tables, registered
+             (playnet wire replies)
              ((playnet doors lobby) #:select (%planner-public-doors))
              (ice-9 popen) (ice-9 rdelim) (ice-9 regex) (ice-9 format)
              (srfi srfi-1))

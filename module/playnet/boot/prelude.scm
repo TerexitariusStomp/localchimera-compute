@@ -22,7 +22,6 @@
   #:use-module (playnet knowledge law incumbent-readings)
   #:use-module (playnet knowledge law protections)
   #:use-module (playnet knowledge law aspects)
-  #:use-module (playnet knowledge law activities)
   #:use-module (playnet knowledge law product)
   #:use-module (playnet legal compliance)
   #:use-module (playnet legal filings)
@@ -166,7 +165,6 @@
   #:use-module (playnet keri acdc)
   #:use-module (playnet keri first-person credentials)
   #:use-module (playnet personhood attestation-ceremony)
-  #:use-module (playnet voice affected-interest)
   #:use-module (playnet keri cesr)
   #:use-module (playnet keri citizen-sig)
   #:use-module (playnet keri said-portable)
@@ -750,8 +748,8 @@
                clear-use-unit-gaps! compile-process compile-recipe
                use-unit-gaps batch-unit-gaps clear-batch-unit-gaps!
                canonical-string compute-said said-sort-pairs
-               install-said-blake3! ^affected-interest-voice
-               affected-interest-env spawn-affected-interest-voice
+               install-said-blake3!
+
                ^attestation-ceremony attestation-ceremony-for
                land-witness-attestation! register-attestation-ceremony!
                witness-attest-handler current-aid-key-resolver
@@ -988,7 +986,6 @@
    (playnet knowledge law incumbent-readings)
    (playnet knowledge law protections)
    (playnet knowledge law aspects)
-   (playnet knowledge law activities)
    (playnet knowledge law product)
    (playnet legal compliance)
    (playnet legal filings)

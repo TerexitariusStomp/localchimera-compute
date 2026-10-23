@@ -185,10 +185,6 @@
      ;; verifiable KEL from anyone who forwards it; no username, no seat.
      ;; Levels a known AID up (rotations beyond the held depth), refuses
      ;; a different history under one AID. Public, like fetch-icp.
-     ((witness-kel aid-prefix icp-alist sigs rotations)
-      (<- signup-agent 'witness-kel! aid-prefix icp-alist sigs rotations
-          (and oobi-host (string? aid-prefix) ($ oobi-host 'get aid-prefix))
-          oobi-host))
 
      ;; join: a seat in this gateway's universal commune for an AID
      ;; already witnessed here. The seat is what keri-authenticate checks
@@ -510,9 +506,6 @@
 
    ;; what stands between this AID and each person in its own book — the
    ;; book is read here, so the reading is of the caller's contacts alone
-   ((relationships scope-id)
-    (<- governance-svc 'relationships aid-prefix scope-id
-        (filter-map contact-aid (own-book))))
 
    ;; ── compute ── the commons' machine book. Identity-bound doors pass
    ;; this AID as the member the act belongs to: the lender on offer,
@@ -659,7 +652,6 @@
 
    ;; the bundle: what you carry between gateways — personhood, vouches,
    ;; the blessings and key logs that make them checkable elsewhere
-   ((my-vouches) (<- governance-svc 'fp-my-vouches aid-prefix))
 
    ((present-bundle wire) (<- governance-svc 'present-bundle aid-prefix wire))
 

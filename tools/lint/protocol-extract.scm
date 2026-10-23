@@ -110,18 +110,12 @@ session's own act (`see` reads the vision model; `my-phc` sends fp-my-phc)."
               (object-forms (assq-ref %objects 'session) 'session)))
 
 ;; An object's doors may be written in more than one file: the object's own
-;; module, and the fragments it composes (declared-doors, doors/identity.scm,
-;; doors/body.scm).
+;; module, and the fragments it composes (declared-doors, doors/identity.scm).
+;; The machine build strips the planner object and the domain door files —
+;; the objects here are what the stripped product still serves.
 (define %objects
   `((lobby   "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm")
-    (session "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm"
-             "module/playnet/doors/body.scm")
-    (planner "module/playnet/doors/service.scm"
-             "module/playnet/doors/planner/person.scm" "module/playnet/doors/planner/chat.scm"
-             "module/playnet/doors/planner/money.scm" "module/playnet/doors/planner/roster.scm"
-             "module/playnet/doors/planner/slots.scm" "module/playnet/doors/planner/work.scm"
-             "module/playnet/doors/planner/records.scm" "module/playnet/doors/planner/standing.scm"
-             "module/playnet/doors/planner/solving.scm")))
+    (session "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm")))
 
 (define (all-doors)
   (append-map (lambda (o) (map (lambda (d) (cons (car o) d)) (object-doors (cdr o) (car o))))
