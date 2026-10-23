@@ -112,12 +112,6 @@
     (volumes '(("fuseki-data" . "/fuseki"))))
 
    (oci-container-configuration
-    ;; Radicale — CalDAV/CardDAV for the calendar layer.
-    (image "docker.io/tomsquest/docker-radicale:3.4.1.0")
-    (ports '(("5232" . "5232")))
-    (volumes '(("radicale-data" . "/data"))))
-
-   (oci-container-configuration
     ;; ntfy — push notifications (UnifiedPush-compatible).
     (image "docker.io/binwiederhier/ntfy:v2.11.0")
     (command '("serve"))

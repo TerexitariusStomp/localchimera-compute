@@ -159,18 +159,6 @@ services:
       retries: 3
 
   # ── interface services ────────────────────────────────────────────────
-  radicale:
-    image: docker.io/tomsquest/docker-radicale:3.4.1.0
-    restart: unless-stopped
-    networks: [playnet-net]
-    ports: ["5232:5232"]
-    volumes: [radicale-data:/data]
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5232/ >/dev/null || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
   ntfy:
     image: docker.io/binwiederhier/ntfy:v2.11.0
     restart: unless-stopped
@@ -224,7 +212,6 @@ volumes:
   decidim-data:
   decidim-uploads:
   fuseki-data:
-  radicale-data:
   ntfy-data:
   odoo-data:
   odoo-addons:

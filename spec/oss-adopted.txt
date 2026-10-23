@@ -10,8 +10,6 @@ signify-ts | Apache-2.0 | https://github.com/WebOfTrust/signify-ts | in-use
 monerod-wallet-rpc | BSD-3-Clause | https://github.com/monero-project/monero | in-use
 nginx | BSD-2-Clause | https://nginx.org | in-use
 tor | BSD-3-Clause | https://gitlab.torproject.org/tpo/core/tor | in-use
-maplibre-gl-js | BSD-3-Clause | https://github.com/maplibre/maplibre-gl-js | in-use
-h3 | Apache-2.0 | https://github.com/uber/h3 | in-use
 radicle-heartwood | MIT Apache-2.0 | https://app.radicle.xyz/nodes/seed.radicle.xyz/rad:z3gqcJUoA1n9HaHKufZs5FCSGazvFd | in-use
 guix-system | GPL-3.0 | https://git.savannah.gnu.org/git/guix.git | in-use
 shepherd | GPL-3.0 | https://git.savannah.gnu.org/git/shepherd.git | in-use
@@ -47,8 +45,6 @@ odoo-oca-ddmrp | LGPL-3.0 | https://github.com/OCA/ddmrp | adopted
 erpnext | GPL-3.0 | https://github.com/frappe/erpnext | adopted
 cedar | Apache-2.0 | https://github.com/cedar-policy/cedar | adopted
 opa | Apache-2.0 | https://github.com/open-policy-agent/opa | adopted
-radicale | GPL-3.0 | https://github.com/Kozea/Radicale | adopted
-fullcalendar | MIT | https://github.com/fullcalendar/fullcalendar | adopted
 ntfy | Apache-2.0 GPL-2.0 | https://github.com/binwiederhier/ntfy | adopted
 unifiedpush | Apache-2.0 | https://unifiedpush.org | adopted
 mosquitto | EPL-2.0 | https://github.com/eclipse-mosquitto/mosquitto | adopted

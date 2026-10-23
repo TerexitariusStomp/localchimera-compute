@@ -36,7 +36,6 @@
             cedar-request make-cedar-delegate
             temporal-start-wire temporal-signal-wire make-temporal-delegate
             ntfy-wire make-ntfy-delegate
-            radicale-report-wire make-radicale-delegate
             ap-activity make-ap-delegate
             decidim-ballot-wire make-decidim-delegate
             litellm-chat-wire make-litellm-delegate
@@ -160,31 +159,6 @@
       (lambda ()
         (transport "POST" (string-append "/" topic) message))
       (lambda _ 'unavailable))))
-
-
-;;; ── Radicale — the calendar's CalDAV ─────────────────────────────────────
-;;; REPORT for range queries, PUT for writes. Wire carries both so the
-;;; transport doesn't need to know which verb a given ask uses.
-
-(define* (radicale-report-wire calendar-path depth filter-xml)
-  `(("method" . "REPORT")
-    ("path" . ,calendar-path)
-    ("headers" . (("Depth" . ,(number->string depth))
-                  ("Content-Type" . "application/xml")))
-    ("body" . ,filter-xml)))
-
-(define* (make-radicale-delegate #:optional (transport %transport-unavailable))
-  "() → (lambda (calendar-path depth filter-xml) → response | 'unavailable)."
-  (lambda (calendar-path depth filter-xml)
-    (catch #t
-      (lambda ()
-        (let ((w (radicale-report-wire calendar-path depth filter-xml)))
-          (transport (cdr (assoc "method" w))
-                     (cdr (assoc "path" w))
-                     (cdr (assoc "body" w)))))
-      (lambda _ 'unavailable))))
-
-
 ;;; ── ActivityPub — the federation's outbox ────────────────────────────────
 ;;; Any AP-speaking server takes a signed activity POST at the actor's
 ;;; outbox. The wire is the activity; signing rides the transport's auth.

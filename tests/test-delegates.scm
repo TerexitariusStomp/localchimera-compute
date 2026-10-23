@@ -150,12 +150,4 @@
          (procedure? (%env-transport "PLAYNET_TEST_SET_URL")) #t)
   (unsetenv "PLAYNET_TEST_SET_URL"))
 
-(let* ((cap (capture '(("multistatus" . ()))))
-       (d (make-radicale-delegate (car cap)))
-       (ans (d "/cal/alice/" 1 "<c:calendar-query/>")))
-  (check "radicale delegate issues REPORT with the filter body"
-         (let ((call (car ((cdr cap)))))
-           (and (equal? (car call) "REPORT")
-                (equal? (cadr call) "/cal/alice/"))) #t))
-
 (test-summary!)

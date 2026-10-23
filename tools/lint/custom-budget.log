@@ -9,3 +9,4 @@
 2026-10-22T05:41:03Z	373887 → 373904	live-verified transports: JSON-encoded bodies + per-service headers — 4 parity legs green against real services
 2026-10-22T05:42:52Z	373904 → 373925	CP-SAT sidecar + wire->json arrays — the solver seam runs a real OPTIMAL answer
 2026-10-22T05:47:16Z	373925 → 373964	odoo execute_kw needs common.authenticate + (db uid pass) args — the delegate now does the real two-call flow
+2026-10-23T01:26:04Z	373964 → 249700	phase-1 strip: commons surfaces removed (docs, ux, faces, doors, knowledge data); machine node only — residue ledger in spec/oss-inventory.md
