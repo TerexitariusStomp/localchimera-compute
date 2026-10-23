@@ -66,7 +66,10 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
   none means the run refuses — the cap is a promise, not a wish.
 - The receipt digest is byte-identical to `naoms-compute-receipt/v1`:
   `sha256("naoms-compute-receipt/v1" || 0x00 || canonicalJSON(fields))`.
-  Lender signs first, coordinator/scope countersigns. Golden vectors are shared
+  Lender signs first (`lenderSig`, verified door-side per §1); the
+  countersign is the borrower's `machine-accept` plus the door's own
+  recording — an authenticated act, not a detached signature — so the
+  wire's `borrowerSig` field rides null. Golden vectors are shared
   with `packages/hive-bridge` tests so all commons verify one format.
 - `SubmitOutcome` ∈ `accepted|preempted`; `preempted` is a recorded fact, no
   pay, no miss — the job requeues to the outer ring.

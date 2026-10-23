@@ -49,7 +49,12 @@ class FakePeer {
   createDataChannel() { this.out = new FakeChannel(); return this.out; }
   async createOffer() { return { type: "offer", sdp: `offer:${FakePeer.peers.indexOf(this)}` }; }
   async createAnswer() { return { type: "answer", sdp: "answer" }; }
-  async setLocalDescription(d) { if (d.type === "offer") this.offered = d.sdp; }
+  async setLocalDescription(d) {
+    if (d.type === "offer") this.offered = d.sdp;
+    // ICE gathering emits candidates after the description sets — real
+    // peers trickle them into the same signal batch as the desc itself
+    this.onicecandidate?.({ candidate: { fake: true, at: d.type } });
+  }
   async setRemoteDescription(d) {
     if (d.type === "offer") {
       this.peerPc = FakePeer.peers.find(p => p !== this && p.offered === d.sdp);
@@ -62,7 +67,7 @@ class FakePeer {
       this.peerPc?.incoming?.open?.();
     }
   }
-  async addIceCandidate() {}
+  async addIceCandidate() { this.iceAdded = (this.iceAdded ?? 0) + 1; }
   close() { this.closed = true; }
 }
 
@@ -164,6 +169,11 @@ await throws("a probe needs an inUrl",
 
   check("the offer and answer crossed the claim's log",
         log.some(r => r.body.type === "offer") && log.some(r => r.body.type === "answer"));
+  // regression: a candidate in the same batch as the description once died
+  // with the cursor past it — both ends must actually receive theirs
+  check("candidates batched with the desc still reach addIceCandidate",
+        FakePeer.peers.every(p => (p.iceAdded ?? 0) >= 1),
+        `${FakePeer.peers.map(p => p.iceAdded)}`);
   check("each row carries its stamped sender",
         log.every(r => typeof r.seq === "number" && typeof r.from === "string"));
   const expectHash = await sha256hex(new TextEncoder().encode("hello relay"));
