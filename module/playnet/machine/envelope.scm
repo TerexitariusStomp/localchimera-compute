@@ -31,6 +31,7 @@
             egress-profile? caps-grant?
             availability-descriptor? envelope-availability
             sense-profile?
+            swarm-descriptor? envelope-swarm *swarm-roles*
             alist->job-envelope job-envelope->alist envelope-no-amount?))
 
 
@@ -178,6 +179,55 @@
                          (or (not v) (and (number? v) (positive? v)))))))
            (and (pos? 'intervalMs) (pos? 'count) (pos? 'durationMs))))))
 
+;;; ── the swarm profile ─────────────────────────────────────────────────
+;;; params.swarm marks this envelope as one shard of a task no single tab
+;;; could run: group names the swarm (the id the borrower opened with
+;;; machine-swarm-open), shards the expected fan-out, shard-index which
+;;; claim this envelope feeds. The role names the shard's place in the
+;;; decomposition — and the role must fit the kind: the swarm is a
+;;; coordination shape, not a new kind.
+;;;
+;;;   stage  — an exec shard of a pipeline (a model's layer range):
+;;;            activations arrive from shard-index-1, results flow to
+;;;            shard-index+1 over swarm-signalled channels
+;;;   map    — a data-parallel exec shard: an input slice in, a result
+;;;            slice out, replayable shard by shard
+;;;   merge  — the exec claim that consumes the siblings' outputs and
+;;;            emits the aggregate receipt
+;;;   stripe — a store shard: content wider than one tab's quota, one
+;;;            stripe per claim, challenged like any store claim
+;;;   hop    — a relay shard: one link of a chained datachannel path;
+;;;            the last hop egresses
+;;;
+;;; One job still mints one claim — the claim stays the accounting atom;
+;;; the swarm is coordination over claims, never a new billing entity.
+
+(define *swarm-roles* '(stage map merge stripe hop))
+
+(define (swarm-role-for-kind? role kind)
+  (or (and (memq role '(stage map merge)) (eq? kind 'exec))
+      (and (eq? role 'stripe) (eq? kind 'store))
+      (and (eq? role 'hop) (eq? kind 'relay))))
+
+(define (swarm-descriptor? s kind)
+  "The params.swarm shape for KIND: group is the swarm's name (a string —
+   the borrower's swarm-open id), shards the expected fan-out (≥2 — a
+   one-shard swarm is a job), shard-index which claim this feeds
+   (0..shards-1), role one of the decomposition roles the kind can run."
+  (and (list? s)
+       (let ((group (params-ref s 'group))
+             (shards (params-ref s 'shards))
+             (index (params-ref s 'shard-index))
+             (role (params-ref s 'role)))
+         (and (string? group)
+              (integer? shards) (>= shards 2)
+              (integer? index) (>= index 0) (< index shards)
+              (swarm-role-for-kind? role kind)))))
+
+(define (envelope-swarm e)
+  "The envelope's swarm descriptor, or #f."
+  (params-ref (job-envelope-params e) 'swarm))
+
 (define* (make-job-envelope #:key (kind 'exec) bridge-job-id (image #f)
                             (entrypoint #f) input-hash
                             (caps '()) (network? #f) (params '()))
@@ -208,6 +258,10 @@
   (when (eq? kind 'sense)
     (unless (sense-profile? params)
       (error "envelope: a sense envelope needs params.sources and positive session knobs" params)))
+  (let ((s (params-ref params 'swarm)))
+    (when s
+      (unless (swarm-descriptor? s kind)
+        (error "envelope: params.swarm is not a swarm descriptor for this kind" s))))
   (%make-job-envelope kind bridge-job-id image entrypoint input-hash caps
                       network? params))
 

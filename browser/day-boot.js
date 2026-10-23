@@ -1200,6 +1200,17 @@ function boot() {
       new Promise(res => schemeHandlers.machineSignal ? schemeHandlers.machineSignal(commune || "", claimId || "", JSON.stringify(body ?? null), res) : res("err:offline"));
     HANDLERS.machineSignals = (commune, claimId, after) =>
       new Promise(res => schemeHandlers.machineSignals ? schemeHandlers.machineSignals(commune || "", claimId || "", after || 0, res) : res("[]"));
+    // the swarm bus — same mailbox, N-party key: swarmId names the
+    // borrower-opened group; the door's membership check keeps the bus
+    // to the swarm's parties (borrower + live-claim lenders)
+    HANDLERS.machineSwarmOpen = (commune, swarmId, jobIds) =>
+      new Promise(res => schemeHandlers.machineSwarmOpen ? schemeHandlers.machineSwarmOpen(commune || "", swarmId || "", JSON.stringify(jobIds ?? []), res) : res("err:offline"));
+    HANDLERS.machineSwarmOf = (commune, swarmId) =>
+      new Promise(res => schemeHandlers.machineSwarmOf ? schemeHandlers.machineSwarmOf(commune || "", swarmId || "", res) : res("err:offline"));
+    HANDLERS.machineSwarmSignal = (commune, swarmId, body) =>
+      new Promise(res => schemeHandlers.machineSwarmSignal ? schemeHandlers.machineSwarmSignal(commune || "", swarmId || "", JSON.stringify(body ?? null), res) : res("err:offline"));
+    HANDLERS.machineSwarmSignals = (commune, swarmId, after) =>
+      new Promise(res => schemeHandlers.machineSwarmSignals ? schemeHandlers.machineSwarmSignals(commune || "", swarmId || "", after || 0, res) : res("[]"));
     HANDLERS.machineBind = (commune, wireJson) =>
       new Promise(res => schemeHandlers.machineBind ? schemeHandlers.machineBind(commune || "", wireJson || "{}", res) : res("err:offline"));
     HANDLERS.machineUnbind = (commune, key, side) =>

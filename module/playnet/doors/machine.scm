@@ -35,6 +35,7 @@
   #:use-module (playnet machine binding)
   #:use-module (playnet machine binding-verifiers)
   #:use-module (playnet machine payout)
+  #:use-module (playnet machine swarm)
   #:use-module (playnet machine executors)
   #:use-module (playnet doors governance)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
@@ -152,6 +153,30 @@
               (let ((s (spawn-signal-store)))
                 (hash-set! registries k s)
                 s))))
+
+      ;; the swarm shelf — the coordination record beside the claims:
+      ;; which jobs compose a fan-out. The bus itself reuses the signal
+      ;; shelf under "swarm:<id>"; this shelf is just the membership book.
+      (define (swarms-for commune-aid)
+        (let ((k (string-append "swarm:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-swarm-store)))
+                (hash-set! registries k s)
+                s))))
+
+      ;; the bus's authorization: the swarm's borrower, or a lender
+      ;; holding a live claim on one of the swarm's jobs — a settled
+      ;; claim's holder has no more to say than a settled claim's signals.
+      (define (swarm-member? swarm commune-aid caller)
+        (or (equal? caller (swarm-borrower-did swarm))
+            (let ((job-ids (swarm-job-ids swarm))
+                  (claims ($ (registry-for commune-aid) 'claims commune-aid)))
+              (any (lambda (c)
+                     (and (member (dispatch-claim-job-id c) job-ids)
+                          (equal? caller (dispatch-claim-lender-did c))
+                          (memq (dispatch-claim-state c)
+                                '(claimed accepted))))
+                   claims))))
 
       ;; the hive's review pool: every citizen the service has met, minus
       ;; the dispute's parties — sortition scores and picks from this list.
@@ -834,6 +859,106 @@
                            (or (opt-ref opts 'after 0) 0))))))))
            (lambda (k . a)
              (list 'error (format #f "machine-signals: ~a" a)))))
+
+        ;; ── swarms ────────────────────────────────────────────────────
+        ;; A swarm is the coordination record over N shard claims — one
+        ;; job per shard (the claim stays the accounting atom), the record
+        ;; binding the fan-out's shape. machine-swarm-open is a BORROWER
+        ;; act: the caller must own every job it groups. The signal bus is
+        ;; the N-party rendezvous: only the borrower or a lender holding a
+        ;; live claim on a swarm job may post or read — the same
+        ;; stamped-from/at, same dead-letter rule as a claim's log.
+        ((machine-swarm-open identity-key commune-aid swarm-id job-ids)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((reg (registry-for commune-aid))
+                    (jobs (map (lambda (jid) ($ reg 'job-of jid))
+                               (or job-ids '()))))
+               (cond
+                ((not (and (pair? jobs) (every (lambda (j) j) jobs)))
+                 (list 'error "machine-swarm-open: every shard job must exist"))
+                ((not (every (lambda (j)
+                               (and (equal? (machine-job-commune-aid j) commune-aid)
+                                    (equal? (machine-job-borrower-did j) identity-key)))
+                             jobs))
+                 (list 'error "machine-swarm-open: the caller's own jobs only"))
+                (else
+                 (cons 'ok (swarm->list
+                            ($ (swarms-for commune-aid) 'open!
+                               (make-swarm #:id swarm-id
+                                           #:borrower-did identity-key
+                                           #:commune-aid commune-aid
+                                           #:job-ids job-ids
+                                           #:created-at ((*machine-clock*))))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-swarm-open: ~a" a)))))
+
+        ;; the member's read — the fan-out's shape plus each job's state,
+        ;; so a stage learns whether its siblings are claimed yet.
+        ((machine-swarm-of identity-key commune-aid swarm-id)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((s ($ (swarms-for commune-aid) 'of swarm-id))
+                    (reg (registry-for commune-aid)))
+               (cond
+                ((not s) (list 'error "machine-swarm-of: no such swarm"))
+                ((not (swarm-member? s commune-aid identity-key))
+                 (list 'error "machine-swarm-of: the swarm's members only"))
+                (else
+                 (cons 'ok
+                   (list (cons "swarm" (swarm->list s))
+                         (cons "jobs"
+                           (map (lambda (jid)
+                                  (let ((j ($ reg 'job-of jid)))
+                                    `(("jobId" . ,jid)
+                                      ("state" . ,(and j (symbol->string
+                                                          (machine-job-state j)))))))
+                                (swarm-job-ids s)))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-swarm-of: ~a" a)))))
+
+        ((machine-swarm-signal identity-key commune-aid swarm-id body)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let ((s ($ (swarms-for commune-aid) 'of swarm-id)))
+               (cond
+                ((not s) (list 'error "machine-swarm-signal: no such swarm"))
+                ((not (swarm-member? s commune-aid identity-key))
+                 (list 'error "machine-swarm-signal: the swarm's members only"))
+                (else
+                 (let ((seq ($ (signals-for commune-aid) 'append!
+                               (swarm-bus-key swarm-id)
+                               `((from . ,identity-key)
+                                 (at . ,((*machine-clock*)))
+                                 (body . ,(wire-normalize body))))))
+                   (cons 'ok seq))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-swarm-signal: ~a" a)))))
+
+        ((machine-swarm-signals identity-key commune-aid swarm-id . opts)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let ((s ($ (swarms-for commune-aid) 'of swarm-id)))
+               (cond
+                ((not s) (list 'error "machine-swarm-signals: no such swarm"))
+                ((not (swarm-member? s commune-aid identity-key))
+                 (list 'error "machine-swarm-signals: the swarm's members only"))
+                (else
+                 (cons 'ok
+                   (map (lambda (r)
+                          `(("seq" . ,(car r))
+                            ("from" . ,(assq-ref (cdr r) 'from))
+                            ("at" . ,(assq-ref (cdr r) 'at))
+                            ("body" . ,(assq-ref (cdr r) 'body))))
+                        ($ (signals-for commune-aid) 'after
+                           (swarm-bus-key swarm-id)
+                           (or (opt-ref opts 'after 0) 0))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-swarm-signals: ~a" a)))))
 
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —

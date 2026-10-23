@@ -3321,6 +3321,38 @@
                                     (list 'after n) '()))
           (lambda (v) (reply! cb (scm->json-canonical (list->vector v))))))))
 
+;; ── the swarm bus ────────────────────────────────────────────────────────
+;; The N-party rendezvous over the same signal shelf: open binds job-ids
+;; (a JSON array of strings) under the borrower's name; of/signal(s) are
+;; member-only reads and posts — the door runs the membership check.
+(define (handle-machine-swarm-open commune swarm-id job-ids-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (let ((job-ids (vector->list (or (json-read-ordered job-ids-json) #()))))
+        (planner-call cb (<- *session* 'machine-swarm-open commune swarm-id
+                             job-ids)
+          (lambda (v) (reply! cb (scm->json-canonical v)))))))
+
+(define (handle-machine-swarm-of commune swarm-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-swarm-of commune swarm-id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-machine-swarm-signal commune swarm-id body-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (let ((body (json-read-ordered body-json)))
+        (planner-call cb (<- *session* 'machine-swarm-signal commune swarm-id
+                             body)
+          (lambda (v) (reply! cb (scm->json-canonical v)))))))
+
+(define (handle-machine-swarm-signals commune swarm-id after cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (let ((n (arg-num after)))
+        (planner-call cb (apply <- *session* 'machine-swarm-signals commune
+                                swarm-id
+                                (if (and (number? n) (> n 0))
+                                    (list 'after n) '()))
+          (lambda (v) (reply! cb (scm->json-canonical (list->vector v))))))))
+
 ;;; ── governance: the decision inbox (governance-surface.md §Inbox) ─────────
 ;; list-proposals → [{id, status}]; the dial renders the open decisions.
 (define (handle-list-proposals cb)
@@ -4104,6 +4136,10 @@
             ("machineChallenges"       . ,handle-machine-challenges)
             ("machineSignal"           . ,handle-machine-signal)
             ("machineSignals"          . ,handle-machine-signals)
+            ("machineSwarmOpen"        . ,handle-machine-swarm-open)
+            ("machineSwarmOf"          . ,handle-machine-swarm-of)
+            ("machineSwarmSignal"      . ,handle-machine-swarm-signal)
+            ("machineSwarmSignals"     . ,handle-machine-swarm-signals)
             ("machineBind"          . ,handle-machine-bind)
             ("machineUnbind"        . ,handle-machine-unbind)
             ("machineBindings"      . ,handle-machine-bindings)

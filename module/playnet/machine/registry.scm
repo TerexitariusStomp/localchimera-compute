@@ -29,6 +29,7 @@
   #:use-module (playnet machine receipt)
   #:use-module ((playnet machine dispute) #:select (dispute-claim-id))
   #:use-module ((playnet machine challenge) #:select (store-challenge-claim-id))
+  #:use-module ((playnet machine swarm) #:select (^swarm-store))
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:export (<lane-offer> make-lane-offer lane-offer?
@@ -652,4 +653,5 @@
       (((playnet machine registry) ^binding-store) ,^binding-store)
       (((playnet machine registry) ^dispute-store) ,^dispute-store)
       (((playnet machine registry) ^challenge-store) ,^challenge-store)
-      (((playnet machine registry) ^signal-store) ,^signal-store))))
+      (((playnet machine registry) ^signal-store) ,^signal-store)
+      (((playnet machine swarm) ^swarm-store) ,^swarm-store))))
