@@ -124,42 +124,48 @@ const openChannel = async (seam, commune, claimId, env, opts = {}) => {
         }
     });
 
+    // candidates buffer until the remote description lands — addIceCandidate
+    // before setRemoteDescription throws, and a candidate in the same batch
+    // as the description must not be dropped with the cursor past it
+    const pendingCands = [];
+    const drainCands = async () => {
+        while (pendingCands.length)
+            await pc.addIceCandidate(pendingCands.shift());
+    };
     if (role === "offer") {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         await post({ type: "offer", sdp: offer.sdp });
         await untilDeadline("the answer", async () => {
-            for (const b of await pending()) {
-                if (b.type === "answer") {
-                    await pc.setRemoteDescription({ type: "answer", sdp: b.sdp });
-                    return true;
-                }
-                if (b.type === "candidate" && b.candidate)
-                    await pc.addIceCandidate(b.candidate);
-            }
-            return null;
+            const bodies = await pending();
+            const answer = bodies.find(b => b.type === "answer");
+            for (const b of bodies)
+                if (b.type === "candidate" && b.candidate) pendingCands.push(b.candidate);
+            if (!answer) return null;
+            await pc.setRemoteDescription({ type: "answer", sdp: answer.sdp });
+            await drainCands();
+            return true;
         });
     } else {
         await untilDeadline("the offer", async () => {
-            for (const b of await pending()) {
-                if (b.type === "offer") {
-                    await pc.setRemoteDescription({ type: "offer", sdp: b.sdp });
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    await post({ type: "answer", sdp: answer.sdp });
-                    return true;
-                }
-                if (b.type === "candidate" && b.candidate)
-                    await pc.addIceCandidate(b.candidate);
-            }
-            return null;
+            const bodies = await pending();
+            const offer = bodies.find(b => b.type === "offer");
+            for (const b of bodies)
+                if (b.type === "candidate" && b.candidate) pendingCands.push(b.candidate);
+            if (!offer) return null;
+            await pc.setRemoteDescription({ type: "offer", sdp: offer.sdp });
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await post({ type: "answer", sdp: answer.sdp });
+            await drainCands();
+            return true;
         });
     }
     // stragglers: candidates can arrive after the session description
     const trailing = setInterval(async () => {
         for (const b of await pending())
-            if (b.type === "candidate" && b.candidate)
-                try { await pc.addIceCandidate(b.candidate); } catch { }
+            if (b.type === "candidate" && b.candidate) pendingCands.push(b.candidate);
+        try { await drainCands(); } catch { }
     }, opts.pollMs ?? 500);
     try {
         const ch = await Promise.race([
@@ -183,6 +189,16 @@ export const channelLeg = async (seam, commune, claimId, env, opts = {}) => {
         if (direction === "send") {
             const bytes = params.contentB64 ? fromBase64(params.contentB64) : new Uint8Array(0);
             channel.send(bytes);
+            // send() queues; pc.close() before SCTP drains aborts the
+            // association and the receiver reads an error, not the bytes —
+            // wait for the buffer to empty, then a grace beat for the wire
+            const drainDeadline = Date.now() + (opts.drainMs ?? 10_000);
+            while (channel.bufferedAmount > 0) {
+                if (Date.now() > drainDeadline)
+                    throw new Error("machine-relay: send buffer never drained");
+                await sleep(10);
+            }
+            await sleep(opts.closeGraceMs ?? 250);
             return { sent: bytes.byteLength, received: 0, bytes };
         }
         return await new Promise((resolve, reject) => {
@@ -204,7 +220,8 @@ export const channelLeg = async (seam, commune, claimId, env, opts = {}) => {
                 timer = setTimeout(fin, silence);
             };
             channel.onclose = fin;
-            channel.onerror = (e) => reject(new Error(`machine-relay: channel error ${e.message ?? ""}`));
+            channel.onerror = (e) => reject(new Error(
+                `machine-relay: channel error ${e.message ?? e.error?.message ?? e.errorDetail ?? ""}`));
         });
     } finally { try { pc.close(); } catch { } }
 };

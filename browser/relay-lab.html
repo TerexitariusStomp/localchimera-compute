@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>relay lab — real WebRTC over the claim's signal log</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font: 14px/1.5 ui-monospace, monospace; max-width: 720px; margin: 2em auto; padding: 0 1em; }
+  h1 { font-size: 1.2em; }
+  #out { white-space: pre-wrap; }
+  .ok { color: #0a7; } .err { color: #c33; }
+  p.note { color: #666; font-size: .9em; }
+</style>
+</head>
+<body>
+<h1>relay lab</h1>
+<p class="note">Runs the real <code>channelLeg</code> from
+<code>app/machine-relay.js</code> — two real <code>RTCPeerConnection</code>s
+negotiating offer/answer/candidates through a signal log exactly the shape
+<code>machine-signal</code>/<code>machine-signals</code> serve, then 64&nbsp;KB
+of bytes crossing the DataChannel. This proves the leg on real WebRTC;
+what it cannot prove from one tab is NAT traversal between networks —
+that remains the documented gap.</p>
+<pre id="out">boot…</pre>
+<script type="module">
+import { channelLeg } from "./app/machine-relay.js";
+
+const out = document.getElementById("out");
+const lines = [];
+const log = (msg, cls) => {
+    lines.push(msg);
+    out.innerHTML = lines.map(l =>
+        l.startsWith("✓") ? `<span class="ok">${l}</span>` :
+        l.startsWith("✗") ? `<span class="err">${l}</span>` : l).join("\n");
+};
+
+// a signal log shaped like the door's: rows {seq, from, at, body}
+const makeSignalSeam = () => {
+    const rows = [];
+    let seq = 0;
+    return {
+        machineSignal: async (commune, claimId, body) => {
+            rows.push({ seq: ++seq, from: body._who, at: Date.now(), body });
+            return "ok";
+        },
+        machineSignals: async (commune, claimId, after) =>
+            rows.filter(r => r.seq > (after ?? 0)),
+    };
+};
+
+const run = async () => {
+    window.__diag = null;
+    log("── relay lab: real RTCPeerConnection over a shared signal log ──");
+    if (typeof RTCPeerConnection !== "function") {
+        log("✗ RTCPeerConnection is not available in this browser", "err");
+        return;
+    }
+    log("RTCPeerConnection: present (real implementation, not a fake)");
+
+    // 64 KiB payload — past one SCTP message, so fragmentation+reassembly
+    // get exercised too
+    const N = 64 * 1024;
+    const payload = new Uint8Array(N);
+    crypto.getRandomValues(payload);
+    // build b64 in chunks to stay under the arg limit
+    let bin = "";
+    for (let i = 0; i < payload.length; i += 8192)
+        bin += String.fromCharCode(...payload.subarray(i, i + 8192));
+    const contentB64 = btoa(bin);
+    const seam = makeSignalSeam();
+    const commune = "did:keri:ELabCommune";
+    const claimId = "claim-lab";
+
+    const whoPost = (seam0, who) => ({
+        machineSignal: (c, id, body) => seam0.machineSignal(c, id, { ...body, _who: who }),
+        machineSignals: seam0.machineSignals,
+    });
+    const offerSeam = whoPost(seam, "did:key:zOffer");
+    const answerSeam = whoPost(seam, "did:key:zAnswer");
+
+    const senderEnv = {
+        kind: "relay",
+        params: { channel: true, role: "offer", direction: "send", contentB64 },
+    };
+    const recverEnv = {
+        kind: "relay",
+        params: { channel: true, role: "answer", direction: "recv", recvBytes: N },
+    };
+
+    // wrap RTCPeerConnection once to observe what the leg can't see:
+    // candidates gathered, and each side's connection state
+    const diag = window.__diag = { offerCands: 0, answerCands: 0, states: [] };
+    const RealRTC = globalThis.RTCPeerConnection;
+    const seen = new Set();
+    class WatchedRTC extends RealRTC {
+        constructor(conf) {
+            super(conf);
+            const side = seen.size === 0 ? "offer" : "answer";
+            seen.add(this);
+            this.addEventListener("iceconnectionstatechange", () =>
+                diag.states.push(`${side}:${this.iceConnectionState}`));
+            this.addEventListener("icecandidate", (e) => {
+                if (e.candidate) diag[side + "Cands"]++;
+            });
+        }
+    }
+    const t0 = performance.now();
+    const [sent, recvd] = await Promise.all([
+        channelLeg(offerSeam, commune, claimId, senderEnv,
+                   { who: "did:key:zOffer", pollMs: 50, timeoutMs: 30_000, silenceMs: 5_000,
+                     RTCPeerConnection: WatchedRTC }),
+        channelLeg(answerSeam, commune, claimId, recverEnv,
+                   { who: "did:key:zAnswer", pollMs: 50, timeoutMs: 30_000, silenceMs: 5_000,
+                     RTCPeerConnection: WatchedRTC }),
+    ]);
+    const ms = Math.round(performance.now() - t0);
+    log(`ice: offer-cands=${diag.offerCands} answer-cands=${diag.answerCands} states=[${diag.states.join(", ")}]`);
+    log(`sent:    ${sent.sent} bytes`);
+    log(`received:${recvd.received} bytes  (${ms} ms, real ICE + SCTP)`);
+    let same = recvd.received === sent.sent && recvd.bytes.length === N;
+    for (let i = 0; same && i < N; i++) same = recvd.bytes[i] === payload[i];
+    if (same) {
+        log(`✓ ${N} bytes crossed the real DataChannel intact`);
+        log("✓ the signal-log rendezvous carried offer, answer and candidates");
+        log("lab verdict: PASS — real WebRTC leg works; NAT traversal between");
+        log("tabs on different networks remains the documented open gap.");
+    } else {
+        log("✗ byte stream did not survive the channel intact", "err");
+    }
+};
+
+run().catch(e => {
+    const d = window.__diag;
+    if (d) log(`ice: offer-cands=${d.offerCands} answer-cands=${d.answerCands} states=[${d.states.join(", ")}]`);
+    log(`✗ ${e.message ?? e}`, "err");
+    console.error(e);
+});
+</script>
+</body>
+</html>

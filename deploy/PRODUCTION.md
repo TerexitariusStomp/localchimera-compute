@@ -104,10 +104,11 @@ retryable/missing-sref condition until the new one lands).
 
 | suite | invocation | expected |
 |-------|-----------|----------|
-| e2e scenarios (in-vat) | `make test-e2e-scenarios` | lifecycle 24 + disputes 13 + kinds 14 green |
+| e2e scenarios (in-vat) | `make test-e2e-scenarios` | lifecycle 24 + disputes 13 + kinds 17 + exit-paths 12 + substrate 21 green |
 | coverage gate | `make check-e2e-coverage` | no new gaps |
 | machine suites | `make test-machine` (tests/machine/) | 237 green |
-| browser legs | `make test-browser` | 14 suites green — executor, store, relay, sense/bundle/policy + substrate |
+| browser legs | `make test-browser` | 15 suites green — executor, store, relay, sense/bundle/policy, sig, substrate |
+| real WebRTC lab | serve `browser/` and open `/relay-lab.html` | real RTCPeerConnection pair negotiates over the signal-log shape and crosses 64 KiB — verifies the channel leg on real ICE+SCTP (loopback); NAT traversal between networks stays a documented gap |
 | licenses + budget | `make check-licenses check-custom-budget` | allowlisted; ≤ baseline |
 | SBOM | `make sbom` | `sbom.json`, CycloneDX 1.5 |
 
