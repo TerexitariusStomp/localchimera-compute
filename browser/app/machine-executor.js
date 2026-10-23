@@ -213,7 +213,11 @@ export const runEnvelope = async (env, input, opts = {}) => {
 // door recomputes there, or the receipt is refused. Unsigned — 'unverifiable
 // is an honest verdict, 'bad would not be.
 export const emitReceipt = async (args) => {
-    const { env, lenderDid, result, seconds } = args;
+    const { env, result, seconds } = args;
+    // the DID the signature will verify under — a signer in hand means
+    // the node signs as its own did:key; the field must name that key
+    // or the door's verdict is 'bad on a real signature.
+    const lenderDid = args.lenderDid ?? args.signer?.did ?? null;
     const body = {
         // the door keys the receipt by the CLAIM's id — the envelope's own
         // bridgeJobId is the submitter's tag, not the claim it landed under
@@ -231,8 +235,13 @@ export const emitReceipt = async (args) => {
             : null,
         executedAt: Date.now(),
     };
-    return { ...body, lenderSig: null, borrowerSig: null,
-        digest: await digestReceiptBody(body) };
+    const digest = await digestReceiptBody(body);
+    // the lender signs the digest when a signer is in hand — the door
+    // verifies did:key sigs outright and AID sigs through the key
+    // resolver; absent a signer the null rides to 'unverifiable, the
+    // honest verdict (never a silent pass, never a fabricated sig).
+    const lenderSig = args.signer ? await args.signer.sign(digest) : null;
+    return { ...body, lenderSig, borrowerSig: null, digest };
 };
 // ── the loop, one claim at a time ─────────────────────────────────────────
 // fetch the envelope → run it → land the receipt. SEAM is the browser's
@@ -268,6 +277,7 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
         env, lenderDid, input, result, seconds,
         bridgeJobId: claimId,
         reproMode: opts.reproMode, seed: opts.seed,
+        signer: opts.signer,
     });
     return seam.machineReceipt(commune, JSON.stringify(receipt));
 };

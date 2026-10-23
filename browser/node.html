@@ -187,6 +187,7 @@
 import { seam } from "./app/seam.js";
 import { on } from "./app/bus.js";
 import { lendLoop } from "./app/machine-executor.js";
+import { loadNodeSigner } from "./lib/machine-sig.js";
 
 const H = seam.handlers;
 const $ = (id) => document.getElementById(id);
@@ -282,11 +283,21 @@ $("offerBtn").addEventListener("click", async () => {
 // the lend loop: poll claims, run the envelope in the sandboxed worker, post
 // the metered receipt (app/machine-executor.js)
 let stopLoop = null;
-$("lendLoopOn").addEventListener("change", (e) => {
+$("lendLoopOn").addEventListener("change", async (e) => {
   if (e.target.checked) {
     if (!commune()) return log("set the commune AID first", "err"), e.target.checked = false;
     const input = tryJson($("jobEnv").value, {});
+    // the node signs its receipts: the keystore's "machine-node" Ed25519
+    // pair (non-extractable) becomes the lender did:key; no signer → the
+    // loop still runs but receipts land 'unverifiable, honestly
+    const signer = await loadNodeSigner();
+    if (signer && !$("lenderDid").value.trim()) {
+      $("lenderDid").value = signer.did;
+      log(`node did:key ${signer.did.slice(0, 24)}…`, "ok");
+    } else if (!signer)
+      log("no node signer — receipts land unverifiable", "err");
     stopLoop = lendLoop(H, commune(), lenderDid(), input, {
+      signer,
       // the node declines work it can't honestly deliver: a hidden tab, a
       // metered connection, or a battery under a fifth unplugged
       policy: { pauseWhenHidden: true, pauseOnSaveData: true, minBatteryLevel: 0.2 },

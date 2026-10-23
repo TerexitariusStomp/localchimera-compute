@@ -313,15 +313,19 @@
                       #:borrower-sig (ref 'borrowerSig)
                       #:digest-field (ref 'digest)))
 
-      ;; digest first, signature where resolvable — a did:key lender's sig
-      ;; verifies only when the resolver can name its key; the answer is
-      ;; 'verified | 'unverifiable | 'bad, never a silent pass.
+      ;; digest first, signature where resolvable — a did:key lender's
+      ;; key travels inside the DID, an AID lender's resolves through the
+      ;; KEL/device path; the answer is 'verified | 'unverifiable | 'bad,
+      ;; never a silent pass.
       (define (sig-verdict r)
         (let ((d (receipt-digest r))
               (sig (receipt-lender-sig r))
               (lender (receipt-lender-did r)))
           (cond
            ((not (and (string? sig) (string? lender))) 'unverifiable)
+           ;; a did:key lender's key is the DID itself — no resolver needed
+           ((string-prefix? "did:key:" lender)
+            (if (verify-did-key-sig lender d sig) 'verified 'bad))
            ((verify-said-signature d sig lender) 'verified)
            (else 'bad))))
 

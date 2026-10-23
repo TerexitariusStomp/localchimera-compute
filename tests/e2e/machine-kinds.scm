@@ -19,6 +19,10 @@
              (playnet machine replay)
              (playnet machine binding)
              (playnet machine binding-verifiers)
+             (playnet keri signify)          ; installs the ed25519 backend
+             ((playnet keri signify-portable) #:select (seed->ed25519-keypair))
+             ((playnet keri crypto-primitives) #:select (ed25519-keypair-public))
+             ((playnet keri citizen-sig) #:select (sign-said))
              (playnet machine payout)
              (playnet machine settlement)
              (playnet machine executors)
@@ -27,6 +31,7 @@
              (goblins) (goblins vat)
              (goblins actor-lib methods)
              (goblins utils hashmap)
+             (rnrs bytevectors)
              (srfi srfi-1))
 
 (define vat (spawn-vat #:name "machine-kinds-e2e"))
@@ -75,6 +80,43 @@
                    (executedAt . 1761000002000)
                    (digest . ,(receipt-digest rcpt)))))
       ($ gov 'machine-receipt BOB HOME wire)))
+
+  (scenario "lenderSig — a did:key lender's signature verifies door-side")
+  ;; the node IS its key: the receipt's lenderDid names the did:key the
+  ;; signature checks against — no resolver, no binding needed to read it
+  (let* ((kp (seed->ed25519-keypair
+              (u8-list->bytevector (iota 32 1))))
+         (node-did (ed25519-pubkey->did-key (ed25519-keypair-public kp)))
+         (rcpt (make-receipt #:bridge-job-id "claim-signed"
+                             #:lender-did node-did
+                             #:input-hash "in:signed"
+                             #:output-hash "out:signed"
+                             #:usage (make-usage-meter #:unit "seconds"
+                                                       #:amount 1)
+                             #:executed-at 1761000002000))
+         (digest (receipt-digest rcpt))
+         (wire `((bridgeJobId . "claim-signed") (lenderDid . ,node-did)
+                 (inputHash . "in:signed") (outputHash . "out:signed")
+                 (usage . ((unit . "seconds") (amount . 1)))
+                 (executedAt . 1761000002000)
+                 (lenderSig . ,(sign-said digest kp))
+                 (digest . ,digest))))
+    (check "machine-verify answers 'verified on a real signature"
+           (cdr ($ gov 'machine-verify wire)) '(#t verified))
+    ;; a genuinely tampered sig: signed over other bytes, so it fails
+    ;; against the digest the door recomputes from this body
+    (let ((forged (map (lambda (p)
+                         (if (equal? (car p) 'lenderSig)
+                             (cons 'lenderSig (sign-said "deadbeef" kp))
+                             p))
+                       wire)))
+      (check "a sig over a different digest is 'bad, not 'verified"
+             (cdr ($ gov 'machine-verify forged)) '(#t bad)))
+    (check "an unsigned receipt stays 'unverifiable, never refused at verify"
+           (cdr ($ gov 'machine-verify
+                    (filter (lambda (p) (not (equal? (car p) 'lenderSig)))
+                            wire)))
+           '(#t unverifiable)))
 
   (scenario "store — the envelope keeps its kind and content commitment")
   (let* ((run (kind-run 'store "storage"

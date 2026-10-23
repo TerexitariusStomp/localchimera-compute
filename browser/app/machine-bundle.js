@@ -122,6 +122,7 @@ export const runBundleClaim = async (seam, commune, claimId, env, lenderDid, opt
         seconds,
         usage: { unit: "seconds", amount: Math.round(seconds * 1000) / 1000 },
         outputHash: await sha256hex(JSON.stringify(reports)),
+        signer: opts.signer,
     });
     return seam.machineReceipt(commune, JSON.stringify(receipt));
 };

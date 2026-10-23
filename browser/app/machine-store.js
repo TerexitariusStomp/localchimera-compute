@@ -178,6 +178,7 @@ export const runStoreClaim = async (seam, commune, claimId, env, lenderDid, opts
                     usage: { unit: "byte-seconds",
                              amount: Math.round((held?.byteLength ?? 0) * seconds * 1000) / 1000 },
                     outputHash,
+                    signer: opts.signer,
                 });
                 resolve(await seam.machineReceipt(commune, JSON.stringify(receipt)));
             } catch (e) { reject(e); }

@@ -240,6 +240,7 @@ export const runRelayClaim = async (seam, commune, claimId, env, lenderDid, opts
         seconds: 0,
         usage: { unit: "bytes", amount: moved },
         outputHash: bytesForHash ? await sha256Bytes(bytesForHash) : null,
+        signer: opts.signer,
     });
     return seam.machineReceipt(commune, JSON.stringify(receipt));
 };

@@ -24,8 +24,15 @@ mechanism, never a replacement for the inner ones.
 - Personhood: playnet ceremonies produce witnessed-work attestations; PoI
   vouches/rep gates map onto them rather than a parallel system.
 
-OPEN: which party issues the binding ACDC — the scope, or the person's own
-KE?
+DECIDED (shipped): the binding is self-issued, dual-signed — the person's
+own AID signs `account-sig` over the `keri:<aid>` AccountLink statement and
+the did:key countersigns (`binding.scm`, `verify-keri-account-sig`). No
+third-party issuer exists or is needed: the two keys' signatures over the
+same canonical statement ARE the link. A scope may later endorse a binding
+for ranking, but it is never the issuer. With it, `lenderSig` on a receipt
+verifies outright: `did:key` lenders verify under the key the DID encodes,
+AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
+`bad`, never a silent pass.
 
 ## §2 Scopes and pools
 
@@ -151,15 +158,31 @@ KE?
 | ^lobby sturdyrefs | job-submit/result/capabilities doors |
 | personhood ceremonies | witnessed-work attestations |
 
-## Appendix B — open questions for the playnet authors
+## Appendix B — open questions, answered where the code already answered them
 
 1. Code license for playnet itself (proposal lands AGPL-3.0 with PR-0).
+   OPEN — a legal decision, not a code one.
 2. JS inference inside a browser worker, or must compute be hoot-compiled
-   Scheme?
-3. `API_PROVIDER=generic` acceptable for non-enclave workloads (first contact)?
-4. `rep` as a separate credit-fold `kind` — agreed?
-5. Who issues AID↔did:key binding ACDCs (§1 OPEN)?
-6. hREA interop: protocol-level VF compatibility or deliberately independent?
+   Scheme? — DECIDED, shipped: the job payload is JS or wasm inside a
+   sandboxed Worker (`browser/app/machine-executor.js`); the accountability
+   layer — doors, receipts, digests — is Scheme. `env.image` selects per
+   envelope; neither side trusts the other.
+3. `API_PROVIDER=generic` for non-enclave workloads? — DECIDED for v1: no
+   generic provider leg exists. Envelopes execute locally (JS/wasm, IDB
+   storage, platform sensors); outbound network rides only `network: true`
+   + the `fetch` cap on relay legs. A provider leg would arrive as a new
+   kind, not a flag.
+4. `rep` as a separate credit-fold `kind`? — DECIDED, partial: the credit
+   fold's monoid is already keyed by kind (`credit-fold.scm`); machine work
+   lands as `use` events today and a `rep` cell kind is a monoid addition
+   when the account-store emits it. Deferred until settlement wants it.
+5. Who issues AID↔did:key binding ACDCs? — DECIDED, shipped: self-issued,
+   dual-signed (§1). `lenderSig` verifies.
+6. hREA interop? — DECIDED at the event layer: `receipt->event` emits
+   real VF `EconomicEvent`s (`use`, provider/receiver, resourceQuantity,
+   fulfills/satisfies, inScopeOf) onto the scope observer — hREA's own
+   vocabulary. A GraphQL bridge is deliberately out of scope for v1; the
+   event model is the interop surface.
 
 ## Appendix C — inventory rule
 

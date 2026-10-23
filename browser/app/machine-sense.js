@@ -108,6 +108,7 @@ export const runSenseClaim = async (seam, commune, claimId, env, lenderDid, opts
         seconds: 0,
         usage: { unit: "readings", amount: readings.length },
         outputHash: await sha256hex(JSON.stringify(readings)),
+        signer: opts.signer,
     });
     return seam.machineReceipt(commune, JSON.stringify(receipt));
 };

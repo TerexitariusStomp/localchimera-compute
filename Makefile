@@ -1055,7 +1055,7 @@ check-ui-staged:
 .PHONY: test-browser
 test-browser: test-machine-executor test-machine-store test-machine-relay test-machine-sense test-store test-keys test-bytes \
           test-idb test-keystore test-handler-bridge test-handlers-contract test-mesh-plan \
-          test-capabilities test-rns-identity test-reactive 
+          test-capabilities test-rns-identity test-reactive test-machine-sig
 
 # The browser executor — the sandbox, the cap denial, the timeout, and the
 # canonical digest the Scheme verifier recomputes (browser/app/machine-executor.js).
@@ -1107,6 +1107,13 @@ test-handler-bridge:
 # fallback, and the manifest pins the set so a dropped wrapper fails.
 test-handlers-contract:
 	node tests/browser/handlers-contract-test.mjs
+
+# The lender's signature (browser/lib/machine-sig.js): did:key encode and
+# CESR qb64 pinned to the Scheme encoders' goldens, the seed signer byte-
+# identical to signify's, and emitReceipt landing a sig the door's
+# verify-did-key-sig recomputes.
+test-machine-sig:
+	node tests/browser/machine-sig-test.mjs
 
 # The reactive core (browser/app/reactive.js). Twenty-one modules import it and
 # none could see it fail: batching, dependency RE-tracking and identity dedup are
