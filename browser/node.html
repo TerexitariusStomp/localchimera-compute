@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>playnet — machine node</title>
+<style>
+  :root {
+    --ink: #e8e6e3; --dim: #9a968f; --line: #2e2c28; --bg: #141311;
+    --card: #1c1a17; --accent: #7fb069; --warn: #c98a5b; --bad: #c96a5b;
+    --mono: "SF Mono", "Cascadia Code", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14px/1.5 system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 18px;
+           border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; font-weight: 600; margin: 0; letter-spacing: .02em; }
+  header h1 span { color: var(--dim); font-weight: 400; }
+  #status { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 14px;
+         padding: 14px 18px; max-width: 1280px; margin: 0 auto; }
+  section { background: var(--card); border: 1px solid var(--line);
+            border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .12em;
+       color: var(--dim); margin: 0 0 10px; font-weight: 600; }
+  label { display: block; font-size: 12px; color: var(--dim); margin: 8px 0 2px; }
+  input, select, textarea { width: 100%; background: var(--bg); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 5px; padding: 6px 8px;
+    font: 12px var(--mono); }
+  input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); }
+  .row { display: flex; gap: 8px; } .row > * { flex: 1; }
+  button { background: var(--accent); color: #10130e; border: 0; border-radius: 5px;
+           padding: 7px 14px; font: 600 12px system-ui; cursor: pointer; margin-top: 10px; }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+  button.warn { background: var(--warn); }
+  button.bad  { background: var(--bad); }
+  table { width: 100%; border-collapse: collapse; font: 11px var(--mono); }
+  td, th { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line);
+           vertical-align: top; word-break: break-all; }
+  th { color: var(--dim); font-weight: 400; }
+  td button { margin: 0 4px 0 0; padding: 2px 8px; font-size: 10px; }
+  .caps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 10px;
+          font: 12px var(--mono); }
+  .caps b { color: var(--accent); font-weight: 600; }
+  .check { display: flex; align-items: center; gap: 6px; font-size: 12px;
+           margin: 4px 0; cursor: pointer; }
+  .check input { width: auto; }
+  #log { font: 11px/1.5 var(--mono); white-space: pre-wrap; max-height: 200px;
+         overflow-y: auto; color: var(--dim); }
+  .ok { color: var(--accent); } .err { color: var(--bad); }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 10px;
+          border: 1px solid var(--line); font-size: 10px; color: var(--dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>playnet <span>machine node</span></h1>
+  <span id="status">booting…</span>
+  <span style="flex:1"></span>
+  <!-- day-boot.js lands its sign-in chip here -->
+</header>
+<main>
+  <div>
+    <section>
+      <h2>This tab's machine</h2>
+      <div class="caps" id="caps">probing…</div>
+    </section>
+    <section>
+      <h2>Commune</h2>
+      <label>commune AID — the registry namespace this node answers in</label>
+      <input id="commune" placeholder="B… (44-char KERI aid)">
+      <div class="row">
+        <label style="flex:0 0 auto; margin-top:12px"><input type="checkbox" id="lendLoopOn" class="check" style="width:auto"> lend loop: run claimed envelopes here</label>
+      </div>
+      <label>lender did:key (as it appears on offers)</label>
+      <input id="lenderDid" placeholder="did:key:z… (blank = this AID)">
+    </section>
+    <section>
+      <h2>Lend — offer a lane</h2>
+      <label>lane</label>
+      <input id="offerLane" value="exec" placeholder="exec | infer | store | relay">
+      <label>task classes</label>
+      <div id="classBoxes"></div>
+      <div class="row">
+        <div><label>headroom (units/s)</label><input id="offerHeadroom" type="number" value="1"></div>
+        <div><label>replay promise</label>
+          <select id="offerRepro"><option>deterministic</option><option>exact</option><option>none</option></select></div>
+      </div>
+      <button id="offerBtn">offer</button>
+      <table id="offers"></table>
+    </section>
+  </div>
+  <div>
+    <section>
+      <h2>Borrow — submit a job</h2>
+      <div class="row">
+        <div><label>task class</label>
+          <select id="jobClass"><option>compute</option><option>inference</option><option>storage</option>
+            <option>bandwidth</option><option>fetch</option><option>canary</option><option>research</option>
+            <option>jury</option><option>swarm-infer</option><option>build-verify</option></select></div>
+        <div><label>lane</label><input id="jobLane" value="exec"></div>
+        <div><label>replay</label>
+          <select id="jobRepro"><option>deterministic</option><option>exact</option><option>none</option></select></div>
+      </div>
+      <label>job envelope (JSON — image/entrypoint/inputHash/caps)</label>
+      <textarea id="jobEnv" rows="3">{"image":"js:","entrypoint":"(x)=>x*x","inputHash":"","caps":[],"network":false}</textarea>
+      <label>opts (JSON alist, optional)</label>
+      <input id="jobOpts" placeholder="{}">
+      <button id="submitBtn">submit</button>
+      <table id="jobs"></table>
+      <table id="matches"></table>
+    </section>
+    <section>
+      <h2>Claims</h2>
+      <div class="row">
+        <div><label>job id</label><input id="claimJob"></div>
+        <div><label>offer id</label><input id="claimOffer"></div>
+      </div>
+      <button id="claimBtn" class="ghost">claim</button>
+      <table id="claims"></table>
+    </section>
+    <section>
+      <h2>Settlement</h2>
+      <div class="row">
+        <div><label>receipt / envelope / payout wire (JSON)</label>
+          <input id="settleWire" placeholder="{...}"></div>
+      </div>
+      <button id="verifyBtn" class="ghost">verify receipt</button>
+      <button id="envBtn" class="ghost">read envelope</button>
+      <button id="settleBtn" class="ghost">settle</button>
+      <button id="payoutBtn" class="ghost">payout</button>
+      <table id="statements"></table>
+    </section>
+    <section>
+      <h2>Disputes</h2>
+      <div class="row">
+        <div><label>claim id</label><input id="disputeClaim"></div>
+        <div><label>kind</label>
+          <select id="disputeKind"><option>late</option><option>wrong-output</option><option>no-show</option><option>overcharge</option></select></div>
+      </div>
+      <button id="disputeBtn" class="warn">raise dispute</button>
+      <table id="disputes"></table>
+    </section>
+    <section>
+      <h2>Identity bindings (did:key ↔ AID)</h2>
+      <div class="row">
+        <div><label>binding wire (JSON)</label><input id="bindWire" placeholder="{...AccountLink}"></div>
+        <div><label>unbind key / side</label>
+          <span class="row"><input id="unbindKey" placeholder="did:key:z…"><input id="unbindSide" placeholder="signer | account"></span></div>
+      </div>
+      <button id="bindBtn" class="ghost">bind</button>
+      <button id="unbindBtn" class="ghost">unbind</button>
+      <table id="bindings"></table>
+    </section>
+    <section>
+      <h2>Log</h2>
+      <div id="log"></div>
+    </section>
+  </div>
+</main>
+<script src="reflect.js"></script>
+<script type="module" src="day-boot.js"></script>
+<script type="module">
+import { seam } from "./app/seam.js";
+import { on } from "./app/bus.js";
+import { lendLoop } from "./app/machine-executor.js";
+
+const H = seam.handlers;
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+const log = (m, cls = "") => {
+  const d = document.createElement("div");
+  if (cls) d.className = cls;
+  d.textContent = `${new Date().toISOString().slice(11, 19)} ${m}`;
+  logEl.prepend(d);
+};
+const commune = () => $("commune").value.trim();
+const lenderDid = () => $("lenderDid").value.trim() || (seam.data.aid || "");
+const tryJson = (s, dflt) => { try { return JSON.parse(s); } catch { return dflt; } };
+const rows = (v) => {
+  if (typeof v === "string") v = tryJson(v, null);
+  if (Array.isArray(v)) return v;
+  if (v && Array.isArray(v.ok)) return v.ok;
+  return [];
+};
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ── capability probe ──────────────────────────────────────────────────────
+const caps = {};
+(async () => {
+  caps.cores = navigator.hardwareConcurrency || 0;
+  caps.memGB = navigator.deviceMemory ?? null;
+  caps.gpu = !!navigator.gpu;
+  caps.netMbps = navigator.connection?.downlink ?? null;
+  try {
+    const est = await navigator.storage?.estimate?.();
+    caps.storageGB = est?.quota ? Math.round(est.quota / 1e9 * 10) / 10 : null;
+  } catch { caps.storageGB = null; }
+  $("caps").innerHTML = `
+    <span>cores</span><b>${caps.cores}</b>
+    <span>memory</span><b>${caps.memGB ? caps.memGB + " GB" : "?"}</b>
+    <span>webgpu</span><b>${caps.gpu ? "yes" : "no"}</b>
+    <span>downlink</span><b>${caps.netMbps ? caps.netMbps + " Mb/s" : "?"}</b>
+    <span>storage quota</span><b>${caps.storageGB ? caps.storageGB + " GB" : "?"}</b>`;
+})();
+
+// task-class checkboxes the offer form reads
+const CLASSES = ["compute","inference","storage","bandwidth","fetch","canary","research","jury","swarm-infer","build-verify"];
+$("classBoxes").innerHTML = CLASSES.map(c =>
+  `<label class="check"><input type="checkbox" value="${c}"${c === "compute" ? " checked" : ""}>${c}</label>`).join("");
+const pickedClasses = () => [...document.querySelectorAll("#classBoxes input:checked")].map(b => b.value);
+
+// persist the commune + lender fields across reloads
+for (const id of ["commune", "lenderDid"]) {
+  $(id).value = localStorage.getItem("node." + id) || "";
+  $(id).addEventListener("change", () => localStorage.setItem("node." + id, $(id).value));
+}
+
+// ── status: the spine raises pushes on the bus; 'aid' keeps seam.data.aid ─
+let lastStatus = "booting…";
+on("status", (s) => { lastStatus = s; });
+on("aid", refreshAll);
+setInterval(() => {
+  const aid = seam.data.aid ?? "";
+  $("status").textContent =
+    `${lastStatus}${aid ? " · " + String(aid).slice(0, 12) + "…" : ""}`;
+}, 1500);
+
+// ── lend ──────────────────────────────────────────────────────────────────
+const refreshOffers = async () => {
+  if (!H.machineOffers || !commune()) return;
+  const list = rows(await H.machineOffers(commune()));
+  $("offers").innerHTML = "<tr><th>offer</th><th>lane</th><th>classes</th><th>headroom</th><th></th></tr>" +
+    list.map(o => `<tr><td>${esc(String(o.id ?? o.offerId).slice(0, 14))}…</td><td>${esc(o.lane)}</td>
+      <td>${esc((o.classes ?? o.taskClasses ?? []).join(","))}</td><td>${esc(o.headroom)}</td>
+      <td><button class="bad" data-retract="${esc(o.id ?? o.offerId)}">retract</button></td></tr>`).join("");
+};
+$("offers").addEventListener("click", async (e) => {
+  const id = e.target.dataset?.retract;
+  if (!id) return;
+  log(`retract ${id}: ${await H.machineRetract(commune(), id)}`);
+  refreshOffers();
+});
+$("offerBtn").addEventListener("click", async () => {
+  const classes = pickedClasses();
+  if (!commune() || !classes.length) return log("need a commune AID and at least one class", "err");
+  const opts = JSON.stringify({ usageUnit: "seconds" });
+  const r = await H.machineOffer(commune(), $("offerLane").value, classes,
+                                 Number($("offerHeadroom").value) || 1,
+                                 $("offerRepro").value, opts);
+  log(`offer → ${r}`, String(r).startsWith("err:") ? "err" : "ok");
+  refreshOffers();
+});
+
+// the lend loop: poll claims, run the envelope in the sandboxed worker, post
+// the metered receipt (app/machine-executor.js)
+let stopLoop = null;
+$("lendLoopOn").addEventListener("change", (e) => {
+  if (e.target.checked) {
+    if (!commune()) return log("set the commune AID first", "err"), e.target.checked = false;
+    const input = tryJson($("jobEnv").value, {});
+    stopLoop = lendLoop(H, commune(), lenderDid(), input, {
+      onRow: (id, st) => log(`claim ${String(id).slice(0, 12)}… → ${st}`, st.startsWith("err") ? "err" : "ok"),
+    });
+    log("lend loop on");
+  } else { stopLoop?.(); stopLoop = null; log("lend loop off"); }
+});
+
+// ── borrow ────────────────────────────────────────────────────────────────
+const refreshJobs = async () => {
+  if (!H.machineJobs || !commune()) return;
+  const list = rows(await H.machineJobs(commune()));
+  $("jobs").innerHTML = "<tr><th>job</th><th>class</th><th>lane</th><th></th></tr>" +
+    list.map(j => `<tr><td>${esc(String(j.id ?? j.jobId).slice(0, 14))}…</td>
+      <td>${esc(j.taskClass ?? j.class)}</td><td>${esc(j.lane)}</td>
+      <td><button class="ghost" data-match="${esc(j.id ?? j.jobId)}">match</button>
+          <button class="bad" data-withdraw="${esc(j.id ?? j.jobId)}">withdraw</button></td></tr>`).join("");
+};
+$("jobs").addEventListener("click", async (e) => {
+  const m = e.target.dataset?.match, w = e.target.dataset?.withdraw;
+  if (m) {
+    const list = rows(await H.machineMatch(commune(), m));
+    $("matches").innerHTML = "<tr><th colspan='2'>matching offers</th></tr>" +
+      list.map(o => `<tr><td>${esc(String(o.id ?? o.offerId).slice(0, 20))}</td>
+        <td><button class="ghost" data-claimoff="${esc(m)}|${esc(o.id ?? o.offerId)}">claim</button></td></tr>`).join("");
+  }
+  if (w) { log(`withdraw ${w}: ${await H.machineWithdraw(commune(), w)}`); refreshJobs(); }
+});
+$("matches").addEventListener("click", async (e) => {
+  const v = e.target.dataset?.claimoff;
+  if (!v) return;
+  const [job, offer] = v.split("|");
+  const r = await H.machineClaim(commune(), job, offer, "{}");
+  log(`claim ${job.slice(0, 10)}… → ${r}`, String(r).startsWith("err:") ? "err" : "ok");
+  refreshClaims();
+});
+$("submitBtn").addEventListener("click", async () => {
+  const env = tryJson($("jobEnv").value, null);
+  if (!env) return log("envelope JSON does not parse", "err");
+  const opts = JSON.stringify(env);
+  const r = await H.machineSubmit(commune(), $("jobClass").value, $("jobLane").value,
+                                  $("jobRepro").value, env.inputHash || "", opts);
+  log(`submit → ${r}`, String(r).startsWith("err:") ? "err" : "ok");
+  refreshJobs();
+});
+$("claimBtn").addEventListener("click", async () => {
+  const r = await H.machineClaim(commune(), $("claimJob").value.trim(), $("claimOffer").value.trim(), "{}");
+  log(`claim → ${r}`, String(r).startsWith("err:") ? "err" : "ok");
+  refreshClaims();
+});
+
+// ── claims ────────────────────────────────────────────────────────────────
+const refreshClaims = async () => {
+  if (!H.machineClaims || !commune()) return;
+  const list = rows(await H.machineClaims(commune()));
+  $("claims").innerHTML = "<tr><th>claim</th><th>state</th><th></th></tr>" +
+    list.map(c => {
+      const id = String(c.id ?? c.claimId ?? "");
+      return `<tr><td>${esc(id.slice(0, 14))}…</td><td>${esc(c.state)}</td>
+        <td><button class="ghost" data-accept="${esc(id)}">accept</button>
+            <button class="ghost" data-replay="${esc(id)}">replay</button>
+            <button class="warn" data-preempt="${esc(id)}">preempt</button>
+            <button class="bad" data-disp="${esc(id)}">dispute</button></td></tr>`;
+    }).join("");
+};
+$("claims").addEventListener("click", async (e) => {
+  const d = e.target.dataset ?? {};
+  if (d.accept)  log(`accept ${d.accept.slice(0,10)}…: ${await H.machineAccept(commune(), d.accept)}`);
+  if (d.preempt) log(`preempt ${d.preempt.slice(0,10)}…: ${await H.machinePreempt(commune(), d.preempt)}`);
+  if (d.replay)  log(`replay → ${await H.machineReplay(commune(), d.replay)}`);
+  if (d.disp)    { $("disputeClaim").value = d.disp; }
+  refreshClaims();
+});
+
+// ── settlement ────────────────────────────────────────────────────────────
+$("verifyBtn").addEventListener("click", async () =>
+  log(`verify → ${await H.machineVerify($("settleWire").value)}`));
+$("envBtn").addEventListener("click", async () =>
+  log(`envelope → ${await H.machineEnvelope($("settleWire").value)}`));
+$("settleBtn").addEventListener("click", async () =>
+  log(`settle → ${await H.machineSettle(commune(), $("settleWire").value)}`, "ok"));
+$("payoutBtn").addEventListener("click", async () =>
+  log(`payout → ${await H.machinePayout(commune(), $("settleWire").value)}`));
+const refreshStatements = async () => {
+  if (!H.machineStatements || !commune()) return;
+  const list = rows(await H.machineStatements(commune()));
+  $("statements").innerHTML = "<tr><th>statement</th><th>balance</th><th>at</th></tr>" +
+    list.map(s => `<tr><td>${esc(String(s.id ?? s.said ?? "").slice(0, 18))}…</td>
+      <td>${esc(s.balance ?? s.total)}</td><td>${esc(s.at ?? s.executedAt ?? "")}</td></tr>`).join("");
+};
+
+// ── disputes ──────────────────────────────────────────────────────────────
+$("disputeBtn").addEventListener("click", async () => {
+  const r = await H.machineDispute(commune(), $("disputeClaim").value.trim(), $("disputeKind").value);
+  log(`dispute → ${r}`, String(r).startsWith("err:") ? "err" : "ok");
+  refreshDisputes();
+});
+const refreshDisputes = async () => {
+  if (!H.machineDisputes || !commune()) return;
+  const list = rows(await H.machineDisputes(commune()));
+  $("disputes").innerHTML = "<tr><th>dispute</th><th>state</th><th></th></tr>" +
+    list.map(dp => {
+      const id = String(dp.id ?? dp.disputeId ?? "");
+      return `<tr><td>${esc(id.slice(0, 14))}…</td><td>${esc(dp.state ?? dp.outcome)}</td>
+        <td><button class="ghost" data-verdict="${esc(id)}|upheld">upheld</button>
+            <button class="ghost" data-verdict="${esc(id)}|dismissed">dismissed</button>
+            <button class="bad" data-dclose="${esc(id)}">close</button></td></tr>`;
+    }).join("");
+};
+$("disputes").addEventListener("click", async (e) => {
+  const d = e.target.dataset ?? {};
+  if (d.verdict) {
+    const [id, v] = d.verdict.split("|");
+    log(`verdict ${v} on ${id.slice(0, 10)}…: ${await H.machineDisputeVerdict(commune(), id, v)}`);
+  }
+  if (d.dclose) log(`close ${d.dclose.slice(0,10)}…: ${await H.machineDisputeClose(commune(), d.dclose)}`);
+  refreshDisputes();
+});
+
+// ── bindings ──────────────────────────────────────────────────────────────
+$("bindBtn").addEventListener("click", async () =>
+  log(`bind → ${await H.machineBind(commune(), $("bindWire").value)}`));
+$("unbindBtn").addEventListener("click", async () =>
+  log(`unbind → ${await H.machineUnbind(commune(), $("unbindKey").value, $("unbindSide").value)}`));
+const refreshBindings = async () => {
+  if (!H.machineBindings || !commune()) return;
+  const list = rows(await H.machineBindings(commune()));
+  $("bindings").innerHTML = "<tr><th>key</th><th>state</th></tr>" +
+    list.map(b => `<tr><td>${esc(String(b.key ?? b.did ?? "").slice(0, 32))}</td><td>${esc(b.state)}</td></tr>`).join("");
+};
+
+const refreshAll = () => { refreshOffers(); refreshJobs(); refreshClaims(); refreshStatements(); refreshDisputes(); refreshBindings(); };
+$("commune").addEventListener("change", refreshAll);
+setInterval(refreshAll, 15000);
+</script>
+</body>
+</html>
