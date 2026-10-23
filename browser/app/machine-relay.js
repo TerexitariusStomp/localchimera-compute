@@ -68,6 +68,39 @@ export const httpLeg = async (env) => {
     return { bytes, moved: params.outUrl ? pushed * 2 : pushed + bytes.byteLength };
 };
 
+// ── the egress leg ──────────────────────────────────────────────────────
+// profile:"egress" — this tab is the borrower's exit to the open internet.
+// params.destination names the URL the node fetches on the borrower's
+// behalf; the response bytes are the carried work and the meter counts
+// both directions. opts.allowDest is the lender-side policy gate — a
+// commune wires its OPA egress policy (deploy/policies/playnet/doors/
+// egress.rego) here; the default admits only https:/wss: — never a scheme
+// the fetch can't hold, never a destination the policy didn't name. This
+// is the Mysterium user-side case inside the protocol: the exit is
+// receipted and policy-gated, not token-brokered and unaudited.
+export const egressLeg = async (env, opts = {}) => {
+    const params = env.params ?? {};
+    if (!fetchGranted(env))
+        throw new Error("machine-relay: the egress leg needs the fetch cap");
+    const dest = params.destination;
+    if (typeof dest !== "string" || !dest)
+        throw new Error("machine-relay: an egress claim needs params.destination");
+    const allow = opts.allowDest ?? ((d) => {
+        try { const u = new URL(d); return u.protocol === "https:" || u.protocol === "wss:"; }
+        catch { return false; }
+    });
+    if (!allow(dest))
+        throw new Error(`machine-relay: egress destination refused by policy: ${dest}`);
+    const req = params.requestB64 ? fromBase64(params.requestB64) : null;
+    const res = await fetch(dest, { method: params.method ?? (req ? "POST" : "GET"),
+                                    body: req ?? undefined });
+    if (!res.ok)
+        throw new Error(`machine-relay: egress ${dest} → ${res.status}`);
+    const body = new Uint8Array(await res.arrayBuffer());
+    return { status: res.status, sent: req ? req.byteLength : 0,
+             received: body.byteLength, body };
+};
+
 // ── the WebRTC leg ────────────────────────────────────────────────────────
 // The claim's signal log is the rendezvous: offers, answers and candidates
 // are signal bodies {type, sdp | candidate}; each end ignores its own posts
@@ -228,14 +261,21 @@ export const channelLeg = async (seam, commune, claimId, env, opts = {}) => {
 };
 
 // ── the claim ─────────────────────────────────────────────────────────────
-// probe → canary report; channel → the WebRTC leg; inUrl → the HTTP leg.
-// The receipt's usage is the bytes this node actually carried, and for a
-// 'recv or an HTTP carry the outputHash is the carried bytes' digest —
-// a delivery proof the verifier can recompute.
+// probe → canary report; profile:egress → the exit leg; channel → the
+// WebRTC leg; inUrl → the HTTP leg. The receipt's usage is the bytes this
+// node actually carried, and for a 'recv, an HTTP carry, or an egress the
+// outputHash is the delivered bytes' digest — a delivery proof the
+// verifier can recompute.
 export const runRelayClaim = async (seam, commune, claimId, env, lenderDid, opts = {}) => {
     const params = env.params ?? {};
     let moved, bytesForHash, result;
-    if (params.probe) {
+    if (params.profile === "egress") {
+        const leg = await egressLeg(env, opts);
+        moved = leg.sent + leg.received;
+        bytesForHash = leg.body;
+        result = { profile: "egress", destination: params.destination,
+                   status: leg.status, sent: leg.sent, received: leg.received };
+    } else if (params.probe) {
         result = await probe(env);
         moved = result.bytes;
         bytesForHash = null;

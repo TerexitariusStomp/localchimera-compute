@@ -28,6 +28,7 @@
             job-envelope-caps job-envelope-network? job-envelope-params
             envelope-kind? *envelope-kinds*
             params-ref model-descriptor? envelope-model envelope-model-seed
+            egress-profile? caps-grant?
             alist->job-envelope job-envelope->alist envelope-no-amount?))
 
 
@@ -106,6 +107,25 @@
    it so replay reruns the same decode."
   (params-ref (or (envelope-model e) '()) 'seed))
 
+;;; ── the egress profile ─────────────────────────────────────────────────
+;;; A 'relay envelope carrying params.profile 'egress asks the node to be
+;;; the borrower's exit to the open internet: params.destination names the
+;;; URL the node fetches on the borrower's behalf. The shape is refused
+;;; early rather than failing inside the node's executor — an egress leg
+;;; without a destination is not a job, and one without the fetch grant
+;;; could never run.
+
+(define (egress-profile? params)
+  (let ((p (params-ref params 'profile)))
+    (or (eq? p 'egress) (equal? p "egress"))))
+
+(define (caps-grant? caps name)
+  "Does CAPS grant NAME (a grant string like \"fetch\")? caps crosses as a
+   list or vector mixing grant strings with limit alists — either shape
+   answers."
+  (let ((items (if (vector? caps) (vector->list caps) (or caps '()))))
+    (and (member name items) #t)))
+
 (define* (make-job-envelope #:key (kind 'exec) bridge-job-id (image #f)
                             (entrypoint #f) input-hash
                             (caps '()) (network? #f) (params '()))
@@ -120,6 +140,13 @@
     (when m
       (unless (model-descriptor? m)
         (error "envelope: params.model is not a model descriptor" m))))
+  (when (and (eq? kind 'relay) (egress-profile? params))
+    (unless (string? (params-ref params 'destination))
+      (error "envelope: an egress relay needs params.destination"))
+    (unless network?
+      (error "envelope: an egress relay needs network:true"))
+    (unless (caps-grant? caps "fetch")
+      (error "envelope: an egress relay needs the fetch cap")))
   (%make-job-envelope kind bridge-job-id image entrypoint input-hash caps
                       network? params))
 

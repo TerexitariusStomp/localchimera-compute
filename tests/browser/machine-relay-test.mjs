@@ -200,6 +200,54 @@ await throws("a probe needs an inUrl",
     /timed out/);
 }
 
+// ── the egress leg — this tab is the borrower's exit, under policy ───────
+{
+  const BODY = new TextEncoder().encode("egressed-payload");
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url, method: init.method ?? "GET" });
+    return { ok: true, status: 200, arrayBuffer: async () => BODY.buffer.slice(0) };
+  };
+  const env = { network: true, caps: ["fetch"], inputHash: "in:e",
+                params: { profile: "egress", destination: "https://cdn.example/file" } };
+  const leg = await R.egressLeg(env);
+  check("the egress leg fetched the destination",
+        calls.length === 1 && calls[0].url === "https://cdn.example/file");
+  check("the response bytes meter",
+        leg.received === BODY.byteLength, `${leg.received}`);
+
+  const receipts = [];
+  const seam = { machineReceipt: async (_c, j) => { receipts.push(JSON.parse(j)); return { ok: 1 }; } };
+  await R.runRelayClaim(seam, "home", "claim-egress", env, "did:lender");
+  check("an egress receipt meters the bytes it carried",
+        receipts[0].usage.unit === "bytes" && receipts[0].usage.amount === BODY.byteLength);
+  check("the delivered bytes hash for the proof",
+        receipts[0].outputHash === await sha256hex(BODY));
+
+  // the default allowDest admits only https:/wss: — anything else never fetches
+  calls.length = 0;
+  await throws("a non-https destination is refused before any fetch",
+    () => R.egressLeg({ ...env, params: { profile: "egress", destination: "ftp://x/y" } }),
+    /refused by policy/);
+  check("a refused destination never reaches fetch", calls.length === 0);
+  await throws("a missing destination refuses",
+    () => R.egressLeg({ ...env, params: { profile: "egress" } }),
+    /destination/);
+  await throws("no fetch cap → the egress leg refuses closed",
+    () => R.egressLeg({ ...env, network: false, caps: [] }),
+    /fetch cap/);
+  // an injected commune policy narrows the default further — OPA answers
+  // reach allowDest the same way
+  calls.length = 0;
+  await throws("an injected allowDest refuses an unlisted host",
+    () => R.egressLeg(env, { allowDest: (d) => d.includes("allowed.example") }),
+    /refused by policy/);
+  check("the commune's policy refused without a fetch", calls.length === 0);
+  const ok = await R.egressLeg({ ...env, params: { profile: "egress", destination: "https://allowed.example/x" } },
+                               { allowDest: (d) => d.includes("allowed.example") });
+  check("the policy's own destination exits", ok.received === BODY.byteLength);
+}
+
 // ── the dispatch — runClaim routes 'relay to the leg, not the worker ──────
 {
   const PAYLOAD = new TextEncoder().encode("z");
