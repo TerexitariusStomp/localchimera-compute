@@ -157,6 +157,14 @@ const wasmBytes = async (env) => {
 export const runEnvelope = async (env, input, opts = {}) => {
     // non-exec kinds need no image; without one there is nothing to run —
     // the scheme parser only forces image on 'exec, and this is the exec path.
+    // a "webgpu" cap is a promise the job means to compute on the adapter —
+    // request it here so a GPU-less node refuses rather than discovering
+    // the absence inside the sandbox and calling it a run.
+    if ((env.caps || []).includes("webgpu")) {
+        const gpu = opts.gpu ?? (typeof navigator !== "undefined" ? navigator.gpu : null);
+        if (!gpu || !(await gpu.requestAdapter()))
+            throw new Error("machine-executor: the webgpu cap has no adapter here");
+    }
     const isWasm = (env.image ?? "").startsWith("wasm:");
     // the fetch happens OUTSIDE the sandbox — the worker never sees the ref;
     // the network grant check lives here where the bytes actually move
@@ -247,6 +255,14 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
         const { runRelayClaim } = await import("./machine-relay.js");
         return runRelayClaim(seam, commune, claimId, env, lenderDid, opts);
     }
+    if (env.kind === "sense") {
+        const { runSenseClaim } = await import("./machine-sense.js");
+        return runSenseClaim(seam, commune, claimId, env, lenderDid, opts);
+    }
+    if (env.kind === "bundle") {
+        const { runBundleClaim } = await import("./machine-bundle.js");
+        return runBundleClaim(seam, commune, claimId, env, lenderDid, opts);
+    }
     const { result, seconds } = await runEnvelope(env, input, opts);
     const receipt = await emitReceipt({
         env, lenderDid, input, result, seconds,
@@ -255,11 +271,48 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
     });
     return seam.machineReceipt(commune, JSON.stringify(receipt));
 };
+// ── when this tab should lend at all ────────────────────────────────────
+// opts.policy names the holds a node honors instead of claiming capacity
+// it cannot deliver — each returns the reason it holds, or null:
+//   pauseWhenHidden — a hidden tab is deprioritized; work claimed on it is
+//                     a deadline the scheduler didn't promise to keep
+//   pauseOnSaveData — a metered connection shouldn't carry jobs unasked
+//   minBatteryLevel — unplugged below it, "headroom" is a lie the offer told
+// An API the platform can't answer is not a constraint — a desktop with no
+// battery API has no battery reason to hold.
+const policyHold = async (policy) => {
+    if (!policy)
+        return null;
+    try {
+        if (policy.pauseWhenHidden && typeof document !== "undefined"
+            && document.visibilityState === "hidden")
+            return "hidden";
+        if (policy.pauseOnSaveData
+            && typeof navigator !== "undefined" && navigator.connection?.saveData)
+            return "save-data";
+        if (policy.minBatteryLevel && typeof navigator !== "undefined"
+            && navigator.getBattery) {
+            const b = await navigator.getBattery();
+            if (!b.charging && b.level < policy.minBatteryLevel)
+                return "battery";
+        }
+    }
+    catch { /* a refused probe is no reading — no hold from it */ }
+    return null;
+};
 export const lendLoop = (seam, commune, lenderDid, input, opts = {}) => {
     const attempted = new Set();
     let stopped = false;
+    let lastHold = null;
     const tick = async () => {
         if (stopped || !seam.machineClaims)
+            return;
+        const hold = await policyHold(opts.policy);
+        if (hold !== lastHold) {
+            lastHold = hold;
+            opts.onPolicy?.(hold);
+        }
+        if (hold)
             return;
         let rows = [];
         try {

@@ -65,6 +65,8 @@
     <section>
       <h2>This tab's machine</h2>
       <div class="caps" id="caps">probing…</div>
+      <button id="senseBtn" class="ghost">sense — one tick, every source</button>
+      <div class="caps" id="senseOut"></div>
     </section>
     <section>
       <h2>Commune</h2>
@@ -103,7 +105,7 @@
         <div><label>replay</label>
           <select id="jobRepro"><option>deterministic</option><option>exact</option><option>none</option></select></div>
       </div>
-      <label>job envelope (JSON — kind/image/entrypoint/inputHash/caps; 'store takes params.contentB64, 'relay takes params.inUrl/outUrl|channel|probe + the fetch cap)</label>
+      <label>job envelope (JSON — kind/image/entrypoint/inputHash/caps; 'store params.contentB64; 'relay params.inUrl/outUrl|channel|probe + fetch cap; 'sense params.sources/intervalMs/count; 'bundle params.legs)</label>
       <textarea id="jobEnv" rows="3">{"image":"js:","entrypoint":"(x)=>x*x","inputHash":"","caps":[],"network":false}</textarea>
       <label>opts (JSON alist — needs{}, envelopeHash, specId, ring)</label>
       <input id="jobOpts" placeholder='{"needs":{"storage-gb":1}}'>
@@ -285,6 +287,10 @@ $("lendLoopOn").addEventListener("change", (e) => {
     if (!commune()) return log("set the commune AID first", "err"), e.target.checked = false;
     const input = tryJson($("jobEnv").value, {});
     stopLoop = lendLoop(H, commune(), lenderDid(), input, {
+      // the node declines work it can't honestly deliver: a hidden tab, a
+      // metered connection, or a battery under a fifth unplugged
+      policy: { pauseWhenHidden: true, pauseOnSaveData: true, minBatteryLevel: 0.2 },
+      onPolicy: (why) => log(why ? `lend held: ${why}` : "lend resumed", why ? "" : "ok"),
       onRow: (id, st) => log(`claim ${String(id).slice(0, 12)}… → ${st}`, st.startsWith("err") ? "err" : "ok"),
     });
     log("lend loop on");
@@ -465,6 +471,20 @@ $("probeBtn").addEventListener("click", async () => {
       <span>throughput</span><b>${(r.bps / 1e6).toFixed(2)} MB/s</b>`;
     log(`canary ${url} → ${r.bytes}B in ${r.ms}ms`, "ok");
   } catch (e) { log(`canary: ${e.message}`, "err"); }
+});
+
+// ── sense: the same readOnce a 'sense claim ticks — what the platform
+// answers, plus the holes it can't. A 'sense envelope is
+// {"kind":"sense","params":{"sources":[…],"count":N,"intervalMs":M}}.
+$("senseBtn").addEventListener("click", async () => {
+  try {
+    const { readOnce, SENSE_SOURCES } = await import("./app/machine-sense.js");
+    const r = await readOnce({ params: { sources: SENSE_SOURCES } });
+    $("senseOut").textContent =
+      r.readings.map(x => `${x.source}: ${JSON.stringify(x.value)}`).join("\n") +
+      (r.unavailable.length ? "\nunavailable: " + r.unavailable.map(u => u.source).join(", ") : "");
+    log(`sense → ${r.readings.length} readings${r.unavailable.length ? `, ${r.unavailable.length} unavailable` : ""}`, "ok");
+  } catch (e) { log(`sense: ${e.message}`, "err"); }
 });
 
 // ── bindings ──────────────────────────────────────────────────────────────

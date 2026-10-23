@@ -44,7 +44,6 @@ handler:delivers
 handler:devices
 handler:digestOk
 handler:domains
-handler:due
 handler:eligible
 handler:email
 handler:enrollDevice
@@ -81,8 +80,6 @@ handler:listDelegations
 handler:machineAccept
 handler:machineBind
 handler:machineBindings
-handler:machineClaim
-handler:machineClaims
 handler:machineDispute
 handler:machineDisputeClose
 handler:machineDisputeVerdict

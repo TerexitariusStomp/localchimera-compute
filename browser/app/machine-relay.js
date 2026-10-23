@@ -175,7 +175,7 @@ const openChannel = async (seam, commune, claimId, env, opts = {}) => {
 // the leg's two halves: send params.contentB64, or receive until the
 // channel closes (or the byte budget params.recvBytes fills, or a silence
 // timeout) — whichever the envelope asked for.
-const channelLeg = async (seam, commune, claimId, env, opts = {}) => {
+export const channelLeg = async (seam, commune, claimId, env, opts = {}) => {
     const params = env.params ?? {};
     const direction = params.direction ?? "recv";
     const { pc, channel } = await openChannel(seam, commune, claimId, env, opts);

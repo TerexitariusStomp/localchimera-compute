@@ -1043,7 +1043,7 @@ check-ui-staged:
 # ── Browser test aggregates ─────────────────────────────────────────────────
 # test-browser: the node page's JS suites — node, no gateway.
 .PHONY: test-browser
-test-browser: test-machine-executor test-machine-store test-machine-relay test-store test-keys test-bytes \
+test-browser: test-machine-executor test-machine-store test-machine-relay test-machine-sense test-store test-keys test-bytes \
           test-idb test-keystore test-handler-bridge test-mesh-plan \
           test-capabilities test-rns-identity test-reactive 
 
@@ -1068,6 +1068,15 @@ test-machine-store:
 .PHONY: test-machine-relay
 test-machine-relay:
 	node tests/browser/machine-relay-test.mjs
+
+# The sense and bundle kinds plus the lend policy (browser/app/
+# machine-sense.js, machine-bundle.js, the executor's webgpu gate and
+# policyHold): platform-honest readings, sequential legs with per-kind
+# meters bound in the digest preimage, and the holds a node takes when it
+# shouldn't claim capacity.
+.PHONY: test-machine-sense
+test-machine-sense:
+	node tests/browser/machine-sense-test.mjs
 
 # The IndexedDB keystore + legacy migration (browser/lib/keystore.js). Real
 # WebCrypto Ed25519 with in-memory localStorage/IndexedDB mocks. Pins that a

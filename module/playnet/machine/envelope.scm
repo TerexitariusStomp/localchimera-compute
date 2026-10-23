@@ -35,6 +35,15 @@
 (define *price-keys* '(amount price cost fee payment payout rate tip
                               unit-price currency))
 
+;;; keys arrive symbol-normalized on the wire, but a hand-written alist
+;;; may spell them as strings — the refusal must not depend on the type.
+(define (price-key? k)
+  (or (memq k *price-keys*)
+      (and (string? k)
+           (member k '("amount" "price" "cost" "fee" "payment" "payout"
+                       "rate" "tip" "unit-price" "currency"))
+           #t)))
+
 ;;; the kind vocabulary — the wire the offer/jobs shape names
 (define *envelope-kinds* '(exec store relay sense bundle))
 
@@ -69,11 +78,19 @@
 (define (envelope-no-amount? fields)
   "No key in FIELDS (an alist or a list of symbols) is a price key —
    checked recursively, so a params value or bundle leg that is itself an
-   alist is walked too."
+   alist (or a vector of alists, the shape JSON decodes to) is walked too."
   (every (lambda (f)
-           (and (not (memq (if (pair? f) (car f) f) *price-keys*))
-                (or (not (and (pair? f) (list? (cdr f))))
-                    (envelope-no-amount? (cdr f)))))
+           (cond ((and (pair? f) (pair? (car f)))
+                  ;; f is itself an alist — walk every pair in it, first
+                  ;; included, or a leg's leading (price . n) walks free
+                  (envelope-no-amount? f))
+                 ((pair? f)
+                  (and (not (price-key? (car f)))
+                       (cond ((list? (cdr f)) (envelope-no-amount? (cdr f)))
+                             ((vector? (cdr f))
+                              (envelope-no-amount? (vector->list (cdr f))))
+                             (else #t))))
+                 (else (not (price-key? f)))))
          fields))
 
 (define (alist->job-envelope a)
