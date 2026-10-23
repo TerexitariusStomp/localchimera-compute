@@ -12,3 +12,4 @@
 2026-10-23T01:26:04Z	373964 → 249700	phase-1 strip: commons surfaces removed (docs, ux, faces, doors, knowledge data); machine node only — residue ledger in spec/oss-inventory.md
 2026-10-23T04:09:06Z	249700 → 250336	phases 3-5: store/relay/sense/bundle kinds — challenge+signal shelves, browser legs + tests — Tier-1 machine resources
 2026-10-23T04:17:14Z	250336 → 250485	phase 6: per-kind e2e suite (machine-kinds.scm) — Tier-1 machine resources
+2026-10-23T04:31:40Z	250485 → 250671	gap-closing: machine exit-paths + substrate-door liveness e2e — Tier-1 machine resources

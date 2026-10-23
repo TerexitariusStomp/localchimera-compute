@@ -71,7 +71,9 @@ def door_is_tested(name):
 
 
 def dispatch_handlers():
-    pairs = re.compile(r'\("([a-zA-Z][a-zA-Z0-9]*)"\s*\.\s*,')
+    # "name" . ,handle-<name> rows only — a bare ("key" . ,value) inside a
+    # wire serializer is a JSON field, not a handler registration.
+    pairs = re.compile(r'\("([a-zA-Z][a-zA-Z0-9]*)"\s*\.\s*,handle-')
     out = set()
     for _, text in read_all("hoot/day-boot.scm"):
         out.update(pairs.findall(text))
