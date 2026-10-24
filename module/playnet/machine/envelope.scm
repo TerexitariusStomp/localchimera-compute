@@ -31,6 +31,8 @@
             egress-profile? caps-grant?
             availability-descriptor? envelope-availability
             sense-profile?
+            payer-profile? envelope-payer
+            mesh-profile? envelope-mesh
             swarm-descriptor? envelope-swarm *swarm-roles*
             alist->job-envelope job-envelope->alist envelope-no-amount?))
 
@@ -234,6 +236,41 @@
   "The envelope's swarm descriptor, or #f."
   (params-ref (job-envelope-params e) 'swarm))
 
+;;; ── the payer profile ──────────────────────────────────────────────────
+;;; params.payer marks a job as payer-funded demand: network names the
+;;; payer (a catalogue entry in machine/payers.scm — the kind-fit check
+;;; lives door-side, where the catalogue is reachable) and ref is the
+;;; payer's own reference for the job (a demand key, a nostr event id, an
+;;; invoice). Shape only here — the envelope stays catalog-agnostic.
+
+(define (payer-profile? p)
+  "The params.payer shape: {network ref}, both non-empty strings."
+  (and (list? p)
+       (let ((n (params-ref p 'network)) (r (params-ref p 'ref)))
+         (and (string? n) (not (string-null? n))
+              (string? r) (not (string-null? r))))))
+
+(define (envelope-payer e)
+  "The envelope's payer descriptor, or #f."
+  (params-ref (job-envelope-params e) 'payer))
+
+;;; ── the mesh profile ───────────────────────────────────────────────────
+;;; params.mesh marks an envelope that crossed (or is meant for) the
+;;; Reticulum intake: result-dest names the mesh destination hash the
+;;; result should reach when the borrower isn't listening. The byte cap
+;;; and the cached-image rule live door-side where the serialized size
+;;; and the fetch surface are known — here it's the shape.
+
+(define (mesh-profile? m)
+  "The params.mesh shape: an optional {result-dest} mesh destination."
+  (and (list? m)
+       (let ((d (params-ref m 'result-dest)))
+         (or (not d) (and (string? d) (not (string-null? d)))))))
+
+(define (envelope-mesh e)
+  "The envelope's mesh descriptor, or #f."
+  (params-ref (job-envelope-params e) 'mesh))
+
 (define* (make-job-envelope #:key (kind 'exec) bridge-job-id (image #f)
                             (entrypoint #f) input-hash
                             (caps '()) (network? #f) (params '()))
@@ -268,6 +305,14 @@
     (when s
       (unless (swarm-descriptor? s kind)
         (error "envelope: params.swarm is not a swarm descriptor for this kind" s))))
+  (let ((p (params-ref params 'payer)))
+    (when p
+      (unless (payer-profile? p)
+        (error "envelope: params.payer is not a payer descriptor" p))))
+  (let ((m (params-ref params 'mesh)))
+    (when m
+      (unless (mesh-profile? m)
+        (error "envelope: params.mesh is not a mesh descriptor" m))))
   (%make-job-envelope kind bridge-job-id image entrypoint input-hash caps
                       network? params))
 

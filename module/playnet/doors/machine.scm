@@ -37,6 +37,7 @@
   #:use-module (playnet machine payout)
   #:use-module (playnet machine swarm)
   #:use-module (playnet machine providers)
+  #:use-module (playnet machine payers)
   #:use-module (playnet machine executors)
   #:use-module (playnet doors governance)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
@@ -185,6 +186,25 @@
         (let ((k (string-append "bridge:" commune-aid)))
           (or (hash-ref registries k)
               (let ((s (spawn-bridge-store)))
+                (hash-set! registries k s)
+                s))))
+
+      ;; the payer ledger — inbound demand: which jobs a payer funded,
+      ;; its own ref, and the state of the money. The inverse shelf of
+      ;; bridges-for — outbound crosses there, inbound lands here.
+      (define (payers-for commune-aid)
+        (let ((k (string-append "payers:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-payer-ledger)))
+                (hash-set! registries k s)
+                s))))
+
+      ;; the demand desk — the prepaid-customer book a commune's demand
+      ;; API debits against; customers are key hashes, never citizens.
+      (define (desk-for commune-aid)
+        (let ((k (string-append "desk:" commune-aid)))
+          (or (hash-ref registries k)
+              (let ((s (spawn-demand-desk)))
                 (hash-set! registries k s)
                 s))))
 
@@ -1033,6 +1053,221 @@
                                 ($ (bridges-for commune-aid) 'by-job job-id)))))))
            (lambda (k . a)
              (list 'error (format #f "machine-bridge-attempts: ~a" a)))))
+
+        ;; ── demand — who pays, and the desk that books them ──────────────
+        ;; The payer catalogue: which networks pay for which kinds, classed
+        ;; by how their supply fits a tab. Any citizen reads it — the
+        ;; catalogue is the map, not a secret.
+        ((machine-payers identity-key)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (cons 'ok
+                   (map (lambda (e)
+                          (let ((s (cdr e)))
+                            `(("name"  . ,(symbol->string (car e)))
+                              ("kinds" . ,(map symbol->string
+                                               (assq-ref s 'kinds)))
+                              ("class" . ,(symbol->string (assq-ref s 'class)))
+                              ("api"   . ,(assq-ref s 'api))
+                              ("why"   . ,(assq-ref s 'why)))))
+                        *payer-specs*)))
+           (lambda (k . a)
+             (list 'error (format #f "machine-payers: ~a" a)))))
+
+        ;; The payer ledger, borrower-scoped: with JOB-ID the caller must
+        ;; be that job's borrower; without it, the rows of every job the
+        ;; caller borrowed.
+        ((machine-payer-events identity-key commune-aid . opts)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((job-id (opt-ref opts 'jobId #f))
+                    (reg    (registry-for commune-aid)))
+               (if job-id
+                   (let ((j ($ reg 'job-of job-id)))
+                     (cond
+                      ((not j) (list 'error "machine-payer-events: no such job"))
+                      ((not (equal? identity-key (machine-job-borrower-did j)))
+                       (list 'error "machine-payer-events: the borrower's job only"))
+                      (else
+                       (cons 'ok (map payer-row->list
+                                      ($ (payers-for commune-aid) 'by-job job-id))))))
+                   (let ((mine (map machine-job-id
+                                    (filter (lambda (j)
+                                              (equal? identity-key
+                                                      (machine-job-borrower-did j)))
+                                            ($ reg 'jobs commune-aid)))))
+                     (cons 'ok
+                           (map payer-row->list
+                                (filter (lambda (r) (member (payer-row-job-id r) mine))
+                                        ($ (payers-for commune-aid) 'all))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-payer-events: ~a" a)))))
+
+        ;; The prepaid book's write side: DELTA ≥ 0 tops up an existing
+        ;; customer the caller owns — or creates it (NAME opt) when the
+        ;; key is new. The billing rail that bought the credit lives at
+        ;; the treasury edge; this door only keeps the book.
+        ((machine-demand-credit identity-key commune-aid key-hash delta asset . opts)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let ((desk (desk-for commune-aid)))
+               (cond
+                ((not (and (string? key-hash) (not (string-null? key-hash))))
+                 (list 'error "machine-demand-credit: keyHash must be a non-empty string"))
+                ((not (and (number? delta) (>= delta 0)))
+                 (list 'error "machine-demand-credit: delta must be ≥ 0"))
+                ((not (string? asset))
+                 (list 'error "machine-demand-credit: asset must be a string"))
+                (else
+                 (let ((c ($ desk 'of key-hash)))
+                   (cond
+                    ((and c (not (equal? identity-key (demand-customer-owner-did c))))
+                     (list 'error "machine-demand-credit: the customer's owner only"))
+                    (c
+                     (cons 'ok `(("keyHash" . ,key-hash)
+                                 ("balance" . ,($ desk 'credit! key-hash delta)))))
+                    (else
+                     ($ desk 'put!
+                        (make-demand-customer
+                         #:key-hash key-hash
+                         #:name (or (opt-ref opts 'name #f) key-hash)
+                         #:owner-did identity-key
+                         #:balance delta #:asset asset #:active? #t))
+                     (cons 'ok `(("keyHash" . ,key-hash)
+                                 ("balance" . ,delta))))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-demand-credit: ~a" a)))))
+
+        ;; The book's read side, owner-scoped.
+        ((machine-demand-balance identity-key commune-aid key-hash)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let ((c ($ (desk-for commune-aid) 'of key-hash)))
+               (cond
+                ((not c) (list 'error "machine-demand-balance: no such customer"))
+                ((not (equal? identity-key (demand-customer-owner-did c)))
+                 (list 'error "machine-demand-balance: the customer's owner only"))
+                (else (cons 'ok `(("keyHash" . ,(demand-customer-key-hash c))
+                                  ("name" . ,(demand-customer-name c))
+                                  ("balance" . ,(demand-customer-balance c))
+                                  ("asset" . ,(demand-customer-asset c))
+                                  ("active" . ,(demand-customer-active? c))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-demand-balance: ~a" a)))))
+
+        ;; Demand intake: the desk mints a payer-funded job. The customer
+        ;; must be active, owned by the caller, and liquid for DEBIT; the
+        ;; payer must be wireable (an api/browser-class catalogue entry)
+        ;; and serve the envelope's kind. The job submits through the
+        ;; ordinary path — the caller is its borrower — with params.payer
+        ;; stamped so the claim's accounting carries whose money it is;
+        ;; the ledger row binds payer ref → job for the statement's
+        ;; payments.
+        ((machine-demand-intake identity-key commune-aid key-hash payer-name ref
+                                debit task-class lane repro input-hash . opts)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((desk (desk-for commune-aid))
+                    (c    ($ desk 'of key-hash))
+                    (env  (opt-ref opts 'envelope #f))
+                    (wire (and env (wire-normalize env)))
+                    ;; stamp params.payer onto the envelope before it
+                    ;; parses — the claim's accounting carries whose
+                    ;; money the job is
+                    (wire (and wire
+                               (let* ((params (or (assq-ref wire 'params) '()))
+                                      (pd (assq-ref params 'payer)))
+                                 (when (and pd
+                                            (or (not (equal? (assq-ref pd 'network) payer-name))
+                                                (not (equal? (assq-ref pd 'ref) ref))))
+                                   (error "machine-demand-intake: envelope params.payer mismatches the request"))
+                                 (cons (cons 'params
+                                             (append (filter (lambda (p) (not (eq? (car p) 'payer)))
+                                                             params)
+                                                     `((payer . ((network . ,payer-name)
+                                                                 (ref . ,ref))))))
+                                       (filter (lambda (p) (not (eq? (car p) 'params)))
+                                               wire)))))
+                    (parsed (and wire (alist->job-envelope wire)))
+                    (kind (if parsed (job-envelope-kind parsed) 'exec))
+                    (spec (payer-for payer-name)))
+               (cond
+                ((not spec) (list 'error "machine-demand-intake: unknown payer"))
+                ((not (memq (assq-ref (cdr spec) 'class) %wireable-classes))
+                 (list 'error "machine-demand-intake: payer's class can't take intake"))
+                ((not (memq kind (assq-ref (cdr spec) 'kinds)))
+                 (list 'error "machine-demand-intake: payer doesn't serve this kind"))
+                ((not (and (number? debit) (>= debit 0)))
+                 (list 'error "machine-demand-intake: debit must be ≥ 0"))
+                ((not c) (list 'error "machine-demand-intake: no such customer"))
+                ((not (equal? identity-key (demand-customer-owner-did c)))
+                 (list 'error "machine-demand-intake: the customer's owner only"))
+                ((not (demand-customer-active? c))
+                 (list 'error "machine-demand-intake: customer inactive"))
+                (else
+                 (let ((balance ($ desk 'debit! key-hash debit)))
+                   (if (eq? balance 'insufficient)
+                       (list 'error "machine-demand-intake: insufficient balance")
+                       (let* ((job-id ($ (registry-for commune-aid) 'submit
+                                         identity-key commune-aid
+                                         (string->symbol task-class) lane
+                                         (string->symbol repro) input-hash
+                                         (opt-ref opts 'envelopeHash #f)
+                                         (opt-ref opts 'ring 1)
+                                         (opt-ref opts 'specId #f)
+                                         (res-normalize (opt-ref opts 'needs '()))))
+                              (row (make-payer-row
+                                    #:id (format #f "~a:~a:~a" payer-name ref job-id)
+                                    #:job-id job-id
+                                    #:payer (string->symbol payer-name)
+                                    #:ref ref #:amount debit
+                                    #:asset (demand-customer-asset c)
+                                    #:state 'offered
+                                    #:at (* 1000 ((*machine-clock*))))))
+                         (when parsed
+                           ($ (shelf-for commune-aid) 'put! job-id parsed))
+                         ($ (payers-for commune-aid) 'put! row)
+                         (cons 'ok `(("jobId" . ,job-id)
+                                     ("rowId" . ,(payer-row-id row))
+                                     ("balance" . ,balance))))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-demand-intake: ~a" a)))))
+
+        ;; The ledger's settle mark: the row's job borrower records the
+        ;; treasury edge's confirmation — the row is the accounting
+        ;; record, and 'paid is the operator's assertion that the rail
+        ;; landed, audited by the ref, never self-attested by a customer.
+        ((machine-payer-settle identity-key commune-aid row-id)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((ledger (payers-for commune-aid))
+                    (row    ($ ledger 'of row-id)))
+               (cond
+                ((not row) (list 'error "machine-payer-settle: no such row"))
+                (else
+                 (let ((j ($ (registry-for commune-aid) 'job-of (payer-row-job-id row))))
+                   (cond
+                    ((not j) (list 'error "machine-payer-settle: the row's job is gone"))
+                    ((not (equal? identity-key (machine-job-borrower-did j)))
+                     (list 'error "machine-payer-settle: the borrower's row only"))
+                    ((memq (payer-row-state row) '(offered running unpaid))
+                     ($ ledger 'put!
+                        (make-payer-row
+                         #:id row-id #:job-id (payer-row-job-id row)
+                         #:payer (payer-row-payer row) #:ref (payer-row-ref row)
+                         #:amount (payer-row-amount row) #:asset (payer-row-asset row)
+                         #:state 'paid #:at (* 1000 ((*machine-clock*)))))
+                     (cons 'ok `(("rowId" . ,row-id) ("state" . "paid"))))
+                    (else (cons 'ok `(("rowId" . ,row-id)
+                                      ("state" . ,(symbol->string (payer-row-state row))))))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-payer-settle: ~a" a)))))
 
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —

@@ -1217,6 +1217,20 @@ function boot() {
       new Promise(res => schemeHandlers.machineBridgeSubmit ? schemeHandlers.machineBridgeSubmit(commune || "", jobId || "", provider || "", res) : res("err:offline"));
     HANDLERS.machineBridgeAttempts = (commune, jobId) =>
       new Promise(res => schemeHandlers.machineBridgeAttempts ? schemeHandlers.machineBridgeAttempts(commune || "", jobId || "", res) : res("[]"));
+    // the demand side — the payer catalogue, the prepaid book, and the
+    // intake that mints a payer-funded job on the caller's behalf
+    HANDLERS.machinePayers = () =>
+      new Promise(res => schemeHandlers.machinePayers ? schemeHandlers.machinePayers(res) : res("[]"));
+    HANDLERS.machinePayerEvents = (commune, opts) =>
+      new Promise(res => schemeHandlers.machinePayerEvents ? schemeHandlers.machinePayerEvents(commune || "", JSON.stringify(opts ?? null), res) : res("[]"));
+    HANDLERS.machineDemandCredit = (commune, keyHash, delta, asset, opts) =>
+      new Promise(res => schemeHandlers.machineDemandCredit ? schemeHandlers.machineDemandCredit(commune || "", keyHash || "", delta ?? 0, asset || "", JSON.stringify(opts ?? null), res) : res("err:offline"));
+    HANDLERS.machineDemandBalance = (commune, keyHash) =>
+      new Promise(res => schemeHandlers.machineDemandBalance ? schemeHandlers.machineDemandBalance(commune || "", keyHash || "", res) : res("err:offline"));
+    HANDLERS.machineDemandIntake = (commune, keyHash, payer, ref, debit, taskClass, lane, repro, inputHash, opts) =>
+      new Promise(res => schemeHandlers.machineDemandIntake ? schemeHandlers.machineDemandIntake(commune || "", keyHash || "", payer || "", ref || "", debit ?? 0, taskClass || "", lane || "", repro || "", inputHash || "", JSON.stringify(opts ?? null), res) : res("err:offline"));
+    HANDLERS.machinePayerSettle = (commune, rowId) =>
+      new Promise(res => schemeHandlers.machinePayerSettle ? schemeHandlers.machinePayerSettle(commune || "", rowId || "", res) : res("err:offline"));
     HANDLERS.machineBind = (commune, wireJson) =>
       new Promise(res => schemeHandlers.machineBind ? schemeHandlers.machineBind(commune || "", wireJson || "{}", res) : res("err:offline"));
     HANDLERS.machineUnbind = (commune, key, side) =>

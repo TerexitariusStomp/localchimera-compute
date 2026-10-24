@@ -3367,6 +3367,45 @@
       (planner-call cb (<- *session* 'machine-bridge-attempts commune job-id)
         (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
 
+;; ── demand — the payer side of the bridge ────────────────────────────────
+;; payers reads the catalogue; payer-events the ledger rows of the caller's
+;; jobs; demand-credit/balance the prepaid book; demand-intake mints a
+;; payer-funded job; payer-settle marks the treasury confirmation.
+(define (handle-machine-payers cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-payers)
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
+(define (handle-machine-payer-events commune opts-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (apply <- *session* 'machine-payer-events commune
+                              (opts-flat opts-json))
+        (lambda (v) (reply! cb (scm->json-canonical (list->vector v)))))))
+
+(define (handle-machine-demand-credit commune key-hash delta asset opts-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (apply <- *session* 'machine-demand-credit
+                              commune key-hash delta asset (opts-flat opts-json))
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-machine-demand-balance commune key-hash cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-demand-balance commune key-hash)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-machine-demand-intake commune key-hash payer ref debit
+                                      task-class lane repro input-hash opts-json cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (apply <- *session* 'machine-demand-intake
+                              commune key-hash payer ref debit
+                              task-class lane repro input-hash (opts-flat opts-json))
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
+(define (handle-machine-payer-settle commune row-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-payer-settle commune row-id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
 ;;; ── governance: the decision inbox (governance-surface.md §Inbox) ─────────
 ;; list-proposals → [{id, status}]; the dial renders the open decisions.
 (define (handle-list-proposals cb)
@@ -4156,6 +4195,12 @@
             ("machineSwarmSignals"     . ,handle-machine-swarm-signals)
             ("machineBridgeSubmit"     . ,handle-machine-bridge-submit)
             ("machineBridgeAttempts"   . ,handle-machine-bridge-attempts)
+            ("machinePayers"           . ,handle-machine-payers)
+            ("machinePayerEvents"      . ,handle-machine-payer-events)
+            ("machineDemandCredit"     . ,handle-machine-demand-credit)
+            ("machineDemandBalance"    . ,handle-machine-demand-balance)
+            ("machineDemandIntake"     . ,handle-machine-demand-intake)
+            ("machinePayerSettle"      . ,handle-machine-payer-settle)
             ("machineBind"          . ,handle-machine-bind)
             ("machineUnbind"        . ,handle-machine-unbind)
             ("machineBindings"      . ,handle-machine-bindings)

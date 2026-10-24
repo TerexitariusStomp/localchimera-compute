@@ -127,6 +127,8 @@ const WRAPPER_MANIFEST = [
   "machineSignal", "machineSignals", "machineStatements", "machineSubmit",
   "machineSwarmOf", "machineSwarmOpen", "machineSwarmSignal",
   "machineSwarmSignals", "machineBridgeAttempts", "machineBridgeSubmit",
+  "machinePayers", "machinePayerEvents", "machineDemandCredit",
+  "machineDemandBalance", "machineDemandIntake", "machinePayerSettle",
   "machineUnbind", "machineVerify", "machineWithdraw", "openProposal",
   "passcodeCheck", "profileGet", "profileSet", "reachConfirm",
   "reachPresent", "reachRead", "reachWithdraw", "reconnect",
