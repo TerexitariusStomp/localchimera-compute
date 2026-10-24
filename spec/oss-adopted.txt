@@ -64,3 +64,4 @@ react-admin | MIT | https://github.com/marmelab/react-admin | adopted
 appsmith | Apache-2.0 | https://github.com/appsmithorg/appsmith | adopted
 restic | BSD-2-Clause | https://github.com/restic/restic | adopted
 btcpay-server | MIT | https://github.com/btcpayserver/btcpayserver | adopted
+nostr-nips | public-domain | https://github.com/nostr-protocol/nips | adopted

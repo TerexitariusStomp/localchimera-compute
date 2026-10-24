@@ -203,7 +203,16 @@
     (rent               . "the dwelling's own rent in EUR per person-night, 0 when no landlord is paid")
     (tenure             . "own, rent or lodged — custody, never a row of the housing vector")
     (eligible           . "the owner's steward rule as JSON slot criteria, bounding who may be assigned work drawing on the grant; absent means anyone")
-    (opts               . "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default")))
+    (opts               . "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default")
+    (swarm-id           . "the swarm coordination record's id")
+    (job-ids            . "the member job-ids a swarm opens over, a JSON array of strings")
+    (provider-name      . "the ring-3 provider network a bridge leg routes to (golem/mysterium/storj…)")
+    (key-hash           . "the demand customer's credential hash — the bearer key a demand-API caller presents")
+    (payer-name         . "the paying network a funded job is booked under (nostr-dvm, openrouter-style api payers…)")
+    (debit              . "the prepaid units a funded intake draws from the customer's book")
+    (delta              . "the signed credit a demand book gains (positive tops up, negative claws back)")
+    (asset              . "the denomination a demand book or row is priced in (\"sat\", \"usd\"…)")
+    (result-dest        . "the mesh requester's mailbox destination, a 64-char lowercase-hex Reticulum hash")))
 (define (arg-doc name)
   "The documented meaning of argument NAME, or #f when its shape says enough."
   (assq-ref %arg-docs name))
@@ -286,6 +295,10 @@
     (offer-id . id) (job-id . id) (claim-id . id) (dispute-id . id)
     (challenge-id . id) (answer . string) (expected . string)
     (content-hash . string)
+    ;; the demand edge: swarms, provider legs, payer books, mesh intake
+    (swarm-id . id) (job-ids . list) (provider-name . string)
+    (key-hash . string) (payer-name . string) (debit . number)
+    (delta . number) (asset . string) (result-dest . hex)
     (w . json) (verdict . symbol) (key . string) (side . symbol)
     ;; capabilities and in-process objects
     (user-inbox . capability) (client-inbox . capability) (watcher-ref . capability)

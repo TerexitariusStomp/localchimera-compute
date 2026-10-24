@@ -69,6 +69,7 @@
     { "type": "library", "name": "react-admin", "licenses": [{ "license": { "id": "MIT" } } ], "externalReferences": [{ "type": "website", "url": "https://github.com/marmelab/react-admin" }], "properties": [{ "name": "adoption:status", "value": "adopted" }] },
     { "type": "library", "name": "appsmith", "licenses": [{ "license": { "id": "Apache-2.0" } } ], "externalReferences": [{ "type": "website", "url": "https://github.com/appsmithorg/appsmith" }], "properties": [{ "name": "adoption:status", "value": "adopted" }] },
     { "type": "library", "name": "restic", "licenses": [{ "license": { "id": "BSD-2-Clause" } } ], "externalReferences": [{ "type": "website", "url": "https://github.com/restic/restic" }], "properties": [{ "name": "adoption:status", "value": "adopted" }] },
-    { "type": "library", "name": "btcpay-server", "licenses": [{ "license": { "id": "MIT" } } ], "externalReferences": [{ "type": "website", "url": "https://github.com/btcpayserver/btcpayserver" }], "properties": [{ "name": "adoption:status", "value": "adopted" }] }
+    { "type": "library", "name": "btcpay-server", "licenses": [{ "license": { "id": "MIT" } } ], "externalReferences": [{ "type": "website", "url": "https://github.com/btcpayserver/btcpayserver" }], "properties": [{ "name": "adoption:status", "value": "adopted" }] },
+    { "type": "library", "name": "nostr-nips", "licenses": [{ "license": { "id": "public-domain" } } ], "externalReferences": [{ "type": "website", "url": "https://github.com/nostr-protocol/nips" }], "properties": [{ "name": "adoption:status", "value": "adopted" }] }
   ]
 }

@@ -3152,6 +3152,620 @@
       "x-playnet-http": "/api/session/machine-signals"
     },
     {
+      "name": "session.machine-swarm-open",
+      "title": "stock: machine-swarm-open",
+      "description": "Opens swarm SWARM-ID in COMMUNE-AID over JOB-IDS — the borrower names the jobs one piece of work fans out to; this AID the jobs' borrower. Replies ok or an error. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "swarm-id": {
+            "type": "string",
+            "description": "the swarm coordination record's id",
+            "x-playnet-shape": "id"
+          },
+          "job-ids": {
+            "type": "array",
+            "description": "the member job-ids a swarm opens over, a JSON array of strings",
+            "x-playnet-shape": "list"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "swarm-id",
+          "job-ids"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-swarm-open"
+    },
+    {
+      "name": "session.machine-swarm-of",
+      "title": "stock: machine-swarm-of",
+      "description": "Replies swarm SWARM-ID's membership record in COMMUNE-AID — borrower, job ids, when it opened; a swarm member or a governor reads. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "swarm-id": {
+            "type": "string",
+            "description": "the swarm coordination record's id",
+            "x-playnet-shape": "id"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "swarm-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-swarm-of"
+    },
+    {
+      "name": "session.machine-swarm-signal",
+      "title": "stock: machine-swarm-signal",
+      "description": "Posts signal BODY on the swarm bus for SWARM-ID in COMMUNE-AID — the borrower or a live lender on one of its jobs; the shard runner's partial results and shard maps ride here. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "swarm-id": {
+            "type": "string",
+            "description": "the swarm coordination record's id",
+            "x-playnet-shape": "id"
+          },
+          "body": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "description": "a JSON document, as a string",
+            "x-playnet-shape": "json"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "swarm-id",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-swarm-signal"
+    },
+    {
+      "name": "session.machine-swarm-signals",
+      "title": "stock: machine-swarm-signals",
+      "description": "Replies the swarm bus's signals on SWARM-ID in COMMUNE-AID strictly after 'after (0 reads all); the borrower or a live lender reads. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "swarm-id": {
+            "type": "string",
+            "description": "the swarm coordination record's id",
+            "x-playnet-shape": "id"
+          },
+          "opts": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
+            "x-playnet-shape": "alist"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "swarm-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-swarm-signals"
+    },
+    {
+      "name": "session.machine-bridge-submit",
+      "title": "stock: machine-bridge-submit",
+      "description": "Routes ring:3 JOB-ID in COMMUNE-AID to provider PROVIDER-NAME (golem exec, mysterium egress, storj store) — the borrower only, PUBLIC work only, never when inner capacity answers; an unwired transport answers an honest 'unavailable. Replies the attempt row. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "job-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          },
+          "provider-name": {
+            "type": "string",
+            "description": "the ring-3 provider network a bridge leg routes to (golem/mysterium/storj…)",
+            "x-playnet-shape": "string"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "job-id",
+          "provider-name"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-bridge-submit"
+    },
+    {
+      "name": "session.machine-bridge-attempts",
+      "title": "stock: machine-bridge-attempts",
+      "description": "Replies the provider attempts on JOB-ID in COMMUNE-AID — the borrower's ledger read of where its job crossed and what came back. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "job-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "job-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-bridge-attempts"
+    },
+    {
+      "name": "session.machine-payers",
+      "title": "stock: machine-payers",
+      "description": "Replies the payer catalogue — which demand networks buy which envelope kinds, how their supply honestly fits a browser tab, and their wire shape. Any citizen reads; intake still checks fit. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-payers"
+    },
+    {
+      "name": "session.machine-payer-events",
+      "title": "stock: machine-payer-events",
+      "description": "Replies the payer ledger rows in COMMUNE-AID — 'jobId scopes to that job's borrower, unscoped to every job the caller borrowed. The settlement edge's payments name these rows. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "opts": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
+            "x-playnet-shape": "alist"
+          }
+        },
+        "required": [
+          "commune-aid"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-payer-events"
+    },
+    {
+      "name": "session.machine-payer-settle",
+      "title": "stock: machine-payer-settle",
+      "description": "Marks payer ledger row ROW-ID in COMMUNE-AID 'paid — the operator's record that the rail confirmed; a paid row stays paid. Replies ok or an error. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "row-id": {
+            "type": "string",
+            "description": "on record-flow the plan's own id for the schedule row being confirmed, as the schedule carries it; absent, the row is found by its coordinates",
+            "x-playnet-shape": "id"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "row-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-payer-settle"
+    },
+    {
+      "name": "session.machine-demand-credit",
+      "title": "stock: machine-demand-credit",
+      "description": "Tops up demand customer KEY-HASH by DELTA in ASSET within COMMUNE-AID's book — or creates it (opts 'name) when the key is new; the caller is the customer record's owner. The billing rail that bought the credit lives at the treasury edge. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "key-hash": {
+            "type": "string",
+            "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
+            "x-playnet-shape": "string"
+          },
+          "delta": {
+            "type": "number",
+            "description": "the signed credit a demand book gains (positive tops up, negative claws back)",
+            "x-playnet-shape": "number"
+          },
+          "asset": {
+            "type": "string",
+            "description": "the denomination a demand book or row is priced in (\"sat\", \"usd\"…)",
+            "x-playnet-shape": "string"
+          },
+          "opts": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
+            "x-playnet-shape": "alist"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "key-hash",
+          "delta",
+          "asset"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-demand-credit"
+    },
+    {
+      "name": "session.machine-demand-balance",
+      "title": "stock: machine-demand-balance",
+      "description": "Replies demand customer KEY-HASH's book in COMMUNE-AID — balance, asset, active; the owner or the key itself reads. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "key-hash": {
+            "type": "string",
+            "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
+            "x-playnet-shape": "string"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "key-hash"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-demand-balance"
+    },
+    {
+      "name": "session.machine-demand-intake",
+      "title": "stock: machine-demand-intake",
+      "description": "Mints a payer-funded job in COMMUNE-AID: debits customer KEY-HASH by DEBIT (insufficient refuses before the job exists), stamps params.payer on the envelope, submits through the ordinary path with the caller as borrower, and books the ledger row binding REF to the job. The owner or the key itself spends; the payer must be intake-wireable and serve the kind. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "key-hash": {
+            "type": "string",
+            "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
+            "x-playnet-shape": "string"
+          },
+          "payer-name": {
+            "type": "string",
+            "description": "the paying network a funded job is booked under (nostr-dvm, openrouter-style api payers…)",
+            "x-playnet-shape": "string"
+          },
+          "ref": {
+            "type": "string",
+            "description": "on the signing legs a caller nonce folded into the SAID (\"\" = none); on slots-watch a CapTP watcher reference",
+            "x-playnet-shape": "string"
+          },
+          "debit": {
+            "type": "number",
+            "description": "the prepaid units a funded intake draws from the customer's book",
+            "x-playnet-shape": "number"
+          },
+          "task-class": {
+            "type": "string",
+            "description": "a symbol, sent as its name",
+            "x-playnet-shape": "symbol"
+          },
+          "lane": {
+            "type": "string",
+            "x-playnet-shape": "string"
+          },
+          "repro": {
+            "type": "string",
+            "description": "a symbol, sent as its name",
+            "x-playnet-shape": "symbol"
+          },
+          "input-hash": {
+            "type": "string",
+            "x-playnet-shape": "string"
+          },
+          "opts": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
+            "x-playnet-shape": "alist"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "key-hash",
+          "payer-name",
+          "ref",
+          "debit",
+          "task-class",
+          "lane",
+          "repro",
+          "input-hash"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-demand-intake"
+    },
+    {
+      "name": "session.machine-demand-resolve",
+      "title": "stock: machine-demand-resolve",
+      "description": "Resolves which commune's demand book holds KEY-HASH — replies ((commune aid) (owner did)). Only the key itself may resolve: the bearer credential names its own account. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key-hash": {
+            "type": "string",
+            "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
+            "x-playnet-shape": "string"
+          }
+        },
+        "required": [
+          "key-hash"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-demand-resolve"
+    },
+    {
+      "name": "session.machine-demand-job",
+      "title": "stock: machine-demand-job",
+      "description": "Replies JOB-ID's status in COMMUNE-AID — job state, claims with receipt digests, the ledger row; the job's borrower only. The demand API's poll surface. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "job-id": {
+            "type": "string",
+            "x-playnet-shape": "id"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "job-id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-demand-job"
+    },
+    {
+      "name": "session.machine-mesh-info",
+      "title": "stock: machine-mesh-info",
+      "description": "Replies the mesh intake's caps for COMMUNE-AID — the params.input byte budget, the image-ref rule, the result-dest shape — and whether the delivery mailbox stands. A mesh client reads this before it asks. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          }
+        },
+        "required": [
+          "commune-aid"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-mesh-info"
+    },
+    {
+      "name": "session.machine-mesh-intake",
+      "title": "stock: machine-mesh-intake",
+      "description": "Mints a mutual-credit job in COMMUNE-AID for a mesh requester: stamps params.mesh.result-dest on the envelope, refuses what can't cross (bad dest, missing envelope, input over the byte cap, inline image), submits the caller as borrower. A receipt landing on the job posts the delivery to RESULT-DEST's mailbox — the wake the requester drains. [stock; callable by an enrolled device]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "commune-aid": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
+            "description": "a KERI AID prefix",
+            "x-playnet-shape": "aid"
+          },
+          "result-dest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]*$",
+            "description": "the mesh requester's mailbox destination, a 64-char lowercase-hex Reticulum hash",
+            "x-playnet-shape": "hex"
+          },
+          "task-class": {
+            "type": "string",
+            "description": "a symbol, sent as its name",
+            "x-playnet-shape": "symbol"
+          },
+          "lane": {
+            "type": "string",
+            "x-playnet-shape": "string"
+          },
+          "repro": {
+            "type": "string",
+            "description": "a symbol, sent as its name",
+            "x-playnet-shape": "symbol"
+          },
+          "input-hash": {
+            "type": "string",
+            "x-playnet-shape": "string"
+          },
+          "opts": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
+            "x-playnet-shape": "alist"
+          }
+        },
+        "required": [
+          "commune-aid",
+          "result-dest",
+          "task-class",
+          "lane",
+          "repro",
+          "input-hash"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false
+      },
+      "x-playnet-auth": "device",
+      "x-playnet-topic": "stock",
+      "x-playnet-http": "/api/session/machine-mesh-intake"
+    },
+    {
       "name": "session.machine-bind",
       "title": "stock: machine-bind",
       "description": "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names. [stock; callable by an enrolled device]",

@@ -134,6 +134,18 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
   reference a commune uses to price credit against an external
   denomination — a bridge attestation, signed like the statement that
   settles.
+- **The demand edge** (`doors/payers.scm`): a payer registry names the
+  paying networks in three honest classes — `browser` (servicable from a
+  tab today: `nostr-dvm`), `api` (standard wire shapes the demand API
+  translates: openai-style inference, scrape-fetch, uptime-check,
+  load-test, s3-store, mcp tools), and `commune-daemon`/`hardware`
+  (catalogued, not wired — native daemons and radios a tab cannot run).
+  The `^demand-desk` keeps per-customer books (keyHash → `{balance,
+  asset, commune}`) — prepaid for fiat-style buyers, auto-opened
+  postpaid (`sat`, zero balance) for crypto-native jobs. `^payer-ledger`
+  records one receivable row per funded job; `machine-payer-settle`
+  marks paid only against an external ref the caller actually supplies —
+  the ledger never pretends a payment it has not seen.
 
 ## §6 Honesty
 
@@ -167,6 +179,35 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
 - Reticulum netlayer remains opt-in: its license bars use in creating AI
   training corpora. This network runs inference, not training — but the clause
   is recorded here so no one wires logged traffic into an eval corpus later.
+- **The demand API is a payer surface, not a member surface**:
+  `doors/demand.scm` translates standard buyer wire shapes at
+  `POST /api/demand/*` — `/v1/chat/completions` and
+  `/v1/audio/transcriptions` (OpenAI-shaped), `/fetch`, `/check`,
+  `/loadtest`, `/prove`, `/render`, `/pin`, `/ocr`, plus S3 `PUT/GET` —
+  into internal envelopes stamped `params.payer`. The bearer credential
+  is the customer's demand `keyHash`, never a member session; intake
+  debits the demand book (or books the receivable postpaid), mints the
+  job, and the customer polls `machine-demand-job` scoped to its own
+  key. NAOMS's "no HTTP compute surface" rule stands for members — this
+  surface exists because external buyers do not hold playnet sessions.
+- **NIP-90 postpaid**: the browser DVM runner
+  (`browser/app/machine-dvm.js` + `browser/lib/nostr.js` on vendored
+  noble-secp256k1) subscribes a commune's relays for kind-5xxx requests
+  in its lanes, intakes each under `nostr-dvm` with `'postpaid` — the
+  demand desk auto-opens the requester's zero-balance `sat` book on
+  first sight and skips the debit — runs the job, and publishes the
+  kind-6xxx result. Payment is a receivable row until the payer settles
+  (zap/bolt11 metadata rides the event honestly); the ledger records
+  what was priced, never what was merely hoped.
+- **Mesh demand crosses mutual-credit only**: `machine-mesh-intake`
+  mints a job for a Reticulum requester with `params.mesh.result-dest`
+  (a 64-hex destination) stamped on the envelope — no payer row, no
+  demand book. Intake refuses what cannot cross a radio: input over the
+  serialized byte cap, inline image bytes (refs only), a malformed dest.
+  When the job's receipt lands, the notice posts to the requester's
+  mailbox destination; `drain!` is the wake for a client whose link is
+  intermittent. `machine-mesh-info` answers the caps up front so a mesh
+  client asks only for what crosses.
 
 ## §8 Privacy
 
@@ -206,6 +247,10 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
 | (no single-node ceiling) | swarm — `params.swarm` shards over claims |
 | ring-3 pool adapters | `providers.scm` + `machine-bridge-submit` |
 | member's own load | governor — `watchRun` → abort → `machine-preempt` |
+| paid demand / customer books | `payers.scm` — registry, `^payer-ledger`, `^demand-desk` |
+| standard buyer wire shapes | `doors/demand.scm` at `POST /api/demand/*` |
+| nostr paid compute | `machine-dvm.js` + `nostr.js` — kind-5xxx→6xxx, `'postpaid` intake |
+| off-wifi demand | `machine-mesh-intake` → `params.mesh.result-dest` → `mesh-mailbox` wake |
 
 ## Appendix B — open questions, answered where the code already answered them
 
@@ -248,6 +293,24 @@ AID lenders through the KEL/device resolver — `verified` | `unverifiable` |
    dual-signed `payout` binding (`settlement->member-plan`). A member
    who never binds stays entirely in credit; tokens live at the
    treasury/member edge and never enter node trust.
+8. Who pays, and how does paid demand reach a tab? — DECIDED, shipped:
+   **buyers speak their own wire shapes; the demand edge translates.**
+   Traditional demand pays for standard APIs, not networks — so
+   `doors/demand.scm` serves OpenAI-shaped inference and transcription,
+   scrape-fetch, uptime checks, load tests, proving, rendering, pinning,
+   OCR, and S3 store at `/api/demand/*`, each minting a real envelope.
+   Crypto-native paid demand arrives as NIP-90 jobs the browser DVM
+   earns directly (postpaid `sat` receivables). Daemon/hardware payer
+   networks (Golem, Akash, Helium-class) stay catalogued in the payer
+   registry, honestly classed `commune-daemon`/`hardware` — a browser
+   cannot run them and the spec does not pretend otherwise.
+9. Can a client with no WiFi — a radio on Reticulum — buy compute? —
+   DECIDED, shipped: yes, on mutual credit. `machine-mesh-intake`
+   carries the same envelope across the mesh link, stamps the LXMF
+   result-dest, and the mailbox is the store-and-forward wake: the
+   receipt notice waits in the destination's mailbox until the client
+   drains it. LoRa-sized honesty applies at intake — oversize inputs
+   and inline images refuse before a job ever mints.
 
 ## Appendix C — inventory rule
 

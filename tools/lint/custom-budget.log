@@ -18,3 +18,4 @@
 2026-10-23T18:51:47Z	252012 → 252970	chimera-parity phases: model-inference/egress/availability/sense envelope profiles + opt-in payout partition, rate-statement, e2e+unit suites — Tier-1 machine resources
 2026-10-23T21:03:43Z	252970 → 253882	swarm megaplan: params.swarm descriptor + swarm shelf + 4 bus doors + shard runner (map/stage/merge/stripe/hop/fleet) + provider bridge (golem/mysterium/storj legs, attempts ledger) + governor (watchRun, abort→preempt, maxClaims) + e2e/unit suites
 2026-10-23T21:08:02Z	253882 → 253886	attribution emitter retarget to surviving surface + crossing-catalogue absent-spec tolerance (post-strip gate repair)
+2026-10-24T03:13:46Z	253886 → 255798	demand megaplan: payers registry+ledger+demand desk + /api/demand/* translators + NIP-90 dvm postpaid intake + mesh intake/mailbox wake + e2e suites

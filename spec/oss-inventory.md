@@ -70,6 +70,9 @@ Nothing paid, nothing source-available (no BUSL, SSPL, Elastic).
 | Swarm coordination | — **custom glue** over claims + signal shelf | ours | `machine/swarm.scm` (~90) + `browser/app/machine-swarm.js` (~200): the heavy legs are the kind runners already counted |
 | Ring-3 provider legs | **Golem yagna / Mysterium node / Storj** | GPL-3.0 / AGPL-3.0 | `machine/providers.scm` (~190) + `machine-bridge-submit` door — transports injected, fail-closed |
 | Member-first governor | — **custom** | ours | `browser/app/machine-governor.js` (~70) over the executor's own abort surface |
+| Demand edge (payer registry, books, ledger, translators) | — **custom** | ours | `doors/payers.scm` + `doors/demand.scm` (~0.8k) — buyer wire shapes mint envelopes; books/ledger are mutual-credit rows |
+| NIP-90 paid compute | **nostr NIPs** (protocol) + **noble-secp256k1** (vendored, schnorr) | public-domain / MIT | `browser/lib/nostr.js` + `browser/app/machine-dvm.js` (~0.4k) |
+| Mesh demand intake | **Reticulum mailbox** (already flagged ⚠) | ours over flagged | `machine-mesh-intake` door + receipt→mailbox wake in `doors/machine.scm` |
 | API surface docs | **swagger-ui** (vendored) | Apache-2.0 | — |
 | TEE evidence tier | **dcap-qvl / Intel DCAP / NVIDIA NRAS** | Apache-2.0 / BSD-3 | fills `verify-quote` seam |
 | Fleet provisioning | **OpenTofu** + providers | MPL-2.0 | `fleet/reconciler.scm` + provider seams |
