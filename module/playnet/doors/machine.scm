@@ -20,6 +20,7 @@
 (define-module (playnet doors machine)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-13)
+  #:use-module (rnrs bytevectors)
   #:use-module (ice-9 format)
   #:use-module (goblins)
   #:use-module (goblins abstract-types)
@@ -39,6 +40,8 @@
   #:use-module (playnet machine providers)
   #:use-module (playnet machine payers)
   #:use-module (playnet machine executors)
+  #:use-module ((playnet doors lobby) #:select (current-mesh-mailbox))
+  #:use-module ((playnet utils hex) #:select (bv->hex))
   #:use-module (playnet doors governance)
   #:use-module ((playnet protocol dispatch) #:select (declared-doors))
   #:use-module ((playnet keri citizen-sig) #:select (verify-said-signature))
@@ -68,6 +71,18 @@
 ;;; augmentation, not a dependency). Deployed by
 ;;; (make-opa-delegate (%env-transport "PLAYNET_OPA_URL")).
 (define *machine-authz* (make-parameter #f))
+
+;;; ── the mesh caps ──────────────────────────────────────────────────────
+;;; What may honestly cross a LoRa link: params.input serialized stays
+;;; under 4KB (a Reticulum request is small talk, not a file upload), and
+;;; an exec image is a ref or builtin — never inline bytes.
+(define %mesh-max-input-bytes 4096)
+(define %mesh-max-image-chars 256)
+
+(define (char-hex c)
+  (or (char-numeric? c)
+      (memq c '(#\a #\b #\c #\d #\e #\f))
+      (memq c '(#\A #\B #\C #\D #\E #\F))))
 
 (define (json-ref parsed key)
   "KEY lookup in a guile-json alist, string and symbol keys both."
@@ -1367,6 +1382,80 @@
            (lambda (k . a)
              (list 'error (format #f "machine-demand-job: ~a" a)))))
 
+        ;; ── the mesh — off-WiFi demand over Reticulum ────────────────────
+        ;; A mesh requester reaches the lobby's sturdyref over the ret
+        ;; netlayer and calls doors like any session — but it sleeps on
+        ;; LoRa, it can't babysit a socket: it asks, goes dark, and drains
+        ;; a mailbox. machine-mesh-intake mints the job with
+        ;; params.mesh.result-dest stamped; when a receipt lands on a
+        ;; mesh-stamped job a delivery posts to ^mesh-mailbox for that
+        ;; dest — the wake the requester drains when it's back in earshot.
+        ;;
+        ;; The caps are the honest part: a request too fat for the link
+        ;; refuses at intake instead of queuing work its answer can't
+        ;; come back through. result-dest is a 64-hex destination hash;
+        ;; params.input serialized stays under %mesh-max-input-bytes; an
+        ;; exec image is a ref or a builtin, never inline bytes.
+        ((machine-mesh-info identity-key commune-aid)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (cons 'ok
+                   `(("caps" . (("maxInputBytes" . ,%mesh-max-input-bytes)
+                                ("maxImageChars" . ,%mesh-max-image-chars)
+                                ("resultDest" . "64-hex destination hash")
+                                ("result" . "mailbox delivery on receipt")))
+                     ("mailbox" . ,(if (current-mesh-mailbox) #t #f)))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-mesh-info: ~a" a)))))
+
+        ((machine-mesh-intake identity-key commune-aid result-dest
+                              task-class lane repro input-hash . opts)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((env (opt-ref opts 'envelope #f))
+                    (wire (and env (wire-normalize env)))
+                    (wire (and wire
+                               (cons (cons 'params
+                                           (append
+                                            (or (assq-ref wire 'params) '())
+                                            `((mesh . ((result-dest . ,result-dest))))))
+                                     (filter (lambda (p) (not (eq? (car p) 'params)))
+                                             wire))))
+                    (input (and wire (assq-ref (or (assq-ref wire 'params) '())
+                                               'input)))
+                    (input-bytes (and input
+                                      (bytevector-length
+                                       (string->utf8 (scm->json-string input)))))
+                    (parsed (and wire (alist->job-envelope wire)))
+                    (image (and parsed (job-envelope-image parsed))))
+               (cond
+                ((not (and (string? result-dest)
+                           (= 64 (string-length result-dest))
+                           (string-every char-hex result-dest)))
+                 (list 'error "machine-mesh-intake: result-dest is a 64-hex destination hash"))
+                ((not parsed)
+                 (list 'error "machine-mesh-intake: envelope required"))
+                ((and image (> (string-length image) %mesh-max-image-chars))
+                 (list 'error "machine-mesh-intake: exec image must be a ref, not inline bytes"))
+                ((and input-bytes (> input-bytes %mesh-max-input-bytes))
+                 (list 'error "machine-mesh-intake: params.input over the mesh cap"))
+                (else
+                 (let ((job-id ($ (registry-for commune-aid) 'submit
+                                  identity-key commune-aid
+                                  (string->symbol task-class) lane
+                                  (string->symbol repro) input-hash
+                                  (opt-ref opts 'envelopeHash #f)
+                                  (opt-ref opts 'ring 1)
+                                  (opt-ref opts 'specId #f)
+                                  (res-normalize (opt-ref opts 'needs '())))))
+                   ($ (shelf-for commune-aid) 'put! job-id parsed)
+                   (cons 'ok `(("jobId" . ,job-id)
+                               ("resultDest" . ,result-dest))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-mesh-intake: ~a" a)))))
+
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —
         ;; a CAIP-10 payout address, or `keri:<aid>` which IS the AID↔did:key
@@ -1540,6 +1629,31 @@
                                  #:intent-id (and claim
                                                   (dispatch-claim-job-id claim)))))
                          (lambda _ #t))))
+                   ;; the mesh wake — a receipt landing on a mesh-stamped
+                   ;; job posts a delivery for the envelope's result-dest:
+                   ;; the requester sleeps on LoRa and drains the mailbox
+                   ;; when it's back in earshot. Hex of a JSON notice —
+                   ;; the digest rides so the drain can verify against
+                   ;; the claim it reads next poll.
+                   (when claim
+                     (catch #t
+                       (lambda ()
+                         (let* ((env ($ (shelf-for commune-aid) 'get
+                                        (dispatch-claim-job-id claim)))
+                                (md (and env (envelope-mesh env)))
+                                (dest (and md (params-ref md 'result-dest)))
+                                (mb (and dest (current-mesh-mailbox))))
+                           (when mb
+                             ($ mb 'store! dest
+                                (bv->hex
+                                 (string->utf8
+                                  (scm->json-string
+                                   `(("type" . "machine-result")
+                                     ("jobId" . ,(dispatch-claim-job-id claim))
+                                     ("claimId" . ,claim-id)
+                                     ("state" . "receipted")
+                                     ("outputHash" . ,(receipt-output-hash r))))))))))
+                       (lambda _ #t)))
                    (cons 'ok (list digest verdict)))))))
            (lambda (k . a) (list 'error (format #f "machine-receipt: ~a" a)))))
 

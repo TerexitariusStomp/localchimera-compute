@@ -614,6 +614,13 @@ or #f when no handler sends it."
     (door session machine-demand-job (commune-aid job-id)
           #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
           #:doc "Replies JOB-ID's status in COMMUNE-AID — job state, claims with receipt digests, the ledger row; the job's borrower only. The demand API's poll surface.")
+    ;; ── the mesh — off-WiFi demand: LoRa-honest intake and the wake
+    (door session machine-mesh-info (commune-aid)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the mesh intake's caps for COMMUNE-AID — the params.input byte budget, the image-ref rule, the result-dest shape — and whether the delivery mailbox stands. A mesh client reads this before it asks.")
+    (door session machine-mesh-intake (commune-aid result-dest task-class lane repro input-hash . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Mints a mutual-credit job in COMMUNE-AID for a mesh requester: stamps params.mesh.result-dest on the envelope, refuses what can't cross (bad dest, missing envelope, input over the byte cap, inline image), submits the caller as borrower. A receipt landing on the job posts the delivery to RESULT-DEST's mailbox — the wake the requester drains.")
     (door session machine-bind (commune-aid w)
           #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
           #:doc "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.")
