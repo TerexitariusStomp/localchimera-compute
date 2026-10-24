@@ -1149,8 +1149,12 @@
              (let ((c ($ (desk-for commune-aid) 'of key-hash)))
                (cond
                 ((not c) (list 'error "machine-demand-balance: no such customer"))
-                ((not (equal? identity-key (demand-customer-owner-did c)))
-                 (list 'error "machine-demand-balance: the customer's owner only"))
+                ;; the owner reads its book; the key itself reads it too —
+                ;; the key IS the demand API's credential, its holder the
+                ;; customer the book is spent for
+                ((not (or (equal? identity-key (demand-customer-owner-did c))
+                          (equal? identity-key key-hash)))
+                 (list 'error "machine-demand-balance: the customer's owner or key only"))
                 (else (cons 'ok `(("keyHash" . ,(demand-customer-key-hash c))
                                   ("name" . ,(demand-customer-name c))
                                   ("balance" . ,(demand-customer-balance c))
@@ -1205,8 +1209,13 @@
                 ((not (and (number? debit) (>= debit 0)))
                  (list 'error "machine-demand-intake: debit must be ≥ 0"))
                 ((not c) (list 'error "machine-demand-intake: no such customer"))
-                ((not (equal? identity-key (demand-customer-owner-did c)))
-                 (list 'error "machine-demand-intake: the customer's owner only"))
+                ;; the owner mints jobs on its book; so does the key
+                ;; itself — the holder of the API credential is the
+                ;; customer, and the job's borrower is then the key,
+                ;; which is what scopes its ledger reads
+                ((not (or (equal? identity-key (demand-customer-owner-did c))
+                          (equal? identity-key key-hash)))
+                 (list 'error "machine-demand-intake: the customer's owner or key only"))
                 ((not (demand-customer-active? c))
                  (list 'error "machine-demand-intake: customer inactive"))
                 (else
@@ -1268,6 +1277,71 @@
                                       ("state" . ,(symbol->string (payer-row-state row))))))))))))
            (lambda (k . a)
              (list 'error (format #f "machine-payer-settle: ~a" a)))))
+
+        ;; The demand API's resolver: the bearer key is the credential, so
+        ;; only the key itself may resolve which commune's book holds it.
+        ;; Walks this service's desks — the first commune holding the key
+        ;; answers (an operator minting the same key in two communes made
+        ;; its own ambiguity). Replies ((commune aid) (owner did)
+        ;; (keyHash k)) so the translator can place the intake call.
+        ((machine-demand-resolve identity-key key-hash)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (if (not (and (string? key-hash) (equal? identity-key key-hash)))
+                 (list 'error "machine-demand-resolve: the key resolves itself")
+                 (let ((hit #f))
+                   (hash-for-each
+                    (lambda (k v)
+                      (when (and (not hit) (string-prefix? "desk:" k))
+                        (let ((c ($ v 'of key-hash)))
+                          (when c
+                            (set! hit (list (substring k 5)
+                                            (demand-customer-owner-did c)))))))
+                    registries)
+                   (if hit
+                       (cons 'ok `(("commune" . ,(car hit))
+                                   ("owner" . ,(cadr hit))
+                                   ("keyHash" . ,key-hash)))
+                       (list 'error "machine-demand-resolve: no such customer")))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-demand-resolve: ~a" a)))))
+
+        ;; The demand API's status read: the job, its claims with state
+        ;; and receipt digests, and the ledger row the spend booked. The
+        ;; borrower reads its own — for a demand job the borrower IS the
+        ;; key, so the customer's poll surfaces exactly what it paid for.
+        ((machine-demand-job identity-key commune-aid job-id)
+         (catch #t
+           (lambda ()
+             (ensure-citizen identity-key)
+             (let* ((reg (registry-for commune-aid))
+                    (j ($ reg 'job-of job-id)))
+               (cond
+                ((not j) (list 'error "machine-demand-job: no such job"))
+                ((not (equal? identity-key (machine-job-borrower-did j)))
+                 (list 'error "machine-demand-job: the borrower's job only"))
+                (else
+                 (cons 'ok
+                       `(("jobId" . ,job-id)
+                         ("state" . ,(symbol->string (machine-job-state j)))
+                         ("borrower" . ,(machine-job-borrower-did j))
+                         ("claims" . ,(list->vector
+                                       (map (lambda (c)
+                                              `(("id" . ,(dispatch-claim-id c))
+                                                ("state" . ,(symbol->string (dispatch-claim-state c)))
+                                                ("lender" . ,(dispatch-claim-lender-did c))
+                                                ("receipt" . ,(and (dispatch-claim-receipt c)
+                                                                   (receipt-output-hash
+                                                                    (dispatch-claim-receipt c))))))
+                                            (filter (lambda (c)
+                                                      (equal? job-id (dispatch-claim-job-id c)))
+                                                    ($ reg 'claims commune-aid)))))
+                         ("ledger" . ,(list->vector
+                                       (map payer-row->list
+                                            ($ (payers-for commune-aid) 'by-job job-id))))))))))
+           (lambda (k . a)
+             (list 'error (format #f "machine-demand-job: ~a" a)))))
 
         ;; ── bindings ─────────────────────────────────────────────────────
         ;; The AccountLink ceremony (spec §1): a did:key binds an account —

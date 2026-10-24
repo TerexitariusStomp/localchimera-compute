@@ -568,6 +568,52 @@ or #f when no handler sends it."
     (door session machine-signals (commune-aid claim-id . opts)
           #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
           #:doc "Replies the signals on CLAIM-ID in COMMUNE-AID strictly after 'after (0 reads all) — the counterparty's poll; this AID a party to the claim or a governor.")
+    ;; ── swarm coordination — work larger than one node, one borrower and
+    ;; the lenders holding live claims on the swarm's jobs in the bus
+    (door session machine-swarm-open (commune-aid swarm-id job-ids)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Opens swarm SWARM-ID in COMMUNE-AID over JOB-IDS — the borrower names the jobs one piece of work fans out to; this AID the jobs' borrower. Replies ok or an error.")
+    (door session machine-swarm-of (commune-aid swarm-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies swarm SWARM-ID's membership record in COMMUNE-AID — borrower, job ids, when it opened; a swarm member or a governor reads.")
+    (door session machine-swarm-signal (commune-aid swarm-id body)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Posts signal BODY on the swarm bus for SWARM-ID in COMMUNE-AID — the borrower or a live lender on one of its jobs; the shard runner's partial results and shard maps ride here.")
+    (door session machine-swarm-signals (commune-aid swarm-id . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the swarm bus's signals on SWARM-ID in COMMUNE-AID strictly after 'after (0 reads all); the borrower or a live lender reads.")
+    ;; ── the bridge — ring 3's provider legs, local-first by rule
+    (door session machine-bridge-submit (commune-aid job-id provider-name)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Routes ring:3 JOB-ID in COMMUNE-AID to provider PROVIDER-NAME (golem exec, mysterium egress, storj store) — the borrower only, PUBLIC work only, never when inner capacity answers; an unwired transport answers an honest 'unavailable. Replies the attempt row.")
+    (door session machine-bridge-attempts (commune-aid job-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the provider attempts on JOB-ID in COMMUNE-AID — the borrower's ledger read of where its job crossed and what came back.")
+    ;; ── the demand desk — who pays, the prepaid book, payer-funded jobs
+    (door session machine-payers ()
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the payer catalogue — which demand networks buy which envelope kinds, how their supply honestly fits a browser tab, and their wire shape. Any citizen reads; intake still checks fit.")
+    (door session machine-payer-events (commune-aid . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies the payer ledger rows in COMMUNE-AID — 'jobId scopes to that job's borrower, unscoped to every job the caller borrowed. The settlement edge's payments name these rows.")
+    (door session machine-payer-settle (commune-aid row-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Marks payer ledger row ROW-ID in COMMUNE-AID 'paid — the operator's record that the rail confirmed; a paid row stays paid. Replies ok or an error.")
+    (door session machine-demand-credit (commune-aid key-hash delta asset . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Tops up demand customer KEY-HASH by DELTA in ASSET within COMMUNE-AID's book — or creates it (opts 'name) when the key is new; the caller is the customer record's owner. The billing rail that bought the credit lives at the treasury edge.")
+    (door session machine-demand-balance (commune-aid key-hash)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies demand customer KEY-HASH's book in COMMUNE-AID — balance, asset, active; the owner or the key itself reads.")
+    (door session machine-demand-intake (commune-aid key-hash payer-name ref debit task-class lane repro input-hash . opts)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
+          #:doc "Mints a payer-funded job in COMMUNE-AID: debits customer KEY-HASH by DEBIT (insufficient refuses before the job exists), stamps params.payer on the envelope, submits through the ordinary path with the caller as borrower, and books the ledger row binding REF to the job. The owner or the key itself spends; the payer must be intake-wireable and serve the kind.")
+    (door session machine-demand-resolve (key-hash)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Resolves which commune's demand book holds KEY-HASH — replies ((commune aid) (owner did)). Only the key itself may resolve: the bearer credential names its own account.")
+    (door session machine-demand-job (commune-aid job-id)
+          #:auth device #:topic stock #:reply promise:ok-or-error #:kind read #:to governance
+          #:doc "Replies JOB-ID's status in COMMUNE-AID — job state, claims with receipt digests, the ledger row; the job's borrower only. The demand API's poll surface.")
     (door session machine-bind (commune-aid w)
           #:auth device #:topic stock #:reply promise:ok-or-error #:kind performative #:to governance
           #:doc "Lands an AccountLink W in COMMUNE-AID — an Ethereum CAIP-10 account bound to a did:key by EIP-712/EIP-191, dual-signed, or the caller's own AID under keri:<aid>; the linked EOAs stand behind the one bridge identity the grant names.")

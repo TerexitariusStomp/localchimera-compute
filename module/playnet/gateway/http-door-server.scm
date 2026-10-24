@@ -26,6 +26,7 @@
 (define-module (playnet gateway http-door-server)
   #:use-module (playnet doors http)
   #:use-module ((playnet doors mcp) #:select (%mcp-path handle-mcp-request))
+  #:use-module ((playnet doors demand) #:select (%demand-prefix handle-demand-request))
   #:use-module ((playnet utils clock) #:select (instant->unix (now . clock-now)))
   #:use-module (goblins)
   #:use-module (goblins vat)
@@ -147,9 +148,13 @@ gateway vat, where a person's session is spawned (SPAWN-SESSION:
     (log "  [http-door] ~a ~a~%" (request-method request) (uri-path (request-uri request)))
     (catch #t
       (lambda ()
-        (if (string=? (uri-path (request-uri request)) %mcp-path)
-            (handle-mcp-request request body #:target target #:call call)
-            (handle-door-request request body #:target target #:call call)))
+        (cond
+         ((string=? (uri-path (request-uri request)) %mcp-path)
+          (handle-mcp-request request body #:target target #:call call))
+         ((string-prefix? %demand-prefix (uri-path (request-uri request)))
+          (handle-demand-request request body #:target target #:call call))
+         (else
+          (handle-door-request request body #:target target #:call call))))
       (lambda (k . a)
         (log "  [http-door] handler error: ~a ~s~%" k a)
         (values (build-response #:code 500 #:headers '((content-type . (application/json))))

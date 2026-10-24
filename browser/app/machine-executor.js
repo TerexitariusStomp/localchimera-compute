@@ -245,6 +245,10 @@ export const runEnvelope = async (env, input, opts = {}) => {
             throw new Error("machine-executor: the webgpu cap has no adapter here");
     }
     const isWasm = (env.image ?? "").startsWith("wasm:");
+    // params.input is the job's own payload — demand intake stamps the
+    // customer's request there; the lender's shared INPUT is only the
+    // fallback when the envelope carries none
+    const jobInput = env.params?.input !== undefined ? env.params.input : input;
     // the fetch happens OUTSIDE the sandbox — the worker never sees the ref;
     // the network grant check lives here where the bytes actually move
     const bytes = isWasm ? await wasmBytes(env) : null;
@@ -296,12 +300,12 @@ export const runEnvelope = async (env, input, opts = {}) => {
         if (isWasm) {
             const buf = bytes.buffer;
             w.postMessage({ kind: "wasm", entrypoint: env.entrypoint || "_start",
-                bytes: buf, input: input ?? null,
+                bytes: buf, input: jobInput ?? null,
                 seed: opts.seed ?? env.params?.model?.seed ?? 0,
                 model: mBytes ? mBytes.buffer : null }, transfers);
         }
         else {
-            w.postMessage({ kind: "js", entrypoint: env.entrypoint, input: input ?? null,
+            w.postMessage({ kind: "js", entrypoint: env.entrypoint, input: jobInput ?? null,
                 seed: opts.seed ?? env.params?.model?.seed ?? 0,
                 model: mBytes ? mBytes.buffer : null }, transfers);
         }
