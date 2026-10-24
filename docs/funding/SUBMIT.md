@@ -2,20 +2,23 @@
 
 **Done in-browser:**
 - ✅ **HRF BDF — SUBMITTED** ($35k ask, monday.com form → "Thank you" confirmation)
+- ✅ **OpenSats — SUBMITTED** ($20k/9mo ask → "Thank you for your application").
+  Still needed post-submit: two reference letters emailed to references@opensats.org
+  (subject: "Reference Letter for localchimera-dvm by TerexitariusStomp") — evaluation
+  doesn't start without them.
 - ✅ **NLnet — eligibility question SENT** via their PGP contact form (asks whether disclosed
   agent-assisted development is eligible under GenAI v2.0; decision before the Nov 3 deadline)
 
 **Parked in the automation Brave (profile: `~/.cache/brave-devin`):**
-- ⏸ **OpenSats** — complete through all 8 pages, parked at **Submit Grant Application**.
-  Missing: video link (optional field on page 7) + two reference letters emailed to
-  references@opensats.org. Review the page-7 attestations ("no vibed garbage" etc. — checked
-  on your behalf) then hit Submit.
-- ⏸ **OTF** — magic-link sent to terexmaps@gmail.com; open it IN THE AUTOMATION BRAVE
-  (copy the link URL there) → lands on the IFF concept-note form → paste `otf-iff-concept.md`.
-- ⏸ **FUTO / FFDW** — two prefilled Gmail compose tabs; sign in to Gmail in the automation
-  Brave and press Send.
-- ⏸ **Emergent Ventures** — page opened; the ≤1,500 words must be yours (AI-written apps
-  are detected and rejected). Prep brief: `emergent-ventures-prep.md`.
+- ⏸ **OTF** — magic-link sent to terexmaps@gmail.com; once Gmail is open in the
+  automation Brave, the link can be opened there → lands on the IFF concept-note
+  form → paste `otf-iff-concept.md`.
+- ⏸ **FUTO / FFDW** — two prefilled Gmail compose tabs (grantapps@futo.org,
+  impact@ffdweb.org) — need one Gmail sign-in in the automation Brave, then Send.
+- ⏸ **Emergent Ventures** — form parked with contact fields filled (nym, email, USA/CO,
+  consents). `Tell us about your proposal` + the tweet-idea field left EMPTY — they must
+  be your own words (EV tests for and rejects AI-written applications). Prep:
+  `emergent-ventures-prep.md`.
 
 The only things a machine cannot do
 for you are: appear on camera, sign up for accounts,
