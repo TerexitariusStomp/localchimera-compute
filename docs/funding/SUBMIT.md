@@ -1,9 +1,25 @@
-# SUBMIT — the apply-now runbook
+# SUBMIT — application status (updated Oct 24, 2026)
 
-Everything below is ready to paste. The only things a machine cannot do
-for you are: click web forms, appear on camera, sign up for accounts,
+**Done in-browser:**
+- ✅ **HRF BDF — SUBMITTED** ($35k ask, monday.com form → "Thank you" confirmation)
+- ✅ **NLnet — eligibility question SENT** via their PGP contact form (asks whether disclosed
+  agent-assisted development is eligible under GenAI v2.0; decision before the Nov 3 deadline)
+
+**Parked in the automation Brave (profile: `~/.cache/brave-devin`):**
+- ⏸ **OpenSats** — complete through all 8 pages, parked at **Submit Grant Application**.
+  Missing: video link (optional field on page 7) + two reference letters emailed to
+  references@opensats.org. Review the page-7 attestations ("no vibed garbage" etc. — checked
+  on your behalf) then hit Submit.
+- ⏸ **OTF** — magic-link sent to terexmaps@gmail.com; open it IN THE AUTOMATION BRAVE
+  (copy the link URL there) → lands on the IFF concept-note form → paste `otf-iff-concept.md`.
+- ⏸ **FUTO / FFDW** — two prefilled Gmail compose tabs; sign in to Gmail in the automation
+  Brave and press Send.
+- ⏸ **Emergent Ventures** — page opened; the ≤1,500 words must be yours (AI-written apps
+  are detected and rejected). Prep brief: `emergent-ventures-prep.md`.
+
+The only things a machine cannot do
+for you are: appear on camera, sign up for accounts,
 and write the two applications where AI authorship is banned.
-This file is ordered by deadline.
 
 Repo (paste this everywhere a project URL is asked):
 `https://github.com/TerexitariusStomp/localchimera-compute`
