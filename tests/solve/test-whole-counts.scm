@@ -14,11 +14,11 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-whole-counts.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve discrete) (playnet solve ingest) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve discrete) (localchimera solve ingest) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)
@@ -131,7 +131,7 @@
 ;;; 4. The cuts are the METHOD's, never the world's
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;
-;; playnet's own rule: the solver sees everything, the certificate sees only the
+;; localchimera's own rule: the solver sees everything, the certificate sees only the
 ;; world. A branch bound is scaffolding the search erected — it must not appear
 ;; in what the plan claims to have proven.
 
@@ -168,7 +168,7 @@
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;
 ;; `declare-whole!` above lives in the ENGINE, which is primitive-loaded. A recipe
-;; reaches the planner as a MODULE, and module/playnet/planner.scm does not
+;; reaches the planner as a MODULE, and module/localchimera/planner.scm does not
 ;; include the engine — so a recipe cannot call it, and a guarded call there is a
 ;; silently dead branch rather than a caller.
 ;;

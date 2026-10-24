@@ -3,10 +3,10 @@
 ;;; The contract: a rendered notification's text lands as the POST body
 ;;; at /<topic>. Invariant leg pins the wire; live leg publishes.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
-             (playnet notify rendered)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
+             (localchimera notify rendered)
              (srfi srfi-1))
 
 (define r (rendered-notification 'info "Hello" "the body text" "tag-1"))
@@ -17,7 +17,7 @@
               (equal? (cdr (assoc "path" w)) "/commune-alerts")
               (equal? (cdr (assoc "body" w)) "Hello\n\nthe body text")) #t))
 
-(parity-live-delegate "PLAYNET_NTFY_URL"
+(parity-live-delegate "LOCALCHIMERA_NTFY_URL"
   "ntfy publishes a rendered notification"
   (lambda (t) (make-ntfy-delegate t))
   (lambda (d) (d "parity-test" (rendered->text r)))

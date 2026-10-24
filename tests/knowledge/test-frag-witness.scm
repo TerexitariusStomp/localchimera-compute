@@ -7,13 +7,13 @@
 ;;; so a careless edit can't silently corrupt a sourced number, and checks that BOTH frameworks reduce
 ;;; to the same frag machinery (the catalogue->policy seam emits well-formed agents for each).
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/knowledge/test-frag-witness.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/knowledge/test-frag-witness.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
                         f))
-(use-modules (playnet knowledge catalogues eco))
+(use-modules (localchimera knowledge catalogues eco))
 
 ;; ── tipping points: 16 elements, well-ordered ranges, and the paper's headline (5 at/below ~1.5°C) ──
 (define tips *climate-tipping-points*)

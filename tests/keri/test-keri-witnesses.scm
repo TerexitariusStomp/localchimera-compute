@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-witnesses.scm — witness selection + OOBI sharing tests
 ;;;
-;;; Exercises (playnet keri witnesses):
+;;; Exercises (localchimera keri witnesses):
 ;;;   - keri-toad-for-count  (pure — all threshold bands + error path)
 ;;;   - keri-get-available-witnesses  (parses /config iurls, dedupes by EID)
 ;;;   - keri-get-member-oobi  (GET /identifiers/{aid}/oobi)
@@ -10,9 +10,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keri/test-keri-witnesses.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri witnesses)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri witnesses)
              (web server)
              (web request)
              (web response)

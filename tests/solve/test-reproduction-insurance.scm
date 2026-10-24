@@ -2,7 +2,7 @@
 ;;; test-reproduction-insurance.scm — the two ways a plan can refuse to leave
 ;;; someone short, and what each costs.
 ;;;
-;;; Spec: docs/playnet.typ §Reproduction labour ("Insurance … enters harmony as a
+;;; Spec: docs/localchimera.typ §Reproduction labour ("Insurance … enters harmony as a
 ;;;       HARD possibility-tension rather than a soft desire … the fragility
 ;;;       profiles") + §possibility-tensions.
 ;;;
@@ -35,9 +35,9 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-reproduction-insurance.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet test planner worked-example) (playnet solve world)
-             (playnet solve solver)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera test planner worked-example) (localchimera solve world)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
 

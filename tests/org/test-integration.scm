@@ -11,12 +11,12 @@
 ;;; Uses mock scope-root + account-store and explicit credential predicates;
 ;;; no KERIA dependency.
 
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness))
-(use-modules (playnet scope ballot-store) (playnet utils store-utils) (srfi srfi-1))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet scope ballot-store) (playnet boot governance))
-(use-modules (playnet scope ballot-store))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope ballot-store) (localchimera utils store-utils) (srfi srfi-1))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera scope ballot-store) (localchimera boot governance))
+(use-modules (localchimera scope ballot-store))
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap))

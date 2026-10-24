@@ -16,9 +16,9 @@
 ;;;
 ;;; Run: guile -L module tests/ai/test-tee-verification.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (goblins) (goblins vat) (goblins actor-lib methods)
-             (playnet ai llm) (json)
+             (localchimera ai llm) (json)
              (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
 ;;; ─── a fake key-pool: canned JSON per endpoint, set per-test ───────────────

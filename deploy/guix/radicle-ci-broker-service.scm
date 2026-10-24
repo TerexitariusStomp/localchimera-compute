@@ -21,16 +21,16 @@
             radicle-ci-broker-ssh-agent-shepherd-service))
 
 ;; Our seed node's ID — the broker only acts on events from this node.
-(define %playnet-node-id
+(define %localchimera-node-id
   "z6MkhQDgcmqB3koEasUZe3U7hVQM4QjQdTYn2ZQHJ9xSSh93")
 
 ;; Native adapter config (state dir for HTML/JSON reports, log, report base URL).
 ;;
-;; The log does NOT go in /var/log/playnet, which is `drwxr-x--- root root`. The
+;; The log does NOT go in /var/log/localchimera, which is `drwxr-x--- root root`. The
 ;; broker's own log can live there because shepherd opens `#:log-file` as root
-;; before dropping to the playnet user; the adapter is a CHILD the broker spawns
-;; as playnet, so it must open its own log and cannot — not even into a subdir,
-;; since mode 750 denies playnet the traverse. It exits 2 before emitting its
+;; before dropping to the localchimera user; the adapter is a CHILD the broker spawns
+;; as localchimera, so it must open its own log and cannot — not even into a subdir,
+;; since mode 750 denies localchimera the traverse. It exits 2 before emitting its
 ;; first protocol message, which the broker reports only as
 ;;
 ;;     no first response message
@@ -44,31 +44,31 @@
 (define %native-ci-config
   (plain-file "native-ci.yaml"
               (string-append
-               "state: /var/lib/playnet/ci-reports\n"
-               "log: /var/lib/playnet/ci-logs/native-ci.log\n"
-               "base_url: https://playnet.earth/ci/\n")))
+               "state: /var/lib/localchimera/ci-reports\n"
+               "log: /var/lib/localchimera/ci-logs/native-ci.log\n"
+               "base_url: https://localchimera.earth/ci/\n")))
 
 ;; Broker config: one `native` adapter, triggered on this node's default-branch
 ;; updates and patch create/update, only for repos carrying .radicle/native.yaml.
 (define %ci-broker-config
   (mixed-text-file
    "ci-broker.yaml"
-   "db: /var/lib/playnet/radicle/ci-broker.db\n"
-   "report_dir: /var/lib/playnet/ci-reports\n"
+   "db: /var/lib/localchimera/radicle/ci-broker.db\n"
+   "report_dir: /var/lib/localchimera/ci-reports\n"
    "queue_len_interval: 1min\n"
    "adapters:\n"
    "  native:\n"
    "    command: " (file-append radicle-native-ci "/bin/radicle-native-ci") "\n"
    "    env:\n"
    "      RADICLE_NATIVE_CI: " %native-ci-config "\n"
-   "      PATH: /run/current-system/profile/bin:/var/lib/playnet/radicle/.radicle/bin\n"
+   "      PATH: /run/current-system/profile/bin:/var/lib/localchimera/radicle/.radicle/bin\n"
    "    sensitive_env: {}\n"
    "triggers:\n"
    "  - adapter: native\n"
    "    filters:\n"
    "    - !And\n"
    "      - !HasFile \".radicle/native.yaml\"\n"
-   "      - !Node " %playnet-node-id "\n"
+   "      - !Node " %localchimera-node-id "\n"
    "      - !Or\n"
    "        - !DefaultBranch\n"
    "        - !PatchCreated\n"
@@ -101,7 +101,7 @@
 ;; tracked pid) alive exactly as long as the agent lives, and the TERM trap
 ;; forwards shepherd's stop signal to the actual agent process.
 (define %ci-broker-ssh-agent-sock
-  "/var/lib/playnet/radicle/ci-broker-agent.sock")
+  "/var/lib/localchimera/radicle/ci-broker-agent.sock")
 
 (define %ci-broker-ssh-agent-askpass
   (program-file
@@ -126,7 +126,7 @@
    "while [ ! -S \"$SOCK\" ] && [ \"$i\" -lt 100 ]; do sleep 0.1; i=$((i + 1)); done\n"
    "SSH_AUTH_SOCK=\"$SOCK\" SSH_ASKPASS=" %ci-broker-ssh-agent-askpass
    " SSH_ASKPASS_REQUIRE=force setsid ssh-add "
-   "/var/lib/playnet/radicle/.radicle/keys/radicle < /dev/null\n"
+   "/var/lib/localchimera/radicle/.radicle/keys/radicle < /dev/null\n"
    "wait \"$AGENT_PID\"\n"))
 
 (define (radicle-ci-broker-ssh-agent-shepherd-service)
@@ -140,9 +140,9 @@ SSH_AUTH_SOCK at — see the module comment above for the incident this fixes."
    (start
     #~(make-forkexec-constructor
        (list "/run/current-system/profile/bin/sh" #$%ci-broker-ssh-agent-script)
-       #:user "playnet"
+       #:user "localchimera"
        #:group "users"
-       #:log-file "/var/log/playnet/ci-broker-ssh-agent.log"
+       #:log-file "/var/log/localchimera/ci-broker-ssh-agent.log"
        #:environment-variables
        (list "PATH=/run/current-system/profile/bin:/run/current-system/profile/sbin")))
    (stop #~(make-kill-destructor))
@@ -175,7 +175,7 @@ SSH_AUTH_SOCK at — see the module comment above for the incident this fixes."
    "radicle-ci-broker-start"
    #~(begin
        (let wait ((n 0))
-         (unless (or (file-exists? "/var/lib/playnet/radicle/.radicle/node/control.sock")
+         (unless (or (file-exists? "/var/lib/localchimera/radicle/.radicle/node/control.sock")
                      (>= n 180))
            (sleep 1)
            (wait (+ n 1))))
@@ -186,7 +186,7 @@ SSH_AUTH_SOCK at — see the module comment above for the incident this fixes."
 
 (define (radicle-ci-broker-shepherd-service)
   "Return the shepherd-service running `cib process-events`. Requires the
-radicle-node (whose events it consumes). Runs as the playnet user with the same
+radicle-node (whose events it consumes). Runs as the localchimera user with the same
 RAD_HOME as the node, and waits for that node's control socket before starting
 — see %ci-broker-wrapper."
   (shepherd-service
@@ -195,27 +195,27 @@ RAD_HOME as the node, and waits for that node's control socket before starting
    (documentation "Radicle CI broker — native CI on branches/patches")
    (start
     #~(begin
-        ;; Report, log + DB dirs must exist and be writable by playnet — the
+        ;; Report, log + DB dirs must exist and be writable by localchimera — the
         ;; adapter runs as that user and opens both itself.
         (for-each (lambda (d)
                     (unless (file-exists? d) (mkdir d))
-                    (chown d (passwd:uid (getpwnam "playnet")) (group:gid (getgrnam "users"))))
-                  '("/var/lib/playnet/ci-reports"
-                    "/var/lib/playnet/ci-logs"))
+                    (chown d (passwd:uid (getpwnam "localchimera")) (group:gid (getgrnam "users"))))
+                  '("/var/lib/localchimera/ci-reports"
+                    "/var/lib/localchimera/ci-logs"))
         (make-forkexec-constructor
          (list #$(%ci-broker-wrapper))
-         #:user "playnet"
+         #:user "localchimera"
          #:group "users"
-         #:log-file "/var/log/playnet/ci-broker.log"
+         #:log-file "/var/log/localchimera/ci-broker.log"
          #:environment-variables
-         (list "HOME=/var/lib/playnet/radicle"
-               "RAD_HOME=/var/lib/playnet/radicle/.radicle"
+         (list "HOME=/var/lib/localchimera/radicle"
+               "RAD_HOME=/var/lib/localchimera/radicle/.radicle"
                ;; The signer needs a live agent — see the ssh-agent service
                ;; above (its own module comment has the incident this fixes).
                ;; Literal, not spliced from %ci-broker-ssh-agent-sock — same
                ;; reason as the control-socket path below: a bare string is
                ;; not a lowerable gexp object.
-               "SSH_AUTH_SOCK=/var/lib/playnet/radicle/ci-broker-agent.sock"
+               "SSH_AUTH_SOCK=/var/lib/localchimera/radicle/ci-broker-agent.sock"
                "PATH=/run/current-system/profile/bin:/run/current-system/profile/sbin"))))
    (stop #~(make-kill-destructor))
    (respawn? #t)))

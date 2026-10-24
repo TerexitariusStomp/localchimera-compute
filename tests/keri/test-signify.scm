@@ -9,8 +9,8 @@
 ;;; Run via the dev-test guix shell so libblake3.so is available:
 ;;;   make test-signify
 
-(use-modules (playnet test harness)
-             (playnet keri signify)
+(use-modules (localchimera test harness)
+             (localchimera keri signify)
              (rnrs bytevectors)
              (ice-9 format))
 
@@ -203,7 +203,7 @@
   (check "SAID is 44 chars"
          (= 44 (string-length said)))
   (check "SAID round-trips via cesr-qb64->bytes"
-         (= 32 (bytevector-length ((@ (playnet keri cesr) cesr-qb64->bytes) said)))))
+         (= 32 (bytevector-length ((@ (localchimera keri cesr) cesr-qb64->bytes) said)))))
 
 ;;; Same input → same SAID (determinism)
 (check "said-of deterministic"
@@ -293,7 +293,7 @@
            (string=? "AA" (substring sig-q64 0 2)))
     ;; decoded length: remove "AA" prefix, base64url back to 64 bytes
     (check "sign-event qb64 decodes to 64 bytes"
-           (let ((decoded ((@ (playnet keri cesr) cesr-qb64->bytes) sig-q64)))
+           (let ((decoded ((@ (localchimera keri cesr) cesr-qb64->bytes) sig-q64)))
              (= 64 (bytevector-length decoded))))))
 
 ;;; Verify the signature end-to-end using the pubkey from the keypair.
@@ -401,7 +401,7 @@
          (start   (+ (string-contains sig-hdr "signify=\"") 9))
          (end     (string-contains sig-hdr "\"" start))
          (q64     (substring sig-hdr start end))
-         (sig     ((@ (playnet keri cesr) cesr-qb64->bytes) q64))
+         (sig     ((@ (localchimera keri cesr) cesr-qb64->bytes) q64))
          (res     (assq-ref hdrs 'Signify-Resource))
          (ts      (assq-ref hdrs 'Signify-Timestamp))
          ;; re-parse created from Signature-Input — just grep
@@ -426,7 +426,7 @@
 
 (let* ((built1 (call-with-values
                  (lambda ()
-                   (build-acdc "E_issuer" "E_registry" "playnet-test/v1"
+                   (build-acdc "E_issuer" "E_registry" "localchimera-test/v1"
                                "E_holder" '(("foo" . "bar"))))
                  (lambda (json said alist) (list json said alist))))
        (json1  (car  built1))
@@ -442,11 +442,11 @@
 (let* ((edges  (list (cons 'issuer-phc
                            `((n . "E_target_phc_said")
                              (o . I2I)
-                             (s . "playnet-personhood/v1")))))
+                             (s . "localchimera-personhood/v1")))))
        (built2 (call-with-values
                  (lambda ()
                    (build-acdc "E_issuer" "E_registry"
-                               "playnet-relationship/v1" "E_holder"
+                               "localchimera-relationship/v1" "E_holder"
                                '(("relationship-type" . "trust"))
                                #:edges edges))
                  (lambda (json said alist) (list json said alist))))
@@ -464,7 +464,7 @@
     (check-pred "edge.o = \"I2I\" (stringified for JSON)"
                 (equal? "I2I" (assoc-ref edge "o")))
     (check-pred "edge.s = target schema"
-                (equal? "playnet-personhood/v1" (assoc-ref edge "s"))))
+                (equal? "localchimera-personhood/v1" (assoc-ref edge "s"))))
   (check-pred "edges ACDC JSON contains the serialized edge block"
               (and (string-contains json2 "\"e\":")
                    (string-contains json2 "\"issuer-phc\":")
@@ -474,7 +474,7 @@
 (let* ((said-a (call-with-values
                  (lambda ()
                    (build-acdc "E_issuer" "E_registry"
-                               "playnet-relationship/v1" "E_holder"
+                               "localchimera-relationship/v1" "E_holder"
                                '(("relationship-type" . "trust"))
                                #:edges (list (cons 'issuer-phc
                                                    '((n . "E_a") (o . I2I))))))
@@ -482,7 +482,7 @@
        (said-b (call-with-values
                  (lambda ()
                    (build-acdc "E_issuer" "E_registry"
-                               "playnet-relationship/v1" "E_holder"
+                               "localchimera-relationship/v1" "E_holder"
                                '(("relationship-type" . "trust"))
                                #:edges (list (cons 'issuer-phc
                                                    '((n . "E_b") (o . I2I))))))

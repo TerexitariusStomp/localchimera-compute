@@ -13,7 +13,7 @@
 ;;;
 ;;; ── What this suite proves ──────────────────────────────────────────────────
 ;;;
-;;; The bridge now ships real Signify auth (module/playnet/keri/signify.scm):
+;;; The bridge now ships real Signify auth (module/localchimera/keri/signify.scm):
 ;;;   - bran → HKDF → Ed25519 keypair (libsodium FFI)
 ;;;   - controller AID = blake3 SAID of the inception event
 ;;;   - /boot body: { icp, sig, stem, pidx, tier } per signify-ts
@@ -34,11 +34,11 @@
 ;;;            green-light criteria — failure means the bridge is
 ;;;            wrong on the wire, not that we expected a gap.
 
-(use-modules (playnet test harness)
-             (playnet test keri-integration)
-             (playnet keri bridge)
-             (playnet keri signify)
-             (playnet keri cesr)
+(use-modules (localchimera test harness)
+             (localchimera test keri-integration)
+             (localchimera keri bridge)
+             (localchimera keri signify)
+             (localchimera keri cesr)
              (goblins utils crypto)
              (ice-9 format)
              (ice-9 match)
@@ -300,7 +300,7 @@
            (keria-k0  (vector-ref (assoc-ref state "k") 0))
            (alice-kp   (controller->aid-signing-keypair
                         (signify-context-keypair
-                         (@@ (playnet keri bridge) *signify-ctx*))
+                         (@@ (localchimera keri bridge) *signify-ctx*))
                         "alice"))
            (local-k0   (cesr-bytes->qb64 "D" (ed25519-keypair-public alice-kp))))
       ;; The key KERIA stored in the icp event must match what we
@@ -321,7 +321,7 @@
   (lambda () (keri-create-aid "bob")))
 (check-call "acdc-create-registry on alice"
   (lambda ()
-    (let* ((cred-mod   (resolve-interface '(playnet keri credentials)))
+    (let* ((cred-mod   (resolve-interface '(localchimera keri credentials)))
            (create-reg (module-ref cred-mod 'acdc-create-registry))
            (rid        (create-reg "alice" "intreg")))
       (unless rid

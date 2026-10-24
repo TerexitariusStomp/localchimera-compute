@@ -7,42 +7,42 @@
 # Reuses the deploy SSH key (already routed through Tor).
 #
 # Usage:
-#   PLAYNET_HOST=playnet.onion bash deploy/scripts/backup-pull.sh
+#   LOCALCHIMERA_HOST=localchimera.onion bash deploy/scripts/backup-pull.sh
 #
 # Defaults:
-#   PLAYNET_HOST            — required (server hostname or .onion)
-#   PLAYNET_BACKUP_USER     — deploy
-#   PLAYNET_BACKUP_REMOTE   — /var/lib/playnet/backups/
-#   PLAYNET_BACKUP_LOCAL    — $HOME/playnet-backups
+#   LOCALCHIMERA_HOST            — required (server hostname or .onion)
+#   LOCALCHIMERA_BACKUP_USER     — deploy
+#   LOCALCHIMERA_BACKUP_REMOTE   — /var/lib/localchimera/backups/
+#   LOCALCHIMERA_BACKUP_LOCAL    — $HOME/localchimera-backups
 #
 # Encrypted blobs only — your YubiKey or age key never leaves the
 # workstation. To restore, run `backup-restore.sh` against any blob in
-# $PLAYNET_BACKUP_LOCAL.
+# $LOCALCHIMERA_BACKUP_LOCAL.
 
 set -euo pipefail
 
-: "${PLAYNET_HOST:?Set PLAYNET_HOST=server.onion (or IP)}"
-: "${PLAYNET_BACKUP_USER:=deploy}"
-: "${PLAYNET_BACKUP_REMOTE:=/var/lib/playnet/backups/}"
-: "${PLAYNET_BACKUP_LOCAL:=$HOME/playnet-backups}"
+: "${LOCALCHIMERA_HOST:?Set LOCALCHIMERA_HOST=server.onion (or IP)}"
+: "${LOCALCHIMERA_BACKUP_USER:=deploy}"
+: "${LOCALCHIMERA_BACKUP_REMOTE:=/var/lib/localchimera/backups/}"
+: "${LOCALCHIMERA_BACKUP_LOCAL:=$HOME/localchimera-backups}"
 
-mkdir -p "$PLAYNET_BACKUP_LOCAL"
-chmod 700 "$PLAYNET_BACKUP_LOCAL"
+mkdir -p "$LOCALCHIMERA_BACKUP_LOCAL"
+chmod 700 "$LOCALCHIMERA_BACKUP_LOCAL"
 
 echo "Pulling encrypted snapshots:"
-echo "  $PLAYNET_BACKUP_USER@$PLAYNET_HOST:$PLAYNET_BACKUP_REMOTE"
-echo "  → $PLAYNET_BACKUP_LOCAL"
+echo "  $LOCALCHIMERA_BACKUP_USER@$LOCALCHIMERA_HOST:$LOCALCHIMERA_BACKUP_REMOTE"
+echo "  → $LOCALCHIMERA_BACKUP_LOCAL"
 echo
 
 rsync -av --partial --info=progress2 \
     -e "ssh -o ConnectTimeout=30" \
-    "$PLAYNET_BACKUP_USER@$PLAYNET_HOST:$PLAYNET_BACKUP_REMOTE" \
-    "$PLAYNET_BACKUP_LOCAL/"
+    "$LOCALCHIMERA_BACKUP_USER@$LOCALCHIMERA_HOST:$LOCALCHIMERA_BACKUP_REMOTE" \
+    "$LOCALCHIMERA_BACKUP_LOCAL/"
 
 echo
 echo "Done. Latest snapshot:"
-ls -lh "$PLAYNET_BACKUP_LOCAL/latest.tar.age" 2>/dev/null || \
+ls -lh "$LOCALCHIMERA_BACKUP_LOCAL/latest.tar.age" 2>/dev/null || \
     echo "  (no latest.tar.age — check rsync output)"
 echo
 echo "To inspect what's in the latest snapshot (no writes):"
-echo "  bash deploy/scripts/backup-restore.sh $PLAYNET_BACKUP_LOCAL/latest.tar.age"
+echo "  bash deploy/scripts/backup-restore.sh $LOCALCHIMERA_BACKUP_LOCAL/latest.tar.age"

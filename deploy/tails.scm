@@ -859,7 +859,7 @@ profile icedove /run/current-system/profile/bin/icedove flags=(attach_disconnect
                (tor-ok? (zero? status))
                (message
                 (string-append
-                 "Welcome to playnet-live\n\n"
+                 "Welcome to localchimera-live\n\n"
                  "Security features active:\n"
                  "  ✓ All traffic routed through Tor\n"
                  "  ✓ MAC address randomized\n"
@@ -881,7 +881,7 @@ profile icedove /run/current-system/profile/bin/icedove flags=(attach_disconnect
                  "  firejail torbrowser      Sandboxed Tor Browser\n")))
           (system* #$(file-append zenity "/bin/zenity")
                    "--info"
-                   "--title=playnet-live"
+                   "--title=localchimera-live"
                    (string-append "--text=" message)
                    "--width=500")))))
 

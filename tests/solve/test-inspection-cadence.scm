@@ -23,7 +23,7 @@
 ;;;     conformances and drops the marginal ones — the heterogeneous allocation a
 ;;;     flat a* can't give.
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/solve/test-inspection-cadence.scm
+;;; Run:  guile -L module/localchimera/planner tests/solve/test-inspection-cadence.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 

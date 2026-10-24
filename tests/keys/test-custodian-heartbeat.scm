@@ -1,11 +1,11 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-custodian-heartbeat.scm
 
-;; the host crypto backend: loading (playnet keri signify) installs it
-(use-modules ((playnet keri signify) #:select ()))
-(use-modules (playnet test harness)
-             (playnet keys bran-custody) (playnet credentials audit) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet keys bran-custodians)
+;; the host crypto backend: loading (localchimera keri signify) installs it
+(use-modules ((localchimera keri signify) #:select ()))
+(use-modules (localchimera test harness)
+             (localchimera keys bran-custody) (localchimera credentials audit) (localchimera keri acdc) (localchimera keri acdc) (localchimera keri acdc-store)
+             (localchimera keys bran-custodians)
              (rnrs bytevectors)
              (goblins))
 
@@ -42,7 +42,7 @@
 
 (check "healthy: no incoherence-alert emitted"
        (null? (with-vat vat
-                ($ %store 'by-schema *schema-playnet-incoherence-alert*))))
+                ($ %store 'by-schema *schema-localchimera-incoherence-alert*))))
 
 ;; ── Simulate failures by reducing the custodian list ───────────────
 ;; Drop 3 custodians (keep 2) — below the threshold of 3.
@@ -66,12 +66,12 @@
 (check "degraded: incoherence-alert emitted"
        (= 1 (length (with-vat vat
                       ($ %store 'by-schema
-                         *schema-playnet-incoherence-alert*)))))
+                         *schema-localchimera-incoherence-alert*)))))
 
 ;; ── Inspect the alert payload ──────────────────────────────────────
 
 (let ((alerts (with-vat vat
-                ($ %store 'by-schema *schema-playnet-incoherence-alert*))))
+                ($ %store 'by-schema *schema-localchimera-incoherence-alert*))))
   (check "alert has custody-shares-unreachable in violations"
          (let* ((cred (car alerts))
                 (viols (cred-claim cred 'violations)))

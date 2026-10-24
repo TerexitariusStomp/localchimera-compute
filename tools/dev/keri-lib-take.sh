@@ -1,38 +1,38 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# keri-lib-take.sh — carry a contributor's commits from playnet-keri into the core.
+# keri-lib-take.sh — carry a contributor's commits from localchimera-keri into the core.
 #
 # The KERI + OpenVTC library is developed in the core and cut out as
-# playnet-keri (tools/dev/publish-keri-lib.sh). A contributor works in the cut and
+# localchimera-keri (tools/dev/publish-keri-lib.sh). A contributor works in the cut and
 # opens a Radicle patch there. This brings that work home: the cut keeps the
 # core's paths, so each commit applies as it stands, author and date intact,
 # and the next `make keri-lib-publish` carries it back out.
 #
-#   cd ../playnet-keri && rad patch checkout <patch-id>      # → branch patch/<id>
+#   cd ../localchimera-keri && rad patch checkout <patch-id>      # → branch patch/<id>
 #   tools/dev/keri-lib-take.sh main..patch/<id>
 #
 # What it holds to:
 #   - every path the commits touch is the library's own (the published path
 #     set, or a new file under its directories); anything else is refused —
-#     a patch to playnet-keri has no say over the rest of the core
-#   - the cut's README.md is the core's module/playnet/keri/README.md, and its
-#     guix/gnu/packages/playnet-keri.scm the core's deploy/guix/gnu/packages/playnet-keri.scm; the channel
+#     a patch to localchimera-keri has no say over the rest of the core
+#   - the cut's README.md is the core's module/localchimera/keri/README.md, and its
+#     guix/gnu/packages/localchimera-keri.scm the core's deploy/guix/gnu/packages/localchimera-keri.scm; the channel
 #     files (.guix-channel, .guix-authorizations) belong to the maintainers and
 #     are refused like any path outside the library
 #   - the commits are proven first in a scratch worktree at the core's HEAD:
 #     applied, the import gate run, every shipped suite run in the library's
 #     pure Guix shell; the core's own tree is touched only after that passes
 #
-# Usage:  tools/dev/keri-lib-take.sh <rev-range in the playnet-keri clone>
-# Env:    PLAYNET_KERI_DIR   the clone (default ../playnet-keri)
+# Usage:  tools/dev/keri-lib-take.sh <rev-range in the localchimera-keri clone>
+# Env:    LOCALCHIMERA_KERI_DIR   the clone (default ../localchimera-keri)
 #         KERI_TAKE_SKIP_TESTS=1   gate only (the suites take a few minutes)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-KERI="${PLAYNET_KERI_DIR:-$ROOT/../playnet-keri}"
-RANGE="${1:?usage: keri-lib-take.sh <rev-range in the playnet-keri clone, e.g. main..patch/abc123>}"
+KERI="${LOCALCHIMERA_KERI_DIR:-$ROOT/../localchimera-keri}"
+RANGE="${1:?usage: keri-lib-take.sh <rev-range in the localchimera-keri clone, e.g. main..patch/abc123>}"
 
-[ -d "$KERI/.git" ] || { echo "[take] no playnet-keri clone at $KERI"; exit 1; }
+[ -d "$KERI/.git" ] || { echo "[take] no localchimera-keri clone at $KERI"; exit 1; }
 N=$(git -C "$KERI" rev-list --count --no-merges "$RANGE")
 [ "$N" -gt 0 ] || { echo "[take] $RANGE names no commits"; exit 1; }
 echo "[take] $N commit(s) in $RANGE"
@@ -40,8 +40,8 @@ git -C "$KERI" log --no-merges --reverse --format='         %h %an — %s' "$RAN
 
 # ── the library's own paths ──────────────────────────────────────────────────
 mapfile -t OWN < <(cd "$ROOT" && guile --no-auto-compile -e main -s tools/lint/lint-keri-lib.scm --manifest)
-OWN_DIRS=(module/playnet/keri/ tests/keri/ docs/keri/ docs/first-person/)
-OWN_FILES=(README.md guix/gnu/packages/playnet-keri.scm docs/planning/identity/openvtc-parity.md docs/planning/identity/keri-openvtc-library-split.md
+OWN_DIRS=(module/localchimera/keri/ tests/keri/ docs/keri/ docs/first-person/)
+OWN_FILES=(README.md guix/gnu/packages/localchimera-keri.scm docs/planning/identity/openvtc-parity.md docs/planning/identity/keri-openvtc-library-split.md
            tools/lint/openvtc-parity-check.sh tools/lint/lint-keri-lib.scm deploy/manifests/keri-lib-manifest.scm)
 
 owned() {
@@ -63,12 +63,12 @@ cleanup() { git -C "$ROOT" worktree remove --force "$WORK/proof" >/dev/null 2>&1
 trap cleanup EXIT
 git -C "$KERI" format-patch --quiet --no-merges --stdout "$RANGE" \
   | sed -E \
-      -e 's#^(diff --git) a/README\.md b/README\.md$#\1 a/module/playnet/keri/README.md b/module/playnet/keri/README.md#' \
-      -e 's#^(---) a/README\.md$#\1 a/module/playnet/keri/README.md#' \
-      -e 's#^(\+\+\+) b/README\.md$#\1 b/module/playnet/keri/README.md#' \
-      -e 's#^(diff --git) a/guix/gnu/packages/playnet-keri\.scm b/guix/gnu/packages/playnet-keri\.scm$#\1 a/deploy/guix/gnu/packages/playnet-keri.scm b/deploy/guix/gnu/packages/playnet-keri.scm#' \
-      -e 's#^(---) a/guix/gnu/packages/playnet-keri\.scm$#\1 a/deploy/guix/gnu/packages/playnet-keri.scm#' \
-      -e 's#^(\+\+\+) b/guix/gnu/packages/playnet-keri\.scm$#\1 b/deploy/guix/gnu/packages/playnet-keri.scm#' \
+      -e 's#^(diff --git) a/README\.md b/README\.md$#\1 a/module/localchimera/keri/README.md b/module/localchimera/keri/README.md#' \
+      -e 's#^(---) a/README\.md$#\1 a/module/localchimera/keri/README.md#' \
+      -e 's#^(\+\+\+) b/README\.md$#\1 b/module/localchimera/keri/README.md#' \
+      -e 's#^(diff --git) a/guix/gnu/packages/localchimera-keri\.scm b/guix/gnu/packages/localchimera-keri\.scm$#\1 a/deploy/guix/gnu/packages/localchimera-keri.scm b/deploy/guix/gnu/packages/localchimera-keri.scm#' \
+      -e 's#^(---) a/guix/gnu/packages/localchimera-keri\.scm$#\1 a/deploy/guix/gnu/packages/localchimera-keri.scm#' \
+      -e 's#^(\+\+\+) b/guix/gnu/packages/localchimera-keri\.scm$#\1 b/deploy/guix/gnu/packages/localchimera-keri.scm#' \
   > "$WORK/take.mbox"
 
 # ── prove it away from the core's own tree ──────────────────────────────────
@@ -97,4 +97,4 @@ git -C "$ROOT" am --quiet --3way "$WORK/take.mbox" || {
 echo "[take] landed:"
 git -C "$ROOT" log --reverse --format='         %h %an — %s' "HEAD~$N..HEAD"
 echo "[take] next: make ship, then make keri-lib-publish (the cut carries these out under their authors),"
-echo "       then close the patch in playnet-keri naming the core commit."
+echo "       then close the patch in localchimera-keri naming the core commit."

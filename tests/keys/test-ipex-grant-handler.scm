@@ -11,16 +11,16 @@
 ;;;   - credential already admitted     → no admit, no spurn
 ;;;   - apply/offer/agree stubs         → always spurn
 ;;;
-;;; The handler itself lives in (playnet federation keria-notifications) but is
+;;; The handler itself lives in (localchimera federation keria-notifications) but is
 ;;; not exported; we re-resolve it via `module-ref` for testing.
 ;;;
 ;;; Run: guile -L module -L tests tests/keys/test-ipex-grant-handler.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri credentials)
-             (playnet federation ipex-policy)
-             (playnet credentials membership)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri credentials)
+             (localchimera federation ipex-policy)
+             (localchimera credentials membership)
              (web server)
              (web request)
              (web response)
@@ -30,7 +30,7 @@
              (json))
 
 ;; Pull the (non-exported) handler symbols out of the notifications module.
-(define notif-mod (resolve-module '(playnet federation keria-notifications)))
+(define notif-mod (resolve-module '(localchimera federation keria-notifications)))
 (define handle-ipex-grant (module-ref notif-mod 'handle-ipex-grant))
 (define handle-ipex-apply (module-ref notif-mod 'handle-ipex-apply))
 
@@ -43,11 +43,11 @@
 (define %issuee-aid    "EIssuee000000000000000000000000000000000000")
 (define %grant-said    "EGrant000000000000000000000000000000000000A")
 (define %cred-said     "ECred0000000000000000000000000000000000000A")
-(define %unknown-schema "playnet-not-a-real-schema/v999")
+(define %unknown-schema "localchimera-not-a-real-schema/v999")
 
 (define %posts '())   ; list of (path . body-alist) in reverse order
 (define %credential-exists? #f)
-(define %fixed-schema *schema-playnet-membership*)  ; default informational
+(define %fixed-schema *schema-localchimera-membership*)  ; default informational
 
 (define (with-json code body-alist)
   (values (build-response
@@ -102,7 +102,7 @@
      ;; Identifier name → AID (needed by exchange-body builder)
      ((string-prefix? "/identifiers/" path)
       (with-json 200
-        `(("name" . "playnet-governance")
+        `(("name" . "localchimera-governance")
           ("prefix" . ,%issuee-aid)
           ("state" . (("d" . ,%issuee-aid) ("s" . "0")
                       ("i" . ,%issuee-aid)
@@ -130,7 +130,7 @@
 
 (reset-posts!)
 (set! %credential-exists? #f)
-(set! %fixed-schema *schema-playnet-membership*)
+(set! %fixed-schema *schema-localchimera-membership*)
 (catch #t
   (lambda ()
     (handle-ipex-grant "/exn/ipex/grant" %grant-said
@@ -167,7 +167,7 @@
 
 (reset-posts!)
 (set! %credential-exists? #f)
-(set! %fixed-schema *schema-playnet-federation-membership*)
+(set! %fixed-schema *schema-localchimera-federation-membership*)
 (catch #t
   (lambda ()
     (handle-ipex-grant "/exn/ipex/grant" %grant-said
@@ -185,7 +185,7 @@
 
 (reset-posts!)
 (set! %credential-exists? #t)
-(set! %fixed-schema *schema-playnet-membership*)
+(set! %fixed-schema *schema-localchimera-membership*)
 (catch #t
   (lambda ()
     (handle-ipex-grant "/exn/ipex/grant" %grant-said
@@ -204,7 +204,7 @@
 
 (reset-posts!)
 (set! %credential-exists? #f)
-(set! %fixed-schema *schema-playnet-membership*)
+(set! %fixed-schema *schema-localchimera-membership*)
 (catch #t
   (lambda ()
     (handle-ipex-apply "/exn/ipex/apply" %grant-said

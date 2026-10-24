@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-bridge.scm — KERI bridge tests with mock KERIA
 ;;;
-;;; Exercises the critical paths in (playnet keri bridge):
+;;; Exercises the critical paths in (localchimera keri bridge):
 ;;; - Agent boot + connect
 ;;; - AID creation
 ;;; - OOBI resolution
@@ -12,8 +12,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keri/test-keri-bridge.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
              (goblins utils crypto)
              (web server)
              (web request)

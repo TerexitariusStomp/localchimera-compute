@@ -4,7 +4,7 @@
 ;;; Runs server/fleet-keeper.scm: the process that carries a host the
 ;;; reconciler has recorded to a running, encrypted Guix System, and sends
 ;;; each fleet host its disk passphrase whenever it waits in its initrd
-;;; ((playnet fleet keeper), (playnet fleet child)).
+;;; ((localchimera fleet keeper), (localchimera fleet child)).
 ;;;
 ;;; It runs as the account that holds the provisioning key. Its PATH carries
 ;;; ssh, ssh-keygen, scp and torsocks; with `tor? #t` every SSH connection
@@ -15,7 +15,7 @@
 ;;;   (service fleet-keeper-service-type)
 ;;;
 ;;;   herd status fleet-keeper
-;;;   tail -f /var/log/playnet/fleet-keeper.log
+;;;   tail -f /var/log/localchimera/fleet-keeper.log
 
 (define-module (fleet-keeper-service)
   #:use-module (gnu services)
@@ -35,15 +35,15 @@
   fleet-keeper-configuration make-fleet-keeper-configuration
   fleet-keeper-configuration?
   (user        fleet-keeper-configuration-user
-               (default "playnet"))
+               (default "localchimera"))
   (script      fleet-keeper-configuration-script
-               (default "/home/playnet/playnet-repo/server/fleet-keeper.scm"))
+               (default "/home/localchimera/localchimera-repo/server/fleet-keeper.scm"))
   (module-path fleet-keeper-configuration-module-path
-               (default "/home/playnet/playnet-repo/module"))
+               (default "/home/localchimera/localchimera-repo/module"))
   (deploy-dir  fleet-keeper-configuration-deploy-dir
-               (default "/home/playnet/playnet-repo/deploy"))
+               (default "/home/localchimera/localchimera-repo/deploy"))
   (data-dir    fleet-keeper-configuration-data-dir
-               (default "/var/lib/playnet"))
+               (default "/var/lib/localchimera"))
   ;; Seconds between ticks. Each tick is one SSH attempt per fleet host.
   (interval    fleet-keeper-configuration-interval
                (default 120))
@@ -72,7 +72,7 @@ fleet host its disk passphrase when it waits in its initrd.")
                       "-s" #$script)
                 #:user #$user
                 #:group "users"
-                #:log-file "/var/log/playnet/fleet-keeper.log"
+                #:log-file "/var/log/localchimera/fleet-keeper.log"
                 #:environment-variables
                 (list (string-append "GUILE_LOAD_PATH="
                                      "/run/current-system/profile/share/guile/site/3.0:"
@@ -85,15 +85,15 @@ fleet host its disk passphrase when it waits in its initrd.")
                        #$(file-append coreutils "/bin") ":"
                        #$(file-append bash-minimal "/bin") ":"
                        "/run/current-system/profile/bin")
-                      (string-append "PLAYNET_DATA_DIR=" #$data-dir)
-                      (string-append "PLAYNET_DEPLOY_DIR=" #$deploy-dir)
-                      (string-append "PLAYNET_KEEPER_INTERVAL="
+                      (string-append "LOCALCHIMERA_DATA_DIR=" #$data-dir)
+                      (string-append "LOCALCHIMERA_DEPLOY_DIR=" #$deploy-dir)
+                      (string-append "LOCALCHIMERA_KEEPER_INTERVAL="
                                      #$(number->string interval))
-                      (string-append "PLAYNET_KEEPER_SSH_PREFIX="
+                      (string-append "LOCALCHIMERA_KEEPER_SSH_PREFIX="
                                      #$(if tor? "torsocks" ""))
                       ;; ssh reads the account's home from passwd; the
                       ;; scripts the keeper runs read HOME.
-                      "HOME=/home/playnet")))
+                      "HOME=/home/localchimera")))
       (stop #~(make-kill-destructor))
       (respawn? #t)
       (auto-start? #t)))))

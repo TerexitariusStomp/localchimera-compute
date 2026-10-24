@@ -22,18 +22,18 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-async.scm
 
-(use-modules (playnet solve federation-solve))
-(use-modules (playnet test harness)
-             (playnet federation async)
-             (playnet solve admm-link)
-             ((playnet federation crossing) #:select (make-tuning make-crossing crossing-snapshot crossing-restore!))
-             ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
-             (playnet solve solver)
+(use-modules (localchimera solve federation-solve))
+(use-modules (localchimera test harness)
+             (localchimera federation async)
+             (localchimera solve admm-link)
+             ((localchimera federation crossing) #:select (make-tuning make-crossing crossing-snapshot crossing-restore!))
+             ((localchimera solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
+             (localchimera solve solver)
              (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet test planner federation-wire-fixture))
+(use-modules (localchimera test planner federation-wire-fixture))
 (load (string-append (dirname (dirname (dirname (current-filename))))
-                     "/module/playnet/test/planner/federated-fixtures.scm"))
+                     "/module/localchimera/test/planner/federated-fixtures.scm"))
 
 ;; the synchronous coordinator on fresh oracles, with its finish (the exact local
 ;; solve at the settled pulls, then the clamp): (met rounds pulls)

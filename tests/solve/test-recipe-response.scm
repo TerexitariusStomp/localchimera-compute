@@ -2,7 +2,7 @@
 ;;; test-recipe-response.scm — a recipe's response, read off its runs.
 ;;;
 ;;; The comparator hands the plan a CURVE, and a future reads it at the stress
-;;; it delivers (docs/playnet.typ: every wall is approached on a curve; observed
+;;; it delivers (docs/localchimera.typ: every wall is approached on a curve; observed
 ;;; ratios become the next forecasts). The words — fragile, antifragile,
 ;;; robust, proportional — describe the curve's bend (the lecture's picture,
 ;;; docs/antifragile/DarwinCollege.pdf §VII) and steer nothing.
@@ -12,9 +12,9 @@
 ;;; Run: guile -L module tests/solve/test-recipe-response.scm
 
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet solve recipe-response)
-             (playnet vf formulas shocks)
-             (playnet vf schemas) (playnet vf beyond scenario))
+             (localchimera solve recipe-response)
+             (localchimera vf formulas shocks)
+             (localchimera vf schemas) (localchimera vf beyond scenario))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

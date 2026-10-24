@@ -4,7 +4,7 @@
 // A machine node's accountable chain (spec §1): the tab holds an Ed25519
 // key, its did:key is the lenderDid on every offer and receipt, and a
 // keri:<aid> AccountLink (machine-bind) is what makes the did:key answer
-// to a Playnet AID. The receipt's lenderSig is the CESR qb64 "0B" form of
+// to a LocalChimera AID. The receipt's lenderSig is the CESR qb64 "0B" form of
 // the Ed25519 signature over the receipt digest's UTF-8 bytes — exactly
 // what binding-verifiers.scm's verify-did-key-sig recomputes door-side.
 //

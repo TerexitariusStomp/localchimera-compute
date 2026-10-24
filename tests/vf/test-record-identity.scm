@@ -2,7 +2,7 @@
 ;;; test-record-identity.scm — a record is the same kind of thing on both sides.
 ;;;
 ;;; The planner's schemas are reached two ways: imported as a module by
-;;; `(playnet boot prelude)`, and `primitive-load`ed by the solver engine when it runs
+;;; `(localchimera boot prelude)`, and `primitive-load`ed by the solver engine when it runs
 ;;; standalone. `make-record-type` mints a fresh type per evaluation, so the same
 ;;; definition produced two types sharing a name and nothing else.
 ;;;
@@ -13,15 +13,15 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/vf/test-record-identity.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 
 ;; the engine, standalone — this defines the schemas in guile-user
-(use-modules (playnet vf schemas) (playnet vf beyond schedules))
+(use-modules (localchimera vf schemas) (localchimera vf beyond schedules))
 
 ;; …and now the module path, which evaluates the same definitions again
-(use-modules (playnet vf facts availability)
-             ((playnet utils records) #:select (vf-record-type vf-record-constructor vf-record-accessor vf-record-copier vf-record-maker vf-record-from-list vf-record-type-fields)))
+(use-modules (localchimera vf facts availability)
+             ((localchimera utils records) #:select (vf-record-type vf-record-constructor vf-record-accessor vf-record-copier vf-record-maker vf-record-from-list vf-record-type-fields)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

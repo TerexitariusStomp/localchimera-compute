@@ -1,7 +1,7 @@
 ;;; deploy/fleet-network.scm — fleet-wide network defaults for child hosts.
 ;;;
 ;;; The lowest layer. Above it, lowest to highest: the environment
-;;;   (PLAYNET_PREFIX, PLAYNET_GATEWAY, PLAYNET_INTERFACE, PLAYNET_NAMESERVERS),
+;;;   (LOCALCHIMERA_PREFIX, LOCALCHIMERA_GATEWAY, LOCALCHIMERA_INTERFACE, LOCALCHIMERA_NAMESERVERS),
 ;;; the host's provider-params in desired-fleet.scm ("network-prefix" …), and
 ;;; the options of deploy/scripts/render-child-os.scm.
 ;;;

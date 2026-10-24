@@ -32,12 +32,12 @@
 ;;;
 ;;; Run: guile tests/solve/test-decomposition-invariance.scm
 
-(use-modules (playnet solve decomposed))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve records)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
+(use-modules (localchimera solve decomposed))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve records)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 
@@ -194,7 +194,7 @@
 ;; Exact when flour binds, inflated in proportion to the surplus when it does
 ;; not — the signature of the interior-point BARRIER holding the iterate off a
 ;; non-binding wall, with the free-time thrift term (κ = 0.02, ×0.1h per loaf
-;; ⇒ 0.002 per surplus loaf) far too weak to pull it back. §7.9 of Playnet has
+;; ⇒ 0.002 per surplus loaf) far too weak to pull it back. §7.9 of LocalChimera has
 ;; the thrift term precisely so "the plan makes only what someone wants"; on an
 ;; abundant input it currently does not.
 ;;

@@ -5,12 +5,12 @@
 ;;; reconstruct everything from the ACDCs alone, assert behavioral
 ;;; equivalence on the recovered actor graph.
 
-(use-modules ((playnet test scope) #:select (account!)))
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet voice ballot) (playnet boot scope) (playnet credentials commitments) (playnet credentials membership) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet voice delegation-map) (playnet boot scope) (playnet federation rebuild) (playnet voice voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet keri said-portable))
+(use-modules ((localchimera test scope) #:select (account!)))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas) (localchimera observation states))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera voice ballot) (localchimera boot scope) (localchimera credentials commitments) (localchimera credentials membership) (localchimera credentials voting) (localchimera credentials work) (localchimera keri acdc) (localchimera voice delegation-map) (localchimera boot scope) (localchimera federation rebuild) (localchimera voice voice-signer) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri said-portable))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 
@@ -199,7 +199,7 @@
               (= 2 (length
                     (filter (lambda (c)
                               (equal? (cred-schema c)
-                                      *schema-playnet-federation-membership*))
+                                      *schema-localchimera-federation-membership*))
                             ($ store 'by-issuer "river-fed-aid")))))
 
   ;; --- RECOVER ---
@@ -284,7 +284,7 @@
                         (cons (list cid (car pair) '()) acc))
                       '() citizen-voice-data))
            (registry-aids '("alice" "bob"))
-           (snap-said (compute-said "gov" "gov" *schema-playnet-ballot-snapshot*
+           (snap-said (compute-said "gov" "gov" *schema-localchimera-ballot-snapshot*
                                     (list (cons 'proposal-id "p-1")
                                           (cons 'entries entries)))))
       ($ store 'issue

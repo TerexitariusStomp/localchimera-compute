@@ -13,16 +13,16 @@
 ;;;          ServerAliveCountMax 3
 ;;;
 ;;;   3. The server's .onion address (from first deploy or from
-;;;      /var/lib/tor/hidden-services/playnet/hostname)
+;;;      /var/lib/tor/hidden-services/localchimera/hostname)
 ;;;
 ;;; Usage:
-;;;   PLAYNET_PROVIDER=deploy/providers/onion.scm guix deploy deploy/machines.scm
+;;;   LOCALCHIMERA_PROVIDER=deploy/providers/onion.scm guix deploy deploy/machines.scm
 ;;;
 ;;; Copy this file to deploy/providers/onion.scm and fill in the
 ;;; .onion address after the first deploy.
 
 `((host-ip     . "PASTE_YOUR_ONION_ADDRESS_HERE.onion")
-  (host-name   . "playnet")
+  (host-name   . "localchimera")
   (system      . "x86_64-linux")
   ;; SSH host key — get from first deploy or from hosts.scm
   (ssh-host-key . "ssh-ed25519 PASTE_HOST_KEY_HERE")

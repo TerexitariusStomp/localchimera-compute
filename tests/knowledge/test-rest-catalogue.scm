@@ -11,7 +11,7 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/knowledge/test-rest-catalogue.scm
 
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet knowledge catalogues rest))
+             (localchimera knowledge catalogues rest))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

@@ -8,9 +8,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/scope/containment-cascade-test.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))
@@ -93,9 +93,9 @@
     (check-pred "nitrogen cascaded two levels → 1.56" (~= (onhand obs "n") 1.56))))
 
 ;;; ── a count's lower and raise are inverses, and a void takes the cascade back ──
-(use-modules ((playnet observation adjustment) #:select (adjustment-event))
-             ((playnet observation observer) #:select (void-event))
-             ((playnet utils clock) #:select (civil->instant)))
+(use-modules ((localchimera observation adjustment) #:select (adjustment-event))
+             ((localchimera observation observer) #:select (void-event))
+             ((localchimera utils clock) #:select (civil->instant)))
 
 (define store3 (make-memory-store))
 (define-values (vat3 scope3)

@@ -18,7 +18,7 @@
 #   1. Note the SSH host key (printed at end)
 #   2. Create deploy/providers/<location>.scm with the IP and host key
 #   3. Deploy:
-#      PLAYNET_PROVIDER=deploy/providers/<location>.scm \
+#      LOCALCHIMERA_PROVIDER=deploy/providers/<location>.scm \
 #        bash deploy/scripts/reconfigure.sh
 
 set -euo pipefail
@@ -72,12 +72,12 @@ herd start cow-store /mnt
 mkdir -p /mnt/etc/guix
 cat > /mnt/etc/guix/system.scm << 'GUIXEOF'
 ;; Minimal Guix System for initial boot — reconfigure.sh will
-;; deploy the full playnet config after first SSH connection.
+;; deploy the full localchimera config after first SSH connection.
 (use-modules (gnu))
 (use-service-modules networking ssh)
 
 (operating-system
-  (host-name "playnet")
+  (host-name "localchimera")
   (timezone "Etc/UTC")
   (bootloader (bootloader-configuration
                 (bootloader grub-efi-bootloader)
@@ -122,5 +122,5 @@ echo "[bootstrap]"
 echo "[bootstrap] After reboot:"
 echo "[bootstrap]   1. SSH as root, set deploy user's SSH key"
 echo "[bootstrap]   2. Create deploy/providers/<name>.scm"
-echo "[bootstrap]   3. PLAYNET_PROVIDER=... bash deploy/scripts/reconfigure.sh"
+echo "[bootstrap]   3. LOCALCHIMERA_PROVIDER=... bash deploy/scripts/reconfigure.sh"
 echo "[bootstrap] ============================================"

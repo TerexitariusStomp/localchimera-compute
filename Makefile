@@ -60,7 +60,7 @@ install-hooks:
 # ── Satellite pins (deploy/satellites.scm) ──────────────────────────────────
 # The core's HEAD is the only input to the deployed system: every other repo
 # is consumed at the commit + nar hash pinned in deploy/satellites.scm.
-# `make bump SAT=<name>` moves one pin to ../playnet-<name>'s HEAD; the
+# `make bump SAT=<name>` moves one pin to ../localchimera-<name>'s HEAD; the
 # pre-push hook runs `check-satellite-pins` so a pin that does not resolve is
 # a push refused. Plan: docs/planning/identity/repo-split-and-protocol-doors.md
 check-satellite-pins:
@@ -78,7 +78,7 @@ satellites:
 	@GUILE_AUTO_COMPILE=0 deploy/scripts/satellite-pins.scm place "$(CURDIR)"
 
 # On a machine that holds the clones: each landing directory becomes a symlink
-# to ../playnet-<name>, so there is one copy of every satellite file and an
+# to ../localchimera-<name>, so there is one copy of every satellite file and an
 # edit under browser/radicle, server/rns-bridge, … is an edit in that
 # satellite's own repo. The pin still decides what ships; `make
 # check-satellite-pins` says how far each clone stands past its pin, and
@@ -88,7 +88,7 @@ link-satellites:
 
 # The one command that gives every checkout of the core the same shape:
 # clone each satellite beside the core when it is not there (from the mirror
-# the box serves; PLAYNET_MIRROR, PLAYNET_GIT_PREFIX=torsocks to override),
+# the box serves; LOCALCHIMERA_MIRROR, LOCALCHIMERA_GIT_PREFIX=torsocks to override),
 # then link it in. SAT="explorer rns-bridge" limits it to those.
 workspace:
 	@GUILE_AUTO_COMPILE=0 deploy/scripts/satellite-pins.scm workspace "$(CURDIR)" $(SAT)
@@ -99,14 +99,14 @@ workspace:
 # commit the box has not seen.
 carry:
 	@[ -n "$(SAT)" ] || { echo "usage: make carry SAT=<name>"; exit 2; }
-	@PROMOTE_TORSOCKS= PLAYNET_BOX="$${PLAYNET_BOX:-playnet-server}" \
+	@PROMOTE_TORSOCKS= LOCALCHIMERA_BOX="$${LOCALCHIMERA_BOX:-localchimera-server}" \
 	  bash deploy/scripts/carry-satellite.sh "$(SAT)"
 
 # ── OpenVTC parity (docs/planning/identity/openvtc-parity.md) ────────────────────────
 # Our credential/trust layer is hand-ported from OpenVTC, not vendored — so
 # there's no satellite pin to gate a build, just a "how far we've read" pin
 # on their commit history. `make check-openvtc-parity` fetches upstream into
-# a sibling cache (../openvtc-upstream, override PLAYNET_OPENVTC_CACHE) and
+# a sibling cache (../openvtc-upstream, override LOCALCHIMERA_OPENVTC_CACHE) and
 # lists commits since the pin that touch credential/trust-relevant paths.
 # Read-only; never moves the pin.
 .PHONY: check-openvtc-parity
@@ -114,8 +114,8 @@ check-openvtc-parity:
 	@bash tools/lint/openvtc-parity-check.sh
 
 # ── KERI + OpenVTC library (docs/planning/identity/keri-openvtc-library-split.md) ────
-# lint-keri-lib holds the import boundary of module/playnet/keri (First Person included);
-# keri-lib-cut builds the standalone playnet-keri repository from committed
+# lint-keri-lib holds the import boundary of module/localchimera/keri (First Person included);
+# keri-lib-cut builds the standalone localchimera-keri repository from committed
 # history (local only — publishing it is a separate, deliberate step).
 .PHONY: lint-keri-lib keri-lib-cut
 lint-keri-lib:
@@ -125,7 +125,7 @@ keri-lib-cut: lint-keri-lib
 	@bash tools/dev/publish-keri-lib.sh
 
 # Every suite the cut ships, in a PURE shell built from the library's own
-# manifest — the proof that a stranger with Guix and the playnet-keri repo has
+# manifest — the proof that a stranger with Guix and the localchimera-keri repo has
 # all it takes. The same command runs from inside the cut.
 KERI_LIB_ENV = guix shell --pure -m deploy/manifests/keri-lib-manifest.scm --
 .PHONY: test-keri-lib
@@ -135,12 +135,12 @@ test-keri-lib: lint-keri-lib
 	  if guile --no-auto-compile -q -L module $$t >/tmp/keri-lib-test.log 2>&1; \
 	  then echo "ok   $$t"; else echo "FAIL $$t"; tail -5 /tmp/keri-lib-test.log; fail=1; fi; done; exit $$fail'
 
-# Carry a contributor's commits from playnet-keri into the core: held to the
+# Carry a contributor's commits from localchimera-keri into the core: held to the
 # library's paths, proven in a scratch worktree (gate + every shipped suite),
 # landed under their author.  usage: make keri-lib-take RANGE=main..patch/<id>
 .PHONY: keri-lib-take
 keri-lib-take:
-	@[ -n "$(RANGE)" ] || { echo "usage: make keri-lib-take RANGE=main..patch/<id>   (a range in ../playnet-keri)"; exit 2; }
+	@[ -n "$(RANGE)" ] || { echo "usage: make keri-lib-take RANGE=main..patch/<id>   (a range in ../localchimera-keri)"; exit 2; }
 	@bash tools/dev/keri-lib-take.sh "$(RANGE)"
 
 # Publish a cut the way every satellite moves: cut from committed history,
@@ -151,8 +151,8 @@ keri-lib-take:
 # deploy/satellites.scm and `make ship`.
 .PHONY: keri-lib-publish
 keri-lib-publish: keri-lib-cut
-	@cd ../playnet-keri && tag="cut-$$(git -C $(CURDIR) rev-parse --short=12 HEAD)" && \
-	  { git rev-parse -q --verify "refs/tags/$$tag" >/dev/null || git -c user.signingkey="$$(git -C $(CURDIR) config user.signingkey)" -c user.name="$$(git -C $(CURDIR) config user.name)" -c user.email="$$(git -C $(CURDIR) config user.email)" tag -s "$$tag" -m "playnet-keri cut from core $$(git -C $(CURDIR) rev-parse HEAD)"; } && \
+	@cd ../localchimera-keri && tag="cut-$$(git -C $(CURDIR) rev-parse --short=12 HEAD)" && \
+	  { git rev-parse -q --verify "refs/tags/$$tag" >/dev/null || git -c user.signingkey="$$(git -C $(CURDIR) config user.signingkey)" -c user.name="$$(git -C $(CURDIR) config user.name)" -c user.email="$$(git -C $(CURDIR) config user.email)" tag -s "$$tag" -m "localchimera-keri cut from core $$(git -C $(CURDIR) rev-parse HEAD)"; } && \
 	  git push rad HEAD:main keyring && git push rad "refs/tags/$$tag"
 	@$(MAKE) --no-print-directory bump SAT=keri
 	@$(MAKE) --no-print-directory carry SAT=keri
@@ -160,25 +160,25 @@ keri-lib-publish: keri-lib-cut
 
 # ── Laptop-side secret backups (three-tier redundancy) ──────────────────────
 # Tier 1: USB    — deploy/.age-key.txt + deploy/secrets.scm.age  (working copy)
-# Tier 2: laptop — ~/.playnet-secrets/playnet.age-key.txt + .secrets.scm
-# Tier 3: vault  — ~/.playnet-secrets/playnet-vault.kdbx attachments
+# Tier 2: laptop — ~/.localchimera-secrets/localchimera.age-key.txt + .secrets.scm
+# Tier 3: vault  — ~/.localchimera-secrets/localchimera-vault.kdbx attachments
 #
 # `make backup-laptop` refreshes tier 2 from tier 1 (no interaction).
 # `make backup-vault` updates tier 3 from tier 2 (prompts for vault pw once).
 # `make backup-all` does both.
-PLAYNET_HOME_SECRETS = $(HOME)/.playnet-secrets
+LOCALCHIMERA_HOME_SECRETS = $(HOME)/.localchimera-secrets
 .PHONY: backup-laptop backup-vault backup-all
 backup-laptop:
-	@mkdir -p "$(PLAYNET_HOME_SECRETS)"
-	@chmod 700 "$(PLAYNET_HOME_SECRETS)"
-	@cp -f deploy/.age-key.txt "$(PLAYNET_HOME_SECRETS)/playnet.age-key.txt"
-	@chmod 600 "$(PLAYNET_HOME_SECRETS)/playnet.age-key.txt"
+	@mkdir -p "$(LOCALCHIMERA_HOME_SECRETS)"
+	@chmod 700 "$(LOCALCHIMERA_HOME_SECRETS)"
+	@cp -f deploy/.age-key.txt "$(LOCALCHIMERA_HOME_SECRETS)/localchimera.age-key.txt"
+	@chmod 600 "$(LOCALCHIMERA_HOME_SECRETS)/localchimera.age-key.txt"
 	@age -d -i deploy/.age-key.txt deploy/secrets.scm.age \
-	  > "$(PLAYNET_HOME_SECRETS)/playnet.secrets.scm"
-	@chmod 600 "$(PLAYNET_HOME_SECRETS)/playnet.secrets.scm"
+	  > "$(LOCALCHIMERA_HOME_SECRETS)/localchimera.secrets.scm"
+	@chmod 600 "$(LOCALCHIMERA_HOME_SECRETS)/localchimera.secrets.scm"
 	@echo "tier 2 refreshed:"
-	@echo "  $(PLAYNET_HOME_SECRETS)/playnet.age-key.txt"
-	@echo "  $(PLAYNET_HOME_SECRETS)/playnet.secrets.scm"
+	@echo "  $(LOCALCHIMERA_HOME_SECRETS)/localchimera.age-key.txt"
+	@echo "  $(LOCALCHIMERA_HOME_SECRETS)/localchimera.secrets.scm"
 
 backup-vault:
 	bash deploy/scripts/backup-to-vault.sh
@@ -189,7 +189,7 @@ CHANNELS = deploy/channels.scm
 
 # ── Bootable ISO (Path B of the confidential-VPS provider deploy story) ─────
 # Builds a minimal Guix System ISO with the operator SSH key baked in.
-# See deploy/playnet-iso.scm (provider-specific guide — kept in the private
+# See deploy/localchimera-iso.scm (provider-specific guide — kept in the private
 # ops vault, not in the public repo).
 #
 #   make iso         → iso9660 image (for the provider's "Custom ISO" upload)
@@ -202,12 +202,12 @@ CHANNELS = deploy/channels.scm
 iso:
 	guix time-machine -C $(CHANNELS) -- \
 	  system image --root=result-iso -t iso9660 -L deploy/guix \
-	  deploy/playnet-iso.scm
+	  deploy/localchimera-iso.scm
 
 iso-raw:
 	guix time-machine -C $(CHANNELS) -- \
 	  system image --root=result-iso-raw -t mbr-hybrid-raw -L deploy/guix \
-	  deploy/playnet-iso.scm
+	  deploy/localchimera-iso.scm
 
 # Build the ISO and publish it to IPFS so the VPS provider (or any provider that
 # requires an HTTPS URL) can fetch from a public gateway. Writes the CID
@@ -249,7 +249,7 @@ deploy:
 ifndef PROVIDER
 	$(error PROVIDER is required, e.g. make deploy PROVIDER=deploy/providers/provider-1.scm)
 endif
-	PLAYNET_PROVIDER=$(PROVIDER) \
+	LOCALCHIMERA_PROVIDER=$(PROVIDER) \
 	  guix time-machine -C $(CHANNELS) -- \
 	  deploy -L deploy/guix -L module deploy/machines.scm
 
@@ -275,7 +275,7 @@ reconfigure:
 ifndef PROVIDER
 	$(error PROVIDER is required, e.g. PROVIDER=deploy/providers/provider-1.scm)
 endif
-	PLAYNET_PROVIDER=$(PROVIDER) \
+	LOCALCHIMERA_PROVIDER=$(PROVIDER) \
 	  guix system reconfigure -L deploy/guix deploy/os.scm
 	@bash deploy/scripts/reconfigure-restarts.sh
 
@@ -289,7 +289,7 @@ founder:
 
 # ── Multi-developer flow (see CONTRIBUTING.md) ──────────────────────────────
 # contributor: one-command onboarding — mint a local Radicle identity. Needs
-# NO infra access. After this, `rad clone $$PLAYNET_RID --seed <seed>` (get the
+# NO infra access. After this, `rad clone $$LOCALCHIMERA_RID --seed <seed>` (get the
 # seed from a maintainer; it is intentionally not committed — opsec) then
 # `rad patch open` to contribute.
 .PHONY: contributor
@@ -298,9 +298,9 @@ contributor:
 	@rad auth
 	@echo ""
 	@echo "Identity minted. Next:"
-	@echo "  export PLAYNET_RID=rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ"
-	@echo "  export PLAYNET_SEED='<node-id>@<seed-host>:<port>'   # ask a maintainer"
-	@echo "  rad clone \$$PLAYNET_RID --seed \$$PLAYNET_SEED"
+	@echo "  export LOCALCHIMERA_RID=rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ"
+	@echo "  export LOCALCHIMERA_SEED='<node-id>@<seed-host>:<port>'   # ask a maintainer"
+	@echo "  rad clone \$$LOCALCHIMERA_RID --seed \$$LOCALCHIMERA_SEED"
 	@echo "Then: hack → make test → git commit -S → rad patch open. See CONTRIBUTING.md."
 
 # merge-patch: DELEGATE action — promote a reviewed patch to canonical + deploy.
@@ -314,10 +314,10 @@ merge-patch:
 # Signs the current main as ops, carries the delegate ref to the box seed
 # (canonical is a quorum of BOTH delegate refs — the box push alone leaves the
 # Explorer frozen), advances canonical, and deploys. Uses the Tor ssh alias, no
-# torsocks. Defaults to HEAD; override with SHA=<commit> and/or PLAYNET_BOX=.
+# torsocks. Defaults to HEAD; override with SHA=<commit> and/or LOCALCHIMERA_BOX=.
 .PHONY: ship
 ship:
-	@SECRETS="$(PLAYNET_HOME_SECRETS)/playnet.secrets.scm"; \
+	@SECRETS="$(LOCALCHIMERA_HOME_SECRETS)/localchimera.secrets.scm"; \
 	OMAR=""; \
 	[ -f "$$SECRETS" ] && OMAR="$$(sed -n 's/.*setenv "RAD_OMAR_PASSPHRASE" "\([^"]*\)".*/\1/p' "$$SECRETS")"; \
 	if [ -z "$$OMAR" ]; then \
@@ -327,26 +327,26 @@ ship:
 	  echo "        \$$EDITOR deploy/secrets.scm             # set (setenv \"RAD_OMAR_PASSPHRASE\" \"…\")"; \
 	  echo "        bash deploy/scripts/secrets-encrypt.sh && make backup-laptop && shred -u deploy/secrets.scm"; \
 	fi; \
-	RAD_OMAR_PASSPHRASE="$$OMAR" PROMOTE_TORSOCKS= PLAYNET_BOX="$${PLAYNET_BOX:-playnet-server}" \
+	RAD_OMAR_PASSPHRASE="$$OMAR" PROMOTE_TORSOCKS= LOCALCHIMERA_BOX="$${LOCALCHIMERA_BOX:-localchimera-server}" \
 	  bash deploy/scripts/promote.sh "$(or $(SHA),$$(git rev-parse HEAD))" omar
 
 TIME_MACHINE = guix time-machine -C $(CHANNELS) --
 # The wasm toolchain: Hoot 0.9.0 of the pinned Guix commit (GUIX_CHANNEL_PIN
-# below) plus the upstream fixes deploy/guix/playnet-hoot.scm carries.
+# below) plus the upstream fixes deploy/guix/localchimera-hoot.scm carries.
 # `--commit=` time-machines the guix channel alone, so the Radicle channel's
 # libgit2 hang stays out of the way and every machine, the box included,
 # resolves the same Hoot, Goblins, fibers and Guile. The -L path is absolute
 # because `local-file` resolves the patch files against it.
 HOOT_PINNED = guix time-machine --commit=$(GUIX_CHANNEL_PIN) --
-HOOT_PKG = -L $(CURDIR)/deploy/guix -e '(@ (playnet-hoot) guile-hoot/playnet)'
+HOOT_PKG = -L $(CURDIR)/deploy/guix -e '(@ (localchimera-hoot) guile-hoot/localchimera)'
 
 # Every wasm bundle loads the same browser/reflect.js, which belongs to the Hoot
 # that compiled the bundles: one wasm built by another Hoot cannot instantiate
-# under it. A toolchain change (the Guix pin, playnet-hoot.scm, its patches) is
+# under it. A toolchain change (the Guix pin, localchimera-hoot.scm, its patches) is
 # therefore a rebuild-everything event that no source file records, so the stamp
 # below carries it: it is rewritten only when the toolchain's identity changes,
 # and every wasm rule lists it as a prerequisite.
-HOOT_TOOLCHAIN_ID = $(GUIX_CHANNEL_PIN) $(shell cat deploy/guix/playnet-hoot.scm deploy/guix/patches/hoot/*.patch | sha256sum | cut -c1-16)
+HOOT_TOOLCHAIN_ID = $(GUIX_CHANNEL_PIN) $(shell cat deploy/guix/localchimera-hoot.scm deploy/guix/patches/hoot/*.patch | sha256sum | cut -c1-16)
 .PHONY: FORCE
 FORCE:
 $(HOOT_TOOLCHAIN_STAMP): FORCE
@@ -354,7 +354,7 @@ $(HOOT_TOOLCHAIN_STAMP): FORCE
 
 # ── Two-tier runner strategy ────────────────────────────────────────────────
 # The test tree runs under plain `guix shell -m dev-test-manifest.scm`
-# (no time-machine) because `deploy/channels.scm` pins the `playnet` channel
+# (no time-machine) because `deploy/channels.scm` pins the `localchimera` channel
 # to a Radicle seed whose git HTTP bridge currently hangs `guix time-machine`'s
 # libgit2 client (bare `git ls-remote` works fine — it's a guix-libgit2 bug).
 # Production paths (`guix deploy`, `guix pull`, the live-hacking dev bundle)
@@ -429,7 +429,7 @@ HOOT_BUILD_DEV = $(HOOT_BUILD)
 # — every browser client silently fails. A bare `guix build guile-goblins`
 # uses the build host's channel (was 0.17.0 while production ran 0.18.0 → the
 # 2026-06-07 outage). PIN to the guix channel commit from deploy/channels.scm
-# via a guix-only time-machine (reliable; skips the radicle playnet channel).
+# via a guix-only time-machine (reliable; skips the radicle localchimera channel).
 # Bump GUIX_CHANNEL_PIN in lockstep with deploy/channels.scm (name 'guix).
 GUIX_CHANNEL_PIN = 5f42ab7d46cf22b19844521b2385a7890faf274b
 GOBLINS_PREFIX = $(shell guix time-machine --commit=$(GUIX_CHANNEL_PIN) -- build guile-goblins 2>/dev/null)
@@ -481,19 +481,19 @@ serve:
 	  echo "  or:       PORT=8081 make serve"; \
 	  exit 1; \
 	fi
-	PLAYNET_DEV=1 PLAYNET_FIBERS=1 $(HOOT_RUN_DEV) -L . -L module \
+	LOCALCHIMERA_DEV=1 LOCALCHIMERA_FIBERS=1 $(HOOT_RUN_DEV) -L . -L module \
 	  -c '((@ (server serve-static) run-static-server) #:work-dir "browser" #:oobi-dir "$(if $(OOBI_DIR),$(OOBI_DIR),data/oobi-host)" #:port $(if $(PORT),$(PORT),8080))'
 
 # Reliable headless SCREENSHOT of a local page — via Playwright + guix
 # ungoogled-chromium (UNCONFINED). The snap Firefox hangs headless under
 # Wayland/snap confinement from a non-login shell, so we don't use it. Needs
 # `make serve` running. Writes outside the repo by default.
-#   make shot                                  # the share face → ~/playnet-dev-shots/shot.png
+#   make shot                                  # the share face → ~/localchimera-dev-shots/shot.png
 #   make shot URL='http://127.0.0.1:8080/node.html' OUT=/tmp/cal.png W=420 H=800
 .PHONY: shot
 shot:
 	bash tools/dev/shot.sh "$(if $(URL),$(URL),http://127.0.0.1:8080/node.html)" \
-	  "$(if $(OUT),$(OUT),$(HOME)/playnet-dev-shots/shot.png)" $(if $(W),$(W),1400) $(if $(H),$(H),900)
+	  "$(if $(OUT),$(OUT),$(HOME)/localchimera-dev-shots/shot.png)" $(if $(W),$(W),1400) $(if $(H),$(H),900)
 
 # The day dial, LIVE: the whole local stack in ONE command — a real gateway
 # (no KERIA), the static server pointed at that gateway's own state dir, and
@@ -533,7 +533,7 @@ routing-stop:
 # the glyphs with browser/, and the box cuts its own archives.
 #   make map-tiles                        every region to z15
 #   REGIONS=berlin MAXZOOM=12 make map-tiles
-#   MAP_DIR=/var/lib/playnet/map make map-tiles    on the box
+#   MAP_DIR=/var/lib/localchimera/map make map-tiles    on the box
 .PHONY: map-tiles
 map-tiles:
 	bash tools/emit/map-tiles.sh
@@ -568,7 +568,7 @@ map-tiles:
 #
 #   make ci-warm                       # on the machine that runs CI
 #   ssh <box> 'cd <checkout> && make ci-warm'
-CI_ENV_ROOT ?= /var/lib/playnet/ci-test-env
+CI_ENV_ROOT ?= /var/lib/localchimera/ci-test-env
 .PHONY: ci-warm
 ci-warm:
 	rm -f $(CI_ENV_ROOT)
@@ -582,14 +582,14 @@ ci-warm:
 # on the box, found 2026-09-23 the first time a gc actually ran there. This
 # root is the same package set as HOOT_BUILD_DEV, so it pins exactly the
 # closure that build resolves. The deploy hook runs it before every wasm build;
-# re-run it by hand after a change to playnet-hoot.scm or the pinned Guix.
+# re-run it by hand after a change to localchimera-hoot.scm or the pinned Guix.
 #
 # `guix build --root` registers one root per output (HOOT_ENV_ROOT-0, -1, …)
 # and exits cleanly. At the pinned Guix, `guix shell guile-next guile-hoot
 # --root=…` registers its root and then aborts with a struct-vtable error in the
 # error reporter (guile-next with guile-hoot is the trigger; either alone is
 # fine, and the same command succeeds on Guix master of 2026-10-01).
-HOOT_ENV_ROOT ?= /var/lib/playnet/hoot-env
+HOOT_ENV_ROOT ?= /var/lib/localchimera/hoot-env
 .PHONY: hoot-warm
 hoot-warm:
 	rm -f $(HOOT_ENV_ROOT) $(HOOT_ENV_ROOT)-*
@@ -610,7 +610,7 @@ hoot-warm:
 # whatever host it happens to be running, every time.
 #
 # Silent everywhere else: the guard is whether this host has a writable
-# directory to put the root in. A developer's laptop has no /var/lib/playnet,
+# directory to put the root in. A developer's laptop has no /var/lib/localchimera,
 # so this is a no-op there and `make test` is unchanged.
 .PHONY: ci-env
 ci-env:
@@ -631,16 +631,16 @@ ci-env:
 #
 # It builds INSIDE the test environment, not against the host's compiler, so the
 # object and the Guile that loads it come from one manifest.
-KERNEL_SO := module/playnet/solve/kernel/libplanner_kernel.so
-KERNEL_SRC := module/playnet/solve/kernel/kernel.c \
-              module/playnet/solve/kernel/kernel_kinds.h
+KERNEL_SO := module/localchimera/solve/kernel/libplanner_kernel.so
+KERNEL_SRC := module/localchimera/solve/kernel/kernel.c \
+              module/localchimera/solve/kernel/kernel_kinds.h
 
 .PHONY: kernel
 kernel: $(KERNEL_SO)
 
-$(KERNEL_SO): $(KERNEL_SRC) module/playnet/solve/kernel/Makefile
+$(KERNEL_SO): $(KERNEL_SRC) module/localchimera/solve/kernel/Makefile
 	$(TEST_ENV) \
-	  make -C module/playnet/solve/kernel
+	  make -C module/localchimera/solve/kernel
 
 # The source lints every gate runs, and the one way the suite is run.
 LINTS = lint-parens lint-layers lint-verbs lint-ids lint-compile
@@ -721,7 +721,7 @@ test-fast: check-fresh test-commit-clean
 # The compiler already rejects an unbalanced form — but only in files some
 # test imports. Standalone scripts under module/ and tools/ are read by
 # nothing, so a broken paren in one is invisible until someone runs it by
-# hand: (playnet utils parse-unit-definitions) carried a missing close paren
+# hand: (localchimera utils parse-unit-definitions) carried a missing close paren
 # from its first commit. This is the check that sees those.
 #
 # Runs OUTSIDE $(TEST_ENV) on purpose — the reader is plain Guile with no
@@ -741,11 +741,11 @@ lint-docs:
 # runtime will ever say so. Reads the packs without registering them, so it costs
 # a second and needs no vat.
 #
-# Runs INSIDE $(TEST_ENV): loading the packs pulls in (playnet knowledge
+# Runs INSIDE $(TEST_ENV): loading the packs pulls in (localchimera knowledge
 # context-pack), which imports (goblins). A bare `guile` finds goblins only where
 # the user's profile happens to carry it, so native CI (system profile only)
 # failed here with "no code for module (goblins)".
-# The spec's crossing table (docs/playnet.typ `crossing-catalogue`) names the
+# The spec's crossing table (docs/localchimera.typ `crossing-catalogue`) names the
 # crossings of the code's catalogue (legal/crossings.scm), each of the same kind.
 .PHONY: check-crossing-catalogue
 check-crossing-catalogue:
@@ -805,20 +805,20 @@ notice-facts-emit:
 check-notice-facts-fresh:
 	@LC_ALL=C.UTF-8 guile --no-auto-compile -L module tools/emit/emit-notice-facts.scm check
 
-# Where each file of module/playnet/ is, what reaches it, and which imports point
+# Where each file of module/localchimera/ is, what reaches it, and which imports point
 # up the layers (docs/planning/codebase-layout.md). tools/lint/module-layout.scm is
 # the layout as data, naming the tree to come; tools/lint/module-map.scm reads every
 # .scm in the tree as forms and lints each file at the rank it will stand at.
-# `module-map` writes module/playnet/README.md; `lint-layers` lists the upward
+# `module-map` writes module/localchimera/README.md; `lint-layers` lists the upward
 # imports and any file the layout does not name, and exits 1 for any: the tree
 # has no upward import, and `make test` runs the lint. The map carries importer counts,
 # so `check-module-map-fresh` is for the reader, not the gate. The tool imports
-# no playnet module and reads 1,600 files, so it runs compiled, under its own cache.
+# no localchimera module and reads 1,600 files, so it runs compiled, under its own cache.
 .PHONY: module-map check-module-map-fresh lint-layers
 module-map:
-	@LC_ALL=C.UTF-8 tools/test/own-ccache.sh guile tools/lint/module-map.scm --write module/playnet/README.md
+	@LC_ALL=C.UTF-8 tools/test/own-ccache.sh guile tools/lint/module-map.scm --write module/localchimera/README.md
 check-module-map-fresh:
-	@LC_ALL=C.UTF-8 EMIT_CMD="tools/test/own-ccache.sh guile" tools/lint/check-emit-fresh.sh check-module-map-fresh module/playnet/README.md module-map tools/lint/module-map.scm --write
+	@LC_ALL=C.UTF-8 EMIT_CMD="tools/test/own-ccache.sh guile" tools/lint/check-emit-fresh.sh check-module-map-fresh module/localchimera/README.md module-map tools/lint/module-map.scm --write
 lint-layers:
 	@LC_ALL=C.UTF-8 tools/test/own-ccache.sh guile tools/lint/module-map.scm --lint
 
@@ -854,8 +854,8 @@ lint-compile:
 warm-ccache:
 	@$(TEST_ENV) guile -L module tools/lint/warm-ccache.scm
 
-# playnet's own development, planned by the planner: every open Radicle
-# issue is a want, its area a skill, its kind a recipe (module/playnet/
+# localchimera's own development, planned by the planner: every open Radicle
+# issue is a want, its area a skill, its kind a recipe (module/localchimera/
 # planner/dev/recipes.scm). Prints the week; writes nothing,
 # publishes nothing. DEV_PLAN_ARGS carries flags through, e.g.
 # `make dev-plan DEV_PLAN_ARGS="--for box"`. See tools/dev/dev-plan.scm.
@@ -911,14 +911,14 @@ test-observation-evidence:
 test-adjustment:
 	$(GUILE_TEST_DEV) -L module tests/observation/test-adjustment.scm
 
-# The Tier-2 adapter seams (module/playnet/delegates.scm): wire shapes
+# The Tier-2 adapter seams (module/localchimera/delegates.scm): wire shapes
 # pinned, fail-closed defaults refuse, injected transports answer.
 test-delegates:
 	$(GUILE_TEST_DEV) -L module tests/test-delegates.scm
 
 # The parity suites — every Tier-2 module's PARITY marker names one
 # (tools/lint/check-parity.sh). The invariant leg always runs; the live
-# leg runs when PLAYNET_<SERVICE>_URL names the upstream.
+# leg runs when LOCALCHIMERA_<SERVICE>_URL names the upstream.
 test-parity:
 	@for t in tests/parity/*.scm; do \
 	  echo "== $$t"; $(GUILE_TEST_DEV) -L module $$t || exit 1; done
@@ -946,7 +946,7 @@ test-machine:
 	  echo "== $$t"; $(GUILE_TEST_DEV) -L module -L tests $$t || exit 1; done
 
 # The adopted stack, end to end: bring services up (or find them running),
-# export PLAYNET_*_URL, run the parity suites plus stack-integration.scm.
+# export LOCALCHIMERA_*_URL, run the parity suites plus stack-integration.scm.
 test-e2e-stack:
 	@bash tests/e2e/run-stack.sh
 
@@ -1213,7 +1213,7 @@ test-mcp-door:
 test-device-doors:
 	$(GUILE_TEST_DEV) -L module -L tests tests/doors/test-device-doors.scm
 
-# The protocol declaration (module/playnet/doors/protocol.scm) names the same doors
+# The protocol declaration (module/localchimera/doors/protocol.scm) names the same doors
 # the code answers, with the same args; its seam names are real day-boot
 # handlers; its anonymous planner doors are the facet. tools/lint/protocol-lint.scm.
 check-protocol:
@@ -1228,7 +1228,7 @@ protocol-emit:
 	$(GUILE_TEST_DEV) -L module tools/emit/protocol-emit.scm mcp browser/api/mcp-tools.json
 	$(GUILE_TEST_DEV) -L module tools/emit/protocol-emit.scm seam ui/app/seam-wire.ts
 
-# The page's row types, generated from the wire tables (module/playnet/wire/
+# The page's row types, generated from the wire tables (module/localchimera/wire/
 # rows.scm registry): one interface per table, so the page's types are what
 # the server states. ui/app/wire-rows.ts is committed like seam-wire.ts and a
 # stale copy is refused the same way.
@@ -1269,8 +1269,8 @@ check-na-fresh:
 FDC_RELEASE = FoodData_Central_sr_legacy_food_csv_2018-04
 FDC_URL = https://fdc.nal.usda.gov/fdc-datasets/$(FDC_RELEASE).zip
 FDC_SHA256 = b80817294b8850530aaedf2e515c02593b1824f763a0ff356e5c2081643e6fd0
-FDC_CACHE ?= $(HOME)/.cache/playnet/fdc
-FDC_SLICE = module/playnet/knowledge/data/fdc-sr-legacy.scm
+FDC_CACHE ?= $(HOME)/.cache/localchimera/fdc
+FDC_SLICE = module/localchimera/knowledge/data/fdc-sr-legacy.scm
 .PHONY: fdc-snapshot check-fdc-fresh
 $(FDC_CACHE)/$(FDC_RELEASE)/food_nutrient.csv:
 	@mkdir -p $(FDC_CACHE); cd $(FDC_CACHE) && \
@@ -1322,7 +1322,7 @@ test-universal-commune-kind:
 test-gplay:
 	$(GUILE_TEST_DEV) -L module tests/org/test-gplay.scm
 
-# docs/playnet.pdf + docs/playnet.epub — the scroll's "the latest spec"
+# docs/localchimera.pdf + docs/localchimera.epub — the scroll's "the latest spec"
 # download links. Both are gitignored build products; CI runs the same
 # script via build_docs_epub() in radicle-ci-hook.sh before every sync.
 # Content-stamped, so a re-run with an unchanged .typ is a fast no-op.
@@ -1409,13 +1409,13 @@ test-federation-desk: $(KERNEL_SO)
 # ssh target holding module/ and tests/federation/ at FED_REMOTE_ROOT, with the
 # KERI backend's libraries at FED_REMOTE_LIBS), both ends on the Goblins the
 # channel pin ships: here under time-machine, there its own profile.
-FED_REMOTE ?= playnet-server
+FED_REMOTE ?= localchimera-server
 FED_REMOTE_ROOT ?= /tmp/fed
 FED_REMOTE_LIBS ?=
 test-federation-peer-remote:
 	guix time-machine -C $(CHANNELS) -- shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 	  bash tools/test/own-ccache.sh env LC_ALL=C.UTF-8 \
-	  PLAYNET_FED_REMOTE=$(FED_REMOTE) PLAYNET_FED_REMOTE_ROOT=$(FED_REMOTE_ROOT) PLAYNET_FED_REMOTE_LIBS=$(FED_REMOTE_LIBS) \
+	  LOCALCHIMERA_FED_REMOTE=$(FED_REMOTE) LOCALCHIMERA_FED_REMOTE_ROOT=$(FED_REMOTE_ROOT) LOCALCHIMERA_FED_REMOTE_LIBS=$(FED_REMOTE_LIBS) \
 	  guile -L module tests/federation/test-federation-peer-procs.scm
 
 # A good several scopes supply and several draw: one pull, settled between its
@@ -1503,7 +1503,7 @@ test-discrete:
 # each bioregion: "LABEL|COUNTRY|CROPS" — re-generate + diff its checked-in derived file.
 VERIFY_DERIVED = "doon|India|rice,maize,ragi,pulses" "cascadia|United States|wheat,potato,bean,pea" "berlin|Germany|wheat,barley,potato,maize" "bay-area|United States|tomato,potato,bean,pea"
 verify-derived:
-	@cd module/playnet/knowledge/data && for spec in $(VERIFY_DERIVED); do \
+	@cd module/localchimera/knowledge/data && for spec in $(VERIFY_DERIVED); do \
 	  label=$${spec%%|*}; rest=$${spec#*|}; country=$${rest%%|*}; crops=$${rest#*|}; \
 	  guile emit-derived.scm "$$label" "$$country" "$$crops" > /tmp/$$label-derived.check && \
 	  if diff -q ../worlds/$$label-derived.scm /tmp/$$label-derived.check >/dev/null; then \
@@ -1587,7 +1587,7 @@ test-netlayer:
 .PHONY: deploy-pages 
 deploy-pages:
 	CLOUDFLARE_ACCOUNT_ID=$${CLOUDFLARE_ACCOUNT_ID:?set in env} \
-	wrangler pages deploy browser/ --project-name=$${PAGES_PROJECT:-chimera-playnet}
+	wrangler pages deploy browser/ --project-name=$${PAGES_PROJECT:-chimera-localchimera}
 
 # ── KERI mock-based unit tests ───────────────────────────────────────────────
 # Fast unit tests against an in-process mock KERIA HTTP server. Cover the
@@ -1614,7 +1614,7 @@ test-keri-signup-with-kel:
 test-keri-lobby-seat-gate:
 	$(GUILE_TEST_DEV) -L module tests/doors/test-lobby-seat-gate.scm
 
-# PLAYNET_DISABLE_REAL_SIGNUP refuses signup/signup-with-icp/signup-with-kel/
+# LOCALCHIMERA_DISABLE_REAL_SIGNUP refuses signup/signup-with-icp/signup-with-kel/
 # join, leaves witness-kel/has-seat alone — see docs/legal/gdpr-analysis.md
 test-keri-signup-disabled-gate:
 	$(GUILE_TEST_DEV) -L module tests/knowledge/test-signup-disabled-gate.scm
@@ -1718,8 +1718,8 @@ test-pending-grants-fiber-inheritance:
 test-observability-endpoints:
 	$(GUILE_TEST_DEV) -L module -L tests -L . tests/server/test-observability-endpoints.scm
 
-test-playnet-scope:
-	$(GUILE_TEST_DEV) -L module -L tests tests/tools/test-playnet-scope.scm
+test-localchimera-scope:
+	$(GUILE_TEST_DEV) -L module -L tests tests/tools/test-localchimera-scope.scm
 
 test-dev-priorities:
 	$(GUILE_TEST_DEV) -L module -L tests tests/tools/test-dev-priorities.scm
@@ -1754,8 +1754,8 @@ test-keri-lobby-auth:
 	$(GUILE_TEST_DEV) -L module tests/doors/test-keri-lobby-auth.scm
 
 # ── ACDC role schemas ───────────────────────────────────────────────────────
-# The four playnet role-credential schemas live self-saidified in
-# module/playnet/keri/schemas/. Each file's `$id` holds its own blake3-256
+# The four localchimera role-credential schemas live self-saidified in
+# module/localchimera/keri/schemas/. Each file's `$id` holds its own blake3-256
 # SAID. `make schemas` recomputes + writes; `make test-schemas` asserts
 # idempotency (CI guard against accidental edits without re-saidification).
 
@@ -1826,7 +1826,7 @@ test-multi-gateway:
 	  bash tests/integration/run-multi-gateway-smoke.sh
 
 # Two gateways federated on the wire: each boots as one member of the flour
-# federation (PLAYNET_SEED_FED) with a scope key of its own, publishes its
+# federation (LOCALCHIMERA_SEED_FED) with a scope key of its own, publishes its
 # berth; a third process admits both into a signed federation scope, serves
 # the federation's desk and fold, and hands each gateway the federation's AID
 # and desk; the gateways boot again on the same state, ask, join and settle;
@@ -1868,7 +1868,7 @@ WISP_EDITOR ?= $(firstword $(foreach c,antigravity codium code,$(if $(shell comm
 
 # the public origin the extension's relative links resolve against: the
 # upstream's unless you publish your own
-PLAYNET_ORIGIN ?= https://playnet.earth
+LOCALCHIMERA_ORIGIN ?= https://localchimera.earth
 .PHONY: wisp-ext wisp-ext-build wisp-ts
 wisp-ext:
 	@test -n "$(WISP_EDITOR)" || { echo "No editor CLI (antigravity/codium/code) on PATH; set WISP_EDITOR=<cli>"; exit 1; }
@@ -1877,8 +1877,8 @@ wisp-ext:
 
 wisp-ext-build:
 	cd tooling/wisp-vscode && npx --yes @vscode/vsce package --no-dependencies \
-	  --allow-missing-repository --baseContentUrl $(PLAYNET_ORIGIN) \
-	  --baseImagesUrl $(PLAYNET_ORIGIN) -o wisp-0.1.0.vsix
+	  --allow-missing-repository --baseContentUrl $(LOCALCHIMERA_ORIGIN) \
+	  --baseImagesUrl $(LOCALCHIMERA_ORIGIN) -o wisp-0.1.0.vsix
 
 wisp-ts:
 	cd tooling/tree-sitter-wisp && ./build.sh test
@@ -1898,7 +1898,7 @@ test-witness-two-box:
 # it writes durable state into .dev-data on every run.
 # The truth-telling arc: emphasis, externality, the audit, federated repro,
 # eisenberg-gale, the demand fold, owned delivery. Kernel suites need
-# libplanner_kernel (make -C module/playnet/solve/kernel).
+# libplanner_kernel (make -C module/localchimera/solve/kernel).
 .PHONY: test-truth-telling
 test-truth-telling: $(KERNEL_SO)
 	@for t in emphasis externality audit federated-repro eisenberg-gale; do \

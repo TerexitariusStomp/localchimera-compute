@@ -3,10 +3,10 @@
 !#
 ;;; tools/lint/protocol-extract.scm — the door heads of the three protocol objects
 ;;;
-;;; Reads module/playnet/doors/lobby.scm and module/playnet/doors/service.scm
+;;; Reads module/localchimera/doors/lobby.scm and module/localchimera/doors/service.scm
 ;;; as data, finds every Goblins `(methods ((name . args) …) …)` form, and
 ;;; prints one line per door: object, name, argument list as written. The
-;;; Phase B1 declaration (playnet doors protocol) starts from this output, and the
+;;; Phase B1 declaration (localchimera doors protocol) starts from this output, and the
 ;;; linter that keeps declaration and code in step reuses `door-heads`.
 ;;;
 ;;;   protocol-extract.scm            all three objects, TSV
@@ -115,8 +115,8 @@ session's own act (`see` reads the vision model; `my-phc` sends fp-my-phc)."
 ;; The machine build strips the planner object and the domain door files —
 ;; the objects here are what the stripped product still serves.
 (define %objects
-  `((lobby   "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm")
-    (session "module/playnet/doors/lobby.scm" "module/playnet/doors/identity.scm")))
+  `((lobby   "module/localchimera/doors/lobby.scm" "module/localchimera/doors/identity.scm")
+    (session "module/localchimera/doors/lobby.scm" "module/localchimera/doors/identity.scm")))
 
 (define (all-doors)
   (append-map (lambda (o) (map (lambda (d) (cons (car o) d)) (object-doors (cdr o) (car o))))

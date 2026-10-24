@@ -11,7 +11,7 @@
 ## Framing
 
 HRF funds tools that keep people transacting and communicating under
-repression. playnet-compute's contribution: **machine resources earnable
+repression. localchimera's contribution: **machine resources earnable
 over rails that cannot be shut off or permissioned** — nostr identity
 (NIP-90 paid jobs), sats settlement, and a Reticulum mesh path that
 works where there is no ISP relationship at all. A community that can
@@ -20,7 +20,7 @@ datacenter account, no KYC'd cloud — holds a financial-freedom tool.
 
 ## Application text
 
-**Project:** playnet-compute — censorship-resistant earning via
+**Project:** localchimera — censorship-resistant earning via
 browser-native paid compute (NIP-90) and mesh demand
 
 **The problem.** Distributed-compute earning today requires installing
@@ -30,7 +30,7 @@ authoritarian regimes — precisely those who most need uncensorable
 income — are excluded on every axis: no install rights, no cloud
 accounts, no payout access.
 
-**What exists.** playnet-compute (AGPL-3.0, 489 commits, ~720 green
+**What exists.** localchimera (AGPL-3.0, 489 commits, ~720 green
 test checks, `rad:z2xjyuu4adoo1x88is8xtRz2tYwhu`) makes a browser tab
 an accountable compute node. Paid demand enters over NIP-90 (nostr):
 kind-5xxx requests execute in-browser and return kind-6xxx results

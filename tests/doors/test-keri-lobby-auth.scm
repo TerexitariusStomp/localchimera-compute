@@ -12,9 +12,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-keri-lobby-auth.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet doors lobby)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera doors lobby)
              (goblins)
              (goblins vat)
              (goblins actor-lib methods)

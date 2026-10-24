@@ -13,13 +13,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-floor-under-refinement.scm
 
-(use-modules (playnet test harness)
-             ((playnet test planner prelude) #:select ())
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
-             (playnet knowledge recipes bread-commune-seed)
-             ((playnet utils clock) #:select (now instant->civil))
+(use-modules (localchimera test harness)
+             ((localchimera test planner prelude) #:select ())
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
+             (localchimera knowledge recipes bread-commune-seed)
+             ((localchimera utils clock) #:select (now instant->civil))
              (srfi srfi-1))
 
 (define procs bread-procs)

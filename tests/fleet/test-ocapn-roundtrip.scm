@@ -29,7 +29,7 @@
              (ice-9 textual-ports)
              (ice-9 threads)
              (fibers)
-             (playnet test harness))
+             (localchimera test harness))
 
 ;;; ── Pick a free port, retrying on a lost bind race ───────────────────────
 ;;; `pick-free-port` cannot RESERVE the port it reports — the socket has to

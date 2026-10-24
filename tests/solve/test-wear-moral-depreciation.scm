@@ -22,8 +22,8 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-wear-moral-depreciation.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve report)
-             (playnet solve compile))
+(use-modules (localchimera solve engine) (localchimera solve report)
+             (localchimera solve compile))
 
 ;; bake wears the oven; condition has two components with their own suppliers:
 ;;   fix   : repair  =   5 Cond_rep for  1 h  → 0.2 h/unit   (the repair rate)

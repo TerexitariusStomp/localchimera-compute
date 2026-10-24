@@ -9,7 +9,7 @@
 ;;;   guile tools/lint/lint-verbs.scm --list     print every site
 ;;;
 ;;; The action table (vf/schemas.scm) says what each action does, and
-;;; (playnet vf formulas actions) answers the questions code asks of it. A site
+;;; (localchimera vf formulas actions) answers the questions code asks of it. A site
 ;;; that writes a quoted list of verbs, or compares an action to a verb literal, holds a
 ;;; copy of what the table says (docs/planning/books/beyond-valueflows.md §6.2, Appendix A).
 ;;; A SITE is a line of library code (module/, server/, tools/; not tests, deprecated code

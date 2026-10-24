@@ -11,11 +11,11 @@
 ;;; who can.
 ;;;
 ;;; Run:  guile -L module tests/scope/test-ability-contribution.scm
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness)
-             (playnet observation account) (playnet scope root) (playnet vf schemas)
-             ((playnet observation account) #:select (declare-claimable! set-person-substrate!))
-             ((playnet test scope) #:select (record-work! account!))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera observation account) (localchimera scope root) (localchimera vf schemas)
+             ((localchimera observation account) #:select (declare-claimable! set-person-substrate!))
+             ((localchimera test scope) #:select (record-work! account!))
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (declare-claimable! "spec-bread")

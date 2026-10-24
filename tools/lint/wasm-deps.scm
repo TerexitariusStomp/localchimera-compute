@@ -1,7 +1,7 @@
 #!/usr/bin/env -S guile --no-auto-compile -s
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
-;;; wasm-deps.scm — transitive (playnet …) source closure of a wasm entry point
+;;; wasm-deps.scm — transitive (localchimera …) source closure of a wasm entry point
 ;;;
 ;;; The browser/*.wasm rules in the Makefile carry hand-written prerequisite
 ;;; lists.  A hand-written list drifts silently in the worst possible
@@ -9,17 +9,17 @@
 ;;; so a broken module never triggers a rebuild and the breakage surfaces
 ;;; later, attributed to whoever next edits a listed file.
 ;;;
-;;; That is not hypothetical here. (playnet crypto shamir) is imported by
+;;; That is not hypothetical here. (localchimera crypto shamir) is imported by
 ;;; hoot/repl.scm and was absent from repl.wasm's prerequisites, so when it
 ;;; started using a procedure Hoot lacks, `make` went on reporting the wasm up
 ;;; to date.
 ;;;
 ;;; This walks the import graph from an entry file and prints every
-;;; (playnet …) module reachable from it, as repo-relative .scm paths, one per
+;;; (localchimera …) module reachable from it, as repo-relative .scm paths, one per
 ;;; line, sorted.  `make check-wasm-deps` diffs that against what the Makefile
 ;;; declares.
 ;;;
-;;; Scope: (playnet …) modules only.  Third-party libraries (hoot, goblins,
+;;; Scope: (localchimera …) modules only.  Third-party libraries (hoot, goblins,
 ;;; fibers, srfi, rnrs) live in the store at pinned versions and change only
 ;;; when a pin moves, which is a rebuild-everything event anyway.
 ;;;
@@ -35,7 +35,7 @@
 ;;; ── Two ways a file depends on another ──────────────────────────────────────
 ;;;
 ;;; Imports are one.  `include-from-path` is the other, and it is equally
-;;; static: all 141 include sites in this repo (98 in the (playnet boot prelude)
+;;; static: all 141 include sites in this repo (98 in the (localchimera boot prelude)
 ;;; umbrella alone) name their target as a literal string, so a walker can
 ;;; follow them exactly as it follows an import.  Includes are therefore
 ;;; treated as real edges here, not as a limitation to warn about.
@@ -54,9 +54,9 @@
 ;;; ── Reading import forms ────────────────────────────────────────────────────
 
 (define (module-name->path name)
-  "Repo-relative source path for a (playnet …) module NAME, or #f."
+  "Repo-relative source path for a (localchimera …) module NAME, or #f."
   (and (pair? name)
-       (eq? (car name) 'playnet)
+       (eq? (car name) 'localchimera)
        (let ((path (string-append "module/"
                                   (string-join (map symbol->string name) "/")
                                   ".scm")))
@@ -64,12 +64,12 @@
 
 (define (clause->module-name clause)
   "Extract a module name from an import CLAUSE.  Handles the bare form
-   (playnet a b) and the selecting form ((playnet a b) #:select …)."
+   (localchimera a b) and the selecting form ((localchimera a b) #:select …)."
   (cond
    ((not (pair? clause)) #f)
-   ;; ((playnet a b) #:select …) — head is itself a module name
+   ;; ((localchimera a b) #:select …) — head is itself a module name
    ((pair? (car clause)) (car clause))
-   ;; (playnet a b) — a bare module name
+   ;; (localchimera a b) — a bare module name
    ((symbol? (car clause)) clause)
    (else #f)))
 
@@ -94,7 +94,7 @@
 
 (define (form->includes form path)
   "Repo-relative paths of files textually included by FORM.
-   (include-from-path \"playnet/x/y.scm\") resolves against module/;
+   (include-from-path \"localchimera/x/y.scm\") resolves against module/;
    (include \"y.scm\") resolves against the including file's directory.
    A non-literal path is recorded as opaque — it cannot be followed."
   (match form
@@ -152,7 +152,7 @@
 ;;; ── Closure ─────────────────────────────────────────────────────────────────
 
 (define* (closure entry #:key (includes-only? #f))
-  "Every (playnet …) source file transitively reachable from ENTRY, by import
+  "Every (localchimera …) source file transitively reachable from ENTRY, by import
    or by textual include.  Both are real build edges: editing an included
    fragment changes the including unit just as surely as editing an imported
    module, so both belong in a prerequisite list.

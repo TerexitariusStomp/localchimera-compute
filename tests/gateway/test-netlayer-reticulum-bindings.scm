@@ -9,7 +9,7 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/gateway/test-netlayer-reticulum-bindings.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (goblins ocapn netlayer reticulum))
 
 (define m (resolve-module '(goblins ocapn netlayer reticulum)))

@@ -32,12 +32,12 @@ import { fromHex } from "../app/bytes.js";
 import { readStr, forget } from "../app/store.js";
 
 const STORE = "keypairs";
-const LEGACY_PREFIX = "playnet-kp-";
+const LEGACY_PREFIX = "localchimera-kp-";
 
 // One store of key handles under out-of-line names. A later shape is a new
 // branch in `upgrade` and a bumped version.
 const SCHEMA = {
-  name: "playnet-keys",
+  name: "localchimera-keys",
   version: 1,
   upgrade(db) {
     if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
@@ -82,7 +82,7 @@ export async function makeSealKey(name) {
   return aes;
 }
 
-// One-time migration off the old localStorage["playnet-kp-<name>"] =
+// One-time migration off the old localStorage["localchimera-kp-<name>"] =
 // "<pubHex>:<privHex>" entries. The private half is re-imported as
 // NON-extractable and the legacy entry is removed once the IndexedDB write
 // is durable, so from then on the raw bytes exist nowhere.

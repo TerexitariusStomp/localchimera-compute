@@ -9,11 +9,11 @@
 ;;; nothing but the credential corpus, validating KERI's "end-verifiable
 ;;; on ambient infrastructure" property for our PHC + VRC layer.
 
-(use-modules (playnet test harness))
-(use-modules (playnet keri acdc) (playnet keri acdc-store)
-             (playnet keri first-person credentials) (playnet keri first-person predicates)
-             (playnet keri citizen-sig) (playnet keri signify-portable))
-(use-modules ((playnet keri signify) #:select (ed25519-keypair-public)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera keri acdc) (localchimera keri acdc-store)
+             (localchimera keri first-person credentials) (localchimera keri first-person predicates)
+             (localchimera keri citizen-sig) (localchimera keri signify-portable))
+(use-modules ((localchimera keri signify) #:select (ed25519-keypair-public)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1)
              (ice-9 ftw))
@@ -129,7 +129,7 @@
 
 (display "\n── 2. Durable-dir round trip ──\n")
 
-(define disk-dir "/tmp/playnet-fp-portability-test")
+(define disk-dir "/tmp/localchimera-fp-portability-test")
 (rm-rf disk-dir)
 
 (define vat-c (spawn-vat))

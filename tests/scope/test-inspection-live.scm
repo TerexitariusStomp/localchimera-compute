@@ -24,14 +24,14 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/scope/test-inspection-live.scm
 
-(use-modules (playnet test harness) (playnet test scope)
-             (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
+(use-modules (localchimera test harness) (localchimera test scope)
+             (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 ;; A period here is a WEEK: the roster's window is read over its seven days, so
 ;; `weekday-window` is a working week of the auditor's hours, on any date.
-(use-modules ((playnet solve engine) #:select (set-period-length!)))
+(use-modules ((localchimera solve engine) #:select (set-period-length!)))
 (set-period-length! 1.0 "week")
 (define win (weekday-window))
 

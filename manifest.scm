@@ -1,5 +1,5 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; manifest.scm — one-shot dev shell for the playnet repo.
+;;; manifest.scm — one-shot dev shell for the localchimera repo.
 ;;;
 ;;; Drop into a shell with everything needed to build, run, test, and
 ;;; live-hack the entire codebase:
@@ -14,7 +14,7 @@
 ;;; To extend: add to the list at the bottom. Keep granular sets in
 ;;; the Makefile in sync if the new dep is needed by a build target.
 
-;; Make `(playnet-hoot)` resolvable so we get the repo's guile-hoot. The
+;; Make `(localchimera-hoot)` resolvable so we get the repo's guile-hoot. The
 ;; same trick lives in deploy/guix/machines.scm — we never want to
 ;; force operators to remember -L flags.
 (eval-when (expand load eval)
@@ -33,7 +33,7 @@
              (gnu packages lean)
              (gnu packages linux)         ; inotify-tools
              (gnu packages version-control)
-             (playnet-hoot))              ; guile-hoot/playnet
+             (localchimera-hoot))              ; guile-hoot/localchimera
 
 (packages->manifest
  (list ;; ── Core Guile + build ────────────────────────────────────────
@@ -42,9 +42,9 @@
 
        ;; ── Wasm toolchain (live hacking + production builds) ─────────
        ;; Hoot 0.9.0 plus the upstream number->string fixes
-       ;; (deploy/guix/playnet-hoot.scm): `guild compile-wasm` and the dev
+       ;; (deploy/guix/localchimera-hoot.scm): `guild compile-wasm` and the dev
        ;; REPL's (hoot web-server) come from one package.
-       guile-hoot/playnet
+       guile-hoot/localchimera
        guile-fibers          ; required by (hoot web-server)
        guile-websocket       ; required by (hoot web-server) /repl proxy
 

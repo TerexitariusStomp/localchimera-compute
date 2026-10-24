@@ -5,7 +5,7 @@
 ;;; removed-gate error: the role-credential ceremony they gated on was deleted
 ;;; 2026-08-19, never having bootstrapped for anyone. This is the replacement,
 ;;; wired to the SAME founders.txt-based `governor?` every other admin door in
-;;; (playnet boot governance) already gates on — no new authority concept,
+;;; (localchimera boot governance) already gates on — no new authority concept,
 ;;; the one that runs the system today.
 ;;;
 ;;; What this pins:
@@ -22,9 +22,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-issue-revoke-credential.scm
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri said-portable)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera boot governance) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri said-portable)
              (goblins) (goblins vat))
 
 (define vat (spawn-vat))

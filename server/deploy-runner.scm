@@ -1,11 +1,11 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; server/deploy-runner.scm — auto-deploy on fleet changes via file-watch
 ;;;
-;;; Watches /var/run/playnet/deploy-trigger for changes using inotifywait.
+;;; Watches /var/run/localchimera/deploy-trigger for changes using inotifywait.
 ;;; When the fleet reconciler writes this file after updating hosts.scm,
 ;;; deploy-runner picks it up and runs `guix deploy`.
 ;;;
-;;; NO MQTT. Pure filesystem event. The trigger file is owned by playnet
+;;; NO MQTT. Pure filesystem event. The trigger file is owned by localchimera
 ;;; (written by the gateway process); the deploy-runner runs as the
 ;;; deploy user and only needs read access.
 ;;;
@@ -17,12 +17,12 @@
              (ice-9 format))
 
 (define DEPLOY_DIR
-  (or (getenv "PLAYNET_DEPLOY_DIR")
-      "/home/playnet/playnet-repo/deploy"))
+  (or (getenv "LOCALCHIMERA_DEPLOY_DIR")
+      "/home/localchimera/localchimera-repo/deploy"))
 
 (define TRIGGER_FILE
   (or (getenv "DEPLOY_TRIGGER_FILE")
-      "/var/run/playnet/deploy-trigger"))
+      "/var/run/localchimera/deploy-trigger"))
 
 (define MIN_COOLDOWN_SECONDS 600)
 (define last-deploy-epoch 0)

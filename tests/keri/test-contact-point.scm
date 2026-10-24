@@ -16,10 +16,10 @@
 ;;;     expired credential are each rejected;
 ;;;   • the derived binding matches what ^recipient-registry's `bind` wants.
 
-;; the host crypto backend: loading (playnet keri signify) installs it
-(use-modules ((playnet keri signify) #:select ()))
-(use-modules (playnet keri acdc) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet test harness)
-             ((playnet keri citizen-sig)
+;; the host crypto backend: loading (localchimera keri signify) installs it
+(use-modules ((localchimera keri signify) #:select ()))
+(use-modules (localchimera keri acdc) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera test harness)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair
                         keri-identity-aid))
              (srfi srfi-1))
@@ -42,7 +42,7 @@
          (and (equal? (cred-issuer c) alice-a)
               (equal? (cred-holder c) alice-a)))
   (check "schema is contact-point" (equal? (cred-schema c)
-                                           *schema-playnet-contact-point*))
+                                           *schema-localchimera-contact-point*))
   (check "carries a blinding nonce from first issuance"
          (let ((u (cred-claim c 'u)))
            (and (string? u) (= 24 (string-length u)))))

@@ -10,10 +10,10 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/scope/test-housing-live.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness)
-             (playnet vf schemas) (srfi srfi-1) (srfi srfi-11) (playnet scope live) (playnet vf schemas)
-             (playnet test planner bread)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (srfi srfi-1) (srfi srfi-11) (localchimera scope live) (localchimera vf schemas)
+             (localchimera test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

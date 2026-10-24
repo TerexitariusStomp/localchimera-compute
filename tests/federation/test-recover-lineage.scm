@@ -5,9 +5,9 @@
 ;;; and scope-split credentials referencing its AID, can reconstruct its
 ;;; lineage chain via recover-lineage.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet credentials recomposition) (playnet keri acdc) (playnet federation rebuild) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera credentials recomposition) (localchimera keri acdc) (localchimera federation rebuild) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

@@ -9,7 +9,7 @@
 # channel) — never from the public repo.
 #
 # Idempotent. Usage:  tools/dev/radicle-delegate-setup.sh [--timer] [--sleep-hook]
-#   --timer       also install a systemd --user timer that runs playnet-sync.sh
+#   --timer       also install a systemd --user timer that runs localchimera-sync.sh
 #   --sleep-hook  also install a system-sleep hook (needs sudo) that restarts
 #                 radicle-node.service after every suspend/resume — the
 #                 daemon's Tor/peer sessions die with the network interface on
@@ -22,7 +22,7 @@ set -uo pipefail
 REPO_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null)"
 [ -n "$REPO_ROOT" ] || REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SEEDS_FILE="$REPO_ROOT/deploy/radicle-seeds.local.txt"
-SYNC="$REPO_ROOT/tools/dev/playnet-sync.sh"
+SYNC="$REPO_ROOT/tools/dev/localchimera-sync.sh"
 
 echo "[1/4] Checking prerequisites…"
 command -v rad >/dev/null || { echo "  ✗ 'rad' not found on PATH"; exit 1; }
@@ -75,9 +75,9 @@ if [ -n "$WANT_TIMER" ]; then
   echo "[4/4] Installing systemd --user timer (15-min board sync)…"
   mkdir -p ~/.config/systemd/user
   GUIXBIN="$(dirname "$(command -v rad)")"
-  cat > ~/.config/systemd/user/playnet-sync.service <<EOF
+  cat > ~/.config/systemd/user/localchimera-sync.service <<EOF
 [Unit]
-Description=Push local Radicle repo state to the playnet seed(s) over tor
+Description=Push local Radicle repo state to the localchimera seed(s) over tor
 After=network-online.target
 
 [Service]
@@ -86,9 +86,9 @@ WorkingDirectory=$REPO_ROOT
 Environment=PATH=$GUIXBIN:/run/current-system/profile/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=$SYNC
 EOF
-  cat > ~/.config/systemd/user/playnet-sync.timer <<'EOF'
+  cat > ~/.config/systemd/user/localchimera-sync.timer <<'EOF'
 [Unit]
-Description=Periodic playnet board sync
+Description=Periodic localchimera board sync
 
 [Timer]
 OnBootSec=2min
@@ -99,7 +99,7 @@ Persistent=true
 WantedBy=timers.target
 EOF
   systemctl --user daemon-reload
-  systemctl --user enable --now playnet-sync.timer >/dev/null 2>&1
+  systemctl --user enable --now localchimera-sync.timer >/dev/null 2>&1
   echo "  ✓ timer enabled (every 15 min)"
 else
   echo "[4/4] Skipping timer (pass --timer to install it)."
@@ -145,4 +145,4 @@ else
 fi
 
 echo
-echo "Done. Push the board any time with:  tools/dev/playnet-sync.sh"
+echo "Done. Push the board any time with:  tools/dev/localchimera-sync.sh"

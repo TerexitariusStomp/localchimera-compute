@@ -16,11 +16,11 @@
 ;;;   - Stub-keri-backend mode, where create-scope-aid records the
 ;;;     anchors arg so we can assert they were threaded through.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (srfi srfi-1))
-(use-modules (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store))
-(use-modules (playnet federation universal-commune))
-(use-modules (playnet keys keri-backend))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (srfi srfi-1))
+(use-modules (localchimera credentials membership) (localchimera credentials recomposition) (localchimera keri acdc) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store))
+(use-modules (localchimera federation universal-commune))
+(use-modules (localchimera keys keri-backend))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap))
 
 
@@ -170,7 +170,7 @@
 ;; ============================================================================
 
 (define (issue-fed-membership! store federation-aid commune-aid commune-id)
-  "Helper: write a fresh playnet-federation-membership/v1 ACDC into STORE,
+  "Helper: write a fresh localchimera-federation-membership/v1 ACDC into STORE,
    issued by FEDERATION-AID, holder = COMMUNE-AID."
   (let ((cred (make-federation-membership-credential
                #:issuer-group-aid federation-aid
@@ -218,7 +218,7 @@
                  (and rat (equal? "E_F" (cred-issuer rat)))))
         ;; Merger ACDC should have NO stale-membership edges.
         (let* ((merger (find (lambda (c)
-                               (and (equal? *schema-playnet-scope-merger*
+                               (and (equal? *schema-localchimera-scope-merger*
                                             (cred-schema c))
                                     (equal? c-aid (cred-claim c 'new-scope-aid))))
                              ($ shared-store 'all))))
@@ -268,7 +268,7 @@
         (check "disjoint: ratifier ref = UC"
                (eq? ratifier-ref UC))
         (let* ((merger (find (lambda (c)
-                               (and (equal? *schema-playnet-scope-merger*
+                               (and (equal? *schema-localchimera-scope-merger*
                                             (cred-schema c))
                                     (equal? c-aid (cred-claim c 'new-scope-aid))))
                              ($ shared-store 'all)))
@@ -326,7 +326,7 @@
         (check "mixed: ratifier ref = F"
                (eq? ratifier-ref F))
         (let* ((merger (find (lambda (c)
-                               (and (equal? *schema-playnet-scope-merger*
+                               (and (equal? *schema-localchimera-scope-merger*
                                             (cred-schema c))
                                     (equal? c-aid (cred-claim c 'new-scope-aid))))
                              ($ shared-store 'all)))
@@ -389,7 +389,7 @@
                  (equal? '("E_A6" "E_B6" "E_C6")
                          (cred-claim rat 'predecessors))))
         (let* ((merger (find (lambda (c)
-                               (and (equal? *schema-playnet-scope-merger*
+                               (and (equal? *schema-localchimera-scope-merger*
                                             (cred-schema c))
                                     (equal? d-aid (cred-claim c 'new-scope-aid))))
                              ($ shared-store 'all))))
@@ -438,7 +438,7 @@
           (check "split: ratification has proposal-type=split"
                  (eq? 'split (cred-claim rat 'proposal-type))))
         (let ((split-acdc (find (lambda (c)
-                                  (and (equal? *schema-playnet-scope-split*
+                                  (and (equal? *schema-localchimera-scope-split*
                                                (cred-schema c))
                                        (equal? "E_A7"
                                                (cred-claim c 'parent-scope-aid))))

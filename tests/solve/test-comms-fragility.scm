@@ -8,16 +8,16 @@
 ;;; runs a real solve-native and shows the planner ROUTES reach onto the owned
 ;;; channel to stay off fragile rented infra.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner \
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner \
 ;;;         tests/solve/test-comms-fragility.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve solver)
-             (playnet vf schemas))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve solver)
+             (localchimera vf schemas))
 ;; comms/fragility.scm is a fragment over the engine's world: it loads into
 ;; this module and reads the engine through the imports above.
-(primitive-load (%search-load-path "playnet/comms/fragility.scm"))
+(primitive-load (%search-load-path "localchimera/comms/fragility.scm"))
 
 (define (check label got expected)
   (if (equal? got expected)

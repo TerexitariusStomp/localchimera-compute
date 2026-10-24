@@ -5,8 +5,8 @@
 ;;;
 ;;; Run: guile -L module tests/ai/test-tee-crypto.scm
 
-(use-modules (playnet test harness)
-             (playnet ai tee-crypto)
+(use-modules (localchimera test harness)
+             (localchimera ai tee-crypto)
              (rnrs bytevectors) (ice-9 format))
 
 (define (hex bv)

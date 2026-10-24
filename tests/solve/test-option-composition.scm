@@ -16,22 +16,22 @@
 ;;; not credible; a building-wide one is. The premium is read off the at-stake
 ;;; good the composition produced (the withheld dues), not steered toward.
 ;;;
-;;; Run:  guile -L module/playnet/planner -L module --no-auto-compile \
+;;; Run:  guile -L module/localchimera/planner -L module --no-auto-compile \
 ;;;         tests/solve/test-option-composition.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope))
 (use-modules (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet solve solver)
-             (playnet vf schemas))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera solve solver)
+             (localchimera vf schemas))
 ;; option-premium is a module; option-composition is still a fragment and
 ;; reads its names out of the current module, so import before loading it.
-(use-modules (playnet algorithms option-premium))
-(use-modules (playnet algorithms option-composition))
-(use-modules ((playnet vf formulas actions) #:select (creating-actions))
-             ((playnet vf formulas flows) #:select (committed-by-spec)))
+(use-modules (localchimera algorithms option-premium))
+(use-modules (localchimera algorithms option-composition))
+(use-modules ((localchimera vf formulas actions) #:select (creating-actions))
+             ((localchimera vf formulas flows) #:select (committed-by-spec)))
 
 (define *pass* 0) (define *fail* 0)
 (define (ok? name cond)

@@ -2,7 +2,7 @@
 ;;; test-branch-and-bound.scm — the discrete layer SEARCHES, and its pruning is
 ;;; licensed by the convex certificate.
 ;;;
-;;; Spec: docs/playnet.typ §7 (the thin non-convex wrapper) + docs/social-category.typ
+;;; Spec: docs/localchimera.typ §7 (the thin non-convex wrapper) + docs/social-category.typ
 ;;;       §8 Obligation 8 (a plan carries its proof).
 ;;;
 ;;; A minimum-batch process runs at ≥ L or not at all, so the on/off choice is
@@ -32,10 +32,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-branch-and-bound.scm
 
-(use-modules (playnet solve discrete))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet test planner worked-example) (playnet solve world)
-             (playnet solve solver)
+(use-modules (localchimera solve discrete))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera test planner worked-example) (localchimera solve world)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
 

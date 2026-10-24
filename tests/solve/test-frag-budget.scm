@@ -11,12 +11,12 @@
 ;;; under the unbudgeted total (which meets the full 16 demand); the draw spreads across periods;
 ;;; and build-located emits exactly one aggregate (kind-3) form for the whole horizon.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-budget.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-budget.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 (define s-tip 10.0)   ; = quantile_0.5 of [8,12]; the budget is over TWO periods' total co2 draw
 (define (count-kind C k) (let ((kv (ckind C)) (n (cnt C)) (a 0))

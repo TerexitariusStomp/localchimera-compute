@@ -8,20 +8,20 @@
 ;;; Root-only acts refuse a device session; revocation ends both the
 ;;; session door and the signature door. docs/planning/identity/device-keys.md.
 
-(use-modules (playnet test harness)
-             (playnet test identity)
-             (playnet keri signify-portable)
-             ((playnet keri cesr) #:select (cesr-bytes->qb64))
-             ((playnet keri citizen-sig)
+(use-modules (localchimera test harness)
+             (localchimera test identity)
+             (localchimera keri signify-portable)
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64))
+             ((localchimera keri citizen-sig)
               #:select (aid-signer-keys-resolver verify-said-signature sign-said))
-             ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes))
-             ((playnet keri acdc) #:select (make-credential))
-             ((playnet keri first-person predicates) #:select (cred-signature-valid?))
-             ((playnet keri acdc) #:select (cred-said cred-claims cred-signature cred-schema cred-issuer cred-holder)) ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
-             (playnet identity devices)
-             (playnet identity seat)
-             (playnet identity oobi-host)
-             (playnet doors lobby)
+             ((localchimera keri crypto-primitives) #:select (keri-crypto-random-bytes))
+             ((localchimera keri acdc) #:select (make-credential))
+             ((localchimera keri first-person predicates) #:select (cred-signature-valid?))
+             ((localchimera keri acdc) #:select (cred-said cred-claims cred-signature cred-schema cred-issuer cred-holder)) ((localchimera keri first-person credentials) #:select (make-device-authorization-credential))
+             (localchimera identity devices)
+             (localchimera identity seat)
+             (localchimera identity oobi-host)
+             (localchimera doors lobby)
              (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap)
@@ -29,7 +29,7 @@
              (json)
              (ice-9 format))
 
-(define tmp (let ((d (string-append "/tmp/playnet-device-auth-" (number->string (getpid)))))
+(define tmp (let ((d (string-append "/tmp/localchimera-device-auth-" (number->string (getpid)))))
               (mkdir d) d))
 (device-registry-dir tmp)
 
@@ -158,12 +158,12 @@
 (check "a credential the device signed while live is still the person's signed credential"
        (with-vat gateway-vat
          (cred-signature-valid?
-          (make-credential "playnet-test/v1" aid other-aid '((timestamp . 1700000001))
+          (make-credential "localchimera-test/v1" aid other-aid '((timestamp . 1700000001))
                            #:signing-keypair laptop))))
 (check "…and one it dates after its revocation is not"
        (not (with-vat gateway-vat
               (cred-signature-valid?
-               (make-credential "playnet-test/v1" aid other-aid '((timestamp . 4102444800))
+               (make-credential "localchimera-test/v1" aid other-aid '((timestamp . 4102444800))
                                 #:signing-keypair laptop)))))
 (check "my-devices shows the revocation"
        (let ((ds (with-vat gateway-vat ($ root 'my-devices))))

@@ -1,35 +1,35 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; server/fleet-keeper.scm — the fleet keeper's process
 ;;;
-;;; Every PLAYNET_KEEPER_INTERVAL seconds (default 120) it reads this box's
-;;; desired-fleet.scm and hosts.scm and runs one (playnet fleet keeper)
+;;; Every LOCALCHIMERA_KEEPER_INTERVAL seconds (default 120) it reads this box's
+;;; desired-fleet.scm and hosts.scm and runs one (localchimera fleet keeper)
 ;;; tick: install the hosts that ask for it, send passphrases to hosts
 ;;; waiting in their initrd, promote a host whose system has come up.
 ;;;
 ;;; It runs as the account that holds the provisioning key, and on a
-;;; Tor-only box under torsocks (PLAYNET_KEEPER_SSH_PREFIX=torsocks), so
+;;; Tor-only box under torsocks (LOCALCHIMERA_KEEPER_SSH_PREFIX=torsocks), so
 ;;; every SSH connection it opens rides Tor.
 ;;;
 ;;; Run as a Shepherd service (deploy/guix/fleet-keeper-service.scm) or:
 ;;;   guile --no-auto-compile -L module -s server/fleet-keeper.scm [--once]
 
-(use-modules (playnet fleet child)
-             (playnet fleet keeper)
-             (playnet fleet records)
+(use-modules (localchimera fleet child)
+             (localchimera fleet keeper)
+             (localchimera fleet records)
              (ice-9 format)
              (srfi srfi-1)
              (srfi srfi-13))
 
-(define %data-dir (or (getenv "PLAYNET_DATA_DIR") "/var/lib/playnet"))
+(define %data-dir (or (getenv "LOCALCHIMERA_DATA_DIR") "/var/lib/localchimera"))
 (define %deploy-dir
-  (or (getenv "PLAYNET_DEPLOY_DIR") "/home/playnet/playnet-repo/deploy"))
+  (or (getenv "LOCALCHIMERA_DEPLOY_DIR") "/home/localchimera/localchimera-repo/deploy"))
 (define %identity
-  (or (getenv "PLAYNET_FLEET_SSH_KEY")
+  (or (getenv "LOCALCHIMERA_FLEET_SSH_KEY")
       (string-append (passwd:dir (getpwuid (getuid))) "/.ssh/id_ed25519")))
 (define %interval
-  (or (and=> (getenv "PLAYNET_KEEPER_INTERVAL") string->number) 120))
+  (or (and=> (getenv "LOCALCHIMERA_KEEPER_INTERVAL") string->number) 120))
 (define %ssh-prefix
-  (let ((p (getenv "PLAYNET_KEEPER_SSH_PREFIX")))
+  (let ((p (getenv "LOCALCHIMERA_KEEPER_SSH_PREFIX")))
     (if (and p (not (string-null? p))) (string-tokenize p) '())))
 
 ;; Shepherd stamps each line of the service's log file.
@@ -43,7 +43,7 @@
   (try-unlock! %data-dir name address %identity #:run run-ssh))
 
 (define %installer
-  (or (getenv "PLAYNET_KEEPER_INSTALLER")
+  (or (getenv "LOCALCHIMERA_KEEPER_INSTALLER")
       (string-append %deploy-dir "/scripts/bootstrap-child.sh")))
 
 (define (installer-ready?)

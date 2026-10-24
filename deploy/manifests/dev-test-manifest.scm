@@ -7,12 +7,12 @@
 ;;;
 ;;; ── Why not deploy/channels.scm? ────────────────────────────────────────────
 ;;;
-;;; channels.scm pins the `playnet` channel to a Radicle seed
+;;; channels.scm pins the `localchimera` channel to a Radicle seed
 ;;; (currently iris.radicle.xyz, formerly seed.radicle.garden). Both seeds
 ;;; respond fine to bare `git ls-remote`, but `guix time-machine`'s libgit2
 ;;; client times out trying to handshake with Radicle's git HTTP bridge. So
 ;;; every Make target wired through `$(TIME_MACHINE)` hangs. We don't need
-;;; the playnet channel to RUN tests — only `guix pull` / `guix deploy`
+;;; the localchimera channel to RUN tests — only `guix pull` / `guix deploy`
 ;;; need it for reproducibility — so this manifest is consumed via plain
 ;;; `guix shell -L deploy/guix -m ...` that bypasses time-machine entirely.
 ;;; Local modules in deploy/guix/ are resolved via -L, not channel pinning.
@@ -77,13 +77,13 @@
          "grep"
          "sed"
          "bash"
-         ;; (playnet fleet child) generates each child box's SSH key by running
+         ;; (localchimera fleet child) generates each child box's SSH key by running
          ;; `ssh-keygen`; tests/fleet/test-child-unlock.scm and test-keeper.scm
          ;; reach it. Same story as the tools above: present from the host on a
          ;; developer's machine, absent under --pure and in native CI, where
          ;; both went red with "fleet child: ssh-keygen failed".
          "openssh"))
   ;; Local C library packaged in deploy/guix/blake3.scm — provides
-  ;; libblake3.so for module/playnet/keri/blake3.scm to dlopen.
+  ;; libblake3.so for module/localchimera/keri/blake3.scm to dlopen.
   ;; KERIA SAIDs (CESR code "E") are blake3-256 digests.
   (list blake3)))

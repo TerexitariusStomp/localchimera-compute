@@ -11,9 +11,9 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/economy/test-ownership-attestation.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet boot scope) (playnet boot governance) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet test harness)
-             ((playnet keri citizen-sig)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera boot scope) (localchimera boot governance) (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri said-portable) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1) (localchimera test harness)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         sign-said verify-said-signature))
              (goblins) (goblins utils hashmap) (srfi srfi-1))

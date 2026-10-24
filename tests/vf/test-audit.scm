@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-audit.scm — the audit arithmetic (planner/facts/audit.scm), pure.
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness) (playnet vf schemas) (playnet vf facts audit))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness) (localchimera vf schemas) (localchimera vf facts audit))
 (define (ev id act spec who q at)
   (make-economic-event #:id id #:action act #:resource-conforms-to spec #:provider (if (eq? act 'consume) who "commune") #:receiver (if (eq? act 'consume) #f who)
                        #:resource-quantity (make-measure q %count-unit) #:has-point-in-time at))

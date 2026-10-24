@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-clock.scm — one clock, three scales, civil only at the boundary.
 ;;;
-;;; (playnet utils clock) is the single place a numeric instant is made or
+;;; (localchimera utils clock) is the single place a numeric instant is made or
 ;;; read (open-threads §3.5): the `timescale` parameter names the canonical
 ;;; scale ('gps default — continuous, no leap seconds), and civil ISO strings
 ;;; exist only at the edges. These checks pin the scale arithmetic to known
@@ -11,8 +11,8 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/utils/test-clock.scm
 
-(use-modules (playnet test harness)
-             (playnet utils clock)
+(use-modules (localchimera test harness)
+             (localchimera utils clock)
              (ice-9 format))
 
 (format #t "~%── §1 scale anchors: the published constants ──~%")

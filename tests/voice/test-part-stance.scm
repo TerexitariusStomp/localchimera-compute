@@ -16,11 +16,11 @@
 ;;;
 ;;; Run:  guile -q -L module tests/voice/test-part-stance.scm
 
-(use-modules (playnet voice expression) (playnet boot scope) (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
-             ((playnet keri citizen-sig)
+(use-modules (localchimera voice expression) (localchimera boot scope) (localchimera boot governance) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri said-portable) (localchimera scope root) (srfi srfi-1) (localchimera test harness)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
-             ((playnet voice expression) #:select (validate-distribution))
-             (playnet vf facts parts)
+             ((localchimera voice expression) #:select (validate-distribution))
+             (localchimera vf facts parts)
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 (define (preimage-fields pre) (lambda (k) (let ((p (assq k pre))) (and p (cdr p)))))

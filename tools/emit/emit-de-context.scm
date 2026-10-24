@@ -36,11 +36,11 @@
 (define root (dirname (dirname here)))
 (define (rel p) (string-append root "/" p))
 
-(use-modules (playnet vf schemas))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal crossings))
-(use-modules (playnet vf facts places))
-(use-modules (playnet knowledge law context-pack))
+(use-modules (localchimera vf schemas))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera vf facts places))
+(use-modules (localchimera knowledge law context-pack))
 
 (use-modules (ice-9 format))
 

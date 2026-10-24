@@ -13,13 +13,13 @@
 ;;; so ocean acidification is the TIGHTER wall and binds first — two planetary frameworks, one frag, one draw.
 ;;; Plus the nitrogen RATE boundary ([62,82] Tg/yr, α=0.5 ⇒ tip 72) caps per-period N.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-catalogue.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-catalogue.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))   ; tests/ → planner dir
-(use-modules (playnet knowledge catalogues eco))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))   ; tests/ → planner dir
+(use-modules (localchimera knowledge catalogues eco))
 
 (define ocean-co2-tip (/ 0.05 0.00027))  ; aragonite headroom 0.05 Ω / (Ω per GtCO2)  ≈ 185.2 — the BINDING wall
 (define warm-co2-tip  (/ 0.2  0.00045))  ; warming headroom 0.2°C / TCRE              ≈ 444.4 — slacker

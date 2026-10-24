@@ -4,13 +4,13 @@
 ;;; actor's outbox. Invariant leg pins the activity shape; live leg
 ;;; reaches a real outbox.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
              (srfi srfi-1))
 
 (define fixture-activity
-  (ap-activity "Create" "https://playnet.earth/actors/commune"
+  (ap-activity "Create" "https://localchimera.earth/actors/commune"
                '(("type" . "Note") ("content" . "hello"))
                '("https://www.w3.org/ns/activitystreams#Public")))
 
@@ -21,7 +21,7 @@
             (assoc "to" fixture-activity)
             #t) #t)
 
-(parity-live-delegate "PLAYNET_AP_URL"
+(parity-live-delegate "LOCALCHIMERA_AP_URL"
   "an outbox accepts the activity"
   (lambda (t) (make-ap-delegate "/actors/commune/outbox" t))
   (lambda (d) (d fixture-activity))

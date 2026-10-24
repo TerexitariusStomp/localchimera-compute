@@ -12,13 +12,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-enact-order.scm
 
-(use-modules (playnet solve report))
-(use-modules ((playnet vf formulas flows) #:select (row-figure))
-             (playnet test harness)
-             (playnet test books)
-             (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
-             (playnet scope live)
-             (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver)
+(use-modules (localchimera solve report))
+(use-modules ((localchimera vf formulas flows) #:select (row-figure))
+             (localchimera test harness)
+             (localchimera test books)
+             (localchimera vf schemas) (srfi srfi-1) (srfi srfi-11)
+             (localchimera scope live)
+             (localchimera solve engine) (localchimera solve world) (localchimera solve compile) (localchimera solve solver)
              (goblins) (goblins vat) (goblins persistence-store memory) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -36,13 +36,13 @@
 (hash-set! *demand* (lg "meal" (cell "B" 0)) 10.0)
 (hash-set! *init* (lg "soil" (cell "A" 0)) 5.0)
 (hash-set! *demand* (lg "food" (cell "A" 0)) 20.0)
-(define E (resolve-module '(playnet solve engine)))
+(define E (resolve-module '(localchimera solve engine)))
 (define planned
   (call-with-values build-located
     (lambda (forms labform ncol cols goods raws idx)
       (let* ((x0 ((module-ref E 'located-warm) cols ncol idx))
              (x (call-with-values (lambda () (solve-native forms labform x0)) (lambda (x . _) x))))
-        ((@ (playnet solve report) plan->material) x cols idx)))))
+        ((@ (localchimera solve report) plan->material) x cols idx)))))
 (define (row m)
   `((id . ,(commitment-id m)) (action . ,(commitment-action m)) (conforms-to . ,(commitment-resource-conforms-to m))
     (quantity . ,(row-figure m))

@@ -6,10 +6,10 @@
 ;;; per-component tests can miss. Not exhaustive — meant to verify
 ;;; the whole stack composes as designed.
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (srfi srfi-1))
-(use-modules (playnet federation auditor) (playnet credentials audit) (playnet credentials commitments) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet boot scope) (playnet federation structural-invariants) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person predicates))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (srfi srfi-1))
+(use-modules (localchimera federation auditor) (localchimera credentials audit) (localchimera credentials commitments) (localchimera credentials voting) (localchimera credentials work) (localchimera keri acdc) (localchimera boot scope) (localchimera federation structural-invariants) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person predicates))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors)
              (srfi srfi-1))
@@ -115,7 +115,7 @@
                      #:keypair     (keri-identity-keypair id-aud)))
            (s1 ($ auditor 'audit!)))
       (let ((p1 (find (lambda (c) (equal? s1 (cred-said c)))
-                      ($ store 'by-schema *schema-playnet-audit-pass*))))
+                      ($ store 'by-schema *schema-localchimera-audit-pass*))))
         (check-pred "phase-1 audit-pass present" (not (not p1)))
         (check-pred "phase-1 pass is signed"      (cred-signature p1))
         (check-pred "phase-1 signature verifies"  (cred-signature-valid? p1)))
@@ -129,7 +129,7 @@
       (let* ((s2 ($ auditor 'audit!))
              (a2 (find (lambda (c) (equal? s2 (cred-said c)))
                        ($ store 'by-schema
-                          *schema-playnet-incoherence-alert*))))
+                          *schema-localchimera-incoherence-alert*))))
         (check-pred "phase-2 alert present" (not (not a2)))
         (check-pred "alert is signed"        (cred-signature a2))
         (check-pred "alert signature verifies"
@@ -160,7 +160,7 @@
       (let* ((s3 ($ auditor 'audit!))
              (p3 (find (lambda (c) (equal? s3 (cred-said c)))
                        ($ store 'by-schema
-                          *schema-playnet-audit-pass*))))
+                          *schema-localchimera-audit-pass*))))
         (check-pred "phase-3 audit-pass present" (not (not p3)))
         (check "auditor cycle bumped to 3" ($ auditor 'cycle) 3))
 

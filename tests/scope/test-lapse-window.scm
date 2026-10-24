@@ -24,13 +24,13 @@
 ;;;
 ;;; Run:  guile -q -L module tests/scope/test-lapse-window.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas))
 (use-modules (goblins) (goblins persistence-store memory) (srfi srfi-1))
-(use-modules ((playnet utils clock) #:select (now days->seconds instant->civil))
-             ((playnet observation observer) #:select (void-event))
-             ((playnet test scope) #:select (record-work!)))
+(use-modules ((localchimera utils clock) #:select (now days->seconds instant->civil))
+             ((localchimera observation observer) #:select (void-event))
+             ((localchimera test scope) #:select (record-work!)))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))
 (define (days-ago d) (instant->civil (- (now) (days->seconds d))))

@@ -101,7 +101,7 @@ this is large relative to the yield, the limit case is not what the plan claims.
   (target
     (name "containment")
     (construct "SpatialThing contained-in / bioregion")
-    (description "A fishery sits inside an estuary inside a coast. playnet.typ's \
+    (description "A fishery sits inside an estuary inside a coast. localchimera.typ's \
 coastal scope stewards fishery, estuary and mangrove together, so the nesting \
 and the couplings between them are the structure this target is after.")
     (fields (habitat role species dependency evidence))

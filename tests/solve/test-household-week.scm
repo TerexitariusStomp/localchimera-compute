@@ -42,15 +42,15 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-household-week.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test scope))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas) (playnet vf beyond schedules)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test scope))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas) (localchimera vf beyond schedules)
              (srfi srfi-1)
              (ice-9 format))
 
-(use-modules (playnet knowledge recipes household))
+(use-modules (localchimera knowledge recipes household))
 
 (define PLACE "flat")
 (define ALL-DAYS '(monday tuesday wednesday thursday friday saturday sunday))

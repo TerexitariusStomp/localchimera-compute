@@ -4,7 +4,7 @@
 #
 # The inventory is the source: spec/oss-adopted.txt names every component,
 # its license and its source. First-party files are the one component named
-# "playnet" (AGPL-3.0-or-later); everything else arrives as a library/service entry.
+# "localchimera" (AGPL-3.0-or-later); everything else arrives as a library/service entry.
 #
 #   tools/sbom.sh [OUT]     default OUT=sbom.json
 #
@@ -28,7 +28,7 @@ json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g'; }
   "metadata": {
     "component": {
       "type": "application",
-      "name": "playnet-compute",
+      "name": "localchimera",
       "licenses": [{ "expression": "AGPL-3.0-or-later" }]
     }
   },

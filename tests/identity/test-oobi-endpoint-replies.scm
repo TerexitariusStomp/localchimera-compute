@@ -15,15 +15,15 @@
 ;;;      registers the endpoint in db.locs / db.ends — the tables
 ;;;      hab.fetchUrls reads, i.e. what the witness receiptor needs.
 
-(use-modules (playnet test harness)
-             (playnet keri signify)            ; installs native crypto backend
-             (playnet keri signify-portable)
-             (playnet keri crypto-primitives)
-             (playnet identity oobi-host)
-             ((playnet keri inception)
+(use-modules (localchimera test harness)
+             (localchimera keri signify)            ; installs native crypto backend
+             (localchimera keri signify-portable)
+             (localchimera keri crypto-primitives)
+             (localchimera identity oobi-host)
+             ((localchimera keri inception)
               #:select (governance-create-scope-aid!
                         scope-inception-aid scope-inception-signed-icp))
-             (playnet identity oobi-host-mirror)
+             (localchimera identity oobi-host-mirror)
              ((server serve-static) #:select ())  ; for @@ body-builder access
              (goblins)
              (json)
@@ -264,7 +264,7 @@
 ;;; tcp/http/https (kering.Schemes) and rejects the reticulum rpy
 ;;; PER-MESSAGE — the keripy ring proves the spec-blessed pair still
 ;;; verifies and registers with the mesh reply in the stream (which is why
-;;; extra-locs frame LAST). Playnet resolvers read all schemes.
+;;; extra-locs frame LAST). LocalChimera resolvers read all schemes.
 
 (format #t "~%-- 6. mesh endpoint (extra /loc/scheme, scheme reticulum) --~%")
 
@@ -293,7 +293,7 @@
                  mesh-body aid %url))
 
 ;;; ── 7. anchored ROT: keripy accepts the retrofit binding event ──────────────
-;;; Pre-anchor personas seal playnet-reticulum-pub into a ROTATION
+;;; Pre-anchor personas seal localchimera-reticulum-pub into a ROTATION
 ;;; (build-rot #:anchors) — the same custom seal shape keripy already
 ;;; accepts in our icp `a` blocks. This ring is the conformance proof
 ;;; for the rot case: keripy processes icp(sn0, no anchor) → anchored
@@ -320,7 +320,7 @@
              #:nkeys (list (next-key-digest
                             (ed25519-keypair-public r7-kp)))
              #:sn 1
-             #:anchors `((("playnet-reticulum-pub" . ,%r7-pub)))))
+             #:anchors `((("localchimera-reticulum-pub" . ,%r7-pub)))))
 
 (let* ((r7-aid     (assoc-ref r7-icp "i"))
        (r7-replies (oobi-endpoint-replies-for-rot
@@ -339,7 +339,7 @@
            (and (vector? a) (= 1 (vector-length a))
                 (equal? %r7-pub
                         (assoc-ref (vector-ref a 0)
-                                   "playnet-reticulum-pub"))))
+                                   "localchimera-reticulum-pub"))))
          #t)
   (verify-keripy "keripy accepts the anchored rot + registers endpoint"
                  r7-body r7-aid %url))

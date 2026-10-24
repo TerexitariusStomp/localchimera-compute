@@ -19,10 +19,10 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-span-declaration.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

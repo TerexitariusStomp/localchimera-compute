@@ -13,7 +13,7 @@
 ;;; bridged handler's N to the seam's count; a handler with a wrapper of its own is
 ;;; not bridged and is not checked here.
 
-(use-modules ((playnet protocol seam) #:select (%handlers handler-name handler-arity))
+(use-modules ((localchimera protocol seam) #:select (%handlers handler-name handler-arity))
              (ice-9 regex) (ice-9 rdelim) (srfi srfi-1))
 
 (define %bridge-rx (make-regexp "HANDLERS\\.([A-Za-z0-9_]+) *= *bridge\\(\"([A-Za-z0-9_]+)\", *([0-9]+)"))

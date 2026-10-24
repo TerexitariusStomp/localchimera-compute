@@ -13,17 +13,17 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module -L tests tests/scope/test-body-present-bundle.scm
 
-(use-modules (playnet test harness)
-             (playnet scope root) (srfi srfi-1)
-             (playnet boot governance) (playnet doors governance) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet keri first-person credentials) (playnet keri first-person predicates)
-             (playnet keri signify-portable)
-             ((playnet keri citizen-sig)
+(use-modules (localchimera test harness)
+             (localchimera scope root) (srfi srfi-1)
+             (localchimera boot governance) (localchimera doors governance) (localchimera keri acdc) (localchimera keri acdc-store)
+             (localchimera keri first-person credentials) (localchimera keri first-person predicates)
+             (localchimera keri signify-portable)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         aid-signer-keys-resolver sign-said-multisig))
-             ((playnet keys exchange) #:select (governance-cred->wire))
-             ((playnet identity seat) #:select (verify-carried-kel))
-             ((playnet identity oobi-host)
+             ((localchimera keys exchange) #:select (governance-cred->wire))
+             ((localchimera identity seat) #:select (verify-carried-kel))
+             ((localchimera identity oobi-host)
               #:select (oobi-write-entry-to-dir! read-oobi-entry-from-dir oobi-current-key-from-dir))
              (goblins) (goblins vat)
              (rnrs bytevectors) (srfi srfi-1) (srfi srfi-13))

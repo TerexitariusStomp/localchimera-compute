@@ -27,20 +27,20 @@
 ;;; Run:  guile -L module tests/solve/test-hold-carry.scm
 
 ;; The engine, then the recipe pack on top of it — the way every other test in
-;; this directory loads. (Importing the (playnet boot prelude) umbrella AND
+;; this directory loads. (Importing the (localchimera boot prelude) umbrella AND
 ;; primitive-loading the engine works, but it is the one combination that has to
 ;; keep two record-type universes in step, so a test that needs neither the
 ;; actors nor the stores does not ask for it.)
-(use-modules ((playnet utils units) #:select (%effort-unit)))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve plan) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 ;; transport.scm is a module now — use-modules, not primitive-load. A
 ;; define-module inside a primitive-loaded file switches current-module for
 ;; the REST of this file and never switches back.
-(use-modules (playnet knowledge recipes transport))
+(use-modules (localchimera knowledge recipes transport))
 
 (define BRIDGE "under-the-bridge")   ; where the container stands
 (define SQUARE "square")             ; where the bread is wanted

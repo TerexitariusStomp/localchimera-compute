@@ -18,12 +18,12 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/economy/test-socialization-live.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet scope live)
-             (playnet credentials custody) (playnet economy socialization) (playnet keri acdc-store)
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera scope live)
+             (localchimera credentials custody) (localchimera economy socialization) (localchimera keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

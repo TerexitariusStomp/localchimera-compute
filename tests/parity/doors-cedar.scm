@@ -4,9 +4,9 @@
 ;;; /authorization with principal/action/resource/entities. Invariant leg
 ;;; pins the wire; live leg asks a real cedar-agent.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
              (srfi srfi-1))
 
 (let ((w (cedar-request "User::\"alice\"" "Action::\"lend\""
@@ -20,7 +20,7 @@
                      (equal? (cdr (assoc "resource" b)) "Lane::\"gpu\""))))
          #t))
 
-(parity-live-delegate "PLAYNET_CEDAR_URL"
+(parity-live-delegate "LOCALCHIMERA_CEDAR_URL"
   "cedar-agent answers an authorization quad"
   (lambda (t) (make-cedar-delegate t))
   (lambda (d) (d "User::\"alice\"" "Action::\"lend\"" "Lane::\"gpu\"" '()))

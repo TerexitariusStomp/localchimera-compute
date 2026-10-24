@@ -12,18 +12,18 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l planner/load-all.scm -l tests/pools/test-account.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet algorithms elastic) (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (playnet observation states))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera algorithms elastic) (localchimera pools credit-fold) (localchimera scope root) (localchimera vf schemas) (localchimera observation states))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
              (srfi srfi-1))
 
 
-(use-modules ((playnet observation account) #:select (declare-claimable!)))
-(use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
-(use-modules ((playnet test scope) #:select (record-work! account!)))
+(use-modules ((localchimera observation account) #:select (declare-claimable!)))
+(use-modules ((localchimera test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
+(use-modules ((localchimera test scope) #:select (record-work! account!)))
 ;; the rail is read off the recipes: this fixture stands in for the plan and
 ;; declares that a claim recipe stands for spec-bread (account.scm spec-claimable?)
 (declare-claimable! "spec-bread")
@@ -177,7 +177,7 @@
                 (= 15/2 ($ as 'effective-balance "alice")))
 
     ;; ── Citizenship dividend: social free time f folds an equal share into
-    ;; drawable credit (playnet.typ §The credit identity). pool=30, N=2 →
+    ;; drawable credit (localchimera.typ §The credit identity). pool=30, N=2 →
     ;; citizenship = pool·f/N = 15f; contribution scales by (1−f):
     ;;   alice = (1−f)·7.5 + 15f ;  bob = (1−f)·22.5 + 15f
     (check-pred "f=0: alice drawable = 7.5 (no free time → no dividend)"

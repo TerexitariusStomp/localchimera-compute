@@ -3,8 +3,8 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-structural-edit.scm
 
-(use-modules (playnet test harness)
-             (playnet tools structural-edit))
+(use-modules (localchimera test harness)
+             (localchimera tools structural-edit))
 
 (define sample
   '((define (classify x)

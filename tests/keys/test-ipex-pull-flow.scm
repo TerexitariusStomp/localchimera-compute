@@ -11,11 +11,11 @@
 ;;; Reuses the test pattern from test-ipex-grant-handler.scm. Mock
 ;;; KERIA records POST paths so we can verify the right verbs went out.
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri credentials)
-             (playnet federation ipex-policy)
-             (playnet credentials membership) (playnet keri acdc) (playnet keri acdc)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri credentials)
+             (localchimera federation ipex-policy)
+             (localchimera credentials membership) (localchimera keri acdc) (localchimera keri acdc)
              (web server)
              (web request)
              (web response)
@@ -24,7 +24,7 @@
              (ice-9 format)
              (json))
 
-(define notif-mod (resolve-module '(playnet federation keria-notifications)))
+(define notif-mod (resolve-module '(localchimera federation keria-notifications)))
 (define handle-ipex-apply (module-ref notif-mod 'handle-ipex-apply))
 (define handle-ipex-offer (module-ref notif-mod 'handle-ipex-offer))
 (define handle-ipex-agree (module-ref notif-mod 'handle-ipex-agree))
@@ -42,8 +42,8 @@
 (define %issuer-aid    "EIssuer000000000000000000000000000000000000")
 (define %holder-aid    "EHolder000000000000000000000000000000000000")
 (define %recipient-aid "ERecipient00000000000000000000000000000000A")
-(define %known-schema  *schema-playnet-membership*)
-(define %unknown-schema "playnet-not-a-real-schema/v999")
+(define %known-schema  *schema-localchimera-membership*)
+(define %unknown-schema "localchimera-not-a-real-schema/v999")
 
 ;; Toggle: which schema the apply requests
 (define %apply-schema %known-schema)
@@ -114,7 +114,7 @@
      ;; Identifier name → AID
      ((string-prefix? "/identifiers/" path)
       (with-json 200
-        `(("name" . "playnet-governance")
+        `(("name" . "localchimera-governance")
           ("prefix" . ,%recipient-aid)
           ("state" . (("d" . ,%recipient-aid) ("s" . "0")
                       ("i" . ,%recipient-aid)

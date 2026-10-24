@@ -1,5 +1,5 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; module-layout.scm — where each directory of module/playnet/ stands, as data.
+;;; module-layout.scm — where each directory of module/localchimera/ stands, as data.
 ;;;
 ;;; Read by tools/lint/module-map.scm; the reasoning is docs/planning/
 ;;; codebase-layout.md (§2 the ranks, §3–§4 every file), on the principle of
@@ -12,14 +12,14 @@
 ;;; has reached its directory, and a `file` form names only what is not a
 ;;; library module.
 ;;;
-;;;   (stays NAME RANK WHAT)   a directory of module/playnet/ and its rank. RANK
+;;;   (stays NAME RANK WHAT)   a directory of module/localchimera/ and its rank. RANK
 ;;;       #f leaves it out of the layer rule. A nested name ("keri/first-person")
 ;;;       stands at its own rank; otherwise a file's rank is its first
 ;;;       directory's.
-;;;   (from OLD NEW)   every file under module/playnet/OLD/ today belongs under
+;;;   (from OLD NEW)   every file under module/localchimera/OLD/ today belongs under
 ;;;       NEW, at the same relative path; NEW "" drops the prefix. The longest
 ;;;       OLD that holds the file wins.
-;;;   (file PATH NEW)   the one file module/playnet/PATH.scm belongs in NEW.
+;;;   (file PATH NEW)   the one file module/localchimera/PATH.scm belongs in NEW.
 ;;;       NEW #f: the file goes (a shim, an alias, a tool), and is not linted.
 ;;;   (tier PATH RANK WHAT)   the file stands in its directory at a rank of its
 ;;;       own: a family's vocabulary, which lower layers state, beside the
@@ -40,8 +40,8 @@
  (stays "tools" 0 "the s-expression zipper, structural edit and index, as a library")
 
  ;; ── rank 1: the vocabulary ──
- (stays "vf" 1 "the ValueFlows vocabulary and what playnet states in it: the records of all_vf.TTL, the action table and the serdes that stores them (vf/), facts (vf/facts/), formulas (vf/formulas/), the records beside the core (vf/beyond/), the two trees (vf/aggregation/)")
- (stays "credentials" 1 "the playnet credential schemas by family: registry, delegation, membership, keys, voting, work, recomposition, commitments, custody, declarations, audit")
+ (stays "vf" 1 "the ValueFlows vocabulary and what localchimera states in it: the records of all_vf.TTL, the action table and the serdes that stores them (vf/), facts (vf/facts/), formulas (vf/formulas/), the records beside the core (vf/beyond/), the two trees (vf/aggregation/)")
+ (stays "credentials" 1 "the localchimera credential schemas by family: registry, delegation, membership, keys, voting, work, recomposition, commitments, custody, declarations, audit")
  (stays "wire" 1 "rows, replies, the snapshot")
  (stays "social" 1 "lenses and relationship kinds")
  (stays "protocol" 1 "the seam, shapes, dispatch, MCP")

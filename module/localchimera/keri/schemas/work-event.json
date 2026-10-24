@@ -1,0 +1,153 @@
+{
+  "$id": "ECgcJ4U0Cxh-UWCZTTD4LU1pV2urnb7nx-EC9tGv5oSm",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LocalChimera Work-Event Credential",
+  "description": "Attests that the holder performed a unit of work; edges to the commitment it fulfils, the intent it satisfies, and (after the founding one) the skill it exercises.",
+  "type": "object",
+  "credentialType": "LocalChimeraWorkEventCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Optional salt"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the witnessing scope)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the worker)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "event-id": {
+              "type": "string",
+              "description": "The EconomicEvent id"
+            },
+            "hours": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Labour-hours performed"
+            },
+            "unit": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Effort unit"
+            },
+            "scope-id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "process-id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "timestamp": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "resource-conforms-to": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The skill"
+            },
+            "fulfills": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Commitment SAID"
+            },
+            "satisfies": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Intent SAID"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "event-id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "e": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Edge-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "description": "ACDC edge block: named edges to other credentials",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Edge-block SAID"
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

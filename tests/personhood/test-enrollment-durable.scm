@@ -10,15 +10,15 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module -L tests tests/personhood/test-enrollment-durable.scm
 
-(setenv "PLAYNET_STATE_DIR"
+(setenv "LOCALCHIMERA_STATE_DIR"
         (string-append (or (getenv "TMPDIR") "/tmp") "/pn-enroll-durable-" (number->string (getpid))))
 
-;; the host crypto backend: loading (playnet keri signify) installs it
-(use-modules ((playnet keri signify) #:select ()))
-(use-modules (playnet test harness)
+;; the host crypto backend: loading (localchimera keri signify) installs it
+(use-modules ((localchimera keri signify) #:select ()))
+(use-modules (localchimera test harness)
              
-             (playnet personhood enrollment) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
-             ((playnet keri citizen-sig)
+             (localchimera personhood enrollment) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera keri first-person predicates)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 

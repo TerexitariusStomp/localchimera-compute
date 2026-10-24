@@ -43,7 +43,7 @@ tests/push/test-push-crypto.scm                          # needs-libgcrypt (dlop
 tests/gateway/test-planner-service-ocapn.scm        # needs-live-gateway (waits on an sref file a gateway writes)
 tests/integration/test-multi-gateway-driver.scm     # driver, not a unit test — requires <sref-A> <sref-B> args
 tests/federation/federation-wire-host.scm              # helper process, not a unit test — requires A|B <sref-file> <seed-byte>; test-federation-wire-procs launches it
-tests/personhood/two-box/box1.scm                   # helper process, not a unit test — needs the PLAYNET_* env run-two-box.sh sets (`make test-witness-two-box`)
+tests/personhood/two-box/box1.scm                   # helper process, not a unit test — needs the LOCALCHIMERA_* env run-two-box.sh sets (`make test-witness-two-box`)
 tests/personhood/two-box/box2.scm                   # helper process, not a unit test — same harness as box1
 
 # ── REAL red, self-contained, tracked debt — the work-list ───────────────────
@@ -53,7 +53,7 @@ tests/personhood/two-box/box2.scm                   # helper process, not a unit
 # runs 65 checks green and has rejoined the baseline.
 
 # ── retired code ─────────────────────────────────────────────────────────────
-# module/playnet/deprecated/ and tests/deprecated/ left the tree on 2026-10-12;
+# module/localchimera/deprecated/ and tests/deprecated/ left the tree on 2026-10-12;
 # the history before that commit holds them whole.
 
 

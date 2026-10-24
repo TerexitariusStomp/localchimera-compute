@@ -5,7 +5,7 @@
 ;;; Run: guile --no-auto-compile -q -L module -L . \
 ;;;        -l docs/evr/algorithms/tests/test-culcus.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (docs evr algorithms culcus))
 
 (define (~= a b) (< (abs (- a b)) 1e-9))

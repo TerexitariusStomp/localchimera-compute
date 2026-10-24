@@ -1,10 +1,10 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bread-seed.scm — the bread town is ONE economy behind two doors.
 ;;;
-;;; bread-world ((playnet knowledge recipes bread-commune-seed)) is read
-;;; through two doors: (playnet test scope) mock-world, stores that answer with
+;;; bread-world ((localchimera knowledge recipes bread-commune-seed)) is read
+;;; through two doors: (localchimera test scope) mock-world, stores that answer with
 ;;; its tables, and seed-world! into a scope-root's REAL stores — the gateway's
-;;; demo commune path (server/gateway.scm, PLAYNET_SEED_DEMO) and what
+;;; demo commune path (server/gateway.scm, LOCALCHIMERA_SEED_DEMO) and what
 ;;; spawn-bread-scope does. This proves the two doors open onto the same plan:
 ;;; same demand, same work per process, same met, through a real recipe-store's
 ;;; own process-chain sort and a real observer's stock. A drift between the
@@ -12,12 +12,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module -L tests tests/scope/test-bread-seed.scm
 
-(use-modules (playnet test harness)
-             (playnet test scope)
-             (playnet knowledge recipes bread-commune-seed) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
-             (playnet knowledge dsl world)
-             (playnet test planner bread)
+(use-modules (localchimera test harness)
+             (localchimera test scope)
+             (localchimera knowledge recipes bread-commune-seed) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
+             (localchimera knowledge dsl world)
+             (localchimera test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

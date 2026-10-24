@@ -8,8 +8,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module -L . -L tests tests/vf/test-work-done-id.scm
 
-(use-modules (playnet test harness)
-             ((playnet vf formulas flows) #:select (work-done-event-id)))
+(use-modules (localchimera test harness)
+             ((localchimera vf formulas flows) #:select (work-done-event-id)))
 
 (check "the first confirmation is ev-<cid>" (work-done-event-id "c1") "ev-c1")
 (check "…and so is k = 0" (work-done-event-id "c1" 0) "ev-c1")

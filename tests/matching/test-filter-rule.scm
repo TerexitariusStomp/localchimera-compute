@@ -3,11 +3,11 @@
 ;;; criteria sidecar parser, and the feasibility pre-gate that reads both.
 ;;; Run: guile -L module tests/matching/test-filter-rule.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet matching schemas)
-             (playnet matching feasibility)
-             (playnet matching filter-rule))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera matching schemas)
+             (localchimera matching feasibility)
+             (localchimera matching filter-rule))
 
 (define ctx '((aid . "A1") (recognition . 0.6) (scopes . ("s1"))
               (skills . ("spec-bread")) (groups . ("friends")) (distance-km . 4)))

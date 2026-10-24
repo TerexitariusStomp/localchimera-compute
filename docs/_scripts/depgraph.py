@@ -19,7 +19,7 @@ def parse_imports(text):
     # use-modules forms: (use-modules (a b) (c d) ...)
     for m in re.finditer(r"\(use-modules\b(.*?)\)\s*(?:;|\n|$)", text, re.S):
         pass
-    # simpler: find all (playnet ...) and (planner ...) style module refs within use contexts
+    # simpler: find all (localchimera ...) and (planner ...) style module refs within use contexts
     # capture both #:use-module (x y) and (use-modules (x y))
     for m in re.finditer(r"#:use-module\s+\(([^)]*)\)", text):
         imps.add(tuple(m.group(1).split()))
@@ -40,7 +40,7 @@ for f in files:
     if mod: mod2file[mod]=rel
     data[rel]={"mod":mod,"imports":parse_imports(t)}
 
-# build edges only for playnet-internal modules
+# build edges only for localchimera-internal modules
 def is_internal(mod):
     return mod in mod2file
 

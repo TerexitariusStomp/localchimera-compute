@@ -11,9 +11,9 @@
 ;;;   guile --no-auto-compile -q -L module \
 ;;;     tests/federation/test-option-premium.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet algorithms option-premium) (playnet federation store-registry) (playnet scope root) (playnet vf schemas))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera algorithms option-premium) (localchimera federation store-registry) (localchimera scope root) (localchimera vf schemas))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

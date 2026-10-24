@@ -6,7 +6,7 @@
 ;;; removed-gate error: the role-credential ceremony they gated on
 ;;; (governance-member?) was deleted 2026-08-19, never having bootstrapped
 ;;; for anyone. This is the replacement, wired to holds-any-live-phc?
-;;; (playnet keri first-person predicates) — the same personhood-credential
+;;; (localchimera keri first-person predicates) — the same personhood-credential
 ;;; machinery accept-socialization/may-govern? already gate on, portable
 ;;; across ecosystems the same way. No new authority concept.
 ;;;
@@ -19,10 +19,10 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-open-terminal-mailbox-gate.scm
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet gateway mailbox)
-             (playnet keri acdc-store) (playnet keri first-person credentials)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera gateway mailbox)
+             (localchimera keri acdc-store) (localchimera keri first-person credentials)
              (goblins) (goblins vat) (goblins actor-lib methods) (goblins utils hashmap))
 
 (define vat (spawn-vat))

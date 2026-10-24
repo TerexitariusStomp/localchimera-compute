@@ -20,20 +20,20 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-peer.scm
 
-(use-modules (playnet solve federation-solve))
-(use-modules (playnet test harness)
-             (playnet federation peer)
-             (playnet federation async)
-             ((playnet federation wire) #:select (signed-reply))
-             ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
-             (playnet solve solver)
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
+(use-modules (localchimera solve federation-solve))
+(use-modules (localchimera test harness)
+             (localchimera federation peer)
+             (localchimera federation async)
+             ((localchimera federation wire) #:select (signed-reply))
+             ((localchimera solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
+             (localchimera solve solver)
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins actor-lib methods)
              (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet test planner federation-wire-fixture))
+(use-modules (localchimera test planner federation-wire-fixture))
 (load (string-append (dirname (dirname (dirname (current-filename))))
-                     "/module/playnet/test/planner/federated-fixtures.scm"))
+                     "/module/localchimera/test/planner/federated-fixtures.scm"))
 (load (string-append (dirname (current-filename)) "/federation-crossing-fixture.scm"))
 
 (define (reference recs)

@@ -18,11 +18,11 @@ commons. Scope the application to what nostr users get.
 
 ### Application text
 
-**Project name:** playnet-dvm — browser-native NIP-90 compute supply
+**Project name:** localchimera-dvm — browser-native NIP-90 compute supply
 
 **What is it?**
 
-playnet-compute is an open commons for machine resources where a
+localchimera is an open commons for machine resources where a
 browser tab is an accountable node — KERI identity, signed replayable
 receipts, mutual-credit settlement (AGPL-3.0, 489 commits, ~720 test
 checks, `rad:z2xjyuu4adoo1x88is8xtRz2tYwhu` on Radicle). Its

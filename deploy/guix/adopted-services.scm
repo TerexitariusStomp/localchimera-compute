@@ -12,8 +12,8 @@
 ;;;
 ;;; Every image is pinned by TAG and documented with the digest a deploy
 ;;; should verify — float no tag in production. Endpoint wiring is the
-;;; adapters' job: module/playnet/delegates.scm and
-;;; module/playnet/machine/adapters.scm inject transports that point at
+;;; adapters' job: module/localchimera/delegates.scm and
+;;; module/localchimera/machine/adapters.scm inject transports that point at
 ;;; the addresses bound here. Until a container is actually running the
 ;;; adapter stays fail-closed — an absent service is 'unavailable, never
 ;;; a pretended answer.

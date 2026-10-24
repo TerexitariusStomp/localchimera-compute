@@ -12,8 +12,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/economy/test-purchase-claim.scm
 
-(use-modules (playnet credentials commitments) (playnet keri acdc) (playnet economy debts) (playnet boot scope) (playnet boot governance) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
-             ((playnet keri citizen-sig)
+(use-modules (localchimera credentials commitments) (localchimera keri acdc) (localchimera economy debts) (localchimera boot scope) (localchimera boot governance) (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri said-portable) (localchimera scope root) (srfi srfi-1) (localchimera test harness)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         sign-said verify-said-signature))
              (goblins) (goblins utils hashmap) (srfi srfi-1))
@@ -75,7 +75,7 @@
              (debt      (by debt-said)))
         (check-pred "no live purse for alice in this spec: nothing flagged" (= flagged 0))
         (check-pred "the debt is a commitment credential, commune owes alice"
-                    (and (equal? *schema-playnet-commitment* (cred-schema debt))
+                    (and (equal? *schema-localchimera-commitment* (cred-schema debt))
                          (eq? 'transfer (cred-claim debt 'action))
                          (equal? commune-aid (cred-issuer debt))
                          (equal? alice (cred-holder debt))))
@@ -84,7 +84,7 @@
         (check-pred "the debt names exactly the claimed amount — 0% interest, nothing to configure"
                     (equal? (cons 10 "EUR") (cred-claim debt 'resource-quantity)))
         (check-pred "no Agreement is minted — a past fact triggers, promises agree"
-                    (not (find (lambda (c) (equal? *schema-playnet-agreement* (cred-schema c)))
+                    (not (find (lambda (c) (equal? *schema-localchimera-agreement* (cred-schema c)))
                                ($ store 'all))))
         (check "settlement reads it like any other debt (economy/debts.scm, unchanged)"
                (length (open-debts store commune-aid alice)) 1)

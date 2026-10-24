@@ -24,7 +24,7 @@
 ;;;
 ;;; Run: guile -L module tests/knowledge/test-feel-the-food.scm
 
-(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge worlds feel-the-food) (playnet vf schemas) (srfi srfi-1)
+(use-modules (localchimera test harness) (localchimera knowledge recipes store) (localchimera knowledge worlds feel-the-food) (localchimera vf schemas) (srfi srfi-1)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 

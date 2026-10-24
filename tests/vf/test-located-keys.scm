@@ -9,7 +9,7 @@
 ;;; acq| over a labour row).
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/vf/test-located-keys.scm
-(use-modules (playnet test harness) (playnet vf facts located) (srfi srfi-1))
+(use-modules (localchimera test harness) (localchimera vf facts located) (srfi srfi-1))
 
 (define (terms key) (key-terms key))
 (define (field key k) (assq-ref (terms key) k))

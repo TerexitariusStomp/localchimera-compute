@@ -19,7 +19,7 @@
 ;;; Run:
 ;;;   guile --no-auto-compile -L module tests/test-netlayer-substitute.scm
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins ocapn captp)

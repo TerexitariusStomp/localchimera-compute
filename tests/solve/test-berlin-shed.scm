@@ -16,19 +16,19 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-berlin-shed.scm
 
-(use-modules (playnet solve plan) ((playnet utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera solve plan) ((localchimera utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
                         f))
-(use-modules (playnet solve engine)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge worlds bioregions))
-;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
+(use-modules (localchimera solve engine)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge worlds bioregions))
+;; solve/robust.scm arrives with the engine — (localchimera solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
-(use-modules (playnet knowledge worlds berlin))                      ; the assembled shed (one <bioregion>)
-(primitive-load (sibling "../../module/playnet/knowledge/recipes/brandenburg-farm.scm"))    ; the farm placed in it
+(use-modules (localchimera knowledge worlds berlin))                      ; the assembled shed (one <bioregion>)
+(primitive-load (sibling "../../module/localchimera/knowledge/recipes/brandenburg-farm.scm"))    ; the farm placed in it
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

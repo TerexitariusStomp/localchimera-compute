@@ -11,11 +11,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-derived-partition.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet vf schemas))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera vf schemas))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

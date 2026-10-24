@@ -11,11 +11,11 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keys/test-scope-exchange.scm
 
-(use-modules (playnet test harness)
-             (playnet keys exchange)
-             (playnet keri signify)
-             ((playnet keri credentials) #:select (ipex-exn-acdc))
-             ((playnet keri signify-portable)
+(use-modules (localchimera test harness)
+             (localchimera keys exchange)
+             (localchimera keri signify)
+             ((localchimera keri credentials) #:select (ipex-exn-acdc))
+             ((localchimera keri signify-portable)
               #:select (bran->signing-keypair
                         ed25519-keypair-public
                         public-key->aid-prefix))
@@ -100,7 +100,7 @@
 
 (define %gov-cred
   `((said   . ,%cred-said)
-    (schema . "playnet-federation-membership/v1")
+    (schema . "localchimera-federation-membership/v1")
     (issuer . ,%scope-aid)
     (holder . ,%holder-aid)
     (claims . ((federation . "demo-fed") (commune-id . "c1")))
@@ -124,7 +124,7 @@
   (check "wire d = governance SAID"   (assoc-ref wire "d") %cred-said)
   (check "wire i = issuer scope AID"  (assoc-ref wire "i") %scope-aid)
   (check "wire s = schema"            (assoc-ref wire "s")
-         "playnet-federation-membership/v1")
+         "localchimera-federation-membership/v1")
   (check "wire a.i = holder"
          (assoc-ref (assoc-ref wire "a") "i") %holder-aid)
   (check "claims string-keyed in a"

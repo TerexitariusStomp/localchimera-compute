@@ -13,10 +13,10 @@
 ;;;              same plan.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-property-plan.scm
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet test scope)
-             (playnet vf schemas) (playnet scope live)
-             (playnet vf beyond scenario)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness) (localchimera test scope)
+             (localchimera vf schemas) (localchimera scope live)
+             (localchimera vf beyond scenario)
              (goblins) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 (define N 8)
 (define SEED0 1)

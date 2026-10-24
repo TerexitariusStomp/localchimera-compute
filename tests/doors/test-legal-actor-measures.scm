@@ -13,10 +13,10 @@
 ;;;
 ;;; Run: guile -L module tests/doors/test-legal-actor-measures.scm
 
-(use-modules (playnet test harness)
-             (playnet legal registry) (playnet legal compliance) (playnet legal adapters)
-             (playnet observation observer) (playnet vf schemas)
-             ((playnet vf facts agent-tags) #:select (tag))
+(use-modules (localchimera test harness)
+             (localchimera legal registry) (localchimera legal compliance) (localchimera legal adapters)
+             (localchimera observation observer) (localchimera vf schemas)
+             ((localchimera vf facts agent-tags) #:select (tag))
              (goblins) (goblins vat)
              (srfi srfi-1) (ice-9 format))
 

@@ -4,17 +4,17 @@
 ;;; Pure function: held ∪ transitive closure of satisfied-by clauses met at
 ;;; ≥ N validated hours. No ACDCs ⇒ no blake3.
 ;;;
-;;; Read from (playnet vf formulas skill-law) — the LIVE closure, the one
+;;; Read from (localchimera vf formulas skill-law) — the LIVE closure, the one
 ;;; conformance-agent-skills hands the solver. A second copy of this function
-;;; lives on under (playnet deprecated planner), and this suite used to import
+;;; lives on under (localchimera deprecated planner), and this suite used to import
 ;;; that one: byte-identical today, and a green here said nothing whatever about
 ;;; the code a plan actually runs. test-skill-matching.scm proves the live
 ;;; closure reaches a solve; this one states what it means.
 ;;;
 ;;; Run: guile -L module tests/vf/test-skill-compose.scm
 
-(use-modules (playnet test harness))
-(use-modules ((playnet vf formulas skill-law) #:select (effective-skills)))
+(use-modules (localchimera test harness))
+(use-modules ((localchimera vf formulas skill-law) #:select (effective-skills)))
 (use-modules (srfi srfi-1))
 
 ;; electrosurgeon = (electrician ≥200h ∧ surgeon ≥150h); master = (electrosurgeon ≥50h)

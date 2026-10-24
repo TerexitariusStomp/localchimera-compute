@@ -2,11 +2,11 @@
 ;;; tests/federation/test-universal-commune-kind.scm
 ;;; UC promoted to a first-class 'universal-commune kind.
 
-(use-modules (playnet test harness)
-             (playnet boot scope) (playnet federation scope-graph)
-             (playnet federation scope-graph)
-             (playnet federation universal-commune)
-             (playnet federation uc-curator)
+(use-modules (localchimera test harness)
+             (localchimera boot scope) (localchimera federation scope-graph)
+             (localchimera federation scope-graph)
+             (localchimera federation universal-commune)
+             (localchimera federation uc-curator)
              (goblins) (goblins utils hashmap)
              ((srfi srfi-13) #:select (string-contains)))
 
@@ -78,7 +78,7 @@
   (check-pred "different UC AID → different SAID"
     (not (equal? (assq-ref a1 'd) (assq-ref a4 'd))))
   (check-pred "carries schema tag"
-    (equal? "playnet-uc-membership/v1" (assq-ref a1 's))))
+    (equal? "localchimera-uc-membership/v1" (assq-ref a1 's))))
 
 (display "\n── 6. rotate-keys accepts #:anchors keyword ──\n")
 ;; Synthetic-mode scope errors on the rotation body itself ("no

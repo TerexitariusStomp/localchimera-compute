@@ -12,10 +12,10 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-ai-doors.scm
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet gateway llm-service)
-             (playnet ai llm)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera gateway llm-service)
+             (localchimera ai llm)
              (goblins) (goblins vat) (goblins actor-lib methods)
              (goblins actor-lib on))
 

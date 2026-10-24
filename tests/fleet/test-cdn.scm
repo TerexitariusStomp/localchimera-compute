@@ -10,11 +10,11 @@
 ;;;
 ;;; Run:  guile -L module tests/fleet/test-cdn.scm
 
-(use-modules (playnet test harness)
-             (playnet fleet cdn)
-             (playnet fleet cdn-front)
-             (playnet fleet records)
-             (playnet fleet reconciler)
+(use-modules (localchimera test harness)
+             (localchimera fleet cdn)
+             (localchimera fleet cdn-front)
+             (localchimera fleet records)
+             (localchimera fleet reconciler)
              (json)
              (srfi srfi-1)
              (srfi srfi-13)
@@ -83,30 +83,30 @@
 
 ;;; ── Zones ─────────────────────────────────────────────────────────────────
 
-(define zone (cdn-call cdn 'ensure-zone "playnet-web-1" "https://203.0.113.7"))
+(define zone (cdn-call cdn 'ensure-zone "localchimera-web-1" "https://203.0.113.7"))
 
 (check "ensure-zone answers a zone with an id, an edge hostname and its origin"
        (and (string? (zone-ref zone 'id))
-            (equal? "playnet-web-1.edge.example" (zone-ref zone 'hostname))
+            (equal? "localchimera-web-1.edge.example" (zone-ref zone 'hostname))
             (equal? "https://203.0.113.7" (zone-ref zone 'origin))))
 
 (check "asked again, it is the same zone — one was ever made"
        (and (equal? (zone-ref zone 'id)
-                    (zone-ref (cdn-call cdn 'ensure-zone "playnet-web-1"
+                    (zone-ref (cdn-call cdn 'ensure-zone "localchimera-web-1"
                                         "https://203.0.113.7")
                               'id))
             (= 1 (length %zones))))
 
 (check "a second host gets its own zone"
        (not (equal? (zone-ref zone 'id)
-                    (zone-ref (cdn-call cdn 'ensure-zone "playnet-web-2"
+                    (zone-ref (cdn-call cdn 'ensure-zone "localchimera-web-2"
                                         "https://203.0.113.8")
                               'id))))
 
 (cdn-call cdn 'set-origin (zone-ref zone 'id) "https://203.0.113.9")
 (check "set-origin moves the zone to a new origin"
        (equal? "https://203.0.113.9"
-               (zone-ref (cdn-call cdn 'ensure-zone "playnet-web-1" "ignored")
+               (zone-ref (cdn-call cdn 'ensure-zone "localchimera-web-1" "ignored")
                          'origin)))
 
 ;;; ── No-cache rules ────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@
 (check-error "a refused purge is an error"
              (lambda () (cdn-call cdn 'purge (zone-ref zone 'id))))
 (check-error "a refused ensure-zone is an error"
-             (lambda () (cdn-call cdn 'ensure-zone "playnet-web-3" "https://x")))
+             (lambda () (cdn-call cdn 'ensure-zone "localchimera-web-3" "https://x")))
 (set! %refuse? #f)
 
 ;;; ── Finding the adapter ───────────────────────────────────────────────────
@@ -149,7 +149,7 @@
 (check "a box with no CDN config has no CDN"
        (not (load-cdn-config "/nonexistent/cdn.conf")))
 
-(let* ((dir (format #f "/tmp/playnet-test-cdn-~a" (getpid)))
+(let* ((dir (format #f "/tmp/localchimera-test-cdn-~a" (getpid)))
        (key (string-append dir "/key"))
        (conf (string-append dir "/cdn.conf")))
   (mkdir dir)
@@ -171,10 +171,10 @@
 
 ;;; ── A recorded fleet host, behind the CDN ─────────────────────────────────
 ;;;
-;;; The reconciler names the hosts that ask; (playnet fleet cdn-front) makes
+;;; The reconciler names the hosts that ask; (localchimera fleet cdn-front) makes
 ;;; each one zone and remembers it. Here the thread runs in place.
 
-(define %zones-file (format #f "/tmp/playnet-test-cdn-zones-~a.scm" (getpid)))
+(define %zones-file (format #f "/tmp/localchimera-test-cdn-zones-~a.scm" (getpid)))
 (when (file-exists? %zones-file) (delete-file %zones-file))
 (set! %zones '())
 
@@ -205,7 +205,7 @@
         (recorded "db-1"  "203.0.113.12")
         (recorded "web-2" "203.0.113.13")))   ; web-3 is still being provisioned
 
-(define front! (@@ (playnet fleet reconciler) front-recorded-hosts!))
+(define front! (@@ (localchimera fleet reconciler) front-recorded-hosts!))
 
 (set-host-fronting! fronting)
 (front! desired materialized)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// browser/lib/capabilities.js — does this browser run playnet's wasm?
+// browser/lib/capabilities.js — does this browser run localchimera's wasm?
 //
 // The spine (day-boot.wasm) and the planner (family.wasm) are compiled by Hoot
 // into WebAssembly that leans on a few engine features. A browser without one of
@@ -71,13 +71,13 @@ export function describe(report) {
   if (missing.length) {
     const what = missing.map((m) => m.label).join(", ");
     return {
-      title: "This browser is too old for playnet's live features",
+      title: "This browser is too old for localchimera's live features",
       detail: `It cannot run: ${what}. You are seeing the demo day. A current version of Chrome, Firefox or Safari turns the live features on.`,
     };
   }
   const why = String((report && report.failed) || "").replace(/\s+/g, " ").trim().slice(0, 160);
   return {
-    title: "playnet's live features did not start in this browser",
+    title: "localchimera's live features did not start in this browser",
     detail: `You are seeing the demo day.${why ? " Reason: " + why + "." : ""} Reloading, or a current browser, may help.`,
   };
 }

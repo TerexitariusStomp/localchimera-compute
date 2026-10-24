@@ -21,12 +21,12 @@
 ;;; Closed form (labour-free, swept bars inactive): with desire g→D and tip s_tip,
 ;;;   x* = 15 − √(25 + 200·w/wd)   for D=20, s_tip=10, s*=0.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-cap.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-cap.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 (define D 20.0)        ; a desire that wants the drawing activity well PAST the tip
 (define s-tip 10.0)    ; = quantile_0.5 of [8,12]

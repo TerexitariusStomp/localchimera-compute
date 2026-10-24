@@ -6,9 +6,9 @@
 ;;; per-solve view (`live-span-of`) into the alist the planner's #:span-of
 ;;; takes. The planner half is test-span-declaration.scm.
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules (srfi srfi-1))
-(use-modules (playnet credentials declarations) (playnet keri acdc) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera credentials declarations) (localchimera keri acdc) (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins))
 (use-modules (srfi srfi-1))
 
@@ -26,7 +26,7 @@
   (check-pred "issuer = the steward scope"  (equal? SCOPE (cred-issuer d)))
   (check-pred "holder = the same scope (its own governed act)"
               (equal? SCOPE (cred-holder d)))
-  (check-pred "span schema" (equal? *schema-playnet-span-declaration* (cred-schema d)))
+  (check-pred "span schema" (equal? *schema-localchimera-span-declaration* (cred-schema d)))
   (check-pred "names the resource"  (equal? LATHE (cred-claim d 'resource-id)))
   (check-pred "references the place, never is one"
               (equal? "town" (cred-claim d 'span-place)))

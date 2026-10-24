@@ -13,13 +13,13 @@
 ;;;
 ;;; Run:  guile -q -L module tests/pools/test-hours-by.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera pools credit-fold) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
 (use-modules (goblins) (goblins persistence-store memory) (srfi srfi-1))
-(use-modules ((playnet pools credit-fold) #:select (voice-share))
-             ((playnet observation observer) #:select (event-terms))
-             ((playnet test scope) #:select (record-work!)))
+(use-modules ((localchimera pools credit-fold) #:select (voice-share))
+             ((localchimera observation observer) #:select (event-terms))
+             ((localchimera test scope) #:select (record-work!)))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))
 (define* (work! obs aid hours eid iid #:key skill place scope)

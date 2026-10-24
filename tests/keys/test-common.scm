@@ -1,8 +1,8 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-common.scm — unit tests for the shared util helpers
 
-(use-modules (playnet test harness)
-             (playnet utils common))
+(use-modules (localchimera test harness)
+             (localchimera utils common))
 
 ;; ── safe-call ───────────────────────────────────────────────────────
 
@@ -109,9 +109,9 @@
 
 ;; ── peer-base-urls (lives in keri/governance) — quick coverage ──────
 
-(use-modules ((playnet keys peers) #:select (peer-base-urls)))
+(use-modules ((localchimera keys peers) #:select (peer-base-urls)))
 
-(setenv "PLAYNET_PEERS"
+(setenv "LOCALCHIMERA_PEERS"
         "https://gw1.example/oobi/E_aid1,https://gw2.example:8080/oobi/E_aid2,,https://gw3.example")
 
 (check "peer-base-urls: strips /oobi/ suffix"
@@ -120,7 +120,7 @@
          "https://gw2.example:8080"
          "https://gw3.example"))
 
-(setenv "PLAYNET_PEERS" "")
+(setenv "LOCALCHIMERA_PEERS" "")
 
 (check "peer-base-urls: empty env → '()"
        (peer-base-urls) '())

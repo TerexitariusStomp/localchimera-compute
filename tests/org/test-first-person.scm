@@ -4,12 +4,12 @@
 ;;; The credential and verification halves that stand on the library alone are
 ;;; tests/keri/test-first-person.scm.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet federation bootstrap) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
-(use-modules (playnet crypto shamir))
-(use-modules ((playnet keri signify) #:select (ed25519-keypair-public)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera federation bootstrap) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera keri first-person predicates))
+(use-modules (localchimera crypto shamir))
+(use-modules ((localchimera keri signify) #:select (ed25519-keypair-public)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))
 

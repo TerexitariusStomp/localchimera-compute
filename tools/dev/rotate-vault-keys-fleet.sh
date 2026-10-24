@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # tools/dev/rotate-vault-keys-fleet.sh — orchestrate vault-key rotation
-#                                    across a fleet of playnet gateways
+#                                    across a fleet of localchimera gateways
 #
 # Wraps the existing per-host tools/dev/rotate-vault-keys.scm: copies the
 # new key out, runs the tool over torsocks ssh, tracks per-host result.
@@ -14,11 +14,11 @@
 # unencrypted channels.
 #
 # Usage:
-#   PLAYNET_VAULT_KEY_OLD=<64hex>    \
-#   PLAYNET_VAULT_KEY_NEW=<64hex>    \
+#   LOCALCHIMERA_VAULT_KEY_OLD=<64hex>    \
+#   LOCALCHIMERA_VAULT_KEY_NEW=<64hex>    \
 #     ./tools/dev/rotate-vault-keys-fleet.sh hosts.txt
 #
-# hosts.txt: one entry per line, in `user@host:/path/to/playnet-repo` form.
+# hosts.txt: one entry per line, in `user@host:/path/to/localchimera-repo` form.
 # Lines beginning with # are comments.
 
 set -uo pipefail
@@ -31,10 +31,10 @@ fi
 HOSTS_FILE="$1"
 [ -r "$HOSTS_FILE" ] || die "can't read $HOSTS_FILE"
 
-OLD="${PLAYNET_VAULT_KEY_OLD:-}"
-NEW="${PLAYNET_VAULT_KEY_NEW:-}"
-[ "${#OLD}" -eq 64 ] || die "PLAYNET_VAULT_KEY_OLD must be 64 hex chars"
-[ "${#NEW}" -eq 64 ] || die "PLAYNET_VAULT_KEY_NEW must be 64 hex chars"
+OLD="${LOCALCHIMERA_VAULT_KEY_OLD:-}"
+NEW="${LOCALCHIMERA_VAULT_KEY_NEW:-}"
+[ "${#OLD}" -eq 64 ] || die "LOCALCHIMERA_VAULT_KEY_OLD must be 64 hex chars"
+[ "${#NEW}" -eq 64 ] || die "LOCALCHIMERA_VAULT_KEY_NEW must be 64 hex chars"
 [ "$OLD" != "$NEW" ] || die "OLD and NEW are identical — no-op"
 
 ROTATED=()
@@ -45,7 +45,7 @@ while IFS= read -r line; do
   case "$line" in ''|\#*) continue ;; esac
 
   host="${line%%:*}"        # before the colon: user@hostname
-  remote_path="${line#*:}"  # after: playnet repo path on remote
+  remote_path="${line#*:}"  # after: localchimera repo path on remote
 
   printf '\n── rotating on %s (%s) ──\n' "$host" "$remote_path"
 
@@ -53,8 +53,8 @@ while IFS= read -r line; do
                   -o BatchMode=yes \
                   "$host" \
        "cd '$remote_path' && \
-        PLAYNET_VAULT_KEY_OLD='$OLD' \
-        PLAYNET_VAULT_KEY_NEW='$NEW' \
+        LOCALCHIMERA_VAULT_KEY_OLD='$OLD' \
+        LOCALCHIMERA_VAULT_KEY_NEW='$NEW' \
         guile --no-auto-compile -L module tools/dev/rotate-vault-keys.scm"
   then
     printf '  ✓ %s rotated\n' "$host"
@@ -99,9 +99,9 @@ cat <<EOF
 All ${#ROTATED[@]} host(s) rotated successfully.
 
 Next steps:
-  1. Update PLAYNET_VAULT_KEY in deploy/secrets.scm or your operator
+  1. Update LOCALCHIMERA_VAULT_KEY in deploy/secrets.scm or your operator
      secret store to the NEW value.
   2. Securely destroy the OLD key (you no longer need it).
   3. Note: each host's bran.vault files are now sealed under NEW.
-     Restart playnet-gateway on each host to verify decryption.
+     Restart localchimera-gateway on each host to verify decryption.
 EOF

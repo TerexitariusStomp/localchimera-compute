@@ -25,19 +25,19 @@
 ;; reads with an enclave model; both are read when the modules load, which a
 ;; compile of this file does at expansion, so the environment is set then too
 (eval-when (expand load eval)
-  (define %dir (string-append (or (getenv "TMPDIR") "/tmp") "/playnet-see-test-"
+  (define %dir (string-append (or (getenv "TMPDIR") "/tmp") "/localchimera-see-test-"
                               (number->string (getpid))))
-  (setenv "PLAYNET_DATA_DIR" %dir)
-  (setenv "PLAYNET_PHOTO_ALLOTMENT" "3")
+  (setenv "LOCALCHIMERA_DATA_DIR" %dir)
+  (setenv "LOCALCHIMERA_PHOTO_ALLOTMENT" "3")
   (setenv "API_VISION_MODEL" "TEE/test-vision"))
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet gateway evidence)
-             (playnet gateway llm-service)
-             (playnet gateway allotment)
-             ((playnet wire rows) #:select (plain-reply))
-             ((playnet utils clock) #:select (civil->epoch))
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera gateway evidence)
+             (localchimera gateway llm-service)
+             (localchimera gateway allotment)
+             ((localchimera wire rows) #:select (plain-reply))
+             ((localchimera utils clock) #:select (civil->epoch))
              (goblins) (goblins vat) (goblins actor-lib methods)
              (goblins actor-lib on)
              (ice-9 textual-ports) (ice-9 regex)

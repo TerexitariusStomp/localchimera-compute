@@ -14,11 +14,11 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-stage-state.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve discrete) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve discrete) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

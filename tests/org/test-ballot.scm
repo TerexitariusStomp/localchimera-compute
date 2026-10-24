@@ -7,10 +7,10 @@
 ;;; revocation snapshot isolation, scope-specific overrides, and
 ;;; over-delegation validation.
 
-(use-modules (playnet test harness))
-(use-modules (playnet pools credit-fold) (srfi srfi-1))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet voice ballot) (playnet voice delegation-map) (playnet voice voice-signer))
+(use-modules (localchimera test harness))
+(use-modules (localchimera pools credit-fold) (srfi srfi-1))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera voice ballot) (localchimera voice delegation-map) (localchimera voice voice-signer))
 (use-modules (goblins)
              (goblins utils hashmap))
 

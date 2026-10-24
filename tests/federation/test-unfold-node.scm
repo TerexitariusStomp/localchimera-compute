@@ -8,12 +8,12 @@
 ;;; outside its subtree — the roster narrows on the way down as it accumulated
 ;;; on the way up.
 
-(use-modules (playnet test harness)
-             (playnet vf aggregation fold-node)
-             (playnet vf aggregation unfold-node)
-             (playnet federation descent)
-             (playnet federation uc-matching)
-             (playnet vf schemas)
+(use-modules (localchimera test harness)
+             (localchimera vf aggregation fold-node)
+             (localchimera vf aggregation unfold-node)
+             (localchimera federation descent)
+             (localchimera federation uc-matching)
+             (localchimera vf schemas)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

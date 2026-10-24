@@ -3,7 +3,7 @@
 ;;;
 ;;; The twin of docs/planning/voice/voice-in-lean.md, file 1 (VoiceField.lean):
 ;;; each check below is named after the theorem it runs, over the same
-;;; definitions (module/playnet/solve/voice-field.scm mirrors "The objects").
+;;; definitions (module/localchimera/solve/voice-field.scm mirrors "The objects").
 ;;; Randomised with a fixed seed where the statement is universal; the doc's
 ;;; own worked numbers (50 hours a column, one full dislike, τ = 0.3 → 107.5
 ;;; against 92.5, 200 in all) where it gives them. The rules the design REFUSES
@@ -12,9 +12,9 @@
 ;;;
 ;;; Run:  guile -q -L module tests/solve/test-property-voice-field.scm
 
-(use-modules (playnet test harness) (srfi srfi-1) (ice-9 format)
-             (playnet vf facts parts) (playnet solve voice-field)
-             ((playnet test scope) #:select (push-on)))
+(use-modules (localchimera test harness) (srfi srfi-1) (ice-9 format)
+             (localchimera vf facts parts) (localchimera solve voice-field)
+             ((localchimera test scope) #:select (push-on)))
 
 (define %state (seed->random-state 20260922))
 (define (rnd lo hi) (+ lo (* (- hi lo) (random:uniform %state))))

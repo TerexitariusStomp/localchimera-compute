@@ -21,12 +21,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/federation/test-crossing-custody.scm
 
-(use-modules (playnet test harness)
-             ((playnet test planner federation-wire-fixture) #:select (fx-identity))
-             (playnet federation crossing-custody)
-             (playnet federation federate)
-             (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
+(use-modules (localchimera test harness)
+             ((localchimera test planner federation-wire-fixture) #:select (fx-identity))
+             (localchimera federation crossing-custody)
+             (localchimera federation federate)
+             (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig)
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              (goblins) (goblins vat)
              (rnrs bytevectors) (srfi srfi-1))
 

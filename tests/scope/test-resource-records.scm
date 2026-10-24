@@ -17,15 +17,15 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-resource-records.scm
 
-(use-modules (playnet test harness)
-             (playnet test books)
-             ((playnet test events) #:select (ev positional-snapshot))
-             (playnet observation observer) (playnet scope root) (playnet vf schemas)
-             ((playnet observation credentials) #:select (install-event-log!))
+(use-modules (localchimera test harness)
+             (localchimera test books)
+             ((localchimera test events) #:select (ev positional-snapshot))
+             (localchimera observation observer) (localchimera scope root) (localchimera vf schemas)
+             ((localchimera observation credentials) #:select (install-event-log!))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
-(define resource->list (@@ (playnet observation observer) economic-resource->list))
+(define resource->list (@@ (localchimera observation observer) economic-resource->list))
 (define (fresh-dir tag)
   (let ((d (string-append "/tmp/pel-res-" (number->string (getpid)) "-" tag)))
     (system* "rm" "-rf" d) (mkdir d) d))

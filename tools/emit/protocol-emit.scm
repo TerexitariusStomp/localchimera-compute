@@ -1,21 +1,21 @@
 #!/usr/bin/env -S guile -L module
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
-;;; tools/emit/protocol-emit.scm — emits read from (playnet doors protocol)
+;;; tools/emit/protocol-emit.scm — emits read from (localchimera doors protocol)
 ;;;
 ;;;   protocol-emit.scm openapi [out]    OpenAPI 3.1 document for the HTTP door
 ;;;   protocol-emit.scm mcp [out]        MCP tool manifest: one tool per HTTP door
 ;;;   protocol-emit.scm seam [out]       ui/app/seam-wire.ts: the SeamHandlers
-;;;                                      and SeamPushes interfaces, from (playnet protocol seam)
+;;;                                      and SeamPushes interfaces, from (localchimera protocol seam)
 ;;;
 ;;; One operation per door that has an HTTP form: `POST /api/<object>/<name>`
 ;;; with a JSON body whose properties are the door's positional arguments
 ;;; in order (optional and rest arguments marked), and a JSON reply. Doors
 ;;; with auth `root` or `operator` have no path: they appear under
-;;; `x-playnet-doors` with `x-playnet-transport: captp` (root) or
+;;; `x-localchimera-doors` with `x-localchimera-transport: captp` (root) or
 ;;; `none` (operator) so the document lists the whole surface.
 ;;;
-;;; Argument schemas come from (playnet protocol shapes): one shape per
+;;; Argument schemas come from (localchimera protocol shapes): one shape per
 ;;; argument name, the same fragment in the OpenAPI document and the MCP
 ;;; manifest, so the two cannot disagree. A door with a capability or
 ;;; in-process argument has no HTTP form (door-http?).
@@ -23,10 +23,10 @@
 ;;; The committed copy is browser/api/openapi.json; `make check-protocol-fresh`
 ;;; regenerates and diffs it.
 
-(use-modules (playnet doors protocol) (playnet protocol shapes) (playnet protocol seam)
-             ((playnet wire rows) #:select (reply-table-ref wire-type-name wire-table-name))
-             (playnet wire replies)
-             (playnet protocol mcp)
+(use-modules (localchimera doors protocol) (localchimera protocol shapes) (localchimera protocol seam)
+             ((localchimera wire rows) #:select (reply-table-ref wire-type-name wire-table-name))
+             (localchimera wire replies)
+             (localchimera protocol mcp)
              (json) (ice-9 match) (ice-9 format) (srfi srfi-1))
 
 (define schema-for door-input-schema)
@@ -37,17 +37,17 @@
     (description . ,(format #f "~a\n\nObject: `~a`. Callable by ~a. Reply shape: `~a`."
                             (door-doc door) (door-object door) (door-audience door) (door-reply door)))
     (tags . ,(vector (symbol->string (door-topic door))))
-    (x-playnet-auth . ,(symbol->string (door-auth door)))
-    (x-playnet-kind . ,(symbol->string (door-kind door)))
-    (x-playnet-to . ,(symbol->string (door-to door)))
-    (x-playnet-object . ,(symbol->string (door-object door)))
-    ,@(if (door-seam door) `((x-playnet-seam . ,(door-seam door))) '())
+    (x-localchimera-auth . ,(symbol->string (door-auth door)))
+    (x-localchimera-kind . ,(symbol->string (door-kind door)))
+    (x-localchimera-to . ,(symbol->string (door-to door)))
+    (x-localchimera-object . ,(symbol->string (door-object door)))
+    ,@(if (door-seam door) `((x-localchimera-seam . ,(door-seam door))) '())
     (security . ,(if (eq? (door-auth door) 'anonymous) (vector) (vector '((deviceSignature . #())))))
     (requestBody . ((required . #t)
                     (content . ((application/json . ((schema . ,(schema-for door))))))))
     (responses . ((200 . ((description . ,(format #f "the door's reply (~a), as JSON" (door-reply door)))
                           (content . ((application/json . ((schema . ,(append (reply-schema (door-reply door))
-                                                                                 `((x-playnet-reply . ,(symbol->string (door-reply door))))))))))))
+                                                                                 `((x-localchimera-reply . ,(symbol->string (door-reply door))))))))))))
                   (401 . ((description . "no valid device signature (B4)")))
                   (403 . ((description . "the door is outside this device's allowlist")))))))
 
@@ -55,9 +55,9 @@
   (let* ((http (filter door-http? %doors))
          (other (filter (lambda (d) (not (door-http? d))) %doors)))
     `((openapi . "3.1.0")
-      (info . ((title . "playnet gateway doors")
+      (info . ((title . "localchimera gateway doors")
                (version . ,(number->string %protocol-version))
-               (description . "Every door the browser may call, declared once in module/playnet/doors/protocol.scm and emitted here, grouped by topic. The HTTP door (POST /api/{object}/{name}) carries the same doors CapTP does; a call is signed with an enrolled device key (RFC 9421) unless the door is anonymous. The same doors are MCP tools: POST /api/mcp speaks JSON-RPC (initialize, tools/list, tools/call), and browser/api/mcp-tools.json is the committed tool list. Doors a client cannot reach (root tier, operator) are listed under x-playnet-doors.")))
+               (description . "Every door the browser may call, declared once in module/localchimera/doors/protocol.scm and emitted here, grouped by topic. The HTTP door (POST /api/{object}/{name}) carries the same doors CapTP does; a call is signed with an enrolled device key (RFC 9421) unless the door is anonymous. The same doors are MCP tools: POST /api/mcp speaks JSON-RPC (initialize, tools/list, tools/call), and browser/api/mcp-tools.json is the committed tool list. Doors a client cannot reach (root tier, operator) are listed under x-localchimera-doors.")))
       (servers . ,(vector '((url . "/"))))
       (tags . ,(list->vector (map (lambda (t) `((name . ,(symbol->string (car t))) (description . ,(cdr t)))) %topics)))
       (components . ((securitySchemes . ((deviceSignature . ((type . "http") (scheme . "signature")
@@ -66,19 +66,19 @@
                        (cons (format #f "/api/~a/~a" (door-object d) (door-name d))
                              `((post . ,(operation d)))))
                      http))
-      (x-playnet-doors . ,(list->vector
+      (x-localchimera-doors . ,(list->vector
                            (map (lambda (d)
                                   `((object . ,(symbol->string (door-object d)))
                                     (name . ,(symbol->string (door-name d)))
                                     (auth . ,(symbol->string (door-auth d)))
                                     (topic . ,(symbol->string (door-topic d)))
-                                    (x-playnet-transport . ,(if (memq (door-auth d) '(anonymous device root)) "captp" "none"))
+                                    (x-localchimera-transport . ,(if (memq (door-auth d) '(anonymous device root)) "captp" "none"))
                                     (summary . ,(door-doc d))))
                                 other))))))
 
 (define (mcp-manifest)
   ;; The committed tool list: what POST /api/mcp answers tools/list with,
-  ;; built by (playnet protocol mcp) so the file and the live answer agree.
+  ;; built by (localchimera protocol mcp) so the file and the live answer agree.
   `((protocolVersion . ,%mcp-protocol-version)
     (serverInfo . ,(mcp-server-info))
     (tools . ,(mcp-tools))))
@@ -95,7 +95,7 @@
   (string-append
    "// SPDX-License-Identifier: AGPL-3.0-or-later\n"
    "// ui/app/seam-wire.ts — GENERATED by tools/emit/protocol-emit.scm seam from\n"
-   "// module/playnet/protocol/seam.scm. Do not edit; `make protocol-emit`.\n"
+   "// module/localchimera/protocol/seam.scm. Do not edit; `make protocol-emit`.\n"
    "//\n"
    "// Both halves of the seam. SeamHandlers is app → spine: every handler the\n"
    "// spine registers (hoot/day-boot.scm), with the doors it sends noted so a\n"

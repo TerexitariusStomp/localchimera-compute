@@ -3,7 +3,7 @@
 !#
 ;;; tools/emit/saidify-schemas.scm — compute SAIDs for ACDC schema files.
 ;;;
-;;; Reads each JSON file in module/playnet/keri/schemas/, computes the
+;;; Reads each JSON file in module/localchimera/keri/schemas/, computes the
 ;;; blake3-256 SAID of the document with `$id` blanked to 44 '#' chars,
 ;;; and writes the file back with the real SAID substituted into `$id`.
 ;;;
@@ -19,15 +19,15 @@
              (ice-9 textual-ports)
              (json)
              (srfi srfi-1)
-             (playnet keri signify)
-             ((playnet keri schemas)
+             (localchimera keri signify)
+             ((localchimera keri schemas)
               #:select (%schema-catalog read-schema-alist)))
 
-(define %schema-dir "module/playnet/keri/schemas")
-;; The work list is the catalog: (playnet keri schemas) is the one
+(define %schema-dir "module/localchimera/keri/schemas")
+;; The work list is the catalog: (localchimera keri schemas) is the one
 ;; place that names the schema set.
 (define %schemas (map car %schema-catalog))
-;; %saidplaceholder is re-exported from (playnet keri signify); the tool
+;; %saidplaceholder is re-exported from (localchimera keri signify); the tool
 ;; and the runtime SAID pipeline now share a single 44-`#` constant.
 (define %placeholder %saidplaceholder)
 

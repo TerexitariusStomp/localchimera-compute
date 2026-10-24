@@ -22,11 +22,11 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-frag-restore-symmetry.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define tip 100.0)          ; quantile_0.5(80,120)
 (define profile (list 80.0 120.0 0.5 50.0))
@@ -104,7 +104,7 @@
 
 ;;; ── the COMMONS: does a pooled budget feel a restore made by one drawer? ────
 ;;;
-;;; playnet.typ §"Shared budgets and possibility-tension": an agent drawn on by
+;;; localchimera.typ §"Shared budgets and possibility-tension": an agent drawn on by
 ;;; many scopes has ONE pooled budget, and "every consume or use event from any
 ;;; scope is debited against this one shared stock". If debits pool but credits
 ;;; do not, the pool is a ratchet — one farm's recharge would relieve only

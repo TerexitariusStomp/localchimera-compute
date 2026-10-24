@@ -18,10 +18,10 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-crossing-column.scm
 
-(use-modules (playnet solve federation-solve))
-(use-modules (playnet test harness)
-             (playnet solve solver)
-             ((playnet solve federation-oracle) #:select (make-boundary-oracle))
+(use-modules (localchimera solve federation-solve))
+(use-modules (localchimera test harness)
+             (localchimera solve solver)
+             ((localchimera solve federation-oracle) #:select (make-boundary-oracle))
              (srfi srfi-1) (ice-9 format))
 
 ;; a seeded stream, so a failure is a program someone can build again

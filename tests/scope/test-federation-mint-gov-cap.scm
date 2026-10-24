@@ -24,10 +24,10 @@
 ;;; identical way a genuinely far ref would, which is exactly the failure
 ;;; mode false-if-exception guards against.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet boot scope) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials))
-(use-modules ((playnet keri citizen-sig)
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera boot scope) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials))
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid))
              (goblins) (goblins vat) (goblins utils hashmap))
 

@@ -1,13 +1,13 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; test-endorsement.scm — tests for (playnet utils endorsement) and capability-governed validation
+;;; test-endorsement.scm — tests for (localchimera utils endorsement) and capability-governed validation
 ;;; Run with:  guile -L module tests/test-endorsement.scm
 
 (define %project-root (string-append (dirname (current-filename)) "/../.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (playnet test harness))
-(use-modules (playnet org gplay)
-             (playnet utils endorsement)
+(use-modules (localchimera test harness))
+(use-modules (localchimera org gplay)
+             (localchimera utils endorsement)
              (goblins)
              (goblins actor-lib sealers)
              (ice-9 receive))

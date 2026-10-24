@@ -88,20 +88,20 @@ check "a.txt there is theirs" "$(git -C "$R" show HEAD:a.txt | sed -n 2p)" "DEUX
 
 echo; echo "── COMPILED: a changed module's importers lose their compiled files, the unrelated keep theirs ──"
 fresh_repo
-mkdir -p "$R/module/playnet"
-printf '(define-module (playnet a) #:export (f))\n(define (f) 1)\n' > "$R/module/playnet/a.scm"
-printf '(define-module (playnet b) #:use-module (playnet a))\n' > "$R/module/playnet/b.scm"
-printf '(define-module (playnet c) #:export (g))\n(define (g) 1)\n' > "$R/module/playnet/c.scm"
+mkdir -p "$R/module/localchimera"
+printf '(define-module (localchimera a) #:export (f))\n(define (f) 1)\n' > "$R/module/localchimera/a.scm"
+printf '(define-module (localchimera b) #:use-module (localchimera a))\n' > "$R/module/localchimera/b.scm"
+printf '(define-module (localchimera c) #:export (g))\n(define (g) 1)\n' > "$R/module/localchimera/c.scm"
 git -C "$R" add module; git -C "$R" commit -q -m "modules"
 G="$R-gate"; CACHE="$R-cache"
 git -C "$R" worktree add -q --detach "$G" main
 GR="$(cd "$G" && pwd -P)"
-for m in a b c; do mkdir -p "$CACHE/ccache$GR/module/playnet"; : > "$CACHE/ccache$GR/module/playnet/$m.scm.go"; done
-printf '(define-module (playnet a) #:export (f))\n(define (f) 2)\n' > "$R/module/playnet/a.scm"
+for m in a b c; do mkdir -p "$CACHE/ccache$GR/module/localchimera"; : > "$CACHE/ccache$GR/module/localchimera/$m.scm.go"; done
+printf '(define-module (localchimera a) #:export (f))\n(define (f) 2)\n' > "$R/module/localchimera/a.scm"
 echo "a: change" > "$R/msg"
-out="$(tool "$R/msg" module/playnet/a.scm --gate --gate-cmd true --cache-root "$CACHE"; echo "exit=$?")"
+out="$(tool "$R/msg" module/localchimera/a.scm --gate --gate-cmd true --cache-root "$CACHE"; echo "exit=$?")"
 check "the tool exits 0" "$(echo "$out" | tail -1)" "exit=0"
-check "a.go (changed) and b.go (imports a) are gone, c.go (unrelated) stays" "$(ls "$CACHE/ccache$GR/module/playnet" | tr '\n' ' ')" "c.scm.go "
+check "a.go (changed) and b.go (imports a) are gone, c.go (unrelated) stays" "$(ls "$CACHE/ccache$GR/module/localchimera" | tr '\n' ' ')" "c.scm.go "
 
 echo; echo "── WORKTREE: a session's own worktree commits onto main, merged with what landed there ──"
 fresh_repo

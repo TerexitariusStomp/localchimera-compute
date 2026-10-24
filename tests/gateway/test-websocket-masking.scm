@@ -11,7 +11,7 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/gateway/test-websocket-masking.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (web socket)
              (web socket frame)
              (rnrs bytevectors)

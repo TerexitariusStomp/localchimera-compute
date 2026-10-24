@@ -5,11 +5,11 @@
 ;;; build-voice-snapshot produces the right voice-share = gross/total_svc
 ;;; ratios without touching the full planner stack.
 
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness))
-(use-modules (playnet utils store-utils))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet voice ballot) (playnet voice delegation-map) (playnet voice snapshot) (playnet voice voice-signer))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness))
+(use-modules (localchimera utils store-utils))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera voice ballot) (localchimera voice delegation-map) (localchimera voice snapshot) (localchimera voice voice-signer))
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap))

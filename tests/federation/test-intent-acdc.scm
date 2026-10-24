@@ -2,14 +2,14 @@
 ;;; test-intent-acdc.scm — intent ACDCs close the VF triad
 ;;;
 ;;; Verifies:
-;;;   1. add-intent emits playnet-intent ACDC
+;;;   1. add-intent emits localchimera-intent ACDC
 ;;;   2. promote-to-commitment produces commitment ACDC with
 ;;;      satisfies = the intent's commitment-id (resolvable to intent SAID)
 ;;;   3. recover-intents round-trip: intents survive vat tear-down
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas))
-(use-modules (playnet credentials commitments) (playnet keri acdc) (playnet federation rebuild) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas))
+(use-modules (localchimera credentials commitments) (localchimera keri acdc) (localchimera federation rebuild) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -18,7 +18,7 @@
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; 1. add-intent emits playnet-intent ACDC
+;;; 1. add-intent emits localchimera-intent ACDC
 ;;; ════════════════════════════════════════════════════════════════════════════
 
 (display "\n── 1. add-intent emits ACDC ──\n")
@@ -58,7 +58,7 @@
 
     ;; Verify intent ACDC issued
     (let ((cred ($ acdc-store 'by-claim-1
-                   *schema-playnet-intent*
+                   *schema-localchimera-intent*
                    'intent-id "I-offer-bread")))
       (check-pred "intent ACDC issued" (and cred #t))
       (check "intent issuer = E_alice" (cred-issuer cred) "E_alice")
@@ -125,7 +125,7 @@
 
       ;; Commitment ACDC should have satisfies = intent-id
       (let ((cmt-cred ($ acdc-store 'by-claim-1
-                         *schema-playnet-commitment*
+                         *schema-localchimera-commitment*
                          'commitment-id cid)))
         (check-pred "commitment ACDC issued" (and cmt-cred #t))
         (check "commitment.satisfies = intent-id"
@@ -133,7 +133,7 @@
 
       ;; And the intent ACDC exists for the satisfies reference
       (let ((intent-cred ($ acdc-store 'by-claim-1
-                            *schema-playnet-intent*
+                            *schema-localchimera-intent*
                             'intent-id "I-want-bread")))
         (check-pred "intent ACDC referenced by commitment is present"
                     (and intent-cred #t))))))
@@ -230,7 +230,7 @@
       ($ plan-store 'add-intent i)
       ($ plan-store 'add-intent i))
 
-    (let ((all ($ acdc-store 'by-schema *schema-playnet-intent*)))
+    (let ((all ($ acdc-store 'by-schema *schema-localchimera-intent*)))
       (check "idempotent: 1 ACDC after 2 adds" (length all) 1))))
 
 

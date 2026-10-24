@@ -3,19 +3,19 @@
 ;;;
 ;;; A row of the week's plan taken is a commitment; an issue solved is the
 ;;; work that fulfils it and the deliverable produced
-;;; (module/playnet/dev/ledger.scm). The tools that book these
+;;; (module/localchimera/dev/ledger.scm). The tools that book these
 ;;; run on a timer and keep no memory, so every fact is booked once however
 ;;; often it is told, and the books stand across a restart.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/dev/test-dev-ledger.scm
 
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas) (playnet observation states) (srfi srfi-1)
-             (playnet vf schemas)
-             (playnet dev recipes)
-             (playnet dev priorities)
-             (playnet dev plan)
-             (playnet dev ledger)
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas) (localchimera observation states) (srfi srfi-1)
+             (localchimera vf schemas)
+             (localchimera dev recipes)
+             (localchimera dev priorities)
+             (localchimera dev plan)
+             (localchimera dev ledger)
              (goblins) (goblins vat)
              (srfi srfi-1))
 
@@ -50,7 +50,7 @@
 (display "\n── a row of the plan, taken ──\n")
 
 (with-vat vat
-  (let* ((scope (spawn-scope-root "playnet development")))
+  (let* ((scope (spawn-scope-root "localchimera development")))
     (seed-dev-scope! scope facts people)
     (let* ((rows (read-dev-plan (plan-dev-week scope facts people #:meeting? #f) facts people))
            (row  (find (lambda (r) (equal? "aaa111" (row-ref r 'oid))) rows))

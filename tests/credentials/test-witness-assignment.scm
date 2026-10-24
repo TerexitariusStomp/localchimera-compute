@@ -4,8 +4,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/credentials/test-witness-assignment.scm
 
-(use-modules (playnet test harness)
-             (playnet credentials keys) (playnet keri acdc) (playnet keri acdc)
+(use-modules (localchimera test harness)
+             (localchimera credentials keys) (localchimera keri acdc) (localchimera keri acdc)
              (srfi srfi-1))   ;; every
 
 (define %federation "EFederation_alpha_00000000000000000000000000")
@@ -39,7 +39,7 @@
 
 (let ((c (assignment %member-1 1)))
   (check "schema is set"
-         (cred-schema c) *schema-playnet-witness-assignment*)
+         (cred-schema c) *schema-localchimera-witness-assignment*)
   (check "issuer is the federation"
          (cred-issuer c) %federation)
   (check "holder is the member operating the witness"

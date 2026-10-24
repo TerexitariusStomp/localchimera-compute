@@ -2,7 +2,7 @@
 ;;; test-capacity-denomination.scm — a capacity means the same at any period length.
 ;;;
 ;;; A period's length is a governed choice: `*period-length*` is what a scope sets
-;;; to say how finely it wants to see its own commitments, and playnet.typ (§One
+;;; to say how finely it wants to see its own commitments, and localchimera.typ (§One
 ;;; program) asks only that the length be STATED. So a capacity that reads the
 ;;; period as its denominator is a quantity that moves when that choice moves —
 ;;; the same means over the same day sums differently depending on where the
@@ -25,13 +25,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-capacity-denomination.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet vf formulas capacity))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera vf formulas capacity))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

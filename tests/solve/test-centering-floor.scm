@@ -2,7 +2,7 @@
 ;;; test-centering-floor.scm — the barrier left standing at the path floor is
 ;;; FELT IN THE PLAN, and the knob that controls it must actually be connected.
 ;;;
-;;; Spec: docs/social-category.typ §8 Obligation 3b; docs/playnet.typ §7.9
+;;; Spec: docs/social-category.typ §8 Obligation 3b; docs/localchimera.typ §7.9
 ;;;       ("a small free-time term rewards spending less total labour, so the
 ;;;       plan makes only what someone wants") and §7.11 (the duality gap μ "is
 ;;;       driven to zero").
@@ -27,11 +27,11 @@
 ;;;
 ;;; Run: guile tests/solve/… (discovered by tools/test/run-scm-tests.sh)
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve records) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve records) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
              (srfi srfi-1)
              (ice-9 format))
 

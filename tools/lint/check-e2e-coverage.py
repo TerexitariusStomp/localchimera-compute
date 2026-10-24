@@ -4,7 +4,7 @@
 # "Everything has a test" is a claim this script makes mechanical:
 #
 #   1. DOORS — every ((name …) clause inside a declared-doors form in
-#      module/playnet/doors/*.scm that is ever invoked as 'name somewhere
+#      module/localchimera/doors/*.scm that is ever invoked as 'name somewhere
 #      (call sites, tests, other doors) is a declared door. Each must be
 #      named in at least one tests/**/*.scm file.
 #
@@ -12,7 +12,7 @@
 #      dispatch table must be named in at least one tests/browser/*.mjs
 #      or tests/ux/*.mjs.
 #
-#   3. DELEGATES — every make-*-delegate in module/playnet/delegates.scm
+#   3. DELEGATES — every make-*-delegate in module/localchimera/delegates.scm
 #      must appear in tests/test-delegates.scm AND a tests/parity/*.scm
 #      (the parity suite's live leg is what proves the upstream).
 #
@@ -46,7 +46,7 @@ def declared_doors():
     never_doors = {"assoc", "assq", "assv", "lambda", "let", "let*", "and",
                    "or", "not", "if", "when", "unless", "list", "cons",
                    "car", "cdr", "map", "filter", "apply", "member"}
-    for _, text in read_all("module/playnet/doors/*.scm"):
+    for _, text in read_all("module/localchimera/doors/*.scm"):
         candidates.update(clause.findall(text))
     candidates -= never_doors
 
@@ -91,7 +91,7 @@ def handler_is_tested(name):
 
 def delegates():
     makers = re.compile(r"\(define\*? \(?(make-[a-z0-9-]+-delegate)")
-    for _, text in read_all("module/playnet/delegates.scm"):
+    for _, text in read_all("module/localchimera/delegates.scm"):
         return sorted(set(makers.findall(text)))
     return []
 

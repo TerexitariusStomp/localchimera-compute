@@ -16,10 +16,10 @@
 ;;;
 ;;; Run:  guile -q -L module tests/solve/test-voice-field-solve.scm
 
-(use-modules (playnet solve report))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver)
-             (playnet vf facts parts) (playnet solve voice-field)
+(use-modules (localchimera solve report))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve world) (localchimera solve compile) (localchimera solve solver)
+             (localchimera vf facts parts) (localchimera solve voice-field)
              (srfi srfi-1) (ice-9 format))
 
 (define (~= a b . tol) (< (abs (- a b)) (if (pair? tol) (car tol) 1e-6)))

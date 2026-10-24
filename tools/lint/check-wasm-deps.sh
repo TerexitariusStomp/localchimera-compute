@@ -8,7 +8,7 @@
 # a needless rebuild. A MISSING entry means make believes a stale artifact is
 # fresh, so an edit that breaks the build produces no rebuild and no error —
 # the breakage surfaces later, blamed on whoever next touches a listed file.
-# (playnet crypto shamir) went missing from browser/repl.wasm exactly this way.
+# (localchimera crypto shamir) went missing from browser/repl.wasm exactly this way.
 #
 # So: missing is an error, extra is a note. Extras are never demanded away,
 # because tools/lint/wasm-deps.scm reads static import forms only and a prerequisite

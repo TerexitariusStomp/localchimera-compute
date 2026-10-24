@@ -15,9 +15,9 @@
 ;;;
 ;;; Run:  guile -q -L module tests/pools/test-free-time-fold.scm
 
-(use-modules (playnet test harness) (srfi srfi-1)
-             (playnet pools free-time-fold)
-             (playnet vf aggregation fold-node)
+(use-modules (localchimera test harness) (srfi srfi-1)
+             (localchimera pools free-time-fold)
+             (localchimera vf aggregation fold-node)
              (goblins) (goblins vat))
 
 (define (near? a b) (< (abs (- a b)) 1e-9))

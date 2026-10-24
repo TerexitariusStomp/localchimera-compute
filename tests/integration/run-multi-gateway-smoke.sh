@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/integration/run-multi-gateway-smoke.sh
 #
-# Two-gateway subprocess smoke test. Spawns two playnet gateways in
+# Two-gateway subprocess smoke test. Spawns two localchimera gateways in
 # disjoint state dirs on disjoint ports (gateway-harness.sh), waits for
 # each to write its gateway-sref.txt, then runs the OCapN driver to verify
 # both are reachable + enlivenable from a third process.
@@ -21,8 +21,8 @@
 # real cross-gateway IPEX delivery you need a different harness (each
 # gateway gets its own KERIA agent, the operator-only path).
 #
-# PLAYNET_SCOPES_DURABLE=0: no on-disk scope restore, faster boot; PLAYNET_PEERS
-# and PLAYNET_UC_AID unset: each gateway stands alone and is its own UC.
+# LOCALCHIMERA_SCOPES_DURABLE=0: no on-disk scope restore, faster boot; LOCALCHIMERA_PEERS
+# and LOCALCHIMERA_UC_AID unset: each gateway stands alone and is its own UC.
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -33,8 +33,8 @@ gw_setup
 echo "=== multi-gateway smoke ==="
 echo "  TMPA=$TMPA port=$PORT_A"
 echo "  TMPB=$TMPB port=$PORT_B"
-gw_spawn "A" "$TMPA" "$PORT_A" PLAYNET_SCOPES_DURABLE=0
-gw_spawn "B" "$TMPB" "$PORT_B" PLAYNET_SCOPES_DURABLE=0
+gw_spawn "A" "$TMPA" "$PORT_A" LOCALCHIMERA_SCOPES_DURABLE=0
+gw_spawn "B" "$TMPB" "$PORT_B" LOCALCHIMERA_SCOPES_DURABLE=0
 gw_wait_for "A" "$TMPA/gateway-sref.txt" 45
 gw_wait_for "B" "$TMPB/gateway-sref.txt" 45
 SREF_A=$(head -n 1 "$TMPA/gateway-sref.txt")

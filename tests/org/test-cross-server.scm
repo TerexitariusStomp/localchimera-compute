@@ -5,11 +5,11 @@
 ;;; the federation. The federation enlivens server-A's scope via sturdyref
 ;;; across the fake OCapN network.
 
-(use-modules ((playnet test scope) #:select (account!)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet federation vows) (playnet boot scope) (playnet boot scope) (playnet federation sturdyref-credential) (playnet keri acdc-store))
+(use-modules ((localchimera test scope) #:select (account!)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera federation vows) (localchimera boot scope) (localchimera boot scope) (localchimera federation sturdyref-credential) (localchimera keri acdc-store))
 (use-modules (goblins)
              (goblins vat)
              (goblins utils hashmap)
@@ -171,7 +171,7 @@
                            (lambda (watershed-w)
                              (let ((sref-creds
                                     ($ store 'by-schema
-                                       *schema-playnet-federation-sturdyref*)))
+                                       *schema-localchimera-federation-sturdyref*)))
                                (atomic-box-set! result-box-2
                                                 (list bakery-w watershed-w
                                                       (length sref-creds)))

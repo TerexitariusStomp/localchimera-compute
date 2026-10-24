@@ -18,10 +18,10 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/scope/test-stock-conformance-live.scm
 
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet scope live)
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 ;; the wheat-flour the commune actually holds (onhand ONHAND kg, at "town").

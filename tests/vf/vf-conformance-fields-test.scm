@@ -4,24 +4,24 @@
 ;;; `vf-conformance-classes-test.scm` holds the vocabulary file's record types to the
 ;;; TTL's classes. This holds each record's FIELDS to the TTL's properties: a field
 ;;; named `has-beginning` on <commitment> is the property `hasBeginning`, whose
-;;; domain names Commitment. What playnet names otherwise — an id (an IRI in RDF),
+;;; domain names Commitment. What localchimera names otherwise — an id (an IRI in RDF),
 ;;; a field the TTL has no property for — is declared here with its reason, and
 ;;; the declaration is checked for rot both ways: a declared field that became a
 ;;; property, or left the record, fails.
 ;;;
 ;;; Run: guile -L module tests/vf/vf-conformance-fields-test.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             ((playnet utils records) #:select (vf-record-type-fields vf-record-type-name))
-             (playnet test vf-ttl)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             ((localchimera utils records) #:select (vf-record-type-fields vf-record-type-name))
+             (localchimera test vf-ttl)
              (srfi srfi-1) (srfi srfi-13))
 
 (define root (vf-repo-root))
 (define properties (ttl-properties root))          ; (name label domain range card) …
 (define property-names (map car properties))
 
-;; kebab->camel-class / kebab->camel-field: (playnet test vf-ttl)
+;; kebab->camel-class / kebab->camel-field: (localchimera test vf-ttl)
 
 ;; the record types that are classes of the TTL, by their names
 (define (record-types module-name)
@@ -43,7 +43,7 @@
                         (or (null? (caddr p)) (member class (caddr p)))))
        properties))
 
-;; What playnet names otherwise, per record: (field . reason). `id` is every
+;; What localchimera names otherwise, per record: (field . reason). `id` is every
 ;; record's: a record's identity is its IRI in RDF, a field here. The reasons fall
 ;; into a few kinds, each named in the entry: the TTL spells it otherwise; the TTL
 ;; names the property on other classes only; the field is a declared extension
@@ -117,7 +117,7 @@
                                  (else "a property of its class, or declared otherwise")))
                    (or (property-of? prop class) (and why #t)))))
         (vf-record-type-fields rtd)))))
- (record-types '(playnet vf schemas)))
+ (record-types '(localchimera vf schemas)))
 
 (check-pred "records of several classes were checked" (> (length checked) 10))
 
@@ -126,7 +126,7 @@
  (lambda (entry)
    (let* ((record (car entry))
           (rtd (find (lambda (t) (string=? (class-of t) (kebab->camel-class record)))
-                     (record-types '(playnet vf schemas)))))
+                     (record-types '(localchimera vf schemas)))))
      (check (format #f "<~a> is a record of a class" record) (and rtd (memq record checked) #t))
      (when rtd
        (for-each

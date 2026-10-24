@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/identity/test-kel-in-hand.scm — the key log in hand, pinned natively
 ;;;
-;;; What this pins (module/playnet/identity/kel.scm, the pure half of the
+;;; What this pins (module/localchimera/identity/kel.scm, the pure half of the
 ;;; browser's identity code):
 ;;;   • a passcode incepts a log the module verifies, and opens it; another
 ;;;     passcode does not;
@@ -14,15 +14,15 @@
 ;;;     yield a sealed-to key; the forget receipt renders as the page reads it.
 ;;;
 ;;; Run: guile -L module tests/identity/test-kel-in-hand.scm
-(use-modules (playnet test harness)
-             (playnet identity kel)
-             (playnet keri signify)   ; installs the native crypto backend
-             ((playnet keri crypto-primitives) #:select (ed25519-keypair-public))
-             ((playnet keri signify-portable)
+(use-modules (localchimera test harness)
+             (localchimera identity kel)
+             (localchimera keri signify)   ; installs the native crypto backend
+             ((localchimera keri crypto-primitives) #:select (ed25519-keypair-public))
+             ((localchimera keri signify-portable)
               #:select (bran->signing-keypair bran->next-keypair next-key-digest
                         build-icp build-rot sign-event json-read-ordered scm->json-canonical))
-             ((playnet keri key-state) #:select (check-rotation))
-             ((playnet keri reticulum-binding) #:select (kel-reticulum-pub))
+             ((localchimera keri key-state) #:select (check-rotation))
+             ((localchimera keri reticulum-binding) #:select (kel-reticulum-pub))
              (srfi srfi-1))
 
 (define bran  "0ADEMOpasscode000000X")

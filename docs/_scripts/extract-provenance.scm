@@ -4,7 +4,7 @@
 ;;; extract-provenance.scm — regenerate *provenance-facts* from greppable tags.
 ;;;
 ;;; The bridge's maintenance path. Reads the two conventions and rewrites the
-;;; region between the BEGIN/END markers in module/playnet/lang/provenance.scm:
+;;; region between the BEGIN/END markers in module/localchimera/lang/provenance.scm:
 ;;;
 ;;;   prose (docs/**):  @claim ID grounds: REF ...     (in <!-- --> or // )
 ;;;                     → (grounds ID REF) for each REF, and (argues ID "path")
@@ -27,7 +27,7 @@
   (canonicalize-path
    (string-append (dirname (current-filename)) "/../..")))
 
-(define %module "module/playnet/lang/provenance.scm")
+(define %module "module/localchimera/lang/provenance.scm")
 
 ;;; ── scan ──────────────────────────────────────────────────────────────────────
 

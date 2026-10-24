@@ -12,7 +12,7 @@ runs its old compiled file and fails at run time, or reads a field out of place,
 while its source is right.
 
 For every compiled file of a source in this tree, this takes the sources the file
-reaches by imports (a `(playnet …)` module name anywhere in its text that names a
+reaches by imports (a `(localchimera …)` module name anywhere in its text that names a
 file here, and the same for each of those in turn) and drops the compiled file when
 any of them is newer. The reach is read from the text, so it can only be too wide:
 a module named in a comment costs a recompile and nothing else.
@@ -26,7 +26,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TREES = ('module', 'tests', 'tools', 'server', 'hoot')
-SPEC = re.compile(r'\((playnet(?:\s+[^\s()#;"]+)+)')
+SPEC = re.compile(r'\((localchimera(?:\s+[^\s()#;"]+)+)')
 
 
 def sources():
@@ -54,7 +54,7 @@ def main(argv):
         found = set()
         for m in SPEC.finditer(text):
             parts = m.group(1).split()
-            # the longest prefix that names a file: `(playnet a b #:select …)` and prose alike
+            # the longest prefix that names a file: `(localchimera a b #:select …)` and prose alike
             for n in range(len(parts), 1, -1):
                 f = os.path.join(ROOT, 'module', *parts[:n]) + '.scm'
                 if os.path.isfile(f):

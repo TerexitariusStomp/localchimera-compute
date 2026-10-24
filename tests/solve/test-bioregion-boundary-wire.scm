@@ -8,17 +8,17 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-bioregion-boundary-wire.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge worlds bioregions)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge worlds bioregions)
              (srfi srfi-1)
              (ice-9 format))
 (use-modules ((json parser)  #:select (json-string->scm))
              ((json builder) #:select (scm->json-string))
              ((ice-9 textual-ports) #:select (get-string-all)))
-(use-modules (playnet knowledge worlds doon-valley))
-(use-modules (playnet knowledge worlds doon-shed))
+(use-modules (localchimera knowledge worlds doon-valley))
+(use-modules (localchimera knowledge worlds doon-shed))
 
 ;; ── load the SINGLE SOURCE (identical logic to service.scm load-bioregion-boundaries!) ──
 (define bpath (or (find file-exists? '("browser/data/geo/boundaries.json"

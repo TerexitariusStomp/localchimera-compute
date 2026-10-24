@@ -11,9 +11,9 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-resource-flows.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet algorithms propagation) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera algorithms propagation) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

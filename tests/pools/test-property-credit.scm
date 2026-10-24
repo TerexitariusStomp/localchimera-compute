@@ -13,11 +13,11 @@
 ;;; The seeds are fixed, so a failure is a world someone can build again.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/pools/test-property-credit.scm
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness) (playnet algorithms elastic) (playnet pools credit-fold)
-             (playnet scope root) (playnet vf schemas) (playnet observation states)
-             ((playnet observation account) #:select (declare-claimable!))
-             ((playnet test scope) #:select (plan-claim! record-work!))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness) (localchimera algorithms elastic) (localchimera pools credit-fold)
+             (localchimera scope root) (localchimera vf schemas) (localchimera observation states)
+             ((localchimera observation account) #:select (declare-claimable!))
+             ((localchimera test scope) #:select (plan-claim! record-work!))
              (goblins) (goblins persistence-store memory) (goblins utils hashmap) (srfi srfi-1) (srfi srfi-11) (ice-9 format))
 (declare-claimable! "spec-bread")
 (define N 15)

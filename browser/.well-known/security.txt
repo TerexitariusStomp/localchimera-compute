@@ -3,7 +3,7 @@
 # tooling looks here first, before anything else.
 #
 # This is the unfinished template, served only while no operator security
-# contact is configured. Once PLAYNET_OPERATOR_SECURITY (or _CONTACT) is set,
+# contact is configured. Once LOCALCHIMERA_OPERATOR_SECURITY (or _CONTACT) is set,
 # the server generates this file itself, with a fresh Expires — see
 # docs/legal/README.md §2. Until then every field below is commented out: an
 # unfinished template should look unfinished, not like a live, unmonitored
@@ -33,7 +33,7 @@ Expires: 2027-10-05T00:00:00Z
 #
 # This file governs vulnerability reports about running THIS gateway — its
 # configuration, its deployment, its data. For a bug or a vulnerability in
-# the playnet software itself, read SECURITY.md in the project's source tree
+# the localchimera software itself, read SECURITY.md in the project's source tree
 # (rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ) instead, or report it there; the
 # project's authors are not this gateway's operator and hold none of its
 # data (privacy notice §1).

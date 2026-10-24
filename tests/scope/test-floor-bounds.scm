@@ -12,11 +12,11 @@
 ;;;     (`subsistence-clamped`) instead of failing silently.
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/scope/test-floor-bounds.scm
-(use-modules (playnet test harness)
-             (playnet knowledge catalogues subsistence)
-             ((playnet scope live) #:select (agent->subsistence-ctx scope-standard))
-             ((playnet scope policy) #:select (*governance-policy-defaults*))
-             (playnet vf schemas)
+(use-modules (localchimera test harness)
+             (localchimera knowledge catalogues subsistence)
+             ((localchimera scope live) #:select (agent->subsistence-ctx scope-standard))
+             ((localchimera scope policy) #:select (*governance-policy-defaults*))
+             (localchimera vf schemas)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

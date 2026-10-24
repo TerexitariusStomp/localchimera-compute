@@ -6,9 +6,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keri/test-keri-credentials.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri credentials)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri credentials)
              (web server)
              (web request)
              (web response)
@@ -37,7 +37,7 @@
 ;; regk, so it has to GET /identifiers/{name}/registries and find the
 ;; entry by name. #t makes POST /registries 400 like a real re-create.
 (define %registry-already-exists? #f)
-(define %test-registry-name "playnet-credentials")
+(define %test-registry-name "localchimera-credentials")
 
 (define (with-json code body-alist)
   (values
@@ -214,8 +214,8 @@
          (equal? (acdc-registry-id) %test-registry)))
 
 (set! %registry-already-exists? #t)
-(let ((mod (resolve-module '(playnet keri credentials))))
-  (module-define! mod '*playnet-registry-id* #f))
+(let ((mod (resolve-module '(localchimera keri credentials))))
+  (module-define! mod '*localchimera-registry-id* #f))
 (let ((rid (acdc-create-registry "gov-aid" %test-registry-name)))
   (check "already-exists registry: still returns the regk, not the name"
          (equal? rid %test-registry))
@@ -226,8 +226,8 @@
 (set! %registry-already-exists? #f)
 
 ;; Set registry ID so acdc-issue doesn't error
-(let ((mod (resolve-module '(playnet keri credentials))))
-  (module-define! mod '*playnet-registry-id* %test-registry))
+(let ((mod (resolve-module '(localchimera keri credentials))))
+  (module-define! mod '*localchimera-registry-id* %test-registry))
 
 ;;; ── Test: Credential Issuance ───────────────────────────────────────
 

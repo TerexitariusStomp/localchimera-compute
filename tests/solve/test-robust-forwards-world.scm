@@ -20,11 +20,11 @@
 ;;;         tests/solve/test-robust-forwards-world.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve records) (playnet solve robust) (playnet solve plan) (playnet solve world)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge dsl shorthand)
-             ((playnet knowledge recipes transport) #:select (mode-recipe)))
-;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
+(use-modules (localchimera solve engine) (localchimera solve records) (localchimera solve robust) (localchimera solve plan) (localchimera solve world)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge dsl shorthand)
+             ((localchimera knowledge recipes transport) #:select (mode-recipe)))
+;; solve/robust.scm arrives with the engine — (localchimera solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 

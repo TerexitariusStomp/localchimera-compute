@@ -19,11 +19,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/observation/test-observer-boundary.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet test events)
-             (playnet observation observer)
-             (playnet observation observer)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera test events)
+             (localchimera observation observer)
+             (localchimera observation observer)
              (goblins utils hashmap)
              (srfi srfi-1))
 

@@ -5,9 +5,9 @@
 ;;;   guile --no-auto-compile -q -L module \
 ;;;     tests/scope/test-mimir-recipe.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet knowledge recipes mimir) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet knowledge catalogues substances))
+(use-modules (localchimera test harness))
+(use-modules (localchimera knowledge recipes mimir) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera knowledge catalogues substances))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

@@ -11,9 +11,9 @@
              ((guix licenses) #:prefix license:))
 
 (package
-  (name "playnet")
+  (name "localchimera")
   (version "0.1.0-HEAD")
-  (source (local-file "." "playnet-checkout"
+  (source (local-file "." "localchimera-checkout"
                       #:recursive? #t
                       #:select? (lambda (file stat)
                                   ;; Exclude .git, node_modules, etc.
@@ -24,14 +24,14 @@
   (build-system copy-build-system)
   (arguments
    (list #:install-plan
-          #~'(("module" "share/playnet/module")
-              ("server" "share/playnet/server")
-              ("deploy" "share/playnet/deploy")
-              ("browser" "share/playnet/browser")
-              ("tests" "share/playnet/tests")
-              ("docs" "share/playnet/docs")
-              ("tools" "share/playnet/tools")
-              ("Makefile" "share/playnet/Makefile"))
+          #~'(("module" "share/localchimera/module")
+              ("server" "share/localchimera/server")
+              ("deploy" "share/localchimera/deploy")
+              ("browser" "share/localchimera/browser")
+              ("tests" "share/localchimera/tests")
+              ("docs" "share/localchimera/docs")
+              ("tools" "share/localchimera/tools")
+              ("Makefile" "share/localchimera/Makefile"))
          #:phases
          #~(modify-phases %standard-phases
              (add-before 'install 'check
@@ -41,7 +41,7 @@
                    (invoke guile "--no-auto-compile" "-q"
                            "-L" "module"
                            "tests/lang/test-knowledge.scm")
-                   ;; Relational planner tests (imports (playnet deprecated planner))
+                   ;; Relational planner tests (imports (localchimera deprecated planner))
                    (invoke guile "--no-auto-compile" "-q"
                            "-L" "module"
                            "tests/deprecated/relational-planner.scm"))))
@@ -54,7 +54,7 @@
                  ;; Docker — no outer `guix shell` env required.
                  (let* ((out         (assoc-ref outputs "out"))
                         (bin         (string-append out "/bin"))
-                        (base        (string-append out "/share/playnet"))
+                        (base        (string-append out "/share/localchimera"))
                         (guile-bin   (search-input-file inputs "bin/guile"))
                         ;; Auto-discover Guile-bearing inputs: any input
                         ;; whose store path has share/guile/site/3.0
@@ -117,21 +117,21 @@
                              (chmod path #o555)))))
                    (mkdir-p bin)
                    (write-wrapper
-                    "playnet-repl"
+                    "localchimera-repl"
                     (string-append "exec " guile-bin " "
                                    base "/server/repl.scm \"$@\"\n"))
                    (write-wrapper
-                    "playnet-planner"
+                    "localchimera-planner"
                     (string-append "exec " guile-bin
                                    " --no-auto-compile"
-                                   " -c '(use-modules (playnet boot prelude))"
+                                   " -c '(use-modules (localchimera boot prelude))"
                                    " ((@ (system repl repl) start-repl))'"
                                    " \"$@\"\n"))
                    ;; Gateway: `cd $base` so terminal.scm's relative
                    ;; `primitive-load \"deploy/guix/users.scm\"` resolves;
                    ;; also expose `$base/deploy` on the load path.
                     (write-wrapper
-                     "playnet-gateway"
+                     "localchimera-gateway"
                      (string-append "cd " base "\n"
                                     "export GUILE_LOAD_PATH=\""
                                     base "/deploy:$GUILE_LOAD_PATH\"\n"
@@ -149,7 +149,7 @@
   (home-page "https://app.radicle.xyz/nodes/seed.radicle.garden/rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ")
   (synopsis "Communal computer — relational planning over capability-secure actors")
   (description
-   "Playnet is a commons computer built on Spritely Goblins.  It provides
+   "LocalChimera is a commons computer built on Spritely Goblins.  It provides
 relational economic planning (miniKanren over ValueFlows), capability-secure
 governance (actors, facets, revocation), and mesh networking (Reticulum).
 Facts are plain S-expression tuples queried via unification.  Every

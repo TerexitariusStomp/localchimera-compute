@@ -16,10 +16,10 @@
 ;;; Run from repo root:
 ;;;   guile --no-auto-compile -q -L module tests/scope/test-use-unit-lint.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet knowledge recipes beenius-wax) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes cold-chain) (playnet knowledge recipes container) (playnet knowledge recipes currency) (playnet knowledge recipes federation) (playnet knowledge recipes food-surplus) (playnet knowledge recipes grow) (playnet knowledge recipes humisoil) (playnet knowledge recipes infrastructure) (playnet knowledge recipes meeting) (playnet knowledge recipes stone-paper) (playnet knowledge recipes transport) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (localchimera test harness))
+(use-modules (localchimera knowledge recipes beenius-wax) (localchimera knowledge recipes berlin-transit) (localchimera knowledge recipes cold-chain) (localchimera knowledge recipes container) (localchimera knowledge recipes currency) (localchimera knowledge recipes federation) (localchimera knowledge recipes food-surplus) (localchimera knowledge recipes grow) (localchimera knowledge recipes humisoil) (localchimera knowledge recipes infrastructure) (localchimera knowledge recipes meeting) (localchimera knowledge recipes stone-paper) (localchimera knowledge recipes transport) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
-(use-modules ((playnet knowledge dsl vf-lint) #:select (recipe-seeders)))
+(use-modules ((localchimera knowledge dsl vf-lint) #:select (recipe-seeders)))
 
 ;;; Every seeder in knowledge/recipes/ taking a recipe-store and nothing else. A
 ;;; name absent from the module simply does not run: this is a sweep, not a
@@ -86,7 +86,7 @@
 ;;; counted in seat-hours is the ordinary way to say "one seat". Comms channels
 ;;; instead draw `1 post-slot`, their spec's own unit, with no duration. Both
 ;;; forms are coherent and both cancel; VF constrains neither.
-(use-modules ((playnet utils units) #:select (time-unit? %count-unit %effort-unit)))   ; the one reader of "is this a time?"
+(use-modules ((localchimera utils units) #:select (time-unit? %count-unit %effort-unit)))   ; the one reader of "is this a time?"
 (define (unit-of m) (and m (measure-has-unit m)))
 
 ;;; ── the length a run takes, from either place it may be stated ──────────────

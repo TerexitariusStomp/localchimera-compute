@@ -23,7 +23,7 @@
 ;;
 ;; WebSocket frame abstraction.
 ;;
-;; PLAYNET PATCH — guile-websocket 0.3.0's (web socket frame), verbatim except
+;; LOCALCHIMERA PATCH — guile-websocket 0.3.0's (web socket frame), verbatim except
 ;; one line in `read-data-frame`: the final-fragment branch joins
 ;; `(reverse (cons frame fragments))`, so a fragmented message arrives with
 ;; every fragment, the last one included.  Upstream 0.3.0 joins

@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-schemas.scm — ACDC role schemas are self-saidified
 ;;;
-;;; Each of the four playnet role-credential schemas
+;;; Each of the four localchimera role-credential schemas
 ;;; (member/supplier/planner/governor) is a JSON Schema 2020-12 document
 ;;; whose `$id` field holds its own blake3-256 SAID, computed via
 ;;; saidify-schema with `$id` blanked to 44 `#` chars.
@@ -18,10 +18,10 @@
 ;;; `tools/emit/saidify-schemas.scm --check` as a CI guard against edits that
 ;;; weren't followed by `make schemas`.
 
-(use-modules (playnet test harness)
-             (playnet keri credentials)
-             (playnet keri schemas)
-             (playnet keri signify)
+(use-modules (localchimera test harness)
+             (localchimera keri credentials)
+             (localchimera keri schemas)
+             (localchimera keri signify)
              (ice-9 format)
              (json)
              (srfi srfi-1))

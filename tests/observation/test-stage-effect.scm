@@ -11,13 +11,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/observation/test-stage-effect.scm
 
-(use-modules (playnet solve ingest))
-(use-modules (playnet test harness)
-             (playnet test events)
-             (playnet observation observer) (playnet vf schemas) (playnet utils store-utils) (srfi srfi-1)
-             (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet observation observer)
+(use-modules (localchimera solve ingest))
+(use-modules (localchimera test harness)
+             (localchimera test events)
+             (localchimera observation observer) (localchimera vf schemas) (localchimera utils store-utils) (srfi srfi-1)
+             (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera observation observer)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

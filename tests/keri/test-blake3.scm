@@ -12,8 +12,8 @@
 ;;;
 ;;; Bare guile won't find libblake3 unless you've already entered the shell.
 
-(use-modules (playnet test harness)
-             (playnet keri blake3)
+(use-modules (localchimera test harness)
+             (localchimera keri blake3)
              (rnrs bytevectors)
              (ice-9 format))
 

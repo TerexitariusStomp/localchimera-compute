@@ -6,12 +6,12 @@
 ;;; The decisive test: over two periods, a rate boundary caps EACH period, so the horizon total can
 ;;; exceed the tip — whereas a budget would cap the total. We assert exactly that distinction.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-spec.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-spec.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 (define tip 10.0)   ; quantile_0.5(8,12)
 (define (emit-recipe)

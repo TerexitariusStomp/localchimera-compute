@@ -17,9 +17,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/scope/cascade-provenance-test.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness)
-             (playnet algorithms rollup) (playnet algorithms track-trace) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera algorithms rollup) (localchimera algorithms track-trace) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))

@@ -77,10 +77,10 @@
 ;;; this test is to lock in the *data layer* — to prove the schemas can
 ;;; carry the load — so that work has a sturdy place to land.
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
-(use-modules ((playnet utils clock) #:select (clock-contains?)))
-(use-modules (playnet algorithms track-trace) (playnet knowledge recipes cold-chain) (playnet federation store-registry) (playnet scope root) (playnet vf schemas) (playnet vf beyond schedules) (playnet vf beyond lot) (playnet ddmrp records) (srfi srfi-1))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules ((localchimera utils clock) #:select (clock-contains?)))
+(use-modules (localchimera algorithms track-trace) (localchimera knowledge recipes cold-chain) (localchimera federation store-registry) (localchimera scope root) (localchimera vf schemas) (localchimera vf beyond schedules) (localchimera vf beyond lot) (localchimera ddmrp records) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
@@ -130,8 +130,8 @@
 (display "\n=== Section 1: Multi-class catalog ===\n")
 
 ;; Specs and positioning-analysis records live in
-;; module/playnet/knowledge/recipes/cold-chain.scm and are imported
-;; via (use-modules (playnet boot prelude)). Test-local aliases for the bundle
+;; module/localchimera/knowledge/recipes/cold-chain.scm and are imported
+;; via (use-modules (localchimera boot prelude)). Test-local aliases for the bundle
 ;; lists keep the rest of the test readable.
 (define all-food-specs    cold-chain-food-specs)
 (define all-vehicle-specs cold-chain-vehicle-specs)
@@ -176,7 +176,7 @@
 (display "\n=== Section 2: HACCP critical control points ===\n")
 
 ;; Process specs (with HACCP CCP flags) and the 5-step recipe live in
-;; module/playnet/knowledge/recipes/cold-chain.scm.
+;; module/localchimera/knowledge/recipes/cold-chain.scm.
 (define all-process-specs cold-chain-process-specs)
 
 (with-vat vat
@@ -751,7 +751,7 @@
 (define (iso-hhmm iso-ts) (substring iso-ts 11 16))
 
 (define (in-time-range? hhmm tr)
-  ;; the shared rule (playnet utils clock) — as bare strings a 22:00–02:00
+  ;; the shared rule (localchimera utils clock) — as bare strings a 22:00–02:00
   ;; night shift claimed no hour at all.
   (clock-contains? (time-range-start-time tr) (time-range-end-time tr) hhmm))
 

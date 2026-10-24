@@ -7,14 +7,14 @@ the new tip is printed to stderr and the old->new map to stdout, and the new
 commits sit in REPO's object store until a ref is pointed at them.
 
 Commits that name GMAIL as author or committer, or carry it in the message, are
-re-made with playnet-ops <ops@playnet.earth>; every descendant follows (its
+re-made with localchimera-ops <ops@localchimera.earth>; every descendant follows (its
 parents changed) and is signed with KEY (or left unsigned when KEY is -), the gpg clock frozen at its own
 committer date so the same input yields the same commits. Commits before the
 first affected one keep their ids. Prints the old->new map (TSV) on stdout."""
 import os, subprocess, sys
 repo, tip, key = sys.argv[1:4]
 GMAIL = os.environ['SCRUB_EMAIL'].encode()
-OPS_N, OPS_E = b'playnet-ops', b'ops@playnet.earth'
+OPS_N, OPS_E = b'localchimera-ops', b'ops@localchimera.earth'
 wrap = os.path.join(os.path.dirname(os.path.abspath(repo)), 'gpg-frozen-clock')
 open(wrap, 'w').write('#!/bin/sh\nexec gpg --faked-system-time "${KERI_SIGN_TIME}!" "$@"\n'); os.chmod(wrap, 0o755)
 raw = subprocess.run(['git', '-C', repo, 'log', '--topo-order', '--reverse', '--date=raw',

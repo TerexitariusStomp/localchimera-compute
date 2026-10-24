@@ -15,9 +15,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-live.scm
 
-(use-modules (playnet solve federation-solve))
-(use-modules (playnet knowledge recipes federation-demo) (playnet federation store-registry) (playnet scope root)
-             (playnet scope live)
+(use-modules (localchimera solve federation-solve))
+(use-modules (localchimera knowledge recipes federation-demo) (localchimera federation store-registry) (localchimera scope root)
+             (localchimera scope live)
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
@@ -29,7 +29,7 @@
 
 ;; seed a commune's real stores: bake recipe (flour+work→bread), a worker, a
 ;; NESTED spatial tree (federation ⊃ commune ⊃ venue), and inventory.
-;; seeding is the reusable `seed-fed-commune!` from (playnet boot prelude) — the same
+;; seeding is the reusable `seed-fed-commune!` from (localchimera boot prelude) — the same
 ;; helper the gateway's demo path calls to stand up a federation of communes.
 
 ;; gather a commune's live records — the four pulls the service method does.

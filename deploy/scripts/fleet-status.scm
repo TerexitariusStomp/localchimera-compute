@@ -12,12 +12,12 @@
 ;;; Usage:
 ;;;   guile -L module deploy/scripts/fleet-status.scm
 
-(use-modules (playnet fleet records)
+(use-modules (localchimera fleet records)
              (ice-9 format)
              (srfi srfi-1))
 
 (define DEPLOY_DIR
-  (or (getenv "PLAYNET_DEPLOY_DIR")
+  (or (getenv "LOCALCHIMERA_DEPLOY_DIR")
       (let ((script-dir (dirname (current-filename))))
         (string-append (dirname script-dir)))))
 

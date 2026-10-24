@@ -15,7 +15,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-time-injection.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world))
 
 (define (setup!)
   (declare-world! #:places '(("A" 0.0 0.0) ("B" 0.0 0.9))   ; ~100 km, τ·km ≈ 0.2 h

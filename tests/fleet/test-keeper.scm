@@ -11,13 +11,13 @@
 ;;;
 ;;; Run:  guile -L module tests/fleet/test-keeper.scm
 
-(use-modules (playnet test harness)
-             (playnet fleet child)
-             (playnet fleet keeper)
-             (playnet fleet records)
+(use-modules (localchimera test harness)
+             (localchimera fleet child)
+             (localchimera fleet keeper)
+             (localchimera fleet records)
              (srfi srfi-1))
 
-(define %dir (format #f "/tmp/playnet-test-keeper-~a" (getpid)))
+(define %dir (format #f "/tmp/localchimera-test-keeper-~a" (getpid)))
 (system* "rm" "-rf" %dir)
 (mkdir %dir #o700)
 

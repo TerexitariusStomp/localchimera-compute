@@ -22,10 +22,10 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/federation/test-ratification-delivery.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (srfi srfi-1)
-             (playnet credentials voting) (playnet keri acdc) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet federation universal-commune)
+             (localchimera credentials voting) (localchimera keri acdc) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store)
+             (localchimera federation universal-commune)
              (goblins)
              (srfi srfi-1))
 
@@ -51,7 +51,7 @@
          (uc (spawn-universal-commune
               #:acdc-store uc-store
               #:durable? #f
-              #:keri-backend (@@ (playnet keys keri-backend)
+              #:keri-backend (@@ (localchimera keys keri-backend)
                                  stub-keri-backend)))
          (a  (mk-fed a-store "A" "E_fed_A_AID"))
          (b  (mk-fed b-store "B" "E_fed_B_AID")))
@@ -78,7 +78,7 @@
 ;; The ratification ACDC lands in UC's store.
 (with-vat vat
   (let ((creds ($ ($ uc-ref 'acdc-store) 'by-schema
-                  *schema-playnet-recomposition-ratification*)))
+                  *schema-localchimera-recomposition-ratification*)))
     (check "ratification ACDC is in UC's store"
            (and (pair? creds)
                 (any (lambda (c) (equal? (cred-said c) ratification-said))

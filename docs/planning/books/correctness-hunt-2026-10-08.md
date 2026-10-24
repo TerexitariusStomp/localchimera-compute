@@ -208,7 +208,7 @@ produces either key:
 
 ```
 $ grep -rn "(cons 'admit?\|'admit? \.\|(admit? \. " module server --include=*.scm
-$ grep -n "admit?\|proc-frag" module/playnet/economy/recipe-standing.scm
+$ grep -n "admit?\|proc-frag" module/localchimera/economy/recipe-standing.scm
 ```
 
 (both print nothing). The three reads are dead in production: the recipe-admission gate and the

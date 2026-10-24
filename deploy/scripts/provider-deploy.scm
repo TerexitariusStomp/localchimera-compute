@@ -26,13 +26,13 @@
 ;;; Usage:
 ;;;   VPSBG_API_KEY="ID|KEY" guile -L module \
 ;;;     deploy/scripts/provider-deploy.scm \
-;;;     --plan cloud-vps-2gb --name playnet-1 \
-;;;     --iso-url https://example.com/playnet.iso
+;;;     --plan cloud-vps-2gb --name localchimera-1 \
+;;;     --iso-url https://example.com/localchimera.iso
 ;;;
 ;;; See --help for the full option list.
 
-(use-modules (playnet fleet vpsbg)
-             (playnet fleet records)
+(use-modules (localchimera fleet vpsbg)
+             (localchimera fleet records)
              (ice-9 format)
              (ice-9 getopt-long)
              (ice-9 rdelim)              ; read-line
@@ -69,7 +69,7 @@ next-step commands on success.
 Required:
   -p, --plan KEY            Plan key (e.g. cloud-vps-2gb). See
                             `guile -L module -c '(use-modules
-                            (playnet fleet vpsbg))
+                            (localchimera fleet vpsbg))
                             (for-each (lambda (p)
                               (format #t \"~~a~~%\" (assoc-ref p \"key\")))
                               (vpsbg-paginated-data
@@ -104,7 +104,7 @@ Optional:
   -h, --help                Show this help.
 
 After the script returns successfully:
-  1. ssh root@<IP> playnet-install /dev/vda    # interactive disk install
+  1. ssh root@<IP> localchimera-install /dev/vda    # interactive disk install
   2. Capture the new host key with ssh-keyscan and paste it into
      deploy/providers/<host>.scm, alongside the IP.
   3. make deploy PROVIDER=deploy/providers/<host>.scm
@@ -113,16 +113,16 @@ Examples:
   # First-time setup, brand-new account with empty balance:
   VPSBG_API_KEY=\"123|abc...\" guile -L module \\
     deploy/scripts/provider-deploy.scm \\
-    --plan cloud-vps-2gb --name playnet-1 \\
-    --ssh-key-pub ~~/.ssh/playnet.pub \\
+    --plan cloud-vps-2gb --name localchimera-1 \\
+    --ssh-key-pub ~~/.ssh/localchimera.pub \\
     --image-name \"Debian 12\" \\
     --amd-sev-level 3
 
   # Boot from a custom ISO (Path 2 in the private ops vault guide):
   VPSBG_API_KEY=\"123|abc...\" guile -L module \\
     deploy/scripts/provider-deploy.scm \\
-    --plan cloud-vps-2gb --name playnet-2 \\
-    --iso-url https://playnet.example/downloads/playnet.iso \\
+    --plan cloud-vps-2gb --name localchimera-2 \\
+    --iso-url https://localchimera.example/downloads/localchimera.iso \\
     --ssh-key-id 42
 " vpsbg-default-endpoint)
   (exit 0))
@@ -392,7 +392,7 @@ already on the account, else POSTs /ssh-keys."
   (format #t "Next steps:~%")
   (format #t "  1. ssh root@~a lsblk~%" ip)
   (format #t "     # Confirm the disk path (usually /dev/vda)~%~%")
-  (format #t "  2. ssh root@~a playnet-install /dev/vda~%" ip)
+  (format #t "  2. ssh root@~a localchimera-install /dev/vda~%" ip)
   ;; Use ~~ to emit a literal tilde; bare "~1" / "~10" would be parsed
   ;; as a column-width directive expecting an argument.
   (format #t "     # Wipes the disk and installs Guix System; ~~10 min~%~%")
@@ -401,6 +401,6 @@ already on the account, else POSTs /ssh-keys."
   (format #t "  4. cp deploy/providers/example.scm deploy/providers/~a.scm~%" name)
   (format #t "     $EDITOR deploy/providers/~a.scm  # fill in IP + host key~%~%" name)
   (format #t "  5. make deploy PROVIDER=deploy/providers/~a.scm \\~%" name)
-  (format #t "                 DEPLOY_SSH_IDENTITY=~~/.ssh/playnet~%~%"))
+  (format #t "                 DEPLOY_SSH_IDENTITY=~~/.ssh/localchimera~%~%"))
 
 (main (command-line))

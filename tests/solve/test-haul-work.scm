@@ -19,20 +19,20 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-haul-work.scm
 
-(use-modules (playnet solve report))
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet knowledge recipes transport) (playnet solve compile) (playnet vf schemas) (srfi srfi-1)
-             (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             ((playnet plan accepts) #:select (accepts->pins))
-             (playnet knowledge dsl shorthand)
-             (playnet knowledge recipes transport)
+(use-modules (localchimera solve report))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera knowledge recipes transport) (localchimera solve compile) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             ((localchimera plan accepts) #:select (accepts->pins))
+             (localchimera knowledge dsl shorthand)
+             (localchimera knowledge recipes transport)
              (srfi srfi-1) (srfi srfi-13))
 
-(define E (resolve-module '(playnet solve engine)))
+(define E (resolve-module '(localchimera solve engine)))
 (define haul (relocation-recipe "haul" "Haul" "crates" #:payload 25.0 #:unit "kg" #:work '("courier" . 0.06)))
 
 (define (sum xs) (fold + 0.0 xs))

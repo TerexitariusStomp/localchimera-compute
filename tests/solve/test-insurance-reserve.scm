@@ -2,7 +2,7 @@
 ;;; test-insurance-reserve.scm — the calamity reserve q_r^"res", wired through the
 ;;; records pipeline as #:insurance and held by `held`.
 ;;;
-;;; playnet.typ §Reproduction labour splits a stock's standing level in two:
+;;; localchimera.typ §Reproduction labour splits a stock's standing level in two:
 ;;;   q_r^"op"  the SOFT operating buffer — part of the good's desire, shed first
 ;;;             (#:reserve: a low-weight `des` tranche);
 ;;;   q_r^"res" the HARD insurance reserve — "sized by the computation of
@@ -28,10 +28,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-insurance-reserve.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve robust) (playnet solve plan)
-             (playnet vf schemas) (playnet vf beyond scenario)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve robust) (localchimera solve plan)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))
 

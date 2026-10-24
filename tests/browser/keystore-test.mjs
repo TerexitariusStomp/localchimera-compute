@@ -57,11 +57,11 @@ console.log("\n── 1. put / getAll round-trip ──");
 console.log("\n── 2. migrateLegacy: valid key moves, legacy copy removed ──");
 {
   freshLocalStorage(); freshIndexedDB();
-  localStorage.setItem("playnet-kp-bob", await legacyEntry());
+  localStorage.setItem("localchimera-kp-bob", await legacyEntry());
   const moved = await migrateLegacy();
   check("reported 1 migrated", moved === 1);
   check("legacy localStorage entry removed after a durable put",
-        localStorage.getItem("playnet-kp-bob") === null);
+        localStorage.getItem("localchimera-kp-bob") === null);
   const all = await getAll();
   check("keypair now lives in IndexedDB", !!(all.bob && all.bob.privateKey));
 }
@@ -69,22 +69,22 @@ console.log("\n── 2. migrateLegacy: valid key moves, legacy copy removed ─
 console.log("\n── 3. migrateLegacy: a FAILED migration KEEPS the key (the fix) ──");
 {
   freshLocalStorage(); freshIndexedDB();
-  localStorage.setItem("playnet-kp-broken", "zz:zz"); // bad hex → importKey throws
+  localStorage.setItem("localchimera-kp-broken", "zz:zz"); // bad hex → importKey throws
   const moved = await quiet(() => migrateLegacy());
   check("nothing reported migrated", moved === 0);
   check("legacy key NOT destroyed on failure — kept for retry",
-        localStorage.getItem("playnet-kp-broken") === "zz:zz");
+        localStorage.getItem("localchimera-kp-broken") === "zz:zz");
 }
 
 console.log("\n── 4. mixed batch: valid migrates, invalid survives ──");
 {
   freshLocalStorage(); freshIndexedDB();
-  localStorage.setItem("playnet-kp-good", await legacyEntry());
-  localStorage.setItem("playnet-kp-bad", "nothex");
+  localStorage.setItem("localchimera-kp-good", await legacyEntry());
+  localStorage.setItem("localchimera-kp-bad", "nothex");
   const moved = await quiet(() => migrateLegacy());
   check("exactly the valid one migrated", moved === 1);
-  check("valid one's legacy copy removed", localStorage.getItem("playnet-kp-good") === null);
-  check("invalid one's legacy copy kept", localStorage.getItem("playnet-kp-bad") === "nothex");
+  check("valid one's legacy copy removed", localStorage.getItem("localchimera-kp-good") === null);
+  check("invalid one's legacy copy kept", localStorage.getItem("localchimera-kp-bad") === "nothex");
   const all = await getAll();
   check("only the valid one is in IndexedDB", !!(all.good && !all.bad));
 }

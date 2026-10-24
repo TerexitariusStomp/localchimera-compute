@@ -28,12 +28,12 @@
 ;;;   guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -L module tests/scope/test-ledger-signing.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet observation credentials) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person predicates))
-(use-modules (playnet keys keri-backend live))
-(use-modules (playnet keri signify))   ;; install crypto backend
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera observation credentials) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri first-person predicates))
+(use-modules (localchimera keys keri-backend live))
+(use-modules (localchimera keri signify))   ;; install crypto backend
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 (define vat (spawn-vat))

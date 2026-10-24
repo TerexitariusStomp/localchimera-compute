@@ -7,7 +7,7 @@
 ;;;
 ;;; Run: guile -L module tests/utils/test-lei.scm
 
-(use-modules (playnet test harness) (playnet utils lei))
+(use-modules (localchimera test harness) (localchimera utils lei))
 
 (define gleif "506700GE1G29325QX363")
 (check "GLEIF's own LEI verifies" (lei-valid? gleif) #t)

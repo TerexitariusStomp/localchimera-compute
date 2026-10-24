@@ -17,13 +17,13 @@
 ;;; The base is http://127.0.0.1:9091 (the door on the box itself) unless
 ;;; --base names another; reaching the box from elsewhere goes through nginx
 ;;; at https://<domain>/api/… — wrap the call in torsocks for the onion.
-;;; The signature is the door profile (module/playnet/doors/http.scm);
+;;; The signature is the door profile (module/localchimera/doors/http.scm);
 ;;; browser/api/openapi.json says what each door takes.
 
-(use-modules ((playnet doors http) #:select (sign-door-request))
-             ((playnet keri signify-portable) #:select (seed->ed25519-keypair))
-             ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
-             ((playnet keri cesr) #:select (cesr-bytes->qb64))
+(use-modules ((localchimera doors http) #:select (sign-door-request))
+             ((localchimera keri signify-portable) #:select (seed->ed25519-keypair))
+             ((localchimera keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64))
              (web client) (web response) (web uri)
              (rnrs bytevectors) (ice-9 match) (ice-9 format) (ice-9 binary-ports))
 

@@ -22,11 +22,11 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-forest-recurrence.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet vf formulas stocks)
-             (playnet knowledge dsl shorthand))
-;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera vf formulas stocks)
+             (localchimera knowledge dsl shorthand))
+;; solve/robust.scm arrives with the engine — (localchimera solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 

@@ -4,7 +4,7 @@
 ;;; End-to-end scenario: donations reach the planner through the live-registry.
 ;;;
 ;;; Modeled on test-food-surplus-scenario.scm but pared down to a single scope
-;;; ("playnet") that holds one economic resource (res-xmr-main). We exercise
+;;; ("localchimera") that holds one economic resource (res-xmr-main). We exercise
 ;;; three things:
 ;;;
 ;;;   1. bootstrap-monero-resource! wires the spec, observer stub, and the
@@ -22,11 +22,11 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/monero/test-monero-donation-scenario.scm
 
-(use-modules (playnet scope root) (playnet vf schemas)
-             (playnet monero specs)
-             (playnet monero wallet)
-             (playnet monero poller)
-             (playnet test harness)
+(use-modules (localchimera scope root) (localchimera vf schemas)
+             (localchimera monero specs)
+             (localchimera monero wallet)
+             (localchimera monero poller)
+             (localchimera test harness)
              (goblins)
              (goblins persistence-store memory)
              (goblins actor-lib methods)
@@ -36,14 +36,14 @@
 
 ;;; ── Scope + scope-vat setup ──────────────────────────────────────────────
 
-(display "=== Setup: single playnet scope ===\n")
+(display "=== Setup: single localchimera scope ===\n")
 
 (define store (make-memory-store))
 
-(define-values (scope-vat playnet)
+(define-values (scope-vat localchimera)
   (spawn-persistent-vat
    scope-root-env
-   (lambda () (values (spawn-scope-root "playnet")))
+   (lambda () (values (spawn-scope-root "localchimera")))
    store))
 
 ;;; ── Phase 1: bootstrap XMR as a live resource ────────────────────────────
@@ -52,13 +52,13 @@
 
 (define live-xmr
   (with-vat scope-vat
-    (bootstrap-monero-resource! playnet
-                                #:accountable-agent "agent-playnet"
-                                #:location "loc-playnet-server")))
+    (bootstrap-monero-resource! localchimera
+                                #:accountable-agent "agent-localchimera"
+                                #:location "loc-localchimera-server")))
 
 (with-vat scope-vat
   (check "XMR spec registered in recipe-store"
-         (let* ((rs ($ playnet 'recipe-store))
+         (let* ((rs ($ localchimera 'recipe-store))
                 (spec ($ rs 'get-resource-spec "spec-xmr")))
            (and spec
                 (equal? (resource-specification-id spec) "spec-xmr")
@@ -67,7 +67,7 @@
                         "XMR"))))
 
   (check "EconomicResource res-xmr-main seeded at 0"
-         (let* ((obs ($ playnet 'observer))
+         (let* ((obs ($ localchimera 'observer))
                 (r ($ obs 'get-resource "res-xmr-main")))
            (and r
                 (equal? (economic-resource-conforms-to r) "spec-xmr")
@@ -75,7 +75,7 @@
                        (economic-resource-onhand-quantity r))))))
 
   (check "live-registry has res-xmr-main"
-         (let ((lr ($ playnet 'live-registry)))
+         (let ((lr ($ localchimera 'live-registry)))
            ($ lr 'has? "res-xmr-main")))
 
   (check "bootstrap returned a ^live-resource ref"
@@ -88,13 +88,13 @@
 (display "\n=== Phase 2: resize live-resource → live query reflects the new balance ===\n")
 
 ;; This used to go through the deprecated relational planner's
-;; `lift-planning-facts` (module/playnet/deprecated/planner/relational/
+;; `lift-planning-facts` (module/localchimera/deprecated/planner/relational/
 ;; planning-facts.scm) to prove the live-registry override reaches the
 ;; planner's fact set. That function has no ported equivalent in the new
 ;; actor-based planner and — worse — is bound to a textually-duplicated
 ;; copy of every VF record type (deprecated/planner.scm `include-from-path`s
 ;; the same schemas.scm source into its own module, so its record types are
-;; nominally distinct from `(playnet boot prelude)`'s), so mixing it with the
+;; nominally distinct from `(localchimera boot prelude)`'s), so mixing it with the
 ;; monero modules (which are new-planner-only) crashed on any record crossing
 ;; the boundary. Query the live-resource actor directly instead — same
 ;; substantive claim (the resize is visible where a downstream reader would
@@ -110,7 +110,7 @@
   (check "XMR live-resource qty reflects the live balance (3)"
          (= ($ live-xmr 'available) 3))
   (check "XMR live-resource has the expected location"
-         (equal? ($ live-xmr 'location) "loc-playnet-server")))
+         (equal? ($ live-xmr 'location) "loc-localchimera-server")))
 
 ;; And another resize — 0.5 XMR.
 (display "\n=== Phase 2b: partial-XMR resize ===\n")
@@ -162,7 +162,7 @@
    #:wallet-vat wallet-vat
    #:wallet stub-wallet
    #:scope-vat scope-vat
-   #:scope playnet
+   #:scope localchimera
    #:live-resource live-xmr
    #:state '((last-seen-height . 0) (seen-txids . ()))
    #:logger silent-logger))
@@ -180,7 +180,7 @@
                (assq-ref new-state 'seen-txids)))
 
 (with-vat scope-vat
-  (let* ((obs ($ playnet 'observer))
+  (let* ((obs ($ localchimera 'observer))
          (events ($ obs 'events-for-resource "res-xmr-main")))
     (check "observer recorded a donation event"
            (and (pair? events) (= 1 (length events))))
@@ -189,8 +189,8 @@
         (check "event action = 'raise" (eq? (economic-event-action e) 'raise))
         (check "event spec = spec-xmr"
                (equal? (economic-event-resource-conforms-to e) "spec-xmr"))
-        (check "event receiver = agent-playnet"
-               (equal? (economic-event-receiver e) "agent-playnet"))
+        (check "event receiver = agent-localchimera"
+               (equal? (economic-event-receiver e) "agent-localchimera"))
         (check "event quantity = 2.5 XMR"
                (= 2.5 (measure-has-numerical-value
                         (economic-event-resource-quantity e))))))))
@@ -202,13 +202,13 @@
    #:wallet-vat wallet-vat
    #:wallet stub-wallet
    #:scope-vat scope-vat
-   #:scope playnet
+   #:scope localchimera
    #:live-resource live-xmr
    #:state new-state
    #:logger silent-logger))
 
 (with-vat scope-vat
-  (let ((events ($ ($ playnet 'observer) 'events-for-resource "res-xmr-main")))
+  (let ((events ($ ($ localchimera 'observer) 'events-for-resource "res-xmr-main")))
     (check "second tick did not duplicate the donation event"
            (= 1 (length events)))))
 

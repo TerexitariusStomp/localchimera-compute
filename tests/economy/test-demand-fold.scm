@@ -9,18 +9,18 @@
 ;;; into. So the same needs answer differently under a different tree, with
 ;;; nothing rewired.
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness) ((playnet test scope) #:select (mock-plan-store)))
-(use-modules (playnet plan store) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet scope live))       ; set-daily-horizon! — periods ↔ days
-(use-modules (playnet economy demand-fold))
-(use-modules (playnet vf aggregation fold-node))   ; fold-node-reparent!, coalescer
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness) ((localchimera test scope) #:select (mock-plan-store)))
+(use-modules (localchimera plan store) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera scope live))       ; set-daily-horizon! — periods ↔ days
+(use-modules (localchimera economy demand-fold))
+(use-modules (localchimera vf aggregation fold-node))   ; fold-node-reparent!, coalescer
 (use-modules (goblins))
 (use-modules (goblins utils hashmap))
 (use-modules (srfi srfi-1))
-(use-modules ((playnet vf facts tension-terms) #:select (with-tension-terms)))
-(use-modules ((playnet economy demand-fold) #:select (demand-terms-for name-own-rows)))
-(use-modules ((playnet solve engine) #:select (*desire-w0*)))
+(use-modules ((localchimera vf facts tension-terms) #:select (with-tension-terms)))
+(use-modules ((localchimera economy demand-fold) #:select (demand-terms-for name-own-rows)))
+(use-modules ((localchimera solve engine) #:select (*desire-w0*)))
 
 (define vat (spawn-vat))
 
@@ -445,7 +445,7 @@
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;; 12. Emphasis folds as social desire — the spec's law (solve/emphasis.scm)
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; playnet.typ §Desire as harmony: w_d = Σ_p v_p · x̂_p(d). A citizen's
+;;; localchimera.typ §Desire as harmony: w_d = Σ_p v_p · x̂_p(d). A citizen's
 ;;; attachments are their simplex, scaled by their voice; a cell's weight is
 ;;; the sum over citizens; a want nobody weighted takes the aggregate's mean.
 

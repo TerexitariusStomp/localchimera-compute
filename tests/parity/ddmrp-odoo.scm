@@ -4,10 +4,10 @@
 ;;; Odoo stock.buffer must reproduce. Invariant leg proves the roundtrip;
 ;;; live leg reads a real stock.buffer over execute_kw.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
-             (playnet ddmrp buffer-zones)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
+             (localchimera ddmrp buffer-zones)
              (srfi srfi-1))
 
 ;; ── invariant leg: the record contract ────────────────────────────────────
@@ -30,9 +30,9 @@
          (and (equal? (cdr (assoc "jsonrpc" w)) "2.0")
               (equal? (cdr (assoc "method" w)) "call")) #t))
 
-(parity-live-delegate "PLAYNET_ODOO_URL"
+(parity-live-delegate "LOCALCHIMERA_ODOO_URL"
   "odoo execute_kw answers a stock.buffer read"
-  ;; env creds: PLAYNET_ODOO_DB/USER/PASSWORD — unset → delegate unavailable → skip
+  ;; env creds: LOCALCHIMERA_ODOO_DB/USER/PASSWORD — unset → delegate unavailable → skip
   (lambda (t) (make-odoo-delegate t))
   (lambda (d) (d "stock.buffer" "search_read" '((("id" . 1)))))
   (lambda (a) (and (pair? a) (< (car a) 300))))

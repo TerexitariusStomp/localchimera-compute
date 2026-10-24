@@ -24,10 +24,10 @@
              (goblins utils hashmap)
              (ice-9 format)
              (srfi srfi-1)
-             (playnet test harness)
-             (playnet utils hashmap)
-             (playnet fleet records)
-             (playnet fleet reconciler))
+             (localchimera test harness)
+             (localchimera utils hashmap)
+             (localchimera fleet records)
+             (localchimera fleet reconciler))
 
 ;;; ── Recording stub providers ─────────────────────────────────────────────
 
@@ -77,7 +77,7 @@
 
 (call-with-output-file desired-path
   (lambda (port)
-    (display "(use-modules (playnet fleet records))\n" port)
+    (display "(use-modules (localchimera fleet records))\n" port)
     (display "(list\n" port)
     (display "  (desired-host\n" port)
     (display "   #:name \"auto-host-1\"\n" port)

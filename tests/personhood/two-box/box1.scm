@@ -1,17 +1,17 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/personhood/two-box/box1.scm — the WORKER's box.
 ;;;
-;;; Own process, own PLAYNET_STATE_DIR, own static server. It waits for the
+;;; Own process, own LOCALCHIMERA_STATE_DIR, own static server. It waits for the
 ;;; witness's AID (the roster entry memberships would carry in prod), opens
 ;;; the ceremony through the SAME door ^planner-service consumes — which
 ;;; publishes the ask — then polls box2's served /witness/attests until the
 ;;; co-signature lands, and checks the credential strengthened in place to
 ;;; its k-of-n multisig form.
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet personhood witness-relay)
-             (playnet credentials work) (playnet keri acdc) (playnet keri first-person credentials) (playnet personhood enrollment) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials) (playnet keri first-person predicates)
-             (playnet vf schemas) (srfi srfi-1)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera personhood witness-relay)
+             (localchimera credentials work) (localchimera keri acdc) (localchimera keri first-person credentials) (localchimera personhood enrollment) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri first-person credentials) (localchimera keri first-person predicates)
+             (localchimera vf schemas) (srfi srfi-1)
              (goblins)
              (ice-9 format)
              (ice-9 rdelim)
@@ -60,7 +60,7 @@
 
 (let ((we (with-vat vat
             (find (lambda (c) (equal? "e-2box-1" (cred-claim c 'event-id)))
-                  (non-revoked-by-schema store *schema-playnet-work-event*)))))
+                  (non-revoked-by-schema store *schema-localchimera-work-event*)))))
   (unless (and we (pair? (cred-signature we))
                (cred-multisig-valid? we (list w-aid) 1))
     (format #t "[box1] FAIL: credential not strengthened: ~s~%" (and we #t))
@@ -96,7 +96,7 @@
 
 (let ((phc (with-vat vat
              (find (lambda (c) (equal? candidate (cred-holder c)))
-                   (non-revoked-by-schema store *schema-playnet-personhood*)))))
+                   (non-revoked-by-schema store *schema-localchimera-personhood*)))))
   (cond
    ((and phc
          (assq (string->symbol (string-append "witness-" w-aid))

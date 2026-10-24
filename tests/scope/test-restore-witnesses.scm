@@ -11,22 +11,22 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-restore-witnesses.scm
 
-(use-modules (playnet test harness)
-             (playnet keys kel-store) (playnet identity oobi-host-mirror) (playnet utils paths) (playnet boot scope)
-             (playnet keys keri-backend live)
-             (playnet scope recovery)
-             (playnet keys kel-store)
-             (playnet identity oobi-host)
-             (playnet keri signify)
+(use-modules (localchimera test harness)
+             (localchimera keys kel-store) (localchimera identity oobi-host-mirror) (localchimera utils paths) (localchimera boot scope)
+             (localchimera keys keri-backend live)
+             (localchimera scope recovery)
+             (localchimera keys kel-store)
+             (localchimera identity oobi-host)
+             (localchimera keri signify)
              (goblins) (goblins vat)
              (ice-9 format))
 
 (define base-state-dir
-  (string-append "/tmp/playnet-restore-witnesses-"
+  (string-append "/tmp/localchimera-restore-witnesses-"
                  (number->string (current-time)) "-"
                  (number->string (random 100000000))))
-(setenv "PLAYNET_STATE_DIR" base-state-dir)
-(setenv "PLAYNET_VAULT_KEY"
+(setenv "LOCALCHIMERA_STATE_DIR" base-state-dir)
+(setenv "LOCALCHIMERA_VAULT_KEY"
         (let loop ((i 0) (acc "")) (if (= i 32) acc (loop (+ i 1) (string-append acc "ab")))))
 
 (format #t "~%=== a scope minted with no witness, restored with one ===~%")

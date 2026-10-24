@@ -6,7 +6,7 @@
 ;;; schema-server.py and exports:
 ;;;
 ;;;   KERIA_ADMIN_URL / KERIA_BOOT_URL / KERIA_PASSCODE — bridge wiring
-;;;   PLAYNET_SCHEMA_SERVER — http://127.0.0.1:<port>, serving /oobi/<said>
+;;;   LOCALCHIMERA_SCHEMA_SERVER — http://127.0.0.1:<port>, serving /oobi/<said>
 ;;;                           → the saidified economic schema JSON
 ;;;
 ;;; ── What this suite proves ──────────────────────────────────────────────────
@@ -20,11 +20,11 @@
 ;;; localizes the problem (schema resolve vs. field-shape vs. edge target)
 ;;; rather than collapsing into one opaque "issue failed".
 
-(use-modules (playnet test harness)
-             (playnet test keri-integration)
-             (playnet keri bridge)
-             ((playnet keri signify) #:select (signify-context-agent-aid))
-             (playnet keri credentials)
+(use-modules (localchimera test harness)
+             (localchimera test keri-integration)
+             (localchimera keri bridge)
+             ((localchimera keri signify) #:select (signify-context-agent-aid))
+             (localchimera keri credentials)
              (ice-9 format)
              (ice-9 match)
              (srfi srfi-1))
@@ -32,7 +32,7 @@
 ;;; ── env plumbing ──────────────────────────────────────────────────────────
 
 (define-values (%admin-url %boot-url %passcode) (keri-integration-bring-up!))
-(define %schema-server (getenv "PLAYNET_SCHEMA_SERVER"))
+(define %schema-server (getenv "LOCALCHIMERA_SCHEMA_SERVER"))
 
 (format #t "=== Live KERIA economic-credential issuance ===~%")
 (format #t "  admin : ~a~%" %admin-url)
@@ -67,14 +67,14 @@
     (lambda () (keri-connect! %passcode))))
 
 ;;; ── 1. resolve the economic schemas over OOBI ───────────────────────────────
-;;; acdc-ensure-schemas-resolved! reads PLAYNET_SCHEMA_SERVER and POSTs each
+;;; acdc-ensure-schemas-resolved! reads LOCALCHIMERA_SCHEMA_SERVER and POSTs each
 ;;; /oobi/<said> to KERIA's /oobis. A 404/405 here means the schema host or the
 ;;; bridge endpoint is wrong — fail loud before we ever try to issue.
 
 (check-call "resolve economic schemas over OOBI"
   (lambda ()
     (unless %schema-server
-      (error "PLAYNET_SCHEMA_SERVER unset — run via run-integration.sh"))
+      (error "LOCALCHIMERA_SCHEMA_SERVER unset — run via run-integration.sh"))
     (acdc-ensure-schemas-resolved!)
     #t))
 
@@ -302,7 +302,7 @@
       ;; grant and raise the notification).
       (check-call "authorize agent end-role for wholder"
         (lambda ()
-          (let* ((ctx       (@@ (playnet keri bridge) *signify-ctx*))
+          (let* ((ctx       (@@ (localchimera keri bridge) *signify-ctx*))
                  (agent-aid (signify-context-agent-aid ctx))
                  (op        (keri-add-end-role "wholder" "agent" agent-aid)))
             (format #t "  → agent eid: ~a~%" agent-aid)

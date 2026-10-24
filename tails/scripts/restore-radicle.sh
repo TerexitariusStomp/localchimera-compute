@@ -16,11 +16,11 @@ LOCAL_BIN="/home/amnesia/.local/bin"
 VAULT="/home/amnesia/Persistent/vault"
 TOR_ONION_SERVICE="/home/amnesia/Persistent/tor-onion-service"
 SETUP_TOR_SCRIPT="/home/amnesia/Persistent/scripts/setup-tor-onion-service.sh"
-# Single-line "<NID>@<onion>.onion:8776" pointing at the playnet seed.
+# Single-line "<NID>@<onion>.onion:8776" pointing at the localchimera seed.
 # Written by the operator after `rad self --nid` on the server; without
 # it `rad sync` has to discover seeds via DHT, which is what fails on
 # fresh Tails sessions.
-PLAYNET_SEED_FILE="/home/amnesia/Persistent/scripts/playnet-seed.txt"
+LOCALCHIMERA_SEED_FILE="/home/amnesia/Persistent/scripts/localchimera-seed.txt"
 
 echo "[radicle] Restoring Radicle from Persistent..."
 
@@ -89,15 +89,15 @@ else
     echo "[radicle] Tor hidden service not configured (missing keys or script)."
 fi
 
-# --- Playnet seed wiring (preferredSeeds + persistent connect) ---
-if [ -s "$PLAYNET_SEED_FILE" ] && [ -f ~/.radicle/config.json ]; then
-    PLAYNET_SEED=$(tr -d '[:space:]' < "$PLAYNET_SEED_FILE")
-    if [[ "$PLAYNET_SEED" == *"@"*".onion:"* ]]; then
-        PLAYNET_SEED="$PLAYNET_SEED" python3 -c "
+# --- LocalChimera seed wiring (preferredSeeds + persistent connect) ---
+if [ -s "$LOCALCHIMERA_SEED_FILE" ] && [ -f ~/.radicle/config.json ]; then
+    LOCALCHIMERA_SEED=$(tr -d '[:space:]' < "$LOCALCHIMERA_SEED_FILE")
+    if [[ "$LOCALCHIMERA_SEED" == *"@"*".onion:"* ]]; then
+        LOCALCHIMERA_SEED="$LOCALCHIMERA_SEED" python3 -c "
 import json, os
 p = os.path.expanduser('~/.radicle/config.json')
 c = json.load(open(p))
-seed = os.environ['PLAYNET_SEED']
+seed = os.environ['LOCALCHIMERA_SEED']
 node = c.setdefault('node', {})
 node['proxy'] = node.get('proxy', '127.0.0.1:9050')
 node.setdefault('onion', {})['mode'] = 'forward'
@@ -107,9 +107,9 @@ for key in ('preferredSeeds', 'connect'):
         xs.append(seed)
     node[key] = xs
 json.dump(c, open(p, 'w'), indent=2)
-" 2>/dev/null && echo "[radicle] Preferred seed wired: $PLAYNET_SEED"
+" 2>/dev/null && echo "[radicle] Preferred seed wired: $LOCALCHIMERA_SEED"
     else
-        echo "[radicle] WARN: $PLAYNET_SEED_FILE does not look like <NID>@<onion>.onion:<port>"
+        echo "[radicle] WARN: $LOCALCHIMERA_SEED_FILE does not look like <NID>@<onion>.onion:<port>"
     fi
 fi
 

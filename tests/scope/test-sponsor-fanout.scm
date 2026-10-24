@@ -8,9 +8,9 @@
 ;;;   4. Override: cap=#f disables the check (migrations / tests).
 ;;;   5. Indexed: sponsor-recent-invites uses O(1) claim index.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials) (playnet keri first-person predicates))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri first-person credentials) (localchimera keri first-person predicates))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))
 
@@ -157,7 +157,7 @@
   (check "10 invites all admitted"
          (length (filter (lambda (c)
                            (equal? (cred-claim c 'sponsor-aid) "E_alice"))
-                         ($ store 'by-schema *schema-playnet-personhood*)))
+                         ($ store 'by-schema *schema-localchimera-personhood*)))
          10))
 
 

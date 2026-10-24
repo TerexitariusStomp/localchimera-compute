@@ -18,7 +18,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 COMPOSE="docker compose -f deploy/adopted-stack.docker-compose.yml"
-DEV=${PLAYNET_DEV_CONTAINER:-playnet-compute-dev}
+DEV=${LOCALCHIMERA_DEV_CONTAINER:-localchimera-dev}
 mode="${1:---light}"
 
 # ── bring services up ────────────────────────────────────────────────────
@@ -79,16 +79,16 @@ env_args=()
 for svc in $ready; do
   ip=$(ip_of "$svc") || true
   case $svc in
-    ntfy)     [ -n "$ip" ] && env_args+=(-e "PLAYNET_NTFY_URL=http://$ip:80") ;;
-    opa)      [ -n "$ip" ] && env_args+=(-e "PLAYNET_OPA_URL=http://$ip:8181") ;;
-    fuseki)   [ -n "$ip" ] && env_args+=(-e "PLAYNET_JENA_URL=http://$ip:3030") ;;
-    radicale) [ -n "$ip" ] && env_args+=(-e "PLAYNET_RADICALE_URL=http://$ip:5232") ;;
+    ntfy)     [ -n "$ip" ] && env_args+=(-e "LOCALCHIMERA_NTFY_URL=http://$ip:80") ;;
+    opa)      [ -n "$ip" ] && env_args+=(-e "LOCALCHIMERA_OPA_URL=http://$ip:8181") ;;
+    fuseki)   [ -n "$ip" ] && env_args+=(-e "LOCALCHIMERA_JENA_URL=http://$ip:3030") ;;
+    radicale) [ -n "$ip" ] && env_args+=(-e "LOCALCHIMERA_RADICALE_URL=http://$ip:5232") ;;
     cpsat)    if [ -n "$ip" ]; then
-                env_args+=(-e "PLAYNET_CPSAT_URL=http://$ip:5000")
+                env_args+=(-e "LOCALCHIMERA_CPSAT_URL=http://$ip:5000")
               else
                 # sidecar running on the host itself — reach it via the
                 # host's bridge address
-                env_args+=(-e "PLAYNET_CPSAT_URL=http://172.17.0.1:5000")
+                env_args+=(-e "LOCALCHIMERA_CPSAT_URL=http://172.17.0.1:5000")
               fi ;;
   esac
 done

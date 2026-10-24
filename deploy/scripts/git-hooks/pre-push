@@ -33,7 +33,7 @@
 #      whose commit is missing from the local clone or whose tree hashes
 #      differently is a deploy that cannot build. Checked by
 #      deploy/scripts/satellite-pins.scm; needs the clones beside this repo
-#      (or PLAYNET_SATELLITES_DIR).
+#      (or LOCALCHIMERA_SATELLITES_DIR).
 #
 #   5. Reject an AI co-authorship trailer heading toward Radicle
 #      ("Co-Authored-By: Claude …", "Claude-Session: …" — docs/dev/
@@ -46,10 +46,10 @@
 # Install via `make install-hooks` (symlinks this into .git/hooks/pre-push).
 #
 # Bypass (rare, e.g. pushing a WIP branch to a personal Radicle namespace):
-#   PLAYNET_ALLOW_UNSIGNED=1 git push …
-#   PLAYNET_ALLOW_IDENTITY_LEAK=1 git push …
-#   PLAYNET_ALLOW_UNPINNED=1 git push …
-#   PLAYNET_ALLOW_AI_TRAILER=1 git push …
+#   LOCALCHIMERA_ALLOW_UNSIGNED=1 git push …
+#   LOCALCHIMERA_ALLOW_IDENTITY_LEAK=1 git push …
+#   LOCALCHIMERA_ALLOW_UNPINNED=1 git push …
+#   LOCALCHIMERA_ALLOW_AI_TRAILER=1 git push …
 
 set -euo pipefail
 
@@ -66,11 +66,11 @@ fi
 # Only enforce for the deploy path (the `rad` remote and direct box SSH URLs);
 # a local mirror or backup push shouldn't be gated.
 case "$remote_name $url" in
-    *rad*|*ssh://*radicle*|*playnet*) : ;;   # deploy path → enforce
+    *rad*|*ssh://*radicle*|*localchimera*) : ;;   # deploy path → enforce
     *) exit 0 ;;                              # anything else → skip
 esac
 
-[ "${PLAYNET_ALLOW_UNSIGNED:-0}" = "1" ] && exit 0
+[ "${LOCALCHIMERA_ALLOW_UNSIGNED:-0}" = "1" ] && exit 0
 
 z40=0000000000000000000000000000000000000000
 bad=0
@@ -97,7 +97,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     done
 
     # --- Guard 3: no real machine identity leaking toward Radicle -----------
-    if [ "${PLAYNET_ALLOW_IDENTITY_LEAK:-0}" != "1" ]; then
+    if [ "${LOCALCHIMERA_ALLOW_IDENTITY_LEAK:-0}" != "1" ]; then
         me="$(id -un)"
         home_pat="/home/${me}"
         media_pat="/media/${me}"
@@ -144,7 +144,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     fi
 
     # --- Guard 5: no AI co-authorship trailer heading toward Radicle --------
-    if [ "${PLAYNET_ALLOW_AI_TRAILER:-0}" != "1" ]; then
+    if [ "${LOCALCHIMERA_ALLOW_AI_TRAILER:-0}" != "1" ]; then
         for c in $range; do
             trailer_hit=$(git log --format='%B' -1 "$c" \
                           | grep -E '^Co-Authored-By:[^<]*<[^>]*@anthropic\.com>[[:space:]]*$|^Claude-Session:[[:space:]]*https://claude\.ai/(code/)?session_[A-Za-z0-9_-]+[[:space:]]*$' \
@@ -162,7 +162,7 @@ if [ "$bad" = "1" ]; then
     echo "ERROR: refusing to push unsigned commit(s) toward Radicle canonical." >&2
     echo "  Re-sign the range, e.g.:" >&2
     echo "    git rebase --exec 'git commit --amend --no-edit -S' <base>" >&2
-    echo "  or override for a non-canonical push: PLAYNET_ALLOW_UNSIGNED=1 git push …" >&2
+    echo "  or override for a non-canonical push: LOCALCHIMERA_ALLOW_UNSIGNED=1 git push …" >&2
     exit 1
 fi
 
@@ -172,7 +172,7 @@ if [ "${identity_bad:-0}" = "1" ]; then
     echo "  Fix the offending file(s) above (or history-rewrite if already committed)." >&2
     echo "  Ask the opsec-scrub-reviewer subagent for a pre-push scan next time." >&2
     echo "  Override (only if you're SURE it's a false positive):" >&2
-    echo "    PLAYNET_ALLOW_IDENTITY_LEAK=1 git push …" >&2
+    echo "    LOCALCHIMERA_ALLOW_IDENTITY_LEAK=1 git push …" >&2
     exit 1
 fi
 
@@ -181,19 +181,19 @@ if [ "${ai_trailer_bad:-0}" = "1" ]; then
     echo "ERROR: refusing to push an AI co-authorship trailer toward Radicle canonical." >&2
     echo "  Amend the message(s) above to drop the Co-Authored-By/Claude-Session line." >&2
     echo "  Override (only for a non-canonical WIP push):" >&2
-    echo "    PLAYNET_ALLOW_AI_TRAILER=1 git push …" >&2
+    echo "    LOCALCHIMERA_ALLOW_AI_TRAILER=1 git push …" >&2
     exit 1
 fi
 
 # --- Guard 4: every satellite pin resolves ------------------------------------
-if [ "${PLAYNET_ALLOW_UNPINNED:-0}" != "1" ] && [ -f deploy/satellites.scm ]; then
+if [ "${LOCALCHIMERA_ALLOW_UNPINNED:-0}" != "1" ] && [ -f deploy/satellites.scm ]; then
     if ! GUILE_AUTO_COMPILE=0 deploy/scripts/satellite-pins.scm check >&2; then
         echo "" >&2
         echo "ERROR: a satellite pin in deploy/satellites.scm does not resolve." >&2
-        echo "  Clone the satellite beside this repo (../playnet-<name>) or set" >&2
-        echo "  PLAYNET_SATELLITES_DIR; move a pin with: make bump SAT=<name>" >&2
+        echo "  Clone the satellite beside this repo (../localchimera-<name>) or set" >&2
+        echo "  LOCALCHIMERA_SATELLITES_DIR; move a pin with: make bump SAT=<name>" >&2
         echo "  Override (a WIP push to a non-canonical namespace only):" >&2
-        echo "    PLAYNET_ALLOW_UNPINNED=1 git push …" >&2
+        echo "    LOCALCHIMERA_ALLOW_UNPINNED=1 git push …" >&2
         exit 1
     fi
 fi

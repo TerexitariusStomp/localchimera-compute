@@ -16,13 +16,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-discrete-records.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules ((playnet knowledge recipes transport) #:select (mode-recipe)))
-(use-modules (playnet solve engine) (playnet solve discrete) (playnet solve plan) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas) (playnet vf beyond scenario))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules ((localchimera knowledge recipes transport) #:select (mode-recipe)))
+(use-modules (localchimera solve engine) (localchimera solve discrete) (localchimera solve plan) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas) (localchimera vf beyond scenario))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

@@ -8,9 +8,9 @@
 ;;; stored in rust-crates.scm.  Fully reproducible — no vendoring, no
 ;;; internet access at build time.
 ;;;
-;;; To update deps after editing Cargo.toml (in the satellite, ../playnet-rns-bridge):
-;;;   cd ../playnet-rns-bridge && cargo update && cargo audit && git commit
-;;;   guix import -i deploy/guix/rust-crates.scm crate -f ../playnet-rns-bridge/Cargo.lock rns-bridge
+;;; To update deps after editing Cargo.toml (in the satellite, ../localchimera-rns-bridge):
+;;;   cd ../localchimera-rns-bridge && cargo update && cargo audit && git commit
+;;;   guix import -i deploy/guix/rust-crates.scm crate -f ../localchimera-rns-bridge/Cargo.lock rns-bridge
 ;;;   make bump SAT=rns-bridge
 ;;;   (--insert preserves bzip2-sys snippet and define-cargo-inputs mapping)
 ;;;

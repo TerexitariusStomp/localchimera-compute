@@ -8,19 +8,19 @@
 ;;; answer governs. Nothing is stubbed between the policy text and the
 ;;; verdict but HTTP.
 ;;;
-;;; Skips loudly without PLAYNET_OPA_URL — run via tools/dev/run-stack.sh.
+;;; Skips loudly without LOCALCHIMERA_OPA_URL — run via tools/dev/run-stack.sh.
 
-(use-modules (playnet test harness)
-             (playnet doors machine)
-             (playnet delegates)
+(use-modules (localchimera test harness)
+             (localchimera doors machine)
+             (localchimera delegates)
              (ice-9 textual-ports)
              (srfi srfi-1))
 
-(define opa-url (getenv "PLAYNET_OPA_URL"))
+(define opa-url (getenv "LOCALCHIMERA_OPA_URL"))
 
 (if (or (not opa-url) (string-null? opa-url))
     (begin
-      (display "--: stack integration [skipped — PLAYNET_OPA_URL unset]\n")
+      (display "--: stack integration [skipped — LOCALCHIMERA_OPA_URL unset]\n")
       (exit 0)))
 
 (define transport (%json-http-transport opa-url))
@@ -35,7 +35,7 @@
 
 ;; the shipped policy, verbatim — what a deployed OPA actually serves
 (define rego
-  (call-with-input-file "deploy/policies/playnet/doors/machine.rego"
+  (call-with-input-file "deploy/policies/localchimera/doors/machine.rego"
     get-string-all))
 
 ;; 1. the deployed OPA serves the shipped policy (mounted from
@@ -44,13 +44,13 @@
 (check "the shipped compute.rego is what the live OPA serves"
        (and (pair? served)
             (string? (cdr served))
-            (string-contains (cdr served) "playnet.doors.compute")
+            (string-contains (cdr served) "localchimera.doors.compute")
             #t) #t)
 
 ;; membership rides the policy's documented shape:
-;; data.playnet.members[commune] = {members: [...], admins: [...]}
+;; data.localchimera.members[commune] = {members: [...], admins: [...]}
 (define members
-  (PUT "/v1/data/playnet/members"
+  (PUT "/v1/data/localchimera/members"
        "{\"commune-x\":{\"members\":[\"alice\",\"bob\"],\"admins\":[\"alice\"]}}"))
 (check "the commune membership lands in the store"
        (< (car members) 300) #t)
@@ -71,7 +71,7 @@
 (parameterize ((*machine-authz* (make-opa-delegate transport)))
   (check "a policy that doesn't exist answers deny, not allow"
          (let ((a ((make-opa-delegate transport)
-                   "playnet/doors/nonexistent"
+                   "localchimera/doors/nonexistent"
                    '(("principal" . "alice")))))
            ;; the consult treats a missing/empty result as deny — verify
            ;; the raw answer really carries no allow:true

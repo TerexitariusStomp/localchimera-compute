@@ -26,14 +26,14 @@
              (goblins vat)
              (goblins actor-lib methods)
              (goblins utils hashmap)
-             (playnet test harness)
-             (playnet monero wallet)
-             (playnet monero policy)
-             (playnet monero policy-wire)
-             (playnet fleet provider)
-             (playnet fleet records)
-             (playnet fleet reconciler)
-             (playnet fleet swap)
+             (localchimera test harness)
+             (localchimera monero wallet)
+             (localchimera monero policy)
+             (localchimera monero policy-wire)
+             (localchimera fleet provider)
+             (localchimera fleet records)
+             (localchimera fleet reconciler)
+             (localchimera fleet swap)
              (srfi srfi-1)
              (ice-9 ftw)
              (ice-9 format))
@@ -151,13 +151,13 @@
                            'btc 0.001)))))
     (poll-payment . ,(lambda (host entry) 'pending))))
 
-(define %tmpdir (format #f "/tmp/playnet-test-cross-vat-~a" (getpid)))
+(define %tmpdir (format #f "/tmp/localchimera-test-cross-vat-~a" (getpid)))
 (system* "mkdir" "-p" %tmpdir)
 
 (define (write-desired! path name)
   (call-with-output-file path
     (lambda (port)
-      (format port "(use-modules (playnet fleet records))~%(list (sporestack-host #:name ~s #:flavor \"vps-1vcpu-1gb\" #:operating-system \"debian-12\" #:provider \"digitalocean\" #:region \"nyc1\" #:days 30 #:hostname ~s #:estimated-monthly-usd 5))~%"
+      (format port "(use-modules (localchimera fleet records))~%(list (sporestack-host #:name ~s #:flavor \"vps-1vcpu-1gb\" #:operating-system \"debian-12\" #:provider \"digitalocean\" #:region \"nyc1\" #:days 30 #:hostname ~s #:estimated-monthly-usd 5))~%"
               name name))))
 
 (define (spawn-reconciler name)

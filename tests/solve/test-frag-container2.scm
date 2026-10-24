@@ -8,12 +8,12 @@
 ;;;   (B) CASCADE — a container goes through `propagate`, so coupling it to another agent (drawing
 ;;;       soil stresses the Amazon) eats the container's headroom, suppressing its contents' draw.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-container2.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-container2.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 (define tip 50.0)   ; quantile_0.5(40,60)
 (define (log-recipe)

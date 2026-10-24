@@ -25,8 +25,8 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-commute-network.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
-             (playnet solve solver))
+(use-modules (localchimera solve engine)
+             (localchimera solve solver))
 
 (define H  40.0)   ; the worker's hours per period (ONE whole budget)
 (define D  30.0)   ; widget demanded at B, periods 1..3

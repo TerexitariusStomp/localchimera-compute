@@ -10,22 +10,22 @@
 # Plan: docs/planning/identity/openvtc-parity.md
 #
 # Usage: tools/lint/openvtc-parity-check.sh
-# Env:   PLAYNET_OPENVTC_CACHE=path   (default: ../openvtc-upstream)
+# Env:   LOCALCHIMERA_OPENVTC_CACHE=path   (default: ../openvtc-upstream)
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PIN_DOC="$ROOT/docs/planning/openvtc-parity.md"
 UPSTREAM="https://github.com/OpenVTC/openvtc.git"
-CACHE="${PLAYNET_OPENVTC_CACHE:-$ROOT/../openvtc-upstream}"
+CACHE="${LOCALCHIMERA_OPENVTC_CACHE:-$ROOT/../openvtc-upstream}"
 
 # How the two network calls (clone, fetch) reach upstream. A host with a direct
 # route uses plain git. A Tor-routed host — the box has no clearnet resolver —
-# goes through torsocks. PLAYNET_GIT_PREFIX states it outright; unset, the
+# goes through torsocks. LOCALCHIMERA_GIT_PREFIX states it outright; unset, the
 # script looks: no answer for the upstream host and a torsocks on PATH means
 # torsocks.
-if [ -n "${PLAYNET_GIT_PREFIX+set}" ]; then
-  read -r -a NETGIT <<< "${PLAYNET_GIT_PREFIX} git"
+if [ -n "${LOCALCHIMERA_GIT_PREFIX+set}" ]; then
+  read -r -a NETGIT <<< "${LOCALCHIMERA_GIT_PREFIX} git"
 elif ! getent hosts github.com >/dev/null 2>&1 && command -v torsocks >/dev/null 2>&1; then
   NETGIT=(torsocks git)
 else

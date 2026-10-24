@@ -2,12 +2,12 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
 ;;; tools/dev/rotate-vault-keys.scm — re-encrypt every scope's bran.vault
-;;; under a new PLAYNET_VAULT_KEY.
+;;; under a new LOCALCHIMERA_VAULT_KEY.
 ;;;
 ;;; Usage:
-;;;   PLAYNET_STATE_DIR=/path/to/state \
-;;;   PLAYNET_VAULT_KEY_OLD=<64-hex>    \
-;;;   PLAYNET_VAULT_KEY_NEW=<64-hex>    \
+;;;   LOCALCHIMERA_STATE_DIR=/path/to/state \
+;;;   LOCALCHIMERA_VAULT_KEY_OLD=<64-hex>    \
+;;;   LOCALCHIMERA_VAULT_KEY_NEW=<64-hex>    \
 ;;;     guile --no-auto-compile -L module tools/dev/rotate-vault-keys.scm
 ;;;
 ;;; For each scope under <state>/scopes/<aid>/, if a `bran.vault` file
@@ -16,9 +16,9 @@
 ;;; the partial set rolled back from the temp file. Already-rotated
 ;;; vaults (decryptable under NEW) are left untouched (idempotent).
 
-(use-modules (playnet keys bran-custody) (playnet utils paths)
-             (playnet keri signify)         ;; install crypto backend
-             ((playnet utils hex) #:select (bv->hex hex->bv))
+(use-modules (localchimera keys bran-custody) (localchimera utils paths)
+             (localchimera keri signify)         ;; install crypto backend
+             ((localchimera utils hex) #:select (bv->hex hex->bv))
              (rnrs bytevectors)
              (ice-9 ftw)
              (ice-9 format)
@@ -30,8 +30,8 @@
                      "rotate-vault-keys: ~a not set~%" name)
              (exit 2))))
 
-(define old-hex (env-or-die "PLAYNET_VAULT_KEY_OLD"))
-(define new-hex (env-or-die "PLAYNET_VAULT_KEY_NEW"))
+(define old-hex (env-or-die "LOCALCHIMERA_VAULT_KEY_OLD"))
+(define new-hex (env-or-die "LOCALCHIMERA_VAULT_KEY_NEW"))
 
 (unless (= 64 (string-length old-hex))
   (format (current-error-port) "OLD key must be 64 hex chars~%") (exit 2))
@@ -44,7 +44,7 @@
 (define old-bv (hex->bv old-hex))
 (define new-bv (hex->bv new-hex))
 
-(define state-root (string-append (playnet-state-dir) "/scopes"))
+(define state-root (string-append (localchimera-state-dir) "/scopes"))
 
 (unless (file-exists? state-root)
   (format #t "no state at ~a — nothing to rotate~%" state-root)

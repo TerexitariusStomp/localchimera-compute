@@ -2,7 +2,7 @@
 ;;; test-valhalla-live.scm — the matrix client against the real local engine.
 ;;;
 ;;; GUARDED: skips cleanly (exit 0) when no Valhalla answers on
-;;; PLAYNET_VALHALLA_URL (default 127.0.0.1:8002), so offline CI never reddens.
+;;; LOCALCHIMERA_VALHALLA_URL (default 127.0.0.1:8002), so offline CI never reddens.
 ;;; When the engine is up: a 3-place Sofia matrix per manner must yield
 ;;; positive HOURS (the ÷3600 boundary check — a missed conversion would show
 ;;; up as values thousands of times too large), keyed both directions, and the
@@ -11,7 +11,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-valhalla-live.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve routing))
+(use-modules (localchimera solve routing))
 
 (unless (valhalla-up?)
   (format #t "  ~~ skip: no valhalla at ~a~%" *valhalla-base*)

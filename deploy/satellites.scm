@@ -14,12 +14,12 @@
 ;;;
 ;;; Fields:
 ;;;   name    the satellite's short name; its clone sits beside this repo as
-;;;           ../playnet-<name> (override: PLAYNET_SATELLITES_DIR)
+;;;           ../localchimera-<name> (override: LOCALCHIMERA_SATELLITES_DIR)
 ;;;   rid     the Radicle RID ("rad:z…"); #f until the repo is initialized.
 ;;;           The clearnet mirror the box serves is
 ;;;           https://<domain>/<rid without "rad:">.git — the same
-;;;           %playnet-git-mirror-locations route the core uses (deploy/os.scm
-;;;           lists the satellite RIDs for that in %playnet-satellite-rids-bare).
+;;;           %localchimera-git-mirror-locations route the core uses (deploy/os.scm
+;;;           lists the satellite RIDs for that in %localchimera-satellite-rids-bare).
 ;;;   commit  the pinned commit, full sha1
 ;;;   sha256  nar hash of the tree at that commit, base32 as guix prints it
 ;;;   lands   where the tree is placed inside this repo's served tree, or #f
@@ -68,7 +68,7 @@
    (lands  . "tooling"))
  ;; The KERI / ACDC / Signify library and the First Person (OpenVTC)
  ;; credentials over it. A cut OUT of the core — tools/dev/publish-keri-lib.sh
- ;; derives it from module/playnet/keri and their tests — so the box
+ ;; derives it from module/localchimera/keri and their tests — so the box
  ;; serves, seeds and pins it for the KERI and OpenVTC communities and places
  ;; nothing: the core already holds those files.
  '((name   . "keri")

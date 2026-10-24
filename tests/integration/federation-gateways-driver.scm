@@ -22,12 +22,12 @@
 ;;;
 ;;; Usage: guile -L module -s tests/integration/federation-gateways-driver.scm <dir-A> <dir-B>
 
-(use-modules (playnet test planner federation-wire-fixture)
-             (playnet federation peer)
-             ((playnet federation host) #:select (read-kept keep! make-berth moor!))
-             ((playnet keri citizen-sig) #:select (keri-identity-aid))
-             ((playnet keri acdc) #:select (cred-claim cred-holder cred-revoked?))
-             ((playnet test harness) #:select (pick-free-port))
+(use-modules (localchimera test planner federation-wire-fixture)
+             (localchimera federation peer)
+             ((localchimera federation host) #:select (read-kept keep! make-berth moor!))
+             ((localchimera keri citizen-sig) #:select (keri-identity-aid))
+             ((localchimera keri acdc) #:select (cred-claim cred-holder cred-revoked?))
+             ((localchimera test harness) #:select (pick-free-port))
              (goblins) (goblins vat)
              (fibers)
              (ice-9 format) (ice-9 match) (ice-9 threads) (srfi srfi-1))

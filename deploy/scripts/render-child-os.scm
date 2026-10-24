@@ -28,21 +28,21 @@
 ;;;   --initrd-host-key-file FILE
 ;;;                        the initrd door's private key as `guix system init`
 ;;;                        sees it (default: this box's record of the host)
-;;;   --data-dir DIR       where the per-host secrets live (PLAYNET_DATA_DIR)
+;;;   --data-dir DIR       where the per-host secrets live (LOCALCHIMERA_DATA_DIR)
 ;;;   --deploy-dir DIR     where hosts.scm and the template live
 ;;;   --template FILE      another template
 ;;;
 ;;; Prefix, gateway, interface and name servers come from the first of: the
 ;;; options above, the host's provider-params in desired-fleet.scm
 ;;; ("network-prefix" "network-gateway" "network-interface"
-;;; "network-name-servers"), PLAYNET_PREFIX / _GATEWAY / _INTERFACE /
+;;; "network-name-servers"), LOCALCHIMERA_PREFIX / _GATEWAY / _INTERFACE /
 ;;; _NAMESERVERS, deploy/fleet-network.scm. Prefix and gateway have no
 ;;; default and must come from one of them; the interface defaults to eth0
 ;;; and the name servers to public resolvers.
 
-(use-modules (playnet fleet child)
-             (playnet fleet child-os)
-             (playnet fleet records)
+(use-modules (localchimera fleet child)
+             (localchimera fleet child-os)
+             (localchimera fleet records)
              (ice-9 format)
              (ice-9 match)
              (ice-9 rdelim)
@@ -79,8 +79,8 @@
 (define (main args)
   (let* ((opts (parse args))
          (name (or (opt opts 'name) (die "a host name is needed")))
-         (data-dir (or (opt opts 'data-dir) (getenv "PLAYNET_DATA_DIR") "/var/lib/playnet"))
-         (deploy-dir (or (opt opts 'deploy-dir) (getenv "PLAYNET_DEPLOY_DIR") "deploy"))
+         (data-dir (or (opt opts 'data-dir) (getenv "LOCALCHIMERA_DATA_DIR") "/var/lib/localchimera"))
+         (deploy-dir (or (opt opts 'deploy-dir) (getenv "LOCALCHIMERA_DEPLOY_DIR") "deploy"))
          (identity-pub (or (opt opts 'identity-pub)
                            (string-append (passwd:dir (getpwuid (getuid)))
                                           "/.ssh/id_ed25519.pub")))

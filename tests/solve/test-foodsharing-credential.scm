@@ -23,12 +23,12 @@
 ;;;
 ;;; Both are read off the same located solve, four periods, one Kiez.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/solve/test-foodsharing-credential.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world))
-(use-modules (playnet knowledge recipes foodsharing-kit))
+(use-modules (localchimera solve engine) (localchimera solve world))
+(use-modules (localchimera knowledge recipes foodsharing-kit))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

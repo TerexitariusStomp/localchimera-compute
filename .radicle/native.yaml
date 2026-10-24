@@ -1,4 +1,4 @@
-# .radicle/native.yaml — Radicle-native CI contract for playnet.
+# .radicle/native.yaml — Radicle-native CI contract for localchimera.
 #
 # SCHEMA: exactly one key, `shell`, holding a bash snippet. This is not a
 # stylistic choice — it is radicle-native-ci's `RunSpec`, which is

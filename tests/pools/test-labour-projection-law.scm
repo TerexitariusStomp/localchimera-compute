@@ -19,14 +19,14 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/pools/test-labour-projection-law.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet knowledge dsl shorthand)
-             (playnet test harness)
-             (playnet observation observer) (playnet vf schemas)
-             (playnet pools labour-fold)
-             (playnet observation observer)
-             (playnet vf aggregation fold-node)
-             ((playnet vf formulas actions) #:select (labour?))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera knowledge dsl shorthand)
+             (localchimera test harness)
+             (localchimera observation observer) (localchimera vf schemas)
+             (localchimera pools labour-fold)
+             (localchimera observation observer)
+             (localchimera vf aggregation fold-node)
+             ((localchimera vf formulas actions) #:select (labour?))
              (goblins)
              (srfi srfi-1))
 

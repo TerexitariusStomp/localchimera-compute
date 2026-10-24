@@ -1,6 +1,6 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/live-watch-service.scm — Shepherd service that runs
-;;; tools/dev/live-watch.sh against the playnet dev checkout.
+;;; tools/dev/live-watch.sh against the localchimera dev checkout.
 ;;;
 ;;; Once `make serve-dev` has the dev wasm bundle running and the REPL
 ;;; relay listening on 37146, `herd start live-watch` starts an inotify
@@ -13,7 +13,7 @@
 ;;;   make serve-dev                 # 1. dev wasm + REPL relay
 ;;;   sudo herd start live-watch     # 2. inotify loop
 ;;;   # … live-hack from any editor that touches files under
-;;;   #     /home/playnet/dev-checkout/module/ …
+;;;   #     /home/localchimera/dev-checkout/module/ …
 ;;;   sudo herd stop  live-watch
 ;;;
 ;;; auto-start? #f and respawn? #f — this is an opt-in dev tool.
@@ -44,11 +44,11 @@
   ;; Where the writable dev checkout lives. tools/dev/live-watch.sh and
   ;; tools/dev/live-reload.scm both come from this checkout.
   (checkout    live-watch-configuration-checkout
-               (default "/home/playnet/dev-checkout"))
+               (default "/home/localchimera/dev-checkout"))
   ;; Subpaths under CHECKOUT to watch. Each must be a directory.
   (watch-paths live-watch-configuration-watch-paths
                (default '("module")))
-  (user        live-watch-configuration-user      (default "playnet"))
+  (user        live-watch-configuration-user      (default "localchimera"))
   (repl-host   live-watch-configuration-repl-host (default "127.0.0.1"))
   (repl-port   live-watch-configuration-repl-port (default 37146)))
 
@@ -84,8 +84,8 @@
                 ;; /run/current-system/profile is where the system
                 ;; profile (with guile-3.0 + inotify-tools) is mounted.
                 "PATH=/run/current-system/profile/bin:/run/current-system/profile/sbin"
-                (string-append "PLAYNET_REPL_HOST=" #$host)
-                (string-append "PLAYNET_REPL_PORT=" #$(number->string port)))
+                (string-append "LOCALCHIMERA_REPL_HOST=" #$host)
+                (string-append "LOCALCHIMERA_REPL_PORT=" #$(number->string port)))
           #:log-file "/var/log/live-watch.log"))
       (stop #~(make-kill-destructor))
       (respawn? #f)))))
@@ -97,6 +97,6 @@
     (list (service-extension shepherd-root-service-type
                              live-watch-shepherd-service)))
    (description
-    "Watch the playnet dev checkout for Scheme file saves and push the
+    "Watch the localchimera dev checkout for Scheme file saves and push the
 new definitions into the running Hoot REPL relay. Manual start; pairs
 with serve-dev.")))

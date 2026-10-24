@@ -7,9 +7,9 @@
 ;;; over means. The envelope is a ceiling, never a claim; refusal is the
 ;;; default, never an event.
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules )
-(use-modules (playnet credentials declarations) (playnet keri acdc) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera credentials declarations) (localchimera keri acdc) (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins))
 (use-modules (srfi srfi-1))
 
@@ -34,7 +34,7 @@
   (check-pred "issuer = holder = the hosting scope"
               (and (equal? HOST (cred-issuer w)) (equal? HOST (cred-holder w))))
   (check-pred "willingness schema"
-              (equal? *schema-playnet-hosting-willingness* (cred-schema w)))
+              (equal? *schema-localchimera-hosting-willingness* (cred-schema w)))
   (check-pred "the ceiling is a number, not a claim" (= 20.0 (cred-claim w 'ceiling))))
 
 (define vat (spawn-vat))

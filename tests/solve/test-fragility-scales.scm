@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fragility-scales.scm — one form for every limit, read at a different scale.
 ;;;
-;;; playnet.typ §"Worker, soil, and tool: one field" holds that the burnout
+;;; localchimera.typ §"Worker, soil, and tool: one field" holds that the burnout
 ;;; ratio, the regenerative envelope and the design limit are ONE form — "the
 ;;; same convex possibility-tension φ(s) = −w log s, READ AT A DIFFERENT SCALE."
 ;;; solve/ingest.scm makes the scale sayable, as two orthogonal fields:
@@ -15,11 +15,11 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-fragility-scales.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)
@@ -126,7 +126,7 @@
 ;; shed. `within` walks the containment tree instead — the federation's own
 ;; `containment-chain`, asked from the other end — so the shed feels the SUM.
 ;;
-;; This is what playnet.typ §bioregion requires of custody: the steward is
+;; This is what localchimera.typ §bioregion requires of custody: the steward is
 ;; "whoever feels the pull as the draw nears the limit", and an over-draw must
 ;; be "felt by exactly the scope that can ease it".
 
@@ -185,7 +185,7 @@
 ;;; 4. The pooled budget is a LEVEL, not a threshold
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;
-;; playnet.typ §"Shared budgets": "the budget itself is a stock on the surface,
+;; localchimera.typ §"Shared budgets": "the budget itself is a stock on the surface,
 ;; with its own gap signal, held in stewardship custody at the scope that speaks
 ;; for the agent." A `within` fragility alone takes its headroom from the
 ;; governance-set tip; a pooled BUDGET takes it from a measurement — so a shed
@@ -241,7 +241,7 @@
 ;;; 5. A LEVEL carries forward — and cannot borrow from the future
 ;;; ════════════════════════════════════════════════════════════════════════════
 ;;
-;; playnet.typ §"One program": the temporal axis is "a chain, linked only forward
+;; localchimera.typ §"One program": the temporal axis is "a chain, linked only forward
 ;; by storage", and "you can only carry stock FORWARD — there is no activity that
 ;; moves a good from the future to the present. Space is symmetric; time is not."
 ;;

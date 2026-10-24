@@ -22,14 +22,14 @@
 ;;;
 ;;; Run: guile -L module tests/solve/test-leaf-bounds.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet solve engine) (playnet solve plan) (playnet vf schemas) (playnet vf facts located)
-             (playnet knowledge dsl shorthand) (playnet knowledge dsl world)
-             ((playnet knowledge catalogues thermal) #:select (relaxation-records))
-             ((playnet knowledge recipes farm-commune-seed) #:select ((farm-world . commune-farm-world)))   ; the suite's own farm-world is the hectare below
-             ((playnet knowledge catalogues substances) #:select (sunlight-for water-for insolation-kwh-per-m2-day area-m2))
-             ((playnet knowledge catalogues subsistence) #:select (reserve-nutrients)))
+             (localchimera solve engine) (localchimera solve plan) (localchimera vf schemas) (localchimera vf facts located)
+             (localchimera knowledge dsl shorthand) (localchimera knowledge dsl world)
+             ((localchimera knowledge catalogues thermal) #:select (relaxation-records))
+             ((localchimera knowledge recipes farm-commune-seed) #:select ((farm-world . commune-farm-world)))   ; the suite's own farm-world is the hectare below
+             ((localchimera knowledge catalogues substances) #:select (sunlight-for water-for insolation-kwh-per-m2-day area-m2))
+             ((localchimera knowledge catalogues subsistence) #:select (reserve-nutrients)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

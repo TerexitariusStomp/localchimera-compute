@@ -1,10 +1,10 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-guardianship.scm — documentary guardianship; voice math unchanged
 
-(use-modules (playnet test harness))
-(use-modules (playnet pools credit-fold) (srfi srfi-1))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet voice ballot) (playnet voice delegation-map) (playnet economy guardianship) (playnet voice voice-signer))
+(use-modules (localchimera test harness))
+(use-modules (localchimera pools credit-fold) (srfi srfi-1))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera voice ballot) (localchimera voice delegation-map) (localchimera economy guardianship) (localchimera voice voice-signer))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 

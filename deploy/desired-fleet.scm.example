@@ -7,7 +7,7 @@
 ;;; The fleet reconciler reads this file on every tick, diffs against
 ;;; deploy/hosts.scm (the gitignored materialized state written by the
 ;;; reconciler), and provisions anything missing — paid in Monero (or
-;;; BTC for the provider) from the playnet wallet, debited through the
+;;; BTC for the provider) from the localchimera wallet, debited through the
 ;;; wallet-policy for budget enforcement.
 ;;;
 ;;; The `provider` field selects which fleet backend handles the host:
@@ -21,19 +21,19 @@
 ;;; This file returns a `(list ...)` of records so machines.scm can
 ;;; primitive-load it.
 
-(use-modules (playnet fleet records))
+(use-modules (localchimera fleet records))
 
 (list
  ;; ── SporeStack: cheapest dev machine, XMR payment ──────────────
  (sporestack-host
-  #:name "playnet-dev-1"
+  #:name "localchimera-dev-1"
   #:flavor "vps-1vcpu-1gb"
   #:operating-system "debian-12"
   #:provider "digitalocean"
   #:region "nyc1"
   #:days 30
   #:billing-cycle "monthly"
-  #:hostname "playnet-dev-1"
+  #:hostname "localchimera-dev-1"
   #:role 'dev
   #:estimated-monthly-usd 5
   #:bootstrap-mode 'manual)
@@ -43,7 +43,7 @@
  ;; payment flow is operational.
  ;;
  ;; (desired-host
- ;;   #:name "playnet-sev-1"
+ ;;   #:name "localchimera-sev-1"
  ;;   #:provider "vpsbg"
  ;;   #:flavor "cloud-2vcpu-4gb"
  ;;   #:operating-system "debian-12"
@@ -64,7 +64,7 @@
 
  ;; ── SporeStack: larger witness host (example) ──────────────────
  ;; (sporestack-host
- ;;   #:name "playnet-witness-1"
+ ;;   #:name "localchimera-witness-1"
  ;;   #:flavor "vps-2vcpu-4gb"
  ;;   #:provider "vultr"
  ;;   #:region "ams"

@@ -8,10 +8,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/knowledge/test-berlin-flotte.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet vf beyond schedules)
-             (playnet knowledge recipes berlin-flotte)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera vf beyond schedules)
+             (localchimera knowledge recipes berlin-flotte)
              (srfi srfi-1))
 
 (define bikes (flotte-berlin-resources "org:kiez" #:count 3 #:at "place:kiez"))

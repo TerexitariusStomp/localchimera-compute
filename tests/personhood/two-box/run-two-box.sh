@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/personhood/two-box/run-two-box.sh — the TWO-BOX witness harness.
 #
-# Two boxes, for real: two processes with their OWN PLAYNET_STATE_DIR, each
+# Two boxes, for real: two processes with their OWN LOCALCHIMERA_STATE_DIR, each
 # fronted by its OWN serve-static instance, and NOTHING between them but
 # HTTP — the exact shape two federated gateways share. Both ceremony kinds
 # cross, in sequence: box1 opens a WORK witnessing (the ask publishes as a
@@ -32,7 +32,7 @@ say() { echo "[2box] $*"; }
 
 # ── the two static tiers, one per box ───────────────────────────────────────
 serve() { # serve <state-dir> <port>
-  PLAYNET_STATE_DIR="$1" $GUILE \
+  LOCALCHIMERA_STATE_DIR="$1" $GUILE \
     -c "((@ (server serve-static) run-static-server) \
          #:work-dir \"$ROOT_DIR/browser\" \
          #:oobi-dir \"$WORK/oobi\" #:port $2)" \
@@ -56,12 +56,12 @@ done
 say "two static tiers up (:$P1 :$P2)"
 
 # ── the two drivers: witness first (it publishes its aid), worker second ────
-PLAYNET_STATE_DIR="$D2" WITNESS_SHARED="$SHARED" \
+LOCALCHIMERA_STATE_DIR="$D2" WITNESS_SHARED="$SHARED" \
   WITNESS_PEER="http://127.0.0.1:$P1" \
   $GUILE "$ROOT_DIR/tests/personhood/two-box/box2.scm" &
 BOX2=$!; PIDS="$PIDS $BOX2"
 
-PLAYNET_STATE_DIR="$D1" WITNESS_SHARED="$SHARED" \
+LOCALCHIMERA_STATE_DIR="$D1" WITNESS_SHARED="$SHARED" \
   WITNESS_PEER="http://127.0.0.1:$P2" \
   $GUILE "$ROOT_DIR/tests/personhood/two-box/box1.scm"
 B1=$?

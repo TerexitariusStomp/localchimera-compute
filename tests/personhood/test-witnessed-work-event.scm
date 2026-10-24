@@ -9,13 +9,13 @@
 ;;; forged or duplicated signer — while the witness-less path stays exactly the
 ;;; single-signer behaviour it always was.
 
-;; the host crypto backend: loading (playnet keri signify) installs it
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules ((playnet keri signify) #:select ()))
-(use-modules (playnet test harness))
-(use-modules (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet observation credentials) (playnet personhood witnessed-work) (playnet personhood attestation-ceremony) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person predicates))
-(use-modules ((playnet keri citizen-sig)
+;; the host crypto backend: loading (localchimera keri signify) installs it
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules ((localchimera keri signify) #:select ()))
+(use-modules (localchimera test harness))
+(use-modules (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera observation credentials) (localchimera personhood witnessed-work) (localchimera personhood attestation-ceremony) (localchimera credentials work) (localchimera keri acdc) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person predicates))
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair sign-said)))
 (use-modules (goblins) (rnrs bytevectors))
 (use-modules (srfi srfi-1))
@@ -39,7 +39,7 @@
     (attest-contribution! store "EScope" (work-ev "e1" "p1" 6.0)
                           #:witnesses (list (signer w1) (signer w2)))
     (let ((we (find (lambda (c) (equal? "e1" (cred-claim c 'event-id)))
-                    (non-revoked-by-schema store *schema-playnet-work-event*))))
+                    (non-revoked-by-schema store *schema-localchimera-work-event*))))
       (check-pred "the work-event ACDC exists"            (and we #t))
       (check-pred "it carries a multisig block, not one scope's word"
                   (pair? (cred-signature we)))
@@ -57,7 +57,7 @@
     (attest-contribution! store "EScope" (work-ev "e2" "p2" 4.0))
     (check-pred "the single-issuer work event still issues"
                 (and (find (lambda (c) (equal? "e2" (cred-claim c 'event-id)))
-                           (non-revoked-by-schema store *schema-playnet-work-event*))
+                           (non-revoked-by-schema store *schema-localchimera-work-event*))
                      #t))))
 
 (display "\n── the ceremony: keys never leave the witnesses, quorum or nothing ──\n")
@@ -85,7 +85,7 @@
       (check-pred "below quorum NOTHING issues — an unwitnessed claim is no evidence"
                   (and (not we)
                        (not (find (lambda (c) (equal? "e6" (cred-claim c 'event-id)))
-                                  (non-revoked-by-schema store *schema-playnet-work-event*))))))
+                                  (non-revoked-by-schema store *schema-localchimera-work-event*))))))
     ;; …but the same event at quorum 2 issues on the two honest signatures
     (let ((we (gather-witnessed-attestation! store "EScope" (work-ev "e7" "p7" 12.0)
                                              (list w1 w2 w3) #:quorum 2)))
@@ -143,7 +143,7 @@
                         (not (attestation-ceremony-for said)))
             (check-pred "the issued block verifies"
                         (let ((we (find (lambda (c) (equal? "e9" (cred-claim c 'event-id)))
-                                        (non-revoked-by-schema store *schema-playnet-work-event*))))
+                                        (non-revoked-by-schema store *schema-localchimera-work-event*))))
                           (and we (cred-multisig-valid? we aids 2))))))))
     (check-pred "a stale or misdirected reply lands nowhere, silently"
                 (not (land-witness-attestation! "EnoSuchSaid" "EGhost" "0Bnope")))))
@@ -157,7 +157,7 @@
     ;; the on-event hook already issued the single-signer provenance copy
     (attest-contribution! store "EScope" ev)
     (let ((before (find (lambda (c) (equal? "e10" (cred-claim c 'event-id)))
-                        (non-revoked-by-schema store *schema-playnet-work-event*))))
+                        (non-revoked-by-schema store *schema-localchimera-work-event*))))
       (check-pred "the provenance copy stands first" (and before #t))
       ;; the on-demand drive: open, land one signature, quorum 1 finalizes
       (let ((said (open-work-witnessing! store "EScope" ev (list ($ w1 'aid) "EAda"))))
@@ -175,7 +175,7 @@
           (check-pred "one landing meets the quorum floor"
                       (eq? 'finalized (land-witness-attestation! said (car a1) (cdr a1)))))
         (let ((after (find (lambda (c) (equal? "e10" (cred-claim c 'event-id)))
-                           (non-revoked-by-schema store *schema-playnet-work-event*))))
+                           (non-revoked-by-schema store *schema-localchimera-work-event*))))
           (check-pred "the SAME said now carries the multisig block"
                       (and after (equal? (cred-said after) said)
                            (pair? (cred-signature after))
@@ -211,10 +211,10 @@
 ;; local-only behaviour — which makes the whole door walkable here: open,
 ;; inbox, sign with a witness's own key, attest, finalized.
 
-(use-modules ((playnet personhood witness-relay) #:select (make-federated-witness-door)))
+(use-modules ((localchimera personhood witness-relay) #:select (make-federated-witness-door)))
 ;; the door PUBLISHES its ask as a state file — point the state root at a
 ;; scratch dir so the suite writes nowhere real
-(setenv "PLAYNET_STATE_DIR" (string-append (or (getenv "TMPDIR") "/tmp")
+(setenv "LOCALCHIMERA_STATE_DIR" (string-append (or (getenv "TMPDIR") "/tmp")
                                            "/witness-door-test-" (number->string (getpid))))
 
 (with-vat vat
@@ -236,7 +236,7 @@
                                (sign-said said (keri-identity-keypair w1)))))
       (check-pred "door: the witnessed credential stands in the store"
                   (let ((we (find (lambda (c) (equal? "e11" (cred-claim c 'event-id)))
-                                  (non-revoked-by-schema store *schema-playnet-work-event*))))
+                                  (non-revoked-by-schema store *schema-localchimera-work-event*))))
                     (and we (pair? (cred-signature we))))))))
 
 (display "\n── a BROWSER citizen co-signs: E-prefix AID, key resolved via the KEL dir ──\n")
@@ -245,9 +245,9 @@
 ;; (oobi-current-key-from-dir): a pure file read the planner-vat attest can
 ;; make. This pins that whole chain with a fabricated dir entry.
 
-(use-modules ((playnet identity oobi-host)
+(use-modules ((localchimera identity oobi-host)
               #:select (oobi-entry-path oobi-current-key-from-dir))
-             ((playnet personhood attestation-ceremony)
+             ((localchimera personhood attestation-ceremony)
               #:select (current-aid-key-resolver)))
 
 (with-vat vat
@@ -274,7 +274,7 @@
                        (land-witness-attestation! said e-aid
                          (sign-said said (keri-identity-keypair wid)))))
       (let ((we (find (lambda (c) (equal? "e12" (cred-claim c 'event-id)))
-                      (non-revoked-by-schema store *schema-playnet-work-event*))))
+                      (non-revoked-by-schema store *schema-localchimera-work-event*))))
         (check-pred "the multisig block names the E-AID"
                     (and we (assoc e-aid (cred-signature we)) #t))))
     ;; unresolvable E-AID → the pre-existing refusal, not a silent pass

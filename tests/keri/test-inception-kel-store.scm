@@ -7,8 +7,8 @@
 ;;; both pass one. This holds the whole path: mint with a store, and the store
 ;;; holds exactly the body the inception record carries.
 
-(use-modules (playnet test harness))
-(use-modules (playnet keri inception))
+(use-modules (localchimera test harness))
+(use-modules (localchimera keri inception))
 (use-modules (goblins) (goblins actor-lib methods))
 
 (define vat (spawn-vat))

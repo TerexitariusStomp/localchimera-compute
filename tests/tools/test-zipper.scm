@@ -3,8 +3,8 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-zipper.scm
 
-(use-modules (playnet test harness)
-             (playnet tools zipper))
+(use-modules (localchimera test harness)
+             (localchimera tools zipper))
 
 (check "round trip with no edits is identity"
        (zip-root (make-zipper '(define (foo x) (+ x 1))))

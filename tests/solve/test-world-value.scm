@@ -10,7 +10,7 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-world-value.scm
 
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet solve engine) (playnet solve world))
+             (localchimera solve engine) (localchimera solve world))
 
 (define *pass* 0) (define *fail* 0)
 (define (names) (map (lambda (p) (if (pair? p) (car p) p)) *places*))

@@ -14,9 +14,9 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module -L tests tests/e2e/machine-substrate-doors.scm
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet boot governance)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera boot governance)
              (goblins) (goblins vat)
              (ice-9 format))
 

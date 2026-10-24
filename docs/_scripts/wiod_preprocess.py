@@ -8,7 +8,7 @@ Inputs  (download into docs/data/wiod/):
   (optional CO2 accounts — JRC; left out unless docs/data/wiod/CO2.xlsx present)
 
 Outputs (docs/data/wiod/):
-  wiod2014.sexp    for module/playnet/bench/bench-real.scm
+  wiod2014.sexp    for module/localchimera/bench/bench-real.scm
   wiod2014.npz     for docs/_scripts/validate_leontief.py
 
 The WIOT is a CLOSED world model (44 regions × 56 ISIC sectors = 2464 sectors,

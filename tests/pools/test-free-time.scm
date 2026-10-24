@@ -9,9 +9,9 @@
 ;;; it free.
 ;;;
 ;;; Run:  guile -L module tests/pools/test-free-time.scm
-(use-modules (playnet test harness)
-             (playnet algorithms free-time)
-             ((playnet observation account) #:select (household-social-free-time))
+(use-modules (localchimera test harness)
+             (localchimera algorithms free-time)
+             ((localchimera observation account) #:select (household-social-free-time))
              (srfi srfi-1))
 
 (define (near? a b) (< (abs (- a b)) 1e-12))

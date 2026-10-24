@@ -8,12 +8,12 @@
 ;;; #:pins — hand-decided columns the solve treats as facts. Fixture = the
 ;;; bread chain of test-live-wiring, mocked stores in a vat.
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet vf schemas) (srfi srfi-11)
-             (playnet scope live)
-             (playnet plan store)
-             (playnet test planner bread)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (srfi srfi-11)
+             (localchimera scope live)
+             (localchimera plan store)
+             (localchimera test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

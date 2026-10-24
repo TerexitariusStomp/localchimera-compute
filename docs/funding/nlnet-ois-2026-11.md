@@ -9,7 +9,7 @@
 Restack funds "operational internet commons … from middleware without
 vendor lock-in to 'local-first' infrastructure … collective pooling of
 resources and capabilities" — a near-verbatim description of
-playnet-compute. €5k–50k, ~9–12 months, rolling every two months after
+localchimera. €5k–50k, ~9–12 months, rolling every two months after
 Nov 3 (next ~Jan 3, Mar 3…). First proposals cap at €50k; >€50k
 triggers an independent security audit.
 
@@ -33,7 +33,7 @@ triggers an independent security audit.
 ### 2. Scope clause
 
 "AI-related projects are not within scope" unless widely used (>1M
-users). playnet-compute is infrastructure, not an AI project — but it
+users). localchimera is infrastructure, not an AI project — but it
 *does* run inference envelopes, so the application must frame
 accurately: resource-commons plumbing where inference is one envelope
 kind among exec/store/relay/sense. Frameable, but combined with (1) the
@@ -53,7 +53,7 @@ odds lengthen.
 
 ## If eligible: the proposal skeleton (for human authorship)
 
-- **Title:** playnet-compute — a browser-native machine-resource commons
+- **Title:** localchimera — a browser-native machine-resource commons
 - **Summary:** tabs are accountable nodes; envelopes in, signed
   receipts out; mutual-credit settlement; demand enters through
   OpenAI-shaped HTTP, nostr NIP-90, and Reticulum mesh.

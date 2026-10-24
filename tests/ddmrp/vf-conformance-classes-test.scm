@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf-conformance-classes-test.scm — the vocabulary file, held to the vocabulary's classes.
 ;;;
-;;; `module/playnet/vf/schemas.scm` is the ValueFlows core of this
+;;; `module/localchimera/vf/schemas.scm` is the ValueFlows core of this
 ;;; codebase. The vocabulary's Turtle file (docs/valueflows/assets/all_vf.TTL) is
 ;;; the authority on what the core is. This test PARSES that file at run time and
 ;;; holds the two to each other in both directions:
@@ -13,7 +13,7 @@
 ;;;   classes → records   every class of the TTL has a record, or is named in
 ;;;                       `*carried-otherwise*` with how the repo carries it.
 ;;;
-;;; What playnet adds stands in a module of its own, one per family, listed in
+;;; What localchimera adds stands in a module of its own, one per family, listed in
 ;;; `*families*`: the buffer planner (ddmrp/records), recurring schedules
 ;;; (beyond/schedules), the lot (beyond/lot), the planning scenario
 ;;; (beyond/scenario) and the books' states (observation/states). Each family
@@ -29,16 +29,16 @@
 ;;;   cd <repo> && guix shell --pure -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -q -L module tests/ddmrp/vf-conformance-classes-test.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet ddmrp records)
-             (playnet vf beyond schedules)
-             (playnet vf beyond lot)
-             (playnet vf beyond scenario)
-             (playnet observation states)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera ddmrp records)
+             (localchimera vf beyond schedules)
+             (localchimera vf beyond lot)
+             (localchimera vf beyond scenario)
+             (localchimera observation states)
              (srfi srfi-1) (srfi srfi-13))
 
-(use-modules (playnet test vf-ttl))
+(use-modules (localchimera test vf-ttl))
 
 ;;; ── the TTL's classes ───────────────────────────────────────────────────────
 ;;; A class is a subject `vf:Name` (capital initial) at the head of a block.
@@ -67,7 +67,7 @@
                (module-map (lambda (sym var) sym) (resolve-interface module-name)))
    (lambda (a b) (string<? (symbol->string a) (symbol->string b)))))
 
-(define core-records (record-names '(playnet vf schemas)))
+(define core-records (record-names '(localchimera vf schemas)))
 
 (define (kebab->camel sym)
   (string-concatenate
@@ -87,15 +87,15 @@
 ;;; is the way each may fold into the core, to be tried (codebase-organization.md §7).
 
 (define *families*
-  `((buffer-planner (playnet ddmrp records)
+  `((buffer-planner (localchimera ddmrp records)
       "a buffer as a standing Intent, a profile as a classification, a signal as an Intent, a snapshot as a reading of events")
-    (schedules      (playnet vf beyond schedules)
+    (schedules      (localchimera vf beyond schedules)
       "dated Intents over the horizon, against one recurrence extension")
-    (lot            (playnet vf beyond lot)
+    (lot            (localchimera vf beyond lot)
       "the code is trackingIdentifier; the expiry is expiresOn, which has one date and no kind")
-    (scenario       (playnet vf beyond scenario)
+    (scenario       (localchimera vf beyond scenario)
       "a vf:Scenario under a ScenarioDefinition; the stochastic weights are the part VF has no slot for")
-    (states         (playnet observation states)
+    (states         (localchimera observation states)
       "derived from the events that fulfil, satisfy and settle; an account is an EconomicResource of a credit specification")))
 
 ;;; ── carried otherwise ───────────────────────────────────────────────────────
@@ -178,6 +178,6 @@
  *families*)
 
 (check "the buffer planner has nine record types"
-       (= 9 (length (record-names '(playnet ddmrp records)))))
+       (= 9 (length (record-names '(localchimera ddmrp records)))))
 
 (test-summary!)

@@ -19,14 +19,14 @@
 ;;; (shared/private column indices) holds exactly as before, plus that a shock
 ;;; tagged for period 1 leaves period 0 and period 2 of the SAME process unshocked.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/solve/test-period-aware-shocks.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve robust)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge dsl shorthand))
-;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
+(use-modules (localchimera solve engine) (localchimera solve robust)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge dsl shorthand))
+;; solve/robust.scm arrives with the engine — (localchimera solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
 

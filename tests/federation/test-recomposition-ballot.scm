@@ -11,10 +11,10 @@
 ;;;   D. Wrong-spec ratification — three error branches: type mismatch,
 ;;;      spec mismatch, threshold not met.
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet federation auditor) (playnet credentials audit) (playnet credentials membership) (playnet credentials voting) (playnet credentials work) (playnet keri acdc) (playnet boot scope) (playnet voice scope-ballots) (playnet federation structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera federation auditor) (localchimera credentials audit) (localchimera credentials membership) (localchimera credentials voting) (localchimera credentials work) (localchimera keri acdc) (localchimera boot scope) (localchimera voice scope-ballots) (localchimera federation structural-invariants) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -52,7 +52,7 @@
     ($ top 'admit-commune gtop "la" la)
     (let ((cred (find (lambda (c) (equal? "EGLA" (cred-holder c)))
                       ($ store 'by-schema
-                         *schema-playnet-federation-membership*))))
+                         *schema-localchimera-federation-membership*))))
       (check-pred "membership cred issued"   (not (not cred)))
       (check-pred "no ratification edge"     (not (cred-edge cred 'ratification)))
       (check-pred "tree coherent (genesis)"
@@ -102,7 +102,7 @@
     (let* ((auditor (spawn-federation-auditor top))
            (_      ($ auditor 'audit!))
            (alerts ($ store 'by-schema
-                      *schema-playnet-incoherence-alert*)))
+                      *schema-localchimera-incoherence-alert*)))
       (check-pred "incoherence-alert emitted"  (= 1 (length alerts)))
       (let ((vios (cred-claim (car alerts) 'violations)))
         (check-pred "unratified-recompositions in alert"
@@ -153,13 +153,13 @@
       (let* ((memship-lb
               (find (lambda (c) (equal? "ECLB" (cred-holder c)))
                     ($ store 'by-schema
-                       *schema-playnet-federation-membership*)))
+                       *schema-localchimera-federation-membership*)))
              (edge (cred-edge memship-lb 'ratification)))
         (check-pred "ratification edge present" (not (not edge)))
         (check-pred "edge target = ratification SAID"
                     (equal? (cred-said rat-lb) (edge-target edge)))
         (check-pred "edge schema = recomposition-ratification"
-                    (equal? *schema-playnet-recomposition-ratification*
+                    (equal? *schema-localchimera-recomposition-ratification*
                             (edge-schema edge))))
       (check-pred "validator passes"
                   (recomposition-ratified? top))

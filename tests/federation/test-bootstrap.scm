@@ -5,12 +5,12 @@
 ;;; AID, create registry, issue credentials, split bran, distribute shares,
 ;;; reconstruct bran from k shares.
 
-;; the host crypto backend: loading (playnet keri signify) installs it
-(use-modules ((playnet keri signify) #:select ()))
-(use-modules (playnet test harness))
-(use-modules (playnet federation bootstrap) (playnet credentials keys) (playnet credentials membership) (playnet keri acdc) (playnet keri first-person credentials) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
-(use-modules (playnet crypto shamir))
-(use-modules ((playnet keri citizen-sig)
+;; the host crypto backend: loading (localchimera keri signify) installs it
+(use-modules ((localchimera keri signify) #:select ()))
+(use-modules (localchimera test harness))
+(use-modules (localchimera federation bootstrap) (localchimera credentials keys) (localchimera credentials membership) (localchimera keri acdc) (localchimera keri first-person credentials) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera keri first-person predicates))
+(use-modules (localchimera crypto shamir))
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))
@@ -140,17 +140,17 @@
 
   (bootstrap-ceremony! ceremony3 "cred-test" 2 "cred-reg" test-bran 2 2)
 
-  (let ((share-creds ($ store3 'by-schema *schema-playnet-bran-share*)))
+  (let ((share-creds ($ store3 'by-schema *schema-localchimera-bran-share*)))
     (check "2 bran-share credentials in store"
            (length share-creds) 2)
     (check-pred "share credential has threshold=2"
                 (= 2 (cred-claim (car share-creds) 'threshold))))
 
-  (let ((member-creds ($ store3 'by-schema *schema-playnet-membership*)))
+  (let ((member-creds ($ store3 'by-schema *schema-localchimera-membership*)))
     (check "2 membership credentials in store"
            (length member-creds) 2))
 
-  (let ((phc-creds ($ store3 'by-schema *schema-playnet-personhood*)))
+  (let ((phc-creds ($ store3 'by-schema *schema-localchimera-personhood*)))
     (check "2 PHCs in store (one per founder)"
            (length phc-creds) 2)
     (check-pred "founder PHC is live (not revoked)"

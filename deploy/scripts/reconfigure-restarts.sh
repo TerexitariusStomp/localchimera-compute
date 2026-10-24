@@ -53,7 +53,7 @@ done
 
 # ── close out the pending-reconfigure queue ─────────────────────────────────
 # radicle-ci-hook.sh appends every infra-touching push's changed files to
-# this file (it cannot reconfigure itself — no setuid sudo for the playnet
+# this file (it cannot reconfigure itself — no setuid sudo for the localchimera
 # user, by design) and nothing has ever read or cleared it since: it was
 # meant to answer "is a reconfigure pending", but an append-only file that's
 # never trimmed can't, once entries from months ago sit beside a genuinely
@@ -63,7 +63,7 @@ done
 # one time an operator did this by hand (queue.applied-1780637643, 2026-06-05,
 # never repeated since): the file answers "what's pending" again, and the
 # history of what got reconfigured when survives beside it.
-QUEUE=/var/lib/playnet/pending-reconfigure/queue
+QUEUE=/var/lib/localchimera/pending-reconfigure/queue
 if [ -s "$QUEUE" ]; then
   mv "$QUEUE" "$QUEUE.applied-$(date +%s)"
   echo "[reconfigure-restarts] pending-reconfigure queue archived (this reconfigure applied everything in it)"

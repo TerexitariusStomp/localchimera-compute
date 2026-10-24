@@ -1,10 +1,10 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; deploy/guix/deploy-runner-service.scm — auto-deploy on fleet changes
 ;;;
-;;; Runs as the `deploy` user (NOT playnet) because guix deploy needs
+;;; Runs as the `deploy` user (NOT localchimera) because guix deploy needs
 ;;; SSH access to target machines using the deploy key.
 ;;;
-;;; Subscribes to playnet/signals/fleet-changed on the local MQTT
+;;; Subscribes to localchimera/signals/fleet-changed on the local MQTT
 ;;; broker. When triggered, runs `guix deploy deploy/machines.scm`.
 ;;; 10-minute cooldown between deploys.
 ;;;
@@ -29,9 +29,9 @@
   (user         deploy-runner-configuration-user
                 (default "deploy"))
   (script       deploy-runner-configuration-script
-                (default "/home/playnet/playnet-repo/server/deploy-runner.scm"))
+                (default "/home/localchimera/localchimera-repo/server/deploy-runner.scm"))
   (deploy-dir   deploy-runner-configuration-deploy-dir
-                (default "/home/playnet/playnet-repo/deploy"))
+                (default "/home/localchimera/localchimera-repo/deploy"))
   (ssh-identity deploy-runner-configuration-ssh-identity
                 (default "/home/deploy/.ssh/id_ed25519")))
 
@@ -45,7 +45,7 @@
       (provision '(deploy-runner))
       (documentation
        "Auto-deploy on fleet changes. Subscribes to MQTT
-playnet/signals/fleet-changed and runs guix deploy as the deploy user.")
+localchimera/signals/fleet-changed and runs guix deploy as the deploy user.")
       (requirement '(networking))  ; no MQTT — uses inotifywait on trigger file
       (start #~(make-forkexec-constructor
                 (list #$(file-append guile-3.0 "/bin/guile")
@@ -53,11 +53,11 @@ playnet/signals/fleet-changed and runs guix deploy as the deploy user.")
                       "-s" #$script)
                 #:user #$user
                 #:group "users"
-                #:log-file "/var/log/playnet/deploy-runner.log"
+                #:log-file "/var/log/localchimera/deploy-runner.log"
                 #:environment-variables
                 (list (string-append "GUILE_LOAD_PATH="
                                      "/run/current-system/profile/share/guile/site/3.0")
-                      (string-append "PLAYNET_DEPLOY_DIR=" #$deploy-dir)
+                      (string-append "LOCALCHIMERA_DEPLOY_DIR=" #$deploy-dir)
                       (string-append "DEPLOY_SSH_IDENTITY=" #$ssh-identity)
                       (string-append "HOME=/home/" #$user)
                       (string-append "PATH="

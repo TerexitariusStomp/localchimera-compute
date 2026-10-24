@@ -12,20 +12,20 @@
 ;;; Here we just verify that kind + aid-name persist and recover
 ;;; correctly, since those are what Phase 3 adds.
 
-(use-modules (playnet test harness)
-             (playnet utils paths)
+(use-modules (localchimera test harness)
+             (localchimera utils paths)
              (srfi srfi-13)
              (ice-9 ftw))
 
-;;; Sandbox: redirect playnet-state-dir to a temp dir per run.
+;;; Sandbox: redirect localchimera-state-dir to a temp dir per run.
 
 (define %tmp-root
-  (let ((p (string-append "/tmp/playnet-portability-test-"
+  (let ((p (string-append "/tmp/localchimera-portability-test-"
                           (number->string (getpid)))))
     (ensure-directory! p)
     p))
 
-(current-playnet-state-dir-override %tmp-root)
+(current-localchimera-state-dir-override %tmp-root)
 
 (define %aid-1 "E_TEST_COMMUNE_AID_111111111111111111111111")
 (define %aid-2 "E_TEST_FED_AID_2222222222222222222222222222")

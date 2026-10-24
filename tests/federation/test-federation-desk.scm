@@ -19,14 +19,14 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-desk.scm
 
-(use-modules (playnet test harness)
-             ((playnet test planner federation-wire-fixture) #:select (fx-identity))
-             (playnet boot scope) (playnet keri acdc-store) (playnet keri citizen-sig)
-             (playnet federation federate)
-             ((playnet federation sturdyref-credential) #:select (verified-spec spec-ready?))
-             ((playnet federation peer) #:select (^attestation-fold wait-vow call-from-thread))
-             ((playnet federation wire) #:select (signed-reply))
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
+(use-modules (localchimera test harness)
+             ((localchimera test planner federation-wire-fixture) #:select (fx-identity))
+             (localchimera boot scope) (localchimera keri acdc-store) (localchimera keri citizen-sig)
+             (localchimera federation federate)
+             ((localchimera federation sturdyref-credential) #:select (verified-spec spec-ready?))
+             ((localchimera federation peer) #:select (^attestation-fold wait-vow call-from-thread))
+             ((localchimera federation wire) #:select (signed-reply))
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              (goblins) (goblins vat) (goblins actor-lib methods) (goblins actor-lib timers) (goblins actor-lib on)
              (fibers)
              (ice-9 threads)

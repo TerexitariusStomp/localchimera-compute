@@ -4,8 +4,8 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-capacity-execute.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet execution capacity-execute) (playnet observation live-resource) (playnet scope root) (playnet vf schemas))
+(use-modules (localchimera test harness))
+(use-modules (localchimera execution capacity-execute) (localchimera observation live-resource) (localchimera scope root) (localchimera vf schemas))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

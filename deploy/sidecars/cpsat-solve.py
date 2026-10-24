@@ -5,7 +5,7 @@
 #
 # POST /solve {"model": {...}, "params": {...}} → {"status", "values"}.
 #
-# The model is the wire shape module/playnet/delegates.scm's cpsat-wire
+# The model is the wire shape module/localchimera/delegates.scm's cpsat-wire
 # emits:
 #   {"variables":   {name: {"domain": [lo, hi]}},
 #    "constraints": [{"linear": {"vars": [...], "coeffs": [...],

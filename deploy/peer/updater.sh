@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # deploy/peer/updater.sh — in-container Radicle updater.
 #
-# Watches `rad node events` for ref updates on $PLAYNET_RID and, on
+# Watches `rad node events` for ref updates on $LOCALCHIMERA_RID and, on
 # each update, runs the four fences:
 #
 #   1. Delegate-signature gate     (Radicle native — fetch only honors
@@ -21,8 +21,8 @@
 
 set -eu
 
-: "${PEER_HOME:=/srv/playnet}"
-: "${PLAYNET_RID:?Set PLAYNET_RID}"
+: "${PEER_HOME:=/srv/localchimera}"
+: "${LOCALCHIMERA_RID:?Set LOCALCHIMERA_RID}"
 
 export HOME="$PEER_HOME"
 export RAD_HOME="$PEER_HOME/.radicle"
@@ -55,7 +55,7 @@ apply_update() {
         local tmp="$PEER_HOME/generations/.staging-$$"
         rm -rf "$tmp"
         # Clone from local rad storage into staging.
-        git clone --quiet "$RAD_HOME/storage/${PLAYNET_RID#rad:}" "$tmp"
+        git clone --quiet "$RAD_HOME/storage/${LOCALCHIMERA_RID#rad:}" "$tmp"
         git -C "$tmp" checkout --quiet "$new_sha"
         if ! run_preflight "$tmp"; then
             log "Preflight FAILED for $new_sha — discarding, staying on current"
@@ -77,7 +77,7 @@ apply_update() {
 
     # Trigger a clean restart. Shepherd's crash-loop policy in peer.scm
     # handles the rollback if the new generation can't stay up.
-    herd restart playnet-gateway || log "WARNING: herd restart failed"
+    herd restart localchimera-gateway || log "WARNING: herd restart failed"
 
     # Prune: keep current, previous, and 3 most recent.
     keep="$(readlink "$PEER_HOME/current") $(readlink "$PEER_HOME/previous" 2>/dev/null || true)"
@@ -96,15 +96,15 @@ apply_update() {
 # exponential backoff capped at 60s.
 backoff=1
 while true; do
-    log "Watching rad node events for $PLAYNET_RID"
+    log "Watching rad node events for $LOCALCHIMERA_RID"
     rad node events 2>/dev/null | while IFS= read -r event; do
         backoff=1
         case "$event" in
-            *"$PLAYNET_RID"*RefsFetched*|*"$PLAYNET_RID"*refs-changed*)
+            *"$LOCALCHIMERA_RID"*RefsFetched*|*"$LOCALCHIMERA_RID"*refs-changed*)
                 log "Ref update: $event"
                 # Rad fetch already happened (RefsFetched). Read the
                 # new tip from local storage.
-                new_sha="$(git -C "$RAD_HOME/storage/${PLAYNET_RID#rad:}" \
+                new_sha="$(git -C "$RAD_HOME/storage/${LOCALCHIMERA_RID#rad:}" \
                             rev-parse --short HEAD 2>/dev/null || echo "")"
                 cur_sha="$(readlink "$PEER_HOME/current" 2>/dev/null \
                             | sed 's|^generations/||' || echo "")"

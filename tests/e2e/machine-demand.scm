@@ -13,12 +13,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module -L tests tests/e2e/machine-demand.scm
 
-(use-modules (playnet test harness)
-             (playnet test e2e)
-             (playnet machine registry)
-             (playnet machine payers)
-             (playnet boot governance)
-             (playnet doors demand)
+(use-modules (localchimera test harness)
+             (localchimera test e2e)
+             (localchimera machine registry)
+             (localchimera machine payers)
+             (localchimera boot governance)
+             (localchimera doors demand)
              (goblins) (goblins vat)
              (goblins actor-lib methods)
              (web request) (web response) (web uri)

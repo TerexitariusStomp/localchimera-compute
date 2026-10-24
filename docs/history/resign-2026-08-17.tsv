@@ -184,7 +184,7 @@ bdc192c1bc0451aa3bfa7557305bd2820f7ad5c2	38aff541b0f0c5ee2d38f1758c5567e1d8136ce
 243b2e95d62ff7f1dac375535eaa77993cf0697e	071fc85f11adaf5bac63212c776e92885b29a949	plan-scope: the band dial reaches the live solve
 dc39cd924742891fe0105b8ac0d586e7573d559a	a99a97aae844c7757cac5dc5237ded867890deea	docs: the band dial's two doors
 17d2a2c8f63394c432a68e13eea7e2be3f707bd7	afd2ac8fa4464206faada3faba26df01b55df20d	calendar: the header converts, the grid says why it does not
-14655fcfb5748c4d16b6d9d191582b8f15d0e121	90b5fa29d2149ca30d46ef17d3ef524d8ae1aae1	playnet.typ: the band dial, a mover's hours per band, the governed node budget, and what a federated solve keeps relaxed
+14655fcfb5748c4d16b6d9d191582b8f15d0e121	90b5fa29d2149ca30d46ef17d3ef524d8ae1aae1	localchimera.typ: the band dial, a mover's hours per band, the governed node budget, and what a federated solve keeps relaxed
 7a3d51a77855d4557362e1d2977005a618457cd5	ec6ddf434e7d6955b2023f9709cd8cb3f716b56c	day: the faces fall into four groups, spaced not ruled
 7f61849f4e3e8ca261090e71793d5a89daf6105b	2c6248668391e805e47746e04117853443261678	tests: two suites import the catalogue from its own module
 659307b3848be6fd6c5dc5970d5c9d667ba08225	cb24489aa7a8637ef3d88bd211c928aca9dbe537	knowledge: fifteen seeders and recipes become modules

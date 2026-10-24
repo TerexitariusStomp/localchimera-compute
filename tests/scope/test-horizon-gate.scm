@@ -8,14 +8,14 @@
 ;;; BOTH doors — promote-to-commitment and accept-proposal — and installed on
 ;;; every scope by rewire-callbacks, so a fresh spawn-scope-root carries it.
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet plan store)
-             (playnet plan horizon-gate)
-             (playnet scope root)
-             (playnet knowledge dsl shorthand)
-             ((playnet utils clock) #:select (now instant->civil civil->instant))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera plan store)
+             (localchimera plan horizon-gate)
+             (localchimera scope root)
+             (localchimera knowledge dsl shorthand)
+             ((localchimera utils clock) #:select (now instant->civil civil->instant))
              (goblins) (goblins vat)
              (srfi srfi-1)
              (ice-9 format))

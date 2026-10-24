@@ -2,16 +2,16 @@
 ;;; deploy/guix/fleet-reconciler-service.scm — Shepherd service wrapper
 ;;;
 ;;; Runs server/fleet-bridge.scm as a long-lived Shepherd service on
-;;; the playnet host. The bridge subscribes to MQTT infrastructure
+;;; the localchimera host. The bridge subscribes to MQTT infrastructure
 ;;; deficit signals (spec-infra-*) and pokes the ^fleet-reconciler
-;;; living inside the playnet gateway process via the REPL Unix
-;;; socket at /var/run/playnet/repl.sock.
+;;; living inside the localchimera gateway process via the REPL Unix
+;;; socket at /var/run/localchimera/repl.sock.
 ;;;
 ;;; Requirements:
 ;;;   - mosquitto service running (provides localhost MQTT broker)
-;;;   - playnet-gateway service running (spawns the ^fleet-reconciler
+;;;   - localchimera-gateway service running (spawns the ^fleet-reconciler
 ;;;     actor on startup and exposes the REPL socket)
-;;;   - /home/playnet/bin/repl-eval script installed (activation
+;;;   - /home/localchimera/bin/repl-eval script installed (activation
 ;;;     service in machines.scm does this)
 ;;;
 ;;; Usage:
@@ -38,13 +38,13 @@
   fleet-reconciler-configuration make-fleet-reconciler-configuration
   fleet-reconciler-configuration?
   (user            fleet-reconciler-configuration-user
-                   (default "playnet"))
+                   (default "localchimera"))
   (bridge-script   fleet-reconciler-configuration-bridge-script
-                   (default "/home/playnet/playnet-repo/server/fleet-bridge.scm"))
+                   (default "/home/localchimera/localchimera-repo/server/fleet-bridge.scm"))
   (module-path     fleet-reconciler-configuration-module-path
-                   (default "/home/playnet/playnet-repo/module"))
+                   (default "/home/localchimera/localchimera-repo/module"))
   (repl-eval-path  fleet-reconciler-configuration-repl-eval-path
-                   (default "/home/playnet/bin/repl-eval")))
+                   (default "/home/localchimera/bin/repl-eval")))
 
 (define (fleet-reconciler-shepherd-service config)
   (let ((user           (fleet-reconciler-configuration-user config))
@@ -56,7 +56,7 @@
       (provision '(fleet-reconciler))
       (documentation
        "MQTT -> fleet reconciler bridge. Listens for spec-infra-* deficit
-signals on localhost:1883 and pokes the fleet reconciler in the playnet
+signals on localhost:1883 and pokes the fleet reconciler in the localchimera
 gateway via the REPL unix socket.")
       (requirement '(networking mosquitto))
       (start #~(make-forkexec-constructor
@@ -66,13 +66,13 @@ gateway via the REPL unix socket.")
                       "-s" #$bridge-script)
                 #:user #$user
                 #:group "users"
-                #:log-file "/var/log/playnet/fleet-reconciler.log"
+                #:log-file "/var/log/localchimera/fleet-reconciler.log"
                 #:environment-variables
                 (list (string-append "GUILE_LOAD_PATH="
                                      "/run/current-system/profile/share/guile/site/3.0:"
                                      #$module-path)
                       (string-append "REPL_EVAL_PATH=" #$repl-eval-path)
-                      "HOME=/home/playnet")))
+                      "HOME=/home/localchimera")))
       ;; Auto-start: the reconciler's state file lives in the gateway's
       ;; persistence store, so if the gateway is down we just retry.
       (respawn? #t)
@@ -83,8 +83,8 @@ gateway via the REPL unix socket.")
    (name 'fleet-reconciler)
    (description
     "MQTT subscriber that pokes the ^fleet-reconciler actor in the
-playnet gateway vat whenever an infrastructure deficit signal arrives.
-Runs as the playnet user alongside the gateway itself.")
+localchimera gateway vat whenever an infrastructure deficit signal arrives.
+Runs as the localchimera user alongside the gateway itself.")
    (extensions
     (list (service-extension shepherd-root-service-type
                              fleet-reconciler-shepherd-service)))

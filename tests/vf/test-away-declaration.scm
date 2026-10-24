@@ -7,11 +7,11 @@
 ;;; (sign under the person's own AID, verify under it) and the two ways it
 ;;; must fail: a tampered statement, and a signature from someone else.
 
-(use-modules (playnet vf facts away)
-             (playnet keri signify)   ; installs the server crypto backend, load-time
-             ((playnet keri citizen-sig)
+(use-modules (localchimera vf facts away)
+             (localchimera keri signify)   ; installs the server crypto backend, load-time
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid))
-             (playnet test harness))
+             (localchimera test harness))
 
 (define ana (make-keri-identity))
 (define bo  (make-keri-identity))

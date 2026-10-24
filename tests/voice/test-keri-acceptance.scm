@@ -15,12 +15,12 @@
 ;;;      suitable for emitting work-event ACDCs that reference the
 ;;;      agreement via `realization-of`.
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas)
-             (playnet credentials commitments) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet scope demand-registry)
-             (playnet voice demand-bridge)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas)
+             (localchimera credentials commitments) (localchimera keri acdc) (localchimera keri acdc) (localchimera keri acdc-store)
+             (localchimera scope demand-registry)
+             (localchimera voice demand-bridge)
              (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap)
@@ -148,7 +148,7 @@
     (check-pred "one agreement ACDC emitted"
                 (= 1 (length agreement-emissions)))
 
-    (let ((agr-creds ($ acdc 'by-schema *schema-playnet-agreement*)))
+    (let ((agr-creds ($ acdc 'by-schema *schema-localchimera-agreement*)))
       (check-pred "acdc-store holds the agreement credential"
                   (= 1 (length agr-creds)))
       (let ((c (car agr-creds)))

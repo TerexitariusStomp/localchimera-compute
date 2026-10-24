@@ -21,11 +21,11 @@
 ;;;   • demand      (des):  Q_t + S_t → D  (weight W)            (D = reliance)
 ;;;   • inspection (labform): a_t priced at ℓ; substitute S_t at c_s
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/solve/test-inspection-in-plan.scm
+;;; Run:  guile -L module/localchimera/planner tests/solve/test-inspection-in-plan.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve solver))
-(use-modules (playnet knowledge catalogues conformance))  ; governed barrier steepness
+(use-modules (localchimera solve solver))
+(use-modules (localchimera knowledge catalogues conformance))  ; governed barrier steepness
 
 (set! *kappa* 1.0)   ; price labour at 1/hour so inspection cost reads directly as ℓ
 

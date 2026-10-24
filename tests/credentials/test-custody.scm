@@ -1,8 +1,8 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-custody.scm — Custody-attestation + custody-transfer-commitment ACDCs
 
-(use-modules (playnet test harness))
-(use-modules (playnet credentials custody) (playnet credentials registry) (playnet keri acdc) (playnet keri acdc))
+(use-modules (localchimera test harness))
+(use-modules (localchimera credentials custody) (localchimera credentials registry) (localchimera keri acdc) (localchimera keri acdc))
 (use-modules (goblins))
 
 
@@ -20,7 +20,7 @@
             #:valid-from "2026-04-24T00:00:00Z"
             #:valid-until "2026-12-31T00:00:00Z")))
   (check-pred "schema custody-attestation/v1"
-              (equal? *schema-playnet-custody-attestation* (cred-schema att)))
+              (equal? *schema-localchimera-custody-attestation* (cred-schema att)))
   (check-pred "issuer = authority" (equal? "EAuth" (cred-issuer att)))
   (check-pred "holder = custodian" (equal? "EScopeA" (cred-holder att)))
   (check-pred "qty 100"            (= 100 (cred-claim att 'qty)))
@@ -88,7 +88,7 @@
                  #:revoked-attestation-said (cred-said old-att)
                  #:carries-commitments '("ECommit1" "ECommit2"))))
   (check-pred "schema custody-transfer-commitment/v1"
-              (equal? *schema-playnet-custody-transfer-commitment*
+              (equal? *schema-localchimera-custody-transfer-commitment*
                       (cred-schema xfer)))
   (check-pred "from-scope" (equal? "EA" (cred-claim xfer 'from-scope-aid)))
   (check-pred "to-scope"   (equal? "EB" (cred-claim xfer 'to-scope-aid)))
@@ -126,15 +126,15 @@
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
-;;; 4. Schemas registered in *playnet-schemas*
+;;; 4. Schemas registered in *localchimera-schemas*
 ;;; ════════════════════════════════════════════════════════════════════════════
 
 (display "\n── 4. Schema registration ──\n")
 
-(check-pred "custody-attestation in *playnet-schemas*"
-            (member *schema-playnet-custody-attestation* *playnet-schemas*))
-(check-pred "custody-transfer-commitment in *playnet-schemas*"
-            (member *schema-playnet-custody-transfer-commitment* *playnet-schemas*))
+(check-pred "custody-attestation in *localchimera-schemas*"
+            (member *schema-localchimera-custody-attestation* *localchimera-schemas*))
+(check-pred "custody-transfer-commitment in *localchimera-schemas*"
+            (member *schema-localchimera-custody-transfer-commitment* *localchimera-schemas*))
 
 
 (display "\n")

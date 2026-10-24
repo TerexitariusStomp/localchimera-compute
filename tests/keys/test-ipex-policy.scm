@@ -12,9 +12,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keys/test-ipex-policy.scm
 
-(use-modules (playnet test harness)
-             (playnet federation ipex-policy)
-             (playnet credentials membership) (playnet credentials voting))
+(use-modules (localchimera test harness)
+             (localchimera federation ipex-policy)
+             (localchimera credentials membership) (localchimera credentials voting))
 
 ;; ── install + lookup ─────────────────────────────────────────────────
 
@@ -22,22 +22,22 @@
 
 (check "federation-membership has a policy after install"
        (grant-policy? (lookup-grant-policy
-                       *schema-playnet-federation-membership*)))
+                       *schema-localchimera-federation-membership*)))
 
 (check "recomposition-ratification has a policy after install"
        (grant-policy? (lookup-grant-policy
-                       *schema-playnet-recomposition-ratification*)))
+                       *schema-localchimera-recomposition-ratification*)))
 
 (check "membership has a policy after install"
-       (grant-policy? (lookup-grant-policy *schema-playnet-membership*)))
+       (grant-policy? (lookup-grant-policy *schema-localchimera-membership*)))
 
 (check "unknown schema returns #f"
-       (lookup-grant-policy "playnet-not-a-real-schema/v999")
+       (lookup-grant-policy "localchimera-not-a-real-schema/v999")
        #f)
 
 ;; ── register idempotency ─────────────────────────────────────────────
 
-(define %marker-schema "playnet-test-marker/v1")
+(define %marker-schema "localchimera-test-marker/v1")
 (define %p1 (make-grant-policy (lambda _ #t) (lambda _ #f) #f))
 (define %p2 (make-grant-policy (lambda _ #f) (lambda _ #f) #f))
 
@@ -59,7 +59,7 @@
 ;; ── policy-record accessors ──────────────────────────────────────────
 
 (define %fm-policy
-  (lookup-grant-policy *schema-playnet-federation-membership*))
+  (lookup-grant-policy *schema-localchimera-federation-membership*))
 
 (check "federation-membership has an expected-issuer? predicate"
        (procedure? (grant-policy-expected-issuer? %fm-policy)))
@@ -71,7 +71,7 @@
        (procedure? (grant-policy-post-admit-hook %fm-policy)))
 
 (define %member-policy
-  (lookup-grant-policy *schema-playnet-membership*))
+  (lookup-grant-policy *schema-localchimera-membership*))
 
 (check "informational schema has #f post-admit-hook (no reactive effect)"
        (grant-policy-post-admit-hook %member-policy)

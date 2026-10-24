@@ -1,9 +1,9 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-fulfillment.scm — commitment-fulfillment co-signature + spec hierarchy
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (srfi srfi-1))
-(use-modules (playnet credentials commitments) (playnet credentials custody) (playnet keri acdc) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (srfi srfi-1))
+(use-modules (localchimera credentials commitments) (localchimera credentials custody) (localchimera keri acdc) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -194,7 +194,7 @@
     (let* ((xfer-said ($ scope 'transfer-custody gov "spec:wheat" 100 "ENew"))
            (xfer (find (lambda (c) (equal? xfer-said (cred-said c)))
                        ($ store 'by-schema
-                          *schema-playnet-custody-transfer-commitment*))))
+                          *schema-localchimera-custody-transfer-commitment*))))
       (let ((targets (list (and (cred-edge xfer 'carries-commitment-0)
                                 (edge-target (cred-edge xfer 'carries-commitment-0)))
                            (and (cred-edge xfer 'carries-commitment-1)

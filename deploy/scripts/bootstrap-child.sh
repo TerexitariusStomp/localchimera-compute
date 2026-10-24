@@ -29,7 +29,7 @@ STOCK_HOST_KEY="${5:-}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DEPLOY_DIR="$REPO/deploy"
-DATA_DIR="${PLAYNET_DATA_DIR:-/var/lib/playnet}"
+DATA_DIR="${LOCALCHIMERA_DATA_DIR:-/var/lib/localchimera}"
 WORK_DIR="$(mktemp -d)"
 
 cleanup() { rm -rf "$WORK_DIR"; }
@@ -41,8 +41,8 @@ trap cleanup EXIT
 # ssh/scp binary, not inside its option list.
 
 SSH_PREFIX=()
-if [[ -n "${PLAYNET_KEEPER_SSH_PREFIX:-}" ]]; then
-  read -ra SSH_PREFIX <<< "$PLAYNET_KEEPER_SSH_PREFIX"
+if [[ -n "${LOCALCHIMERA_KEEPER_SSH_PREFIX:-}" ]]; then
+  read -ra SSH_PREFIX <<< "$LOCALCHIMERA_KEEPER_SSH_PREFIX"
 fi
 
 SSH_OPTS=(
@@ -199,8 +199,8 @@ if [[ -n "$ROOT_SRC" ]]; then
   done
 fi
 
-if ! ssh_target "[ -f /etc/playnet-installer ]" 2>/dev/null; then
-  die "/etc/playnet-installer not found on target — not the installer ISO"
+if ! ssh_target "[ -f /etc/localchimera-installer ]" 2>/dev/null; then
+  die "/etc/localchimera-installer not found on target — not the installer ISO"
 fi
 
 P1=$(partn "$DEVICE" 1)

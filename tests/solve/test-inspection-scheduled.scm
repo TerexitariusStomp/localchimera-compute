@@ -26,11 +26,11 @@
 ;;; reliance is endogenous, read off the production plan, exactly as build-located
 ;;; schedules any derived-demand labour.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner \
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner \
 ;;;         tests/solve/test-inspection-scheduled.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world))
+(use-modules (localchimera solve engine) (localchimera solve world))
 (define PER '(0 1 2 3))
 (define FRESH "Verif|ovenconf")
 

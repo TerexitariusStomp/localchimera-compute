@@ -45,13 +45,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-federated-bound-floor.scm
 
-(use-modules (playnet solve decomposed))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine)
-             (playnet solve solver)
+(use-modules (localchimera solve decomposed))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
-(primitive-load "module/playnet/test/planner/federated-fixtures.scm")
+(primitive-load "module/localchimera/test/planner/federated-fixtures.scm")
 
 ;; the floor is a global, so it is set and put back — a test that leaves the
 ;; engine retuned is a test that breaks whatever runs after it in the same image

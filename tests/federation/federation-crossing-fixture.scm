@@ -12,8 +12,8 @@
 ;;; `load`ed by the tests (a file, not a module: it defines into the test's own
 ;;; top level, where the solver's DSL is in scope).
 
-(use-modules ((playnet solve federation-oracle) #:select (make-boundary-oracle))
-             (playnet solve solver))
+(use-modules ((localchimera solve federation-oracle) #:select (make-boundary-oracle))
+             (localchimera solve solver))
 
 ;; ── the economy ─────────────────────────────────────────────────────────────
 ;; A scope is a granary-and-bakery: a boundary column, grain, bread; land that

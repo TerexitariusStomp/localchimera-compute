@@ -11,14 +11,14 @@
 ;;; *frag-prior*, keyed by located-good for a per-period cap and by bare spec for a cumulative budget;
 ;;; (b) it does NOT land in *cap*; (c) the emitted barrier's baseline is exactly tip − observed.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-observe.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-observe.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define s-tip 10.0)   ; co2 tip = quantile_0.5 of [8,12]
 (define obs   4.0)    ; the OBSERVED draw already committed (the eco agent's onhand) ⇒ headroom 6

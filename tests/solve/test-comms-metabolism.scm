@@ -12,18 +12,18 @@
 ;;; compose → post-draft; publish `use`s a channel (→ Svc consume) + consumes the
 ;;; draft → produces reach; a demand on reach is the need.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner \
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner \
 ;;;         tests/solve/test-comms-metabolism.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet solve report) (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera solve report) (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas))
 ;; comms/metabolism.scm is a fragment over the engine's world: it loads into
 ;; this module and reads the engine through the imports above.
-(primitive-load (%search-load-path "playnet/comms/metabolism.scm"))
+(primitive-load (%search-load-path "localchimera/comms/metabolism.scm"))
 
 (define fails 0)
 (define (check* label pass?) (unless pass? (set! fails (+ fails 1)))

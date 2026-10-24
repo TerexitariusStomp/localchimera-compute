@@ -10,9 +10,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-declared-dispatch.scm
 
-(use-modules (playnet test harness)
-             (playnet doors protocol)
-             (playnet protocol dispatch)
+(use-modules (localchimera test harness)
+             (localchimera doors protocol)
+             (localchimera protocol dispatch)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

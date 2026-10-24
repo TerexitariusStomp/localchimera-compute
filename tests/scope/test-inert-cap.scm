@@ -9,11 +9,11 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/scope/test-inert-cap.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (srfi srfi-11)
-             (playnet scope live)
-             (playnet test planner bread)
-             ((playnet solve engine) #:select (inert-caps))
+             (localchimera scope live)
+             (localchimera test planner bread)
+             ((localchimera solve engine) #:select (inert-caps))
              (goblins) (goblins vat))
 
 (define (solve caps)

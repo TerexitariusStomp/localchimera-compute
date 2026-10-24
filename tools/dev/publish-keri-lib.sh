@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # publish-keri-lib.sh — cut the KERI + OpenVTC library out of core as its own repo.
 #
-# The library lives inside core (module/playnet/keri with its first-person/ profile,
+# The library lives inside core (module/localchimera/keri with its first-person/ profile,
 # their support modules and pure tests — the set tools/lint/lint-keri-lib.scm
 # --manifest prints). Core stays the place it is developed, so a change that
 # crosses the boundary is one commit. This script produces the small,
@@ -10,8 +10,8 @@
 # full history of those paths, nothing else.
 #
 # git filter-repo is deterministic, so a run over the same core history yields
-# the same commits. The cut is also a Guix CHANNEL (guix/gnu/packages/playnet-keri.scm, the
-# core's deploy/guix/gnu/packages/playnet-keri.scm renamed), and a channel authenticates
+# the same commits. The cut is also a Guix CHANNEL (guix/gnu/packages/localchimera-keri.scm, the
+# core's deploy/guix/gnu/packages/localchimera-keri.scm renamed), and a channel authenticates
 # every commit by its OpenPGP signature. filter-repo writes unsigned commits, so
 # a second pass replays each commit the published repository does not hold yet
 # on top of its tip, signed with the ops key (`Cut-Source:` names the unsigned
@@ -30,12 +30,12 @@
 # This script builds the repository locally and stops. Publishing it
 # (rad init / git push) is a separate, deliberate step, printed at the end.
 #
-# Usage:  tools/dev/publish-keri-lib.sh [OUT_DIR]      (default ../playnet-keri)
+# Usage:  tools/dev/publish-keri-lib.sh [OUT_DIR]      (default ../localchimera-keri)
 # Reads COMMITTED history — commit the library change before cutting.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-OUT="${1:-${PLAYNET_KERI_LIB_OUT:-$ROOT/../playnet-keri}}"
+OUT="${1:-${LOCALCHIMERA_KERI_LIB_OUT:-$ROOT/../localchimera-keri}}"
 cd "$ROOT"
 
 command -v git-filter-repo >/dev/null || git filter-repo --version >/dev/null
@@ -53,10 +53,10 @@ guile --no-auto-compile -e main -s tools/lint/lint-keri-lib.scm
 # the last published cut adds only new commits and is safe to list.
 mapfile -t PATHS < <(guile --no-auto-compile -e main -s tools/lint/lint-keri-lib.scm --manifest)
 PATHS+=(
-  module/playnet/keri/first-person/predicates.scm
-  module/playnet/keri/first-person/sybil-detect.scm
-  module/playnet/keri/first-person/personhood-policy.scm
-  module/playnet/keri/README.md
+  module/localchimera/keri/first-person/predicates.scm
+  module/localchimera/keri/first-person/sybil-detect.scm
+  module/localchimera/keri/first-person/personhood-policy.scm
+  module/localchimera/keri/README.md
   docs/keri
   docs/first-person
   docs/planning/identity/openvtc-parity.md
@@ -64,8 +64,8 @@ PATHS+=(
   tools/lint/openvtc-parity-check.sh
   tools/lint/lint-keri-lib.scm
   deploy/manifests/keri-lib-manifest.scm
-  deploy/guix/playnet-keri.scm
-  deploy/guix/gnu/packages/playnet-keri.scm
+  deploy/guix/localchimera-keri.scm
+  deploy/guix/gnu/packages/localchimera-keri.scm
   LICENSE.md
   LICENSE-ADDITIONAL-TERMS.md
 )
@@ -73,12 +73,12 @@ PATHS+=(
 ARGS=()
 for p in "${PATHS[@]}"; do ARGS+=(--path "$p"); done
 # The library README sits beside the code in core and at the root outside it.
-ARGS+=(--path-rename module/playnet/keri/README.md:README.md)
-# The package is the core channel's deploy/guix/gnu/packages/playnet-keri.scm
-# (it began at deploy/guix/playnet-keri.scm, so that path's history comes too),
+ARGS+=(--path-rename module/localchimera/keri/README.md:README.md)
+# The package is the core channel's deploy/guix/gnu/packages/localchimera-keri.scm
+# (it began at deploy/guix/localchimera-keri.scm, so that path's history comes too),
 # and the channel directory here is guix/.
-ARGS+=(--path-rename deploy/guix/playnet-keri.scm:guix/playnet-keri.scm)
-ARGS+=(--path-rename deploy/guix/gnu/packages/playnet-keri.scm:guix/gnu/packages/playnet-keri.scm)
+ARGS+=(--path-rename deploy/guix/localchimera-keri.scm:guix/localchimera-keri.scm)
+ARGS+=(--path-rename deploy/guix/gnu/packages/localchimera-keri.scm:guix/gnu/packages/localchimera-keri.scm)
 
 # History from before the cut was first published (2026-09-20) carries the
 # project's pseudonymous identities and no other: an author or committer
@@ -88,14 +88,14 @@ ARGS+=(--path-rename deploy/guix/gnu/packages/playnet-keri.scm:guix/gnu/packages
 # out under its author. (A fixed mapping over a fixed span, so the cut stays
 # deterministic.)
 IDENTITY_CALLBACK='
-ok = {b"ops@playnet.earth", b"omar.vasquez@proton.me",
+ok = {b"ops@localchimera.earth", b"omar.vasquez@proton.me",
       b"priya.diallo@proton.me", b"kiraboshi@proton.me"}
 published = 1789948800
 if int(commit.author_date.split()[0]) < published:
     if commit.author_email not in ok:
-        commit.author_name, commit.author_email = b"playnet-ops", b"ops@playnet.earth"
+        commit.author_name, commit.author_email = b"localchimera-ops", b"ops@localchimera.earth"
     if commit.committer_email not in ok:
-        commit.committer_name, commit.committer_email = b"playnet-ops", b"ops@playnet.earth"
+        commit.committer_name, commit.committer_email = b"localchimera-ops", b"ops@localchimera.earth"
 '
 
 WORK="$(mktemp -d)"
@@ -134,8 +134,8 @@ commit_signed() {
         -c commit.gpgsign=true commit --quiet --allow-empty -F "$msg"
 }
 ops_identity() {
-  export GIT_AUTHOR_NAME=playnet-ops GIT_AUTHOR_EMAIL=ops@playnet.earth
-  export GIT_COMMITTER_NAME=playnet-ops GIT_COMMITTER_EMAIL=ops@playnet.earth
+  export GIT_AUTHOR_NAME=localchimera-ops GIT_AUTHOR_EMAIL=ops@localchimera.earth
+  export GIT_COMMITTER_NAME=localchimera-ops GIT_COMMITTER_EMAIL=ops@localchimera.earth
 }
 
 # The introduction's date follows the published tip it sits on, so its commit id
@@ -158,9 +158,9 @@ fi
 if ! git -C "$OUT" cat-file -e HEAD:.guix-channel 2>/dev/null; then
   echo "== channel introduction"
   printf '(channel\n  (version 0)\n  (directory "guix"))\n' > "$OUT/.guix-channel"
-  printf ';; Commits are signed by these keys; the public keys are on the keyring branch.\n(authorizations\n (version 0)\n ((%s\n   (name "playnet-ops"))))\n' "\"$FPR_SPACED\"" > "$OUT/.guix-authorizations"
+  printf ';; Commits are signed by these keys; the public keys are on the keyring branch.\n(authorizations\n (version 0)\n ((%s\n   (name "localchimera-ops"))))\n' "\"$FPR_SPACED\"" > "$OUT/.guix-authorizations"
   git -C "$OUT" add .guix-channel .guix-authorizations
-  printf 'channel: playnet-keri is a Guix channel, its commits signed by the ops key\n\nThe history before this commit is unsigned. From here every commit carries\nan OpenPGP signature, and .guix-authorizations names who may sign.\n' > "$WORK/msg"
+  printf 'channel: localchimera-keri is a Guix channel, its commits signed by the ops key\n\nThe history before this commit is unsigned. From here every commit carries\nan OpenPGP signature, and .guix-authorizations names who may sign.\n' > "$WORK/msg"
   ( ops_identity; export GIT_AUTHOR_DATE="$INTRO_DATE +0000"; commit_signed "$INTRO_DATE" "$WORK/msg" )
 fi
 
@@ -223,5 +223,5 @@ echo "cut: $(git -C "$OUT" rev-list --count HEAD) commits, $(git -C "$OUT" ls-fi
 echo "identities in the cut:"
 git -C "$OUT" log --format='    %an <%ae>' | sort | uniq -c | sort -rn
 echo "to publish (a deliberate, separate step):"
-echo "    cd $OUT && rad init --name playnet-keri --public     # first time"
+echo "    cd $OUT && rad init --name localchimera-keri --public     # first time"
 echo "    cd $OUT && git push rad HEAD:main keyring             # afterwards"

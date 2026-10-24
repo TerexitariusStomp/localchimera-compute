@@ -10,10 +10,10 @@
 ;;; composes all of them into one real accept, end to end, through the
 ;;; gateway's own RPC surface rather than by hand-fabricating a tally.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (srfi srfi-1))
-(use-modules (playnet boot scope) (playnet boot governance) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
-(use-modules ((playnet keri citizen-sig)
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (srfi srfi-1))
+(use-modules (localchimera boot scope) (localchimera boot governance) (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri said-portable))
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         sign-said))
              (goblins) (goblins vat) (goblins utils hashmap))

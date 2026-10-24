@@ -1,5 +1,5 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; test-dev-world.scm — playnet's own development, planned by the planner.
+;;; test-dev-world.scm — localchimera's own development, planned by the planner.
 ;;;
 ;;; An open Radicle issue is a want, its area label a skill, its kind label a
 ;;; recipe, its estimate the hours (recipes/dev.scm); the week's plan is the
@@ -18,14 +18,14 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/dev/test-dev-world.scm
 
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet vf schemas)
-             (playnet knowledge dsl world)
-             (playnet dev recipes)
-             ((playnet knowledge recipes meeting) #:select (meeting-world))
-             (playnet dev priorities)
-             (playnet dev plan)
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl world)
+             (localchimera dev recipes)
+             ((localchimera knowledge recipes meeting) #:select (meeting-world))
+             (localchimera dev priorities)
+             (localchimera dev plan)
              (goblins) (goblins vat)
              (srfi srfi-1))
 
@@ -139,7 +139,7 @@
     (+ (length (car io)) (length (cdr io)))))
 (define-values (result recipes-once recipes-twice flows-once flows-twice)
   (with-vat vat
-    (let ((scope (spawn-scope-root "playnet development")))
+    (let ((scope (spawn-scope-root "localchimera development")))
       (seed-dev-scope! scope facts people)
       (let ((once (length ($ ($ scope 'recipe-store) 'all-recipes)))
             (fl   (flow-count scope)))

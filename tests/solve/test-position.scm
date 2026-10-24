@@ -14,7 +14,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-position.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world))
+(use-modules (localchimera solve engine) (localchimera solve world))
 
 ;; care@market = 35 wanted; Ada (skill doc, 40 hrs) lives in town, market ~100 km off.
 (define (deliver-care agent-position)

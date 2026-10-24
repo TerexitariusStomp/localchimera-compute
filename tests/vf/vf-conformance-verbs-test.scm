@@ -1,10 +1,10 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; vf-conformance-verbs-test.scm — the sets of actions, held to the vocabulary.
 ;;;
-;;; `(playnet vf formulas actions)` answers the questions code asks of the action
+;;; `(localchimera vf formulas actions)` answers the questions code asks of the action
 ;;; table (is this verb an input, does it consume, does it take effort) by predicates
 ;;; over the table's columns. This test asks the same questions of the TTL itself,
-;;; parsed at run time by (playnet test vf-ttl) and sharing no code with the repo's
+;;; parsed at run time by (localchimera test vf-ttl) and sharing no code with the repo's
 ;;; table, and the two answers must agree. A change to the table that moves a verb
 ;;; across one of these lines shows here, and the hand-spelled copies elsewhere in the
 ;;; tree are the ones that will not follow it (tools/lint/lint-verbs.scm counts them).
@@ -16,12 +16,12 @@
 ;;;   cd <repo> && guix shell --pure -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -q -L module tests/vf/vf-conformance-verbs-test.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet vf formulas actions)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera vf formulas actions)
              (srfi srfi-1))
 
-(use-modules (playnet test vf-ttl))
+(use-modules (localchimera test vf-ttl))
 
 (define ttl (ttl-action-table (vf-repo-root)))
 

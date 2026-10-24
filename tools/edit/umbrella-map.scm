@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; umbrella-map.scm — every name an umbrella module exports, and the module that defines it.
 ;;;
-;;;   guile -L module tools/edit/umbrella-map.scm playnet boot prelude   →  NAME TAB (playnet boot prelude …)
+;;;   guile -L module tools/edit/umbrella-map.scm localchimera boot prelude   →  NAME TAB (localchimera boot prelude …)
 ;;;
 ;;; "-" marks a name the umbrella defines itself, "?" one no loaded module owns. The
 ;;; input of tools/edit/retire-umbrella.py.
@@ -16,7 +16,7 @@
   (hash-for-each (lambda (k v) (unless (hashq-ref owner v) (hashq-set! owner v (module-name m)))) (module-obarray m))
   (hash-for-each (lambda (k sub) (when (module? sub) (walk sub))) (module-submodules m)))
 (for-each (lambda (root) (walk (resolve-module root)))
-          '((playnet) (srfi) (ice-9) (rnrs) (system) (goblins) (fibers) (web) (guile)))
+          '((localchimera) (srfi) (ice-9) (rnrs) (system) (goblins) (fibers) (web) (guile)))
 (define exports '())
 (module-for-each (lambda (n v) (set! exports (cons (cons n v) exports))) iface)
 (for-each (lambda (p)

@@ -8,9 +8,9 @@
 ;;; merge-bottom-up!), never auto-executed; a UC already lineally unified
 ;;; with ours (a recomposition ancestor/descendant) is NOT a collision.
 
-(use-modules (playnet test harness))
-(use-modules (playnet credentials recomposition) (playnet keri acdc-store))
-(use-modules (playnet federation universal-commune))
+(use-modules (localchimera test harness))
+(use-modules (localchimera credentials recomposition) (localchimera keri acdc-store))
+(use-modules (localchimera federation universal-commune))
 (use-modules (goblins) (goblins vat))
 
 

@@ -14,12 +14,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-mode-identity.scm
 
-(use-modules (playnet solve world) (playnet test harness)
-             (playnet knowledge recipes bay-area-commune-seed) (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-transit) (playnet knowledge recipes farm-commune-seed) (playnet knowledge recipes transport) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
-             (playnet scope live)
-             (playnet knowledge recipes berlin-transit)
-             (playnet knowledge dsl vf-lint)
-             (playnet knowledge dsl findings)
+(use-modules (localchimera solve world) (localchimera test harness)
+             (localchimera knowledge recipes bay-area-commune-seed) (localchimera knowledge recipes berlin-commune-seed) (localchimera knowledge recipes berlin-transit) (localchimera knowledge recipes farm-commune-seed) (localchimera knowledge recipes transport) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1) (srfi srfi-11)
+             (localchimera scope live)
+             (localchimera knowledge recipes berlin-transit)
+             (localchimera knowledge dsl vf-lint)
+             (localchimera knowledge dsl findings)
              (goblins) (goblins vat) (goblins persistence-store memory)
              (srfi srfi-1))
 

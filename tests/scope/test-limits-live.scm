@@ -22,9 +22,9 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/scope/test-limits-live.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope))
-(use-modules (playnet test harness) (playnet knowledge catalogues eco) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope))
+(use-modules (localchimera test harness) (localchimera knowledge catalogues eco) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1) (localchimera scope live)
              (goblins) (goblins persistence-store memory)
              (srfi srfi-1) (ice-9 format))
 
@@ -54,7 +54,7 @@
   (spawn-persistent-vat scope-root-env (lambda () (spawn-scope-root "Commons")) mem))
 ;; A period here is a WEEK — the fixture's "season" — so Ada's 09:00–17:00 every
 ;; day is 56 h of land work a period, the labour these limits were sized on.
-(use-modules ((playnet solve engine) #:select (set-period-length!)))
+(use-modules ((localchimera solve engine) #:select (set-period-length!)))
 (set-period-length! 1.0 "week")
 (define win (all-week-window "09:00" "17:00"))
 
@@ -145,7 +145,7 @@
             (eq? #t (cadr without)))
 ;; The migrated limit keeps its profile's fixed governance weight (planner.scm
 ;; *stock-frag-w*), so it is felt AT THE OPTIMUM rather than at the wall — the
-;; property playnet.typ names as what lets a federation "ease off BEFORE the limit
+;; property localchimera.typ names as what lets a federation "ease off BEFORE the limit
 ;; by its own arithmetic rather than merely halt at it". A level carrying the
 ;; swept weight instead would spend the boundary to its edge and restore nothing.
 (check-pred "the boundary is felt at the optimum — the commune restores UNASKED"

@@ -4,8 +4,8 @@
 ;;;
 ;;; Run: guile -L module tests/notify/test-recipient-registry.scm
 
-(use-modules (playnet test harness)
-             (playnet notify recipient)
+(use-modules (localchimera test harness)
+             (localchimera notify recipient)
              (goblins)
              (goblins vat)
              (srfi srfi-1))
@@ -35,13 +35,13 @@
 
   ;; bind a browser + email + telegram channel to AID-A
   ($ reg 'bind AID-A 'browser 'inbox-ref-a 'terse)
-  ($ reg 'bind AID-A 'email "hiro@playnet.earth" 'rich)
+  ($ reg 'bind AID-A 'email "hiro@localchimera.earth" 'rich)
   ($ reg 'bind AID-A 'telegram 12345 'markdown)
   (check "aid-A now known" ($ reg 'known? AID-A) #t)
   (check "aid-A has 3 bindings" (length ($ reg 'bindings-for AID-A)) 3)
 
   ;; binding is idempotent on kind+ctx (re-bind email with new style)
-  ($ reg 'bind AID-A 'email "hiro@playnet.earth" 'terse)
+  ($ reg 'bind AID-A 'email "hiro@localchimera.earth" 'terse)
   (check "re-binding same kind+ctx does not duplicate"
          (length ($ reg 'bindings-for AID-A)) 3)
   (let ((email-b (find (lambda (b) (eq? (binding-kind b) 'email))

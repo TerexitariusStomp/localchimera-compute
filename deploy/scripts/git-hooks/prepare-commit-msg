@@ -5,7 +5,7 @@
 #
 #   1. The operator's real machine identity. Git writes the merge source
 #      into the default merge message — "Merge branch 'main' of
-#      /home/<user>/Programs/playnet" — and tooling sometimes quotes
+#      /home/<user>/Programs/localchimera" — and tooling sometimes quotes
 #      absolute paths ("Plan: /home/<user>/…"). Nine such messages reached
 #      public history (see docs/history/resign-2026-08-27.tsv rows reading
 #      "<local clone>"). Patterns are derived from the CURRENT operator's

@@ -3,7 +3,7 @@
 ;;;
 ;;; Loaded by the systemd user unit (shepherd.service). Lives in the user
 ;;; session; no privilege drops, no root-owned paths. State and logs under
-;;; $HOME/.local/state/playnet/.
+;;; $HOME/.local/state/localchimera/.
 ;;;
 ;;; Services invoke their binaries through `guix shell -L deploy/guix -m
 ;;; <manifest>.scm -- <cmd>`. We don't pre-materialize a merged profile via
@@ -16,8 +16,8 @@
              (ice-9 match))
 
 (define %home  (getenv "HOME"))
-(define %repo  (string-append %home "/playnet"))
-(define %state (string-append %home "/.local/state/playnet"))
+(define %repo  (string-append %home "/localchimera"))
+(define %state (string-append %home "/.local/state/localchimera"))
 (define %log   (string-append %state "/log"))
 
 (define %guix     (string-append %home "/.config/guix/current/bin/guix"))
@@ -45,7 +45,7 @@
 ;; KERI tooling (kli witness, keria) walks $HOME/.keri/{ks,db,...} to find
 ;; the keystore + KEL. We provisioned those under $STATE/keria/.keri/ via
 ;; install.sh, so override HOME for KERI services. Anything not KERI keeps
-;; HOME=/home/playnet so guix shell, ssh-agent, etc. behave normally.
+;; HOME=/home/localchimera so guix shell, ssh-agent, etc. behave normally.
 (define %keri-env
   (cons (string-append "HOME=" %state "/keria")
         (filter (lambda (s) (not (string-prefix? "HOME=" s))) %base-env)))
@@ -144,8 +144,8 @@
 
 (define gateway-svc
   (service
-   '(playnet-gateway)
-   #:documentation "playnet OCapN gateway — WebSocket on 9090"
+   '(localchimera-gateway)
+   #:documentation "localchimera OCapN gateway — WebSocket on 9090"
    #:requirement '(keria)
    #:respawn? #t
    #:start (apply make-forkexec-constructor
@@ -156,7 +156,7 @@
                        "--port" "9090")
              #:environment-variables
              (append
-              (list (string-append "PLAYNET_DATA_DIR=" %state "/gateway")
+              (list (string-append "LOCALCHIMERA_DATA_DIR=" %state "/gateway")
                     "KERIA_AGENT_URL=http://localhost:3901"
                     "KERIA_BOOT_URL=http://localhost:3902"
                     ;; torsocks blocks listen() unless told the process needs
@@ -166,13 +166,13 @@
                     (string-append "GUILE_LOAD_PATH=" %repo "/module"))
               %base-env)
              #:directory %repo
-             #:log-file (logfile 'playnet-gateway)
+             #:log-file (logfile 'localchimera-gateway)
              '())
    #:stop (make-kill-destructor)))
 
 (define static-svc
   (service
-   '(playnet-static)
+   '(localchimera-static)
    #:documentation "Static HTTP server for browser REPL (port 8080)"
    #:requirement '()
    #:respawn? #t
@@ -188,7 +188,7 @@
                         "  #:port 8080)"))
              #:environment-variables %base-env
              #:directory %repo
-             #:log-file (logfile 'playnet-static)
+             #:log-file (logfile 'localchimera-static)
              '())
    #:stop (make-kill-destructor)))
 
@@ -203,4 +203,4 @@
 
 (for-each start-in-the-background
           (append (map (lambda (e) (witness-symbol (car e))) %witnesses)
-                  '(radicle-node keria playnet-gateway playnet-static)))
+                  '(radicle-node keria localchimera-gateway localchimera-static)))

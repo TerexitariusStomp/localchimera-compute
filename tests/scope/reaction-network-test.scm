@@ -10,12 +10,12 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/scope/reaction-network-test.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet observation observer) (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
-             (playnet knowledge catalogues substances)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera observation observer) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
+             (localchimera knowledge catalogues substances)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

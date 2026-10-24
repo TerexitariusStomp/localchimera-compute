@@ -8,10 +8,10 @@
 ;;; loop: solve → edge load → recert interval → CREDENTIAL, gated thereafter by the
 ;;; same `custody-cred-live?` the planner reads.
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/vf/test-recert-apply.scm
+;;; Run:  guile -L module/localchimera/planner tests/vf/test-recert-apply.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet vf facts validity))
+(use-modules (localchimera vf facts validity))
 
 ;; a schedule exactly as plan-scope->alist emits it: (skill . interval-in-periods | #f).
 (define schedule '(("electrician" . 1.5) ("baker" . 4.0) ("gardener" . #f)))

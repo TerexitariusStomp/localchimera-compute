@@ -36,8 +36,8 @@
   (string-append %script-dir "/users.scm"))
 
 (define %host
-  (or (getenv "PLAYNET_HOST")
-      (error "Set PLAYNET_HOST to the server IP or .onion address")))
+  (or (getenv "LOCALCHIMERA_HOST")
+      (error "Set LOCALCHIMERA_HOST to the server IP or .onion address")))
 
 ;;; ── Argument spec ───────────────────────────────────────────────────────────
 
@@ -144,7 +144,7 @@ After running, redeploy:
                     "  No password resets — the key IS your credential."
                     ""
                     "Happy hacking!"
-                    "-- sapient-os / playnet")
+                    "-- sapient-os / localchimera")
                    "\n"))
          ;; RFC 5322 wants CRLF line endings; LF-only is not a valid message
          (message (crlf (string-append

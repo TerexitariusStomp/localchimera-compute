@@ -14,12 +14,12 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-bearing.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge dsl shorthand)
-             ((playnet knowledge recipes transport) #:select (mode-recipe))
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas))
+(use-modules (localchimera knowledge dsl shorthand)
+             ((localchimera knowledge recipes transport) #:select (mode-recipe))
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

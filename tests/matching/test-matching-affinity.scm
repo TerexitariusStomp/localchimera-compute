@@ -9,8 +9,8 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/matching/test-matching-affinity.scm
 
-(use-modules (playnet test harness)
-             (playnet matching affinity)
+(use-modules (localchimera test harness)
+             (localchimera matching affinity)
              (srfi srfi-1))
 
 (define (assq-ref alist key) (let ((p (assq key alist))) (and p (cdr p))))

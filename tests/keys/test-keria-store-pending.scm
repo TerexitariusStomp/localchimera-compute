@@ -19,12 +19,12 @@
 ;;; Mock HTTP server: /credentials POST always succeeds (issue is local
 ;;; to KERIA), /ipex/grant toggles between 200 and 500 via %grant-up?.
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri credentials)
-             (playnet keys keria-store)
-             (playnet keys pending-grants)
-             (playnet credentials membership) (playnet keri acdc) (playnet keri acdc)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri credentials)
+             (localchimera keys keria-store)
+             (localchimera keys pending-grants)
+             (localchimera credentials membership) (localchimera keri acdc) (localchimera keri acdc)
              (goblins)
              (web server)
              (web request)
@@ -150,10 +150,10 @@
 
 ;; Helper: make a synthetic credential (the keria-store re-issues anyway).
 (define (mk-cred i)
-  (make-credential *schema-playnet-membership* %issuer-aid %holder-aid
+  (make-credential *schema-localchimera-membership* %issuer-aid %holder-aid
                    `((seq . ,i)) '()))
 (define (mk-cred-to i holder)
-  (make-credential *schema-playnet-membership* %issuer-aid holder
+  (make-credential *schema-localchimera-membership* %issuer-aid holder
                    `((seq . ,i)) '()))
 
 ;; ── Case 1: happy path, KERIA up ───────────────────────────────────
@@ -247,8 +247,8 @@
 ;; delivered.
 
 (define %home-state-dir
-  (string-append "/tmp/playnet-keria-store-home-" (number->string (current-time))))
-(setenv "PLAYNET_STATE_DIR" %home-state-dir)
+  (string-append "/tmp/localchimera-keria-store-home-" (number->string (current-time))))
+(setenv "LOCALCHIMERA_STATE_DIR" %home-state-dir)
 (define %home-holder "DHome000000000000000000000000000000000000000")
 (let ((dir (string-append %home-state-dir "/scopes/" %home-holder)))
   (system* "mkdir" "-p" dir))

@@ -6,7 +6,7 @@
 ;;;
 ;;;   tor             optional anonymising transport for radicle
 ;;;   radicle-node    `rad node` — gossip + storage layer
-;;;   playnet-gateway the actual application; runs from current/
+;;;   localchimera-gateway the actual application; runs from current/
 ;;;   self-update     watches refs, applies new generations
 ;;;
 ;;; The gateway has a rollback hook: if it dies more than 3× within
@@ -15,13 +15,13 @@
 ;;; fourth fence against a bad push (the first three live in
 ;;; updater.sh — delegate signature, preflight, atomic swap).
 
-(use-modules ((playnet utils clock) #:select (instant->unix (now . clock-now))))
+(use-modules ((localchimera utils clock) #:select (instant->unix (now . clock-now))))
 (use-modules (shepherd service)
              (ice-9 popen)
              (ice-9 textual-ports))
 
 (define peer-home
-  (or (getenv "PEER_HOME") "/srv/playnet"))
+  (or (getenv "PEER_HOME") "/srv/localchimera"))
 
 (define (peer-path . parts)
   (string-join (cons peer-home parts) "/"))
@@ -54,14 +54,14 @@
 
 (define gateway-service
   (make <service>
-    #:provides '(playnet-gateway)
+    #:provides '(localchimera-gateway)
     #:requires '()
     #:respawn? #t
     ;; Start: run the wrapper from the live generation. The wrapper
     ;; carries its own GUILE_LOAD_PATH; we just chdir into current/
     ;; so any relative paths inside resolve correctly.
     #:start (make-forkexec-constructor
-             (list (peer-path "current" "bin" "playnet-gateway"))
+             (list (peer-path "current" "bin" "localchimera-gateway"))
              #:directory (peer-path "current")
              #:log-file (peer-path "gateway.log"))
     #:stop (make-kill-destructor)
@@ -87,7 +87,7 @@
     #:requires '(radicle-node)
     #:respawn? #t
     #:start (make-forkexec-constructor
-             (list "/share/playnet/deploy/peer/updater.sh")
+             (list "/share/localchimera/deploy/peer/updater.sh")
              #:log-file (peer-path "updater.log"))
     #:stop (make-kill-destructor)))
 

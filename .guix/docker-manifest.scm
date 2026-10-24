@@ -2,7 +2,7 @@
 ;;; .guix/docker-manifest.scm — manifest for `guix pack --format=docker`
 ;;;
 ;;; Used by Radicle CI to produce a self-contained Docker image tarball
-;;; containing the playnet runtime, the Reticulum bridge, and a usable
+;;; containing the localchimera runtime, the Reticulum bridge, and a usable
 ;;; shell environment (bash + coreutils) so recipients can `docker load`
 ;;; and `docker run -it ... bash` without needing Guix installed.
 
@@ -11,11 +11,11 @@
              (gnu packages bash)
              (rns-bridge))
 
-(define %playnet
+(define %localchimera
   (load (string-append (dirname (current-filename)) "/../guix.scm")))
 
 (packages->manifest
-  (list %playnet
+  (list %localchimera
         rns-bridge
         bash
         coreutils))

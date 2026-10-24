@@ -14,11 +14,11 @@
 ;;;   (2) medicine ≫ cake → medicine fully met (~10), cake sacrificed (~0).
 ;;; (2) is impossible with flat weights; it is the whole point of priority.
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/solve/test-priority.scm
+;;; Run:  guile -L module/localchimera/planner tests/solve/test-priority.scm
 
-(use-modules (playnet test harness) (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve solver))
+(use-modules (localchimera test harness) (srfi srfi-1) (ice-9 format))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve solver))
 
 
 ;; One solve over {medicine, cake}, 10 h labour, both demanded at 10.

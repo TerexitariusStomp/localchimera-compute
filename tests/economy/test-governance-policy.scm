@@ -2,7 +2,7 @@
 ;;; tests/economy/test-governance-policy.scm — require-ratification closes the "any
 ;;; member can accept" gap, opt-in per scope.
 ;;;
-;;; docs/playnet.typ: "Plan acceptance is a production-governance act —
+;;; docs/localchimera.typ: "Plan acceptance is a production-governance act —
 ;;; weighted by labour-voice alone." accept-socialization/accept-
 ;;; reimbursement (and admit-commune/merge-with/split/rejoin-federation)
 ;;; accept an OPTIONAL 'ratification SAID; a bare gov-cap — self-mintable
@@ -12,11 +12,11 @@
 ;;; actually refuses an unratified accept while a correctly-ratified one
 ;;; still goes through.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet credentials commitments) (playnet credentials voting) (playnet keri acdc) (playnet boot scope) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera credentials commitments) (localchimera credentials voting) (localchimera keri acdc) (localchimera boot scope) (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat))
-(use-modules ((playnet scope live) #:select (scope-standard)))
+(use-modules ((localchimera scope live) #:select (scope-standard)))
 
 (define vat (spawn-vat))
 
@@ -101,9 +101,9 @@
 (display "\n── the one registry of governed numbers ──\n")
 ;; every dial the engine reads at solve time has one default here, equal to
 ;; the engine's own, so a scope with no policy row solves as the engine does
-(use-modules ((playnet scope policy) #:select (*governed-dials* policy-dials governance-policy))
-             ((playnet solve engine) #:select (*pref-bound* want-as-cap?))
-             ((playnet solve solver) #:select (*kappa*)))
+(use-modules ((localchimera scope policy) #:select (*governed-dials* policy-dials governance-policy))
+             ((localchimera solve engine) #:select (*pref-bound* want-as-cap?))
+             ((localchimera solve solver) #:select (*kappa*)))
 (check "the registry names the voice bound, β, ρ, κ, the cap shape, the draw weight and the ratified rest standard"
        (map car *governed-dials*) '(voice-tau pref-bound emp-rho kappa want-as-cap stock-draw-hours rest-standard))
 (check "β's default is the engine's" (governance-policy #f 'pref-bound) *pref-bound*)

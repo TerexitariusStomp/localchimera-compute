@@ -5,11 +5,11 @@
 ;;; intermediate ever dips negative: raw drawn down, final stocked up, intermediates
 ;;; net to zero.
 
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet observation observer) (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
-             (playnet test planner bread)
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera observation observer) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
+             (localchimera test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

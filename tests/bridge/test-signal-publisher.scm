@@ -2,32 +2,32 @@
 ;;; test-signal-publisher.scm — the ONE signal topic contract.
 ;;;
 ;;; signal-topic builds what the consumers subscribe to
-;;; (server/dev-bridge.scm's SIGNAL_TOPIC = playnet/signals/deficit/#),
+;;; (server/dev-bridge.scm's SIGNAL_TOPIC = localchimera/signals/deficit/#),
 ;;; and publish-one! carries the scope in the payload, round-tripping
 ;;; through the codec dev-bridge reads with.
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules )
-(use-modules ((playnet bridge signal-publisher)
+(use-modules ((localchimera bridge signal-publisher)
               #:select (signal-topic publish-one!))
-             ((playnet bridge codec)
+             ((localchimera bridge codec)
               #:select (json-string->signal))
              (srfi srfi-1))
 
 (display "=== signal-topic: the subscribed shape ===\n")
 
 (check "deficit signal topic"
-       (equal? "playnet/signals/deficit/spec-dev-x"
+       (equal? "localchimera/signals/deficit/spec-dev-x"
                (signal-topic '((kind . deficit) (spec-id . "spec-dev-x")))))
 
 (check "spec-less signal topic"
-       (equal? "playnet/signals/surplus"
+       (equal? "localchimera/signals/surplus"
                (signal-topic '((kind . surplus)))))
 
-;; dev-bridge subscribes playnet/signals/deficit/# — every deficit topic
+;; dev-bridge subscribes localchimera/signals/deficit/# — every deficit topic
 ;; this door builds lands under that filter
 (check "lands under dev-bridge's subscription"
-       (string-prefix? "playnet/signals/deficit/"
+       (string-prefix? "localchimera/signals/deficit/"
                        (signal-topic '((kind . deficit)
                                        (spec-id . "spec-dev-anything")))))
 
@@ -40,7 +40,7 @@
 (let ((topic (publish-one! capture-fn "commune-a"
                            '((kind . deficit) (spec-id . "spec-dev-x")
                              (title . "a task")))))
-  (check "returns the topic" (equal? "playnet/signals/deficit/spec-dev-x" topic))
+  (check "returns the topic" (equal? "localchimera/signals/deficit/spec-dev-x" topic))
   (check "published once" (= 1 (length captured)))
   (let ((signal (json-string->signal (cdar captured))))
     (check "payload carries the scope" (equal? "commune-a" (assq-ref signal 'scope)))

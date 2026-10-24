@@ -10,12 +10,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-held-good-is-not-a-skill.scm
 
-(use-modules (playnet solve records))
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness) (playnet test scope)
-             (playnet vf schemas) (playnet scope live)
-             ((playnet vf formulas actions) #:select (labour-specs labour?))
-             ((playnet vf facts person-facts) #:select (generic-labour-spec))
+(use-modules (localchimera solve records))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness) (localchimera test scope)
+             (localchimera vf schemas) (localchimera scope live)
+             ((localchimera vf formulas actions) #:select (labour-specs labour?))
+             ((localchimera vf facts person-facts) #:select (generic-labour-spec))
              (goblins) (srfi srfi-1) (ice-9 format))
 
 (define PLACE "town")

@@ -8,7 +8,7 @@
 ;;;   keria    — KERIA cloud agent (ports 3901/3902/3903, localhost only)
 ;;;   keri-witnesses — kli witness demo (ports 5642-5647, public)
 ;;;
-;;; The witness nodes provide KEL (Key Event Log) durability. If the playnet
+;;; The witness nodes provide KEL (Key Event Log) durability. If the localchimera
 ;;; server is replaced, users reconnect with their AID — witnesses hold the
 ;;; KEL history so identity is recovered automatically.
 ;;;
@@ -32,10 +32,10 @@
   keria-configuration?
   ;; Directory for KERIA's persistent data (LEI, KELs, credentials)
   (data-dir  keria-configuration-data-dir
-             (default "/var/lib/playnet/keria"))
+             (default "/var/lib/localchimera/keria"))
   ;; Path to keria.json config (witness OOBIs, connect URLs)
   (config    keria-configuration-config
-             (default "/var/lib/playnet/keria/config/keria.json"))
+             (default "/var/lib/localchimera/keria/config/keria.json"))
   ;; Port for KERIA admin API (signature-authenticated)
   (admin-port keria-configuration-admin-port
               (default 3901))
@@ -47,7 +47,7 @@
               (default 3903))
   ;; User to run as
   (user       keria-configuration-user
-              (default "playnet"))
+              (default "localchimera"))
   ;; Witness pool: alist of (name . port). Each entry becomes one
   ;; Shepherd service + one keystore under <data-dir>/{witnesses,ks}/<name>/.
   ;; Default is the canonical full pool (6 witnesses on the standard
@@ -81,7 +81,7 @@
      (list
      ;; ── keria ────────────────────────────────────────────────────────────
      (shepherd-service
-      (documentation "KERIA KERI cloud agent for playnet identity")
+      (documentation "KERIA KERI cloud agent for localchimera identity")
       (provision '(keria))
       (requirement '(networking loopback))
       (start #~(make-forkexec-constructor
@@ -98,7 +98,7 @@
                        #~(list "--passcode" #$passcode)))
                 #:user #$user
                 #:directory #$data-dir
-                #:log-file "/var/log/playnet/keria.log"
+                #:log-file "/var/log/localchimera/keria.log"
                 #:environment-variables
                 (list (string-append "HOME=" #$data-dir)
                       (string-append "KERI_HOME=" #$data-dir)
@@ -148,7 +148,7 @@
                              "-H" (number->string #$http-port))
                        #:user #$user
                        #:directory #$data-dir
-                       #:log-file (string-append "/var/log/playnet/keri-witness-"
+                       #:log-file (string-append "/var/log/localchimera/keri-witness-"
                                                  #$name ".log")
                        #:environment-variables
                        (list (string-append "HOME=" #$data-dir)
@@ -272,7 +272,7 @@
           ;; ── witness-aids manifest ──────────────────────────────────
           ;; "<name> <http-port> <aid>" per line at
           ;; <data-dir>/witness-aids. The gateway service reads it at
-          ;; START to build PLAYNET_WITNESS_{AIDS,OOBIS} — witness AIDs
+          ;; START to build LOCALCHIMERA_WITNESS_{AIDS,OOBIS} — witness AIDs
           ;; are box-specific (fresh salts at first deploy), so they
           ;; must never be baked into the repo.
           ;;
@@ -314,7 +314,7 @@
    (name 'keria)
    (description
     "KERIA cloud agent + KERI witness pool. Provides KERI-based self-sovereign
-identity for playnet users. Witnesses store KEL receipts so user identity
+identity for localchimera users. Witnesses store KEL receipts so user identity
 survives server replacement.")
    (extensions
     (list (service-extension shepherd-root-service-type

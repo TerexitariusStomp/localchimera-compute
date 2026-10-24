@@ -9,10 +9,10 @@
 ;;;
 ;;; Run:  guile -q -L module tests/scope/test-composition-units-live.scm
 
-(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
-             ((playnet scope live) #:select (scope-composition))
-             ((playnet knowledge catalogues substances) #:select (*contains*))
+(use-modules (localchimera test harness) (localchimera scope root) (localchimera vf schemas) (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
+             ((localchimera scope live) #:select (scope-composition))
+             ((localchimera knowledge catalogues substances) #:select (*contains*))
              (goblins) (srfi srfi-1))
 
 (define (n-of comp spec) (assoc-ref (assoc-ref comp spec) "N"))

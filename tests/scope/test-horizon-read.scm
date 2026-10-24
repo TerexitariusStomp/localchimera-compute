@@ -3,17 +3,17 @@
 ;;; door that reads it: which processes defend a floor, each branch's chain
 ;;; reshaping, and an unbound floor named — never silently.
 ;;;
-;;; docs/planning/solve/commitment-horizon.md. Fixture: (playnet test planner bread).
+;;; docs/planning/solve/commitment-horizon.md. Fixture: (localchimera test planner bread).
 
-(use-modules (playnet test scope))
-(use-modules (playnet test harness)
-             (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1)
-             (playnet scope live)
-             (playnet plan accepts)
-             (playnet plan store)
-             (playnet test planner bread)
-             ((playnet solve engine) #:select (set-period-span! time->period)) ((playnet solve ingest) #:select (declared-partition))
-             ((playnet utils clock) #:select (now instant->unix instant->civil))
+(use-modules (localchimera test scope))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (localchimera vf beyond scenario) (srfi srfi-1)
+             (localchimera scope live)
+             (localchimera plan accepts)
+             (localchimera plan store)
+             (localchimera test planner bread)
+             ((localchimera solve engine) #:select (set-period-span! time->period)) ((localchimera solve ingest) #:select (declared-partition))
+             ((localchimera utils clock) #:select (now instant->unix instant->civil))
              (goblins) (goblins vat)
              (srfi srfi-1))
 

@@ -24,14 +24,14 @@
 ;;; What crosses the boundary is a GOOD and its PULL. No person, no plate, no
 ;;; intake record — the neighbouring commune learns λ, never who ate what.
 ;;;
-;;; Run: guile -L module/playnet/planner tests/solve/test-federated-repro.scm
+;;; Run: guile -L module/localchimera/planner tests/solve/test-federated-repro.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve federation-solve) (playnet solve plan)
-             (playnet solve compile)
-             (playnet vf schemas))
-(use-modules (playnet knowledge catalogues subsistence)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve federation-solve) (localchimera solve plan)
+             (localchimera solve compile)
+             (localchimera vf schemas))
+(use-modules (localchimera knowledge catalogues subsistence)
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

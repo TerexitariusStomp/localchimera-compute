@@ -9,13 +9,13 @@
 ;;; alist serialization, syrup encoding) that the in-process test in
 ;;; test-planner-service.scm cannot.
 ;;;
-;;; This test requires PLAYNET_DATA_DIR to be writable; defaults to
-;;; /tmp/playnet-test if unset.
+;;; This test requires LOCALCHIMERA_DATA_DIR to be writable; defaults to
+;;; /tmp/localchimera-test if unset.
 ;;;
 ;;; Run from project root:
 ;;;   guile -L module tests/test-planner-service-ocapn.scm
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules (fibers)
              (fibers conditions)
              (goblins)
@@ -31,8 +31,8 @@
 (chdir %project-root)
 
 (define %data-dir
-  (or (getenv "PLAYNET_DATA_DIR") "/tmp/playnet-test-ocapn"))
-(setenv "PLAYNET_DATA_DIR" %data-dir)
+  (or (getenv "LOCALCHIMERA_DATA_DIR") "/tmp/localchimera-test-ocapn"))
+(setenv "LOCALCHIMERA_DATA_DIR" %data-dir)
 (unless (file-exists? %data-dir) (mkdir %data-dir))
 
 (define %sref-path (string-append %data-dir "/gateway-sref.txt"))

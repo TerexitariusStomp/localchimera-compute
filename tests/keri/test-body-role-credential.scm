@@ -13,17 +13,17 @@
 ;;;     the role's issuer is its holder, and the body credential stands.
 ;;;
 ;;; Run: guile -L module tests/keri/test-body-role-credential.scm
-(use-modules (playnet test harness)
-             (playnet keri signify)
-             ((playnet keri crypto-primitives) #:select (ed25519-keypair-public))
-             ((playnet keri signify-portable) #:select (bran->signing-keypair public-key->aid-prefix))
-             ((playnet keri citizen-sig) #:select (sign-said-multisig sign-said aid-signer-keys-resolver
+(use-modules (localchimera test harness)
+             (localchimera keri signify)
+             ((localchimera keri crypto-primitives) #:select (ed25519-keypair-public))
+             ((localchimera keri signify-portable) #:select (bran->signing-keypair public-key->aid-prefix))
+             ((localchimera keri citizen-sig) #:select (sign-said-multisig sign-said aid-signer-keys-resolver
                                                   make-keri-identity keri-identity-aid keri-identity-keypair))
-             ((playnet keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-claim cred-signature
+             ((localchimera keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-claim cred-signature
                                             cred-edge edge-target edge-operator edge-schema))
-             ((playnet keri acdc-store) #:select (spawn-acdc-store))
-             (playnet keri first-person credentials)
-             (playnet keri first-person predicates)
+             ((localchimera keri acdc-store) #:select (spawn-acdc-store))
+             (localchimera keri first-person credentials)
+             (localchimera keri first-person predicates)
              (goblins) (goblins vat) (rnrs bytevectors)
              (srfi srfi-1))
 
@@ -43,7 +43,7 @@
                                         #:since "2026-10-10T00:00:00Z"
                                         #:quorum 2
                                         #:u "nonce-1"))
-(check "schema" *schema-playnet-body-role* (cred-schema cred))
+(check "schema" *schema-localchimera-body-role* (cred-schema cred))
 (check "issuer is the body" body-aid (cred-issuer cred))
 (check "holder" holder (cred-holder cred))
 (check "role" 'steward (cred-claim cred 'role))
@@ -155,7 +155,7 @@
     ($ store 'issue body-cred)
     (check "the edge names the body credential" (cred-said body-cred) (edge-target (cred-edge role 'body)))
     (check "the edge is I2I" 'I2I (edge-operator (cred-edge role 'body)))
-    (check "the edge's schema is the body schema" *schema-playnet-body* (edge-schema (cred-edge role 'body)))
+    (check "the edge's schema is the body schema" *schema-localchimera-body* (edge-schema (cred-edge role 'body)))
     (check "another SAID than the unchained role"
            (not (equal? (cred-said role)
                         (cred-said (make-body-role-credential #:body-aid body-aid

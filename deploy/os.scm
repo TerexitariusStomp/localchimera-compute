@@ -33,7 +33,7 @@
              (gnu packages guile-xyz)
              (gnu packages tls)        ; guile-gnutls (for DDNS updater)
              (gnu packages linux)   ; inotify-tools
-             (srfi srfi-13)         ; string-prefix? — %playnet-rid-bare
+             (srfi srfi-13)         ; string-prefix? — %localchimera-rid-bare
              (sev-kernel)               ; linux-libre-sev — AMD SEV-SNP guest kernel
              (gnu packages finance)      ; monero (monerod, monero-wallet-rpc)
              (gnu packages golang-crypto) ; age, age-plugin-yubikey
@@ -46,13 +46,13 @@
              (gnu packages rsync)
              (gnu packages curl)            ; curl — operator HTTP checks (torsocks-wrapped)
              (gnu packages base)            ; gnu-make — CI wasm rebuild (`make browser/day-boot.wasm`)
-             (gnu packages commencement)    ; gcc-toolchain — planner kernel build (`make -C module/playnet/solve/kernel`)
+             (gnu packages commencement)    ; gcc-toolchain — planner kernel build (`make -C module/localchimera/solve/kernel`)
              (gnu packages rust-apps)       ; radicle
              (gnu packages version-control)
              (gnu packages ssh)
-             (playnet-hoot) ; guile-hoot/playnet — Hoot 0.9.0 + upstream number->string fixes
+             (localchimera-hoot) ; guile-hoot/localchimera — Hoot 0.9.0 + upstream number->string fixes
              (opencode)  ; agentic coding CLI for dev-bridge (pinned prebuilt binary)
-             (playnet-keys) ; single source of truth for operator/CI pubkeys
+             (localchimera-keys) ; single source of truth for operator/CI pubkeys
              (rns-bridge)
              (radicle-service)
              (radicle-httpd-service)
@@ -65,7 +65,7 @@
              (fleet-reconciler-service)
              (fleet-keeper-service)
              (deploy-runner-service)
-             (backup-service)            ; playnet-backup-service-type
+             (backup-service)            ; localchimera-backup-service-type
               (gnu services base)
               (gnu services admin)       ; log-rotation-service-type
               (gnu services mcron)        ; required by backup-service-type
@@ -76,8 +76,8 @@
              (gnu system linux-initrd)
              (gnu)
              (guix gexp)
-             (playnet-gateway-service)
-             (playnet-static-service)
+             (localchimera-gateway-service)
+             (localchimera-static-service)
              )
 
 (define %this-dir
@@ -93,12 +93,12 @@
 
 ;; Load provider-specific hardware config (IP, disk layout, bootloader).
 ;; Provider configs are gitignored — they contain server IPs.
-;; Set PLAYNET_PROVIDER before deploying:
-;;   PLAYNET_PROVIDER=deploy/providers/iceland.scm bash deploy/scripts/reconfigure.sh
+;; Set LOCALCHIMERA_PROVIDER before deploying:
+;;   LOCALCHIMERA_PROVIDER=deploy/providers/iceland.scm bash deploy/scripts/reconfigure.sh
 (define %provider
-  (let ((provider-file (getenv "PLAYNET_PROVIDER")))
+  (let ((provider-file (getenv "LOCALCHIMERA_PROVIDER")))
     (unless provider-file
-      (error "Set PLAYNET_PROVIDER to a provider config file, e.g.:\n  export PLAYNET_PROVIDER=deploy/providers/iceland.scm"))
+      (error "Set LOCALCHIMERA_PROVIDER to a provider config file, e.g.:\n  export LOCALCHIMERA_PROVIDER=deploy/providers/iceland.scm"))
     (primitive-load provider-file)))
 
 (define (provider-ref key)
@@ -144,11 +144,11 @@
 ;; Who runs this gateway: the provider config's `operator` alist — name,
 ;; contact, abuse, privacy, security, jurisdiction, address, supervisory,
 ;; representative, source, docs, every one optional text (see deploy/providers/example.scm).
-;; They become PLAYNET_OPERATOR_<KEY> in the static server's environment, which
+;; They become LOCALCHIMERA_OPERATOR_<KEY> in the static server's environment, which
 ;; answers /operator.json (the notices) and /.well-known/security.txt from
 ;; them. A value that is not text is refused here, as the system is evaluated.
 (define %operator-keys
-  ;; the same fields as %operator-fields in module/playnet/utils/operator.scm
+  ;; the same fields as %operator-fields in module/localchimera/utils/operator.scm
   ;; (tests/server/test-operator-endpoint.scm holds the two together)
   '(name contact abuse privacy security jurisdiction address supervisory representative
     source docs))
@@ -161,7 +161,7 @@
                   (error "provider config: (operator …) field is text" (car kv) (cdr kv))))
               op)
     (map (lambda (kv)
-           (cons (string-append "PLAYNET_OPERATOR_" (string-upcase (symbol->string (car kv))))
+           (cons (string-append "LOCALCHIMERA_OPERATOR_" (string-upcase (symbol->string (car kv))))
                  (cdr kv)))
          op)))
 (define %smtp-password-file "/run/secrets/smtp-password")
@@ -170,12 +170,12 @@
   (if (not %mail)
       '()
       (let ((ref (lambda (key) (assq-ref %mail key))))
-        `(("PLAYNET_SMTP_HOST" . ,(ref 'host))
-          ("PLAYNET_SMTP_PORT" . ,(let ((p (or (ref 'port) 587)))
+        `(("LOCALCHIMERA_SMTP_HOST" . ,(ref 'host))
+          ("LOCALCHIMERA_SMTP_PORT" . ,(let ((p (or (ref 'port) 587)))
                                     (if (number? p) (number->string p) p)))
           ,@(if (ref 'user)
-                `(("PLAYNET_SMTP_USER" . ,(ref 'user))
-                  ("PLAYNET_SMTP_PASSWORD_FILE" . ,%smtp-password-file))
+                `(("LOCALCHIMERA_SMTP_USER" . ,(ref 'user))
+                  ("LOCALCHIMERA_SMTP_PASSWORD_FILE" . ,%smtp-password-file))
                 '())
           ,@(if (ref 'from) `(("SMTP_FROM" . ,(ref 'from))) '())))))
 
@@ -183,23 +183,23 @@
 ;; from this RID and watches for ref-update events. Set after `rad init`.
 ;; Falls back to the provider config's `radicle-rid` so multiple
 ;; deployments can share secrets.scm but pin different projects.
-(define %playnet-rid
-  (or (getenv "PLAYNET_RID")
+(define %localchimera-rid
+  (or (getenv "LOCALCHIMERA_RID")
       (provider-ref 'radicle-rid)
-      (error "Set PLAYNET_RID env var or add (radicle-rid . \"rad:...\") to your provider config")))
+      (error "Set LOCALCHIMERA_RID env var or add (radicle-rid . \"rad:...\") to your provider config")))
 
 ;; git URL paths (…/<rid>.git/…) want the bare id — Radicle's own "rad:"
 ;; scheme prefix isn't part of the git-smart-HTTP convention.
-(define %playnet-rid-bare
-  (if (string-prefix? "rad:" %playnet-rid)
-      (substring %playnet-rid 4)
-      %playnet-rid))
+(define %localchimera-rid-bare
+  (if (string-prefix? "rad:" %localchimera-rid)
+      (substring %localchimera-rid 4)
+      %localchimera-rid))
 
 ;; Satellite repos the core pins (deploy/satellites.scm): each gets the same
 ;; git-smart-HTTP mirror route as the core, at /<rid-bare>.git, and the
 ;; node's seed-rids-all below is derived from the same list, so a pin with a
 ;; rid is both the route and the seed. Bare ids, no "rad:" prefix.
-(define %playnet-satellite-rids-bare
+(define %localchimera-satellite-rids-bare
   ;; Read from deploy/satellites.scm — the one place a satellite is named.
   ;; A pin without a rid (not on Radicle yet) has no route and no seed.
   (let* ((pins-file (string-append %this-dir "/satellites.scm"))
@@ -218,13 +218,13 @@
                  pins))))
 
 ;; The mirror locations for the core and every satellite, in one list.
-(define (%playnet-all-git-mirror-locations)
+(define (%localchimera-all-git-mirror-locations)
   ;; (apply append (map …)) rather than append-map: os.scm's imports carry
   ;; srfi-13 only, and `guix system reconfigure` forces this thunk without
   ;; srfi-1 in scope (machines.scm imports it after the load, which is why
   ;; laptop `guix deploy` would not have shown the failure).
-  (apply append (map %playnet-git-mirror-locations
-                     (cons %playnet-rid-bare %playnet-satellite-rids-bare))))
+  (apply append (map %localchimera-git-mirror-locations
+                     (cons %localchimera-rid-bare %localchimera-satellite-rids-bare))))
 
 ;; Optional clearnet domain — #f means onion-only (no nginx HTTPS).
 ;; When set, origin uses a self-signed cert (the CDN pulls with SSL
@@ -243,12 +243,12 @@
     ips))
 
 ;; This deployment's CDN account, from the provider config's `cdn` entry:
-;;   (cdn . ((adapter . "NAME")            ; (playnet fleet cdn NAME)
+;;   (cdn . ((adapter . "NAME")            ; (localchimera fleet cdn NAME)
 ;;           (credential . "VAR")          ; its name in secrets.scm
 ;;           (zone . "ID")
 ;;           (origin . "https://example.org")))
 ;; The key is decrypted to %cdn-key-file; the rest is written to
-;; /etc/playnet/cdn.conf, which deploy/scripts/cdn.scm and the fleet read.
+;; /etc/localchimera/cdn.conf, which deploy/scripts/cdn.scm and the fleet read.
 (define %cdn (provider-ref 'cdn))
 (define %cdn-key-file "/run/secrets/cdn-api-key")
 
@@ -258,11 +258,11 @@
 ;; below (see the (service nginx-service-type ...) instance).
 ;;
 ;; Zones (one definition, referenced from multiple locations):
-;;   playnet_req   — per-client request rate (50 req/s sustained, burst
+;;   localchimera_req   — per-client request rate (50 req/s sustained, burst
 ;;                   tuned per-location). Covers /oobi, /.well-known/keri, /ws.
-;;   playnet_conn  — per-client concurrent connections (32). Coarse DoS guard.
+;;   localchimera_conn  — per-client concurrent connections (32). Coarse DoS guard.
 ;;
-;; The limit key is $playnet_client, not $binary_remote_addr. On the
+;; The limit key is $localchimera_client, not $binary_remote_addr. On the
 ;; clearnet face every request arrives from a CDN edge IP, so
 ;; $binary_remote_addr is the same handful of addresses for the entire
 ;; world: one shared token bucket for all visitors. A single cold page
@@ -272,7 +272,7 @@
 ;; an HTML error body, which the browser rejects as a disallowed MIME
 ;; type for a module import.
 ;;
-;; $playnet_client resolves to the forwarded client address when the
+;; $localchimera_client resolves to the forwarded client address when the
 ;; connection comes from a CDN edge, and to the peer address otherwise.
 ;; X-Forwarded-For is honoured only for peers in %cdn-edge-ips — the
 ;; same allowlist that gates :443 — so a direct or onion client cannot
@@ -291,7 +291,7 @@
 ;;     'rate-limited, fleet/vpsbg.scm retries with backoff.
 ;;   - Server side (this): nginx limit_req at the edge.
 ;; A single zone name keeps things uniform — extend by adding more
-;; `limit_req zone=playnet_req burst=…;` references, not new zones.
+;; `limit_req zone=localchimera_req burst=…;` references, not new zones.
 ;;
 ;; The exception, and the reason it IS one: both limiter modules keep their
 ;; STATE per (zone, key) and share it across every location naming that zone;
@@ -299,22 +299,22 @@
 ;; number out of a shared zone does not get a smaller private budget — it
 ;; becomes the first thing refused once anyone's ordinary traffic has filled
 ;; the shared bucket. A surface that must be limited SEPARATELY therefore
-;; needs a zone of its own, and `playnet_feedback` is the one such surface:
+;; needs a zone of its own, and `localchimera_feedback` is the one such surface:
 ;; anonymous, unauthenticated writes, which are exactly what must not be able
 ;; to spend the app's budget, and exactly what must not be starved by it.
-;; This matters most on the onion face, where $playnet_client collapses every
+;; This matters most on the onion face, where $localchimera_client collapses every
 ;; Tor visitor onto one key — a per-connection cap out of the shared zone
 ;; would go permanently closed once a handful of dials were open.
-(define %playnet-nginx-http-content
+(define %localchimera-nginx-http-content
   (string-append
-   "geo $playnet_from_cdn {\n"
+   "geo $localchimera_from_cdn {\n"
    "    default 0;\n"
    (string-join (map (lambda (cidr)
                        (string-append "    " cidr " 1;"))
                      %cdn-edge-ips)
                 "\n" 'suffix)
    "}\n"
-   "map $playnet_from_cdn $playnet_fwd {\n"
+   "map $localchimera_from_cdn $localchimera_fwd {\n"
    "    0 \"\";\n"
    "    1 $http_x_forwarded_for;\n"
    "}\n"
@@ -323,21 +323,21 @@
    ;; that is the key — the whole string would make every distinct path
    ;; through the edges a distinct bucket for one visitor, and none for
    ;; two visitors behind one path.
-   "map $playnet_fwd $playnet_client {\n"
+   "map $localchimera_fwd $localchimera_client {\n"
    "    \"\"                        $binary_remote_addr;\n"
-   "    ~^\\s*(?<playnet_hop>[^,\\s]+)  $playnet_hop;\n"
-   "    default                   $playnet_fwd;\n"
+   "    ~^\\s*(?<localchimera_hop>[^,\\s]+)  $localchimera_hop;\n"
+   "    default                   $localchimera_fwd;\n"
    "}\n"
-   "limit_req_zone $playnet_client zone=playnet_req:10m rate=50r/s;\n"
-   "limit_conn_zone $playnet_client zone=playnet_conn:10m;\n"
+   "limit_req_zone $localchimera_client zone=localchimera_req:10m rate=50r/s;\n"
+   "limit_conn_zone $localchimera_client zone=localchimera_conn:10m;\n"
    ;; Anonymous feedback writes, budgeted apart from the app (see above).
    ;; A person types feedback at human speed, so a slow sustained rate with
    ;; a small burst is generous for the real use and cheap for a flood.
-   "limit_req_zone $playnet_client zone=playnet_feedback:1m rate=6r/m;\n"
+   "limit_req_zone $localchimera_client zone=localchimera_feedback:1m rate=6r/m;\n"
    ;; Reports of unlawful or harmful content: a pool of their own and so a
    ;; zone of their own, for the same reason — a flood of feedback must not
    ;; close the door a person uses to report a child at risk, nor the reverse.
-   "limit_req_zone $playnet_client zone=playnet_report:1m rate=6r/m;\n"))
+   "limit_req_zone $localchimera_client zone=localchimera_report:1m rate=6r/m;\n"))
 
 ;; Shared nginx locations — used by both the onion (port 80) and
 ;; clearnet (port 443) server blocks.
@@ -351,43 +351,43 @@
 ;;
 ;; Adding a new HTTP route used to require: edit serve-static + edit
 ;; nginx + `guix system reconfigure`. Now it's just edit serve-static
-;; and restart the playnet-gateway service. Faster inner loop, single
+;; and restart the localchimera-gateway service. Faster inner loop, single
 ;; source of truth.
-(define %playnet-locations
+(define %localchimera-locations
   (list
    ;; WebSocket → OCapN gateway. Separate from the catch-all because
    ;; nginx WebSocket upgrade requires its own Upgrade/Connection
    ;; header dance.
-   ;; The HTTP door (module/playnet/doors/http.scm): POST
+   ;; The HTTP door (module/localchimera/doors/http.scm): POST
    ;; /api/{lobby,session,planner}/<name>, signed by an enrolled device key,
    ;; answered by the gateway process on loopback :9091. Prefix matches, so
    ;; /api/docs/, /api/openapi.json, /api/mcp-tools.json stay static files
    ;; and /api/v1 stays the Radicle http-api below. /api/mcp is the same
-   ;; doors as MCP tools (module/playnet/doors/mcp.scm), JSON-RPC.
+   ;; doors as MCP tools (module/localchimera/doors/mcp.scm), JSON-RPC.
    (nginx-location-configuration
     (uri "= /api/mcp")
     (body '("proxy_pass http://127.0.0.1:9091;"
             "proxy_set_header Host $host;"
             "proxy_read_timeout 30;"
-            "limit_req zone=playnet_req burst=20 nodelay;")))
+            "limit_req zone=localchimera_req burst=20 nodelay;")))
    (nginx-location-configuration
     (uri "^~ /api/lobby/")
     (body '("proxy_pass http://127.0.0.1:9091;"
             "proxy_set_header Host $host;"
             "proxy_read_timeout 30;"
-            "limit_req zone=playnet_req burst=20 nodelay;")))
+            "limit_req zone=localchimera_req burst=20 nodelay;")))
    (nginx-location-configuration
     (uri "^~ /api/session/")
     (body '("proxy_pass http://127.0.0.1:9091;"
             "proxy_set_header Host $host;"
             "proxy_read_timeout 30;"
-            "limit_req zone=playnet_req burst=20 nodelay;")))
+            "limit_req zone=localchimera_req burst=20 nodelay;")))
    (nginx-location-configuration
     (uri "^~ /api/planner/")
     (body '("proxy_pass http://127.0.0.1:9091;"
             "proxy_set_header Host $host;"
             "proxy_read_timeout 30;"
-            "limit_req zone=playnet_req burst=20 nodelay;")))
+            "limit_req zone=localchimera_req burst=20 nodelay;")))
    (nginx-location-configuration
     (uri "/ws")
     (body '("proxy_pass http://127.0.0.1:9090;"
@@ -400,8 +400,8 @@
             "client_max_body_size 2m;"
             ;; WebSocket upgrade itself is one request — burst absorbs
             ;; reconnect storms.
-            "limit_req zone=playnet_req burst=10 nodelay;"
-            "limit_conn playnet_conn 32;")))
+            "limit_req zone=localchimera_req burst=10 nodelay;"
+            "limit_conn localchimera_conn 32;")))
    ;; Radicle HTTP API → the write fork (radicle-http-api, :8089). Backs the
    ;; Radicle Explorer (served at /radicle/): repo/issue/patch reads for
    ;; everyone, session-gated writes for operators (sessions require the
@@ -420,8 +420,8 @@
             "proxy_set_header Host $host;"
             "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
             "proxy_read_timeout 120;"
-            "limit_req zone=playnet_req burst=40 nodelay;"
-            "limit_conn playnet_conn 32;")))
+            "limit_req zone=localchimera_req burst=40 nodelay;"
+            "limit_conn localchimera_conn 32;")))
    (nginx-location-configuration
     (uri "/api/v1/")
     (body '("proxy_pass http://127.0.0.1:8089;"
@@ -429,8 +429,8 @@
             "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
             "proxy_read_timeout 120;"
             "client_max_body_size 8m;"
-            "limit_req zone=playnet_req burst=40 nodelay;"
-            "limit_conn playnet_conn 32;")))
+            "limit_req zone=localchimera_req burst=40 nodelay;"
+            "limit_conn localchimera_conn 32;")))
    ;; Raw repo content (the Explorer loads README images + raw blobs from
    ;; the seed's `/raw/<rid>/<sha>/<path>`). The fork serves this at :8089;
    ;; without this route it falls through to serve-static, which 404s slowly
@@ -441,11 +441,11 @@
             "proxy_set_header Host $host;"
             "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
             "proxy_read_timeout 120;"
-            "limit_req zone=playnet_req burst=40 nodelay;"
-            "limit_conn playnet_conn 32;")))
+            "limit_req zone=localchimera_req burst=40 nodelay;"
+            "limit_conn localchimera_conn 32;")))
    ;; The anonymous feedback pool (tier 1 of the issue flow): no account, no
    ;; signature, so the edge is where cost is imposed. It draws on its OWN
-   ;; zone, `playnet_feedback` — the app's zone is shared state, so spending
+   ;; zone, `localchimera_feedback` — the app's zone is shared state, so spending
    ;; from it here would let ordinary page loads close this endpoint (and on
    ;; the onion face, where all visitors share one key, close it for good).
    ;; The body cap matches the handler's own 256 KB, so an oversized
@@ -461,7 +461,7 @@
             "client_max_body_size 256k;"
             ;; ~6/min sustained, 12 in hand — a person sending feedback
             ;; never notices; a script does immediately
-            "limit_req zone=playnet_feedback burst=12 nodelay;")))
+            "limit_req zone=localchimera_feedback burst=12 nodelay;")))
    ;; Reports (terms §7.2): the same shape as feedback, its own zone and its
    ;; own, smaller body cap — a report is text only (the handler's 16 KB).
    (nginx-location-configuration
@@ -471,7 +471,7 @@
             "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
             "proxy_read_timeout 60;"
             "client_max_body_size 16k;"
-            "limit_req zone=playnet_report burst=12 nodelay;")))
+            "limit_req zone=localchimera_report burst=12 nodelay;")))
    ;; Everything else → serve-static.scm. The Guile server owns
    ;; routing, SPA fallback, MIME types, Cache-Control on KERI
    ;; endpoints, security headers — see server/serve-static.scm.
@@ -496,16 +496,16 @@
             ;; purge (a cold edge) got 503s on half its modules and the
             ;; dynamic import failed; the next load, off a warm edge, was
             ;; fine (2026-09-23, nginx error.log "limiting connections by
-            ;; zone playnet_conn"). 160 holds two cold loads from one
+            ;; zone localchimera_conn"). 160 holds two cold loads from one
             ;; visitor with room; the request rate above is the guard
             ;; against anything sustained.
-            "limit_req zone=playnet_req burst=300 nodelay;"
-            "limit_conn playnet_conn 160;")))))
+            "limit_req zone=localchimera_req burst=300 nodelay;"
+            "limit_conn localchimera_conn 160;")))))
 
 ;; Onion-ONLY git-smart-HTTP mirror of this repo, for `guix pull`/`guix
-;; deploy` to fetch the `playnet` channel without depending on a third-party
+;; deploy` to fetch the `localchimera` channel without depending on a third-party
 ;; Radicle↔git gateway. The prior third-party gateway (deploy/channels.scm's
-;; playnet channel URL, historically) went stale: this node's own connection
+;; localchimera channel URL, historically) went stale: this node's own connection
 ;; to it never came up (`rad node status` shows it as "attempted", not
 ;; connected), and every other public gateway checked served the same
 ;; unrelated, unreachable-from-here commit — not a staleness problem, an
@@ -519,22 +519,22 @@
 ;; if one exists) is reachable, because each is an EXACT match on one path,
 ;; not a prefix. Read-only, by construction, not by trust in the backend.
 ;;
-;; Kept OUT of %playnet-locations (the shared list) and appended to each
+;; Kept OUT of %localchimera-locations (the shared list) and appended to each
 ;; server block explicitly instead — onion always, clearnet only where a
 ;; domain is configured — so which faces carry it stays a decision made
 ;; here, not a side effect of sharing a list. No new identifying
 ;; information either way: the RID this exposes is already public in the
 ;; committed channels.scm and already served (read-only) by the existing
 ;; /api/v1 and /raw/ routes, on these same server blocks.
-(define (%playnet-git-mirror-locations rid-bare)
+(define (%localchimera-git-mirror-locations rid-bare)
   (list
    (nginx-location-configuration
     (uri (string-append "= /" rid-bare ".git/info/refs"))
     (body '("proxy_pass http://127.0.0.1:8089;"
             "proxy_set_header Host $host;"
             "proxy_read_timeout 60;"
-            "limit_req zone=playnet_req burst=10 nodelay;"
-            "limit_conn playnet_conn 8;")))
+            "limit_req zone=localchimera_req burst=10 nodelay;"
+            "limit_conn localchimera_conn 8;")))
    (nginx-location-configuration
     (uri (string-append "= /" rid-bare ".git/git-upload-pack"))
     (body '("proxy_pass http://127.0.0.1:8089;"
@@ -542,22 +542,22 @@
             "proxy_set_header Content-Type $content_type;"
             "proxy_read_timeout 120;"
             "client_max_body_size 4m;"
-            "limit_req zone=playnet_req burst=10 nodelay;"
-            "limit_conn playnet_conn 8;")))))
+            "limit_req zone=localchimera_req burst=10 nodelay;"
+            "limit_conn localchimera_conn 8;")))))
 
 ;; nginx-level raw-content. Kept minimal: the security headers /
 ;; cache-control / hidden-file deny moved into serve-static.scm where
 ;; they apply uniformly to all routes. What stays here is anything
 ;; that nginx must enforce *before* hitting the upstream.
-(define %playnet-security-headers '())
+(define %localchimera-security-headers '())
 
-;; Load the playnet package from guix.scm (provides bin/meta-org-relay)
-(define %playnet-package
+;; Load the localchimera package from guix.scm (provides bin/meta-org-relay)
+(define %localchimera-package
   (load (string-append %this-dir "/../guix.scm")))
 
 ;; Three SSH key roles for least-privilege access control:
 ;;
-;;   operator — interactive SSH + REPL access on the playnet user.
+;;   operator — interactive SSH + REPL access on the localchimera user.
 ;;              Lives on the operator's personal machine.
 ;;   deploy   — used exclusively by `guix deploy`. Can push system
 ;;              configs but not access the REPL or wallet.
@@ -568,8 +568,8 @@
 ;; %deploy-ssh-public-key. Until then, the operator key is used for
 ;; both roles (less secure but functional).
 
-;; Operator + CI pubkeys come from (playnet-keys) — SSOT lives in
-;; deploy/guix/playnet-keys.scm so the ISO and production OS can't drift.
+;; Operator + CI pubkeys come from (localchimera-keys) — SSOT lives in
+;; deploy/guix/localchimera-keys.scm so the ISO and production OS can't drift.
 ;; %operator-ssh-public-key and %ci-ssh-public-key are re-exported by the
 ;; import above; the bindings below stay only to localize names for the
 ;; existing call sites without renaming them.
@@ -630,25 +630,25 @@
 (define %repl-eval-script
   (local-file "scripts/repl-eval"))
 
-;; Emacs init.el for the playnet user — deployed via activation service.
+;; Emacs init.el for the localchimera user — deployed via activation service.
 ;; Source of truth lives in deploy/scripts/init.el so it can be edited
 ;; with proper elisp tooling instead of being embedded as an escaped
-;; string. The activation service copies it into ~playnet/.emacs.d/.
+;; string. The activation service copies it into ~localchimera/.emacs.d/.
 (define %emacs-init-el
   (local-file "scripts/init.el"))
 
 (define %guix-x86
   (operating-system
-    (host-name (or (provider-ref 'host-name) "playnet"))
+    (host-name (or (provider-ref 'host-name) "localchimera"))
     (timezone "Etc/UTC")
     (bootloader (provider-ref 'bootloader))
     (kernel linux-libre-sev)
     (initrd-modules (append
                      (provider-ref 'initrd-modules)
                      %base-initrd-modules))
-    ;; /var/log/playnet on tmpfs: service logs live in RAM only, so a
+    ;; /var/log/localchimera on tmpfs: service logs live in RAM only, so a
     ;; powered-off disk seizure yields nothing operationally interesting
-    ;; (system logs in /var/log/* still hit disk; only the playnet-
+    ;; (system logs in /var/log/* still hit disk; only the localchimera-
     ;; specific service logs are volatile). 256M: when this filled at 64M
     ;; (2026-09-06 22:00) the hourly rotation's zstd hit ENOSPC, shepherd's
     ;; control socket wedged behind it, and the box went down an OOM spiral
@@ -656,7 +656,7 @@
     ;; the RAM it holds. Services rotate themselves via shepherd as logs grow.
     (file-systems (append (provider-ref 'file-systems)
                          (list (file-system
-                                 (mount-point "/var/log/playnet")
+                                 (mount-point "/var/log/localchimera")
                                  (device "tmpfs")
                                  (type "tmpfs")
                                  (flags '(no-suid no-dev))
@@ -674,21 +674,21 @@
     ;; Static accounts:
     ;; Static users:
     ;;   deploy          — system administration, guix deploy
-    ;;   playnet         — gateway + REPL + planner (main service user)
-    ;;   playnet-wallet  — wallet-service (isolated, owns wallet files)
-    ;;   playnet-mqtt    — Mosquitto broker (owns MQTT data)
-    ;; All service-isolation users share the playnet-svc group for
+    ;;   localchimera         — gateway + REPL + planner (main service user)
+    ;;   localchimera-wallet  — wallet-service (isolated, owns wallet files)
+    ;;   localchimera-mqtt    — Mosquitto broker (owns MQTT data)
+    ;; All service-isolation users share the localchimera-svc group for
     ;; minimal cross-service access (e.g., REPL socket group-readable).
     ;; Dynamic accounts (from users.scm, managed by provision-user.scm):
     ;;   priya, … — provisioned users with their own SSH keys
-    ;; They get their own group, separate from playnet's "users" group:
-    ;; playnet owns and executes /home/playnet/playnet-repo as group
+    ;; They get their own group, separate from localchimera's "users" group:
+    ;; localchimera owns and executes /home/localchimera/localchimera-repo as group
     ;; "users", so a guest sharing that gid would inherit group-write
     ;; access to the live checkout the moment any file in that tree
     ;; drifted group-writable (a lax rsync umask, a stray chmod -R).
-    ;; "playnet-guests" has no write access to anything playnet owns.
-    (groups (cons* (user-group (name "playnet-svc") (system? #t))
-                   (user-group (name "playnet-guests"))
+    ;; "localchimera-guests" has no write access to anything localchimera owns.
+    (groups (cons* (user-group (name "localchimera-svc") (system? #t))
+                   (user-group (name "localchimera-guests"))
                    %base-groups))
     (users (append
             (list
@@ -699,33 +699,33 @@
               (home-directory "/home/deploy")
               (shell (file-append bash "/bin/bash")))
              (user-account
-              (name "playnet")
+              (name "localchimera")
               (group "users")
-              (supplementary-groups '("playnet-svc" "plugdev"))
-              (home-directory "/home/playnet")
+              (supplementary-groups '("localchimera-svc" "plugdev"))
+              (home-directory "/home/localchimera")
               (shell (file-append bash "/bin/bash")))
              ;; Wallet-service: isolated from the gateway process.
-             ;; Owns /var/lib/playnet/monero/ files. No shell access.
+             ;; Owns /var/lib/localchimera/monero/ files. No shell access.
              (user-account
-              (name "playnet-wallet")
-              (group "playnet-svc")
+              (name "localchimera-wallet")
+              (group "localchimera-svc")
               (system? #t)
-              (home-directory "/var/lib/playnet/wallet")
+              (home-directory "/var/lib/localchimera/wallet")
               (shell (file-append bash "/sbin/nologin")))
              ;; Mosquitto broker: owns MQTT data only.
              (user-account
-              (name "playnet-mqtt")
-              (group "playnet-svc")
+              (name "localchimera-mqtt")
+              (group "localchimera-svc")
               (system? #t)
-              (home-directory "/var/lib/playnet/mosquitto")
+              (home-directory "/var/lib/localchimera/mosquitto")
               (shell (file-append bash "/sbin/nologin"))))
             ;; All users from users.scm (sapient-os + any provisioned accounts).
-            ;; Group "playnet-guests", not "users" — see note above the
+            ;; Group "localchimera-guests", not "users" — see note above the
             ;; groups list.
             (map (lambda (entry)
                    (user-account
                     (name (car entry))
-                    (group "playnet-guests")
+                    (group "localchimera-guests")
                     (home-directory (string-append "/home/" (car entry)))
                     (shell (file-append bash "/bin/bash"))))
                  %dynamic-users)
@@ -737,34 +737,34 @@
         "root ALL=(ALL) ALL\n"
         "%wheel ALL=(ALL) ALL\n"
         "deploy ALL=(ALL) NOPASSWD: ALL\n"
-        ;; No general "su - <user>" grant for playnet: nothing in the
+        ;; No general "su - <user>" grant for localchimera: nothing in the
         ;; codebase currently spawns login shells as provisioned guest
         ;; users, so there's no reason to hold that capability open.
         ;; If a relay-spawns-a-shell feature is ever built, add it back
         ;; scoped to an explicit list drawn from %dynamic-user-names —
-        ;; never a "*" wildcard, and never root/deploy/playnet as a target.
+        ;; never a "*" wildcard, and never root/deploy/localchimera as a target.
         ;;
-        ;; Allow radicle-ci-hook (running as playnet) to restart the
+        ;; Allow radicle-ci-hook (running as localchimera) to restart the
         ;; services it owns after a rad push that touches their code.
         ;; Scoped to specific services + the herd binary path so it
         ;; cannot become a general root escalation.
-        "playnet ALL=(ALL) NOPASSWD: "
-        "/run/current-system/profile/bin/herd restart playnet-gateway, "
-        ;; playnet-static loads server/serve-static.scm once at exec and
+        "localchimera ALL=(ALL) NOPASSWD: "
+        "/run/current-system/profile/bin/herd restart localchimera-gateway, "
+        ;; localchimera-static loads server/serve-static.scm once at exec and
         ;; holds it for the life of the process: an rsync that lands new
         ;; routes leaves the running server answering with the route table
         ;; it booted with — restart picks the new table up.
-        "/run/current-system/profile/bin/herd restart playnet-static, "
+        "/run/current-system/profile/bin/herd restart localchimera-static, "
         "/run/current-system/profile/bin/herd restart dev-bridge, "
-        "/run/current-system/profile/bin/herd restart playnet-matrix-bridge, "
-        "/run/current-system/profile/bin/herd restart playnet-telegram-bridge\n")))
+        "/run/current-system/profile/bin/herd restart localchimera-matrix-bridge, "
+        "/run/current-system/profile/bin/herd restart localchimera-telegram-bridge\n")))
 
     (packages
      (append
       (list guile-goblins
             guile-fibers
             guile-websocket            ; required by (hoot web-server) /repl proxy
-            guile-hoot/playnet         ; provides `hoot` CLI + libs
+            guile-hoot/localchimera         ; provides `hoot` CLI + libs
             emacs-no-x
             emacs-geiser
             emacs-geiser-guile
@@ -826,7 +826,7 @@
             ;; of re-invocation. The stock static-networking-service-type calls
             ;; netlink primitives directly and throws &netlink-response-error 17
             ;; (EEXIST) on any re-run, which permanently fails the service and
-            ;; breaks every dependent (ssh-daemon, playnet-gateway, etc.) until
+            ;; breaks every dependent (ssh-daemon, localchimera-gateway, etc.) until
             ;; the next reboot. We provide 'networking ourselves so dependents
             ;; resolve normally; also write /etc/resolv.conf at start.
             (list
@@ -890,8 +890,8 @@
                    ;; Deploy: deploy key + CI key (guix deploy only)
                    ("deploy"  ,(plain-file "deploy-key"    %deploy-ssh-public-key))
                    ("deploy"  ,(plain-file "ci-deploy-key" %ci-ssh-public-key))
-                   ;; Playnet: operator key only (interactive REPL, live hacking)
-                   ("playnet" ,(plain-file "playnet-key"   %operator-ssh-public-key))
+                   ;; LocalChimera: operator key only (interactive REPL, live hacking)
+                   ("localchimera" ,(plain-file "localchimera-key"   %operator-ssh-public-key))
                    ;; Dynamic users — each gets their own registered public key
                    ,@(map (lambda (entry)
                             (list (car entry)
@@ -908,16 +908,16 @@
        ;; Unknown Host / direct IP access returns 444 (silent drop).
        ;; Explicit nginx base config — overrides the default-value so we
        ;; can set http-context directives (limit_req_zone). The
-       ;; `simple-service 'playnet-web` below only contributes
+       ;; `simple-service 'localchimera-web` below only contributes
        ;; server-blocks (per nginx-service-type's extend at
        ;; gnu/services/web.scm:996), which it appends to this base.
        (service nginx-service-type
                 (nginx-configuration
-                 (extra-content %playnet-nginx-http-content)))
+                 (extra-content %localchimera-nginx-http-content)))
 
-       ;; Shared locations and headers defined in %playnet-locations /
-       ;; %playnet-security-headers — no duplication.
-       (simple-service 'playnet-web
+       ;; Shared locations and headers defined in %localchimera-locations /
+       ;; %localchimera-security-headers — no duplication.
+       (simple-service 'localchimera-web
                        nginx-service-type
                        (append
                         ;; Onion server — always active, serves .onion traffic.
@@ -933,10 +933,10 @@
                          (nginx-server-configuration
                           (server-name '("_"))
                           (listen '("80"))
-                          (root "/home/playnet/playnet-repo/browser")
-                          (locations (append %playnet-locations
-                                             (%playnet-all-git-mirror-locations)))
-                          (raw-content %playnet-security-headers)))
+                          (root "/home/localchimera/localchimera-repo/browser")
+                          (locations (append %localchimera-locations
+                                             (%localchimera-all-git-mirror-locations)))
+                          (raw-content %localchimera-security-headers)))
                         ;; Clearnet face — only when a domain is configured.
                         (if %clearnet-domain
                             (list
@@ -948,8 +948,8 @@
                              (nginx-server-configuration
                               (server-name '("nonexistent.default"))
                               (listen '("443 ssl default_server"))
-                              (ssl-certificate "/var/lib/playnet/tls/playnet-origin.pem")
-                              (ssl-certificate-key "/var/lib/playnet/tls/playnet-origin.key")
+                              (ssl-certificate "/var/lib/localchimera/tls/localchimera-origin.pem")
+                              (ssl-certificate-key "/var/lib/localchimera/tls/localchimera-origin.key")
                               (raw-content '("return 444;")))
                              ;; Clearnet domain server: CDN-edge-only allowlist,
                              ;; self-signed cert, same content as onion.
@@ -979,17 +979,17 @@
                               (server-name (list %clearnet-domain
                                                  (string-append "repl." %clearnet-domain)))
                               (listen '("443 ssl"))
-                              (ssl-certificate "/var/lib/playnet/tls/playnet-origin.pem")
-                              (ssl-certificate-key "/var/lib/playnet/tls/playnet-origin.key")
-                              (root "/home/playnet/playnet-repo/browser")
-                              (locations (append %playnet-locations
-                                                 (%playnet-all-git-mirror-locations)))
+                              (ssl-certificate "/var/lib/localchimera/tls/localchimera-origin.pem")
+                              (ssl-certificate-key "/var/lib/localchimera/tls/localchimera-origin.key")
+                              (root "/home/localchimera/localchimera-repo/browser")
+                              (locations (append %localchimera-locations
+                                                 (%localchimera-all-git-mirror-locations)))
                               (raw-content
                                (append
                                 (map (lambda (ip) (string-append "allow " ip ";"))
                                      %cdn-edge-ips)
                                 '("deny all;")
-                                %playnet-security-headers))))
+                                %localchimera-security-headers))))
                             '())))
 
       ) ;; end of unconditional services list
@@ -1005,15 +1005,15 @@
                             activation-service-type
                             #~(begin
                                 (use-modules (guix build utils))
-                                (mkdir-p "/var/lib/playnet/tls")
-                                (chmod "/var/lib/playnet/tls" #o700)
-                                (unless (file-exists? "/var/lib/playnet/tls/playnet-origin.pem")
+                                (mkdir-p "/var/lib/localchimera/tls")
+                                (chmod "/var/lib/localchimera/tls" #o700)
+                                (unless (file-exists? "/var/lib/localchimera/tls/localchimera-origin.pem")
                                   (system*
                                    #$(file-append openssl "/bin/openssl")
                                    "req" "-x509" "-newkey" "rsa:2048"
                                    "-days" "3650" "-nodes"
-                                   "-keyout" "/var/lib/playnet/tls/playnet-origin.key"
-                                   "-out" "/var/lib/playnet/tls/playnet-origin.pem"
+                                   "-keyout" "/var/lib/localchimera/tls/localchimera-origin.key"
+                                   "-out" "/var/lib/localchimera/tls/localchimera-origin.pem"
                                    "-subj" (string-append "/CN="
                                                            #$(or %clearnet-domain "origin")))))))
            '())
@@ -1022,7 +1022,7 @@
 
       ;; Tor hidden service — .onion address eliminates DNS entirely.
       ;; The .onion hostname is auto-generated on first start and persists
-      ;; in /var/lib/tor/hidden-services/playnet/hostname.
+      ;; in /var/lib/tor/hidden-services/localchimera/hostname.
       ;; No domain registrar, no DNS, no Certificate Transparency logs.
       (service tor-service-type
                (tor-configuration
@@ -1082,7 +1082,7 @@
                                     bridges)))))))
                 (hidden-services
                  (list (tor-onion-service-configuration
-                        (name "playnet")
+                        (name "localchimera")
                         (mapping '((80 "127.0.0.1:80")
                                    (443 "127.0.0.1:443")
                                    (8776 "127.0.0.1:8776"))))  ; Radicle P2P
@@ -1106,7 +1106,7 @@
       ;; hidden-service hostname (which tor generates on first boot), never
       ;; hardcoded. serve-static reads the file at request time and trims it;
       ;; absent → the onion face is simply omitted. Runs as root because the
-      ;; tor hidden-service dir isn't readable by the playnet user.
+      ;; tor hidden-service dir isn't readable by the localchimera user.
       (simple-service 'publish-gateway-onion
                       shepherd-root-service-type
                       (list (shepherd-service
@@ -1114,11 +1114,11 @@
                              (requirement '(tor))
                              (one-shot? #t)
                              (documentation
-                              "Copy the box's Tor onion hostname into /var/lib/playnet/gateway-onion.txt.")
+                              "Copy the box's Tor onion hostname into /var/lib/localchimera/gateway-onion.txt.")
                              (start
                               #~(lambda _
-                                  (let ((src "/var/lib/tor/hidden-services/playnet/hostname")
-                                        (dst "/var/lib/playnet/gateway-onion.txt"))
+                                  (let ((src "/var/lib/tor/hidden-services/localchimera/hostname")
+                                        (dst "/var/lib/localchimera/gateway-onion.txt"))
                                     ;; tor writes the hostname a moment after it
                                     ;; starts; poll briefly (bounded) for it.
                                     (let loop ((n 0))
@@ -1139,11 +1139,11 @@
       ;;
       ;; (service mcron-service-type
       ;;          (mcron-configuration
-      ;;           (jobs (list (make-ddns-job "playnet"
-      ;;                        "https://www.duckdns.org/update?domains=playnet&token=~a&ip="
-      ;;                        "/etc/ddns/playnet.token")))))
+      ;;           (jobs (list (make-ddns-job "localchimera"
+      ;;                        "https://www.duckdns.org/update?domains=localchimera&token=~a&ip="
+      ;;                        "/etc/ddns/localchimera.token")))))
 
-      ;; KERIA cloud agent + witness pool — self-sovereign identity for playnet
+      ;; KERIA cloud agent + witness pool — self-sovereign identity for localchimera
       ;; Users own their keys; this server facilitates but never holds authority.
       ;;
       ;; Witness pool is read from the provider config so different fleet
@@ -1152,9 +1152,9 @@
       ;; §2.4-§2.5 for growth and distribution patterns.
       (service keria-service-type
                (let ((base (keria-configuration
-                            (data-dir "/var/lib/playnet/keria")
-                            (config   "/var/lib/playnet/keria/config/keria.json")
-                            (user     "playnet")))
+                            (data-dir "/var/lib/localchimera/keria")
+                            (config   "/var/lib/localchimera/keria/config/keria.json")
+                            (user     "localchimera")))
                      (provider-witnesses (provider-ref 'witnesses)))
                  (if provider-witnesses
                      (keria-configuration (inherit base)
@@ -1162,13 +1162,13 @@
                      base)))
 
       ;; OCapN gateway — capability-secure communication over WebSocket + Reticulum
-      (service playnet-gateway-service-type
-               (playnet-gateway-configuration
-                (package %playnet-package)
+      (service localchimera-gateway-service-type
+               (localchimera-gateway-configuration
+                (package %localchimera-package)
                 (port 9090)
                 (reticulum? #t)
                 ;; Reads the wallet's sturdyref through the service group.
-                (supplementary-groups '("playnet-svc"))
+                (supplementary-groups '("localchimera-svc"))
                 (secret-environment-files
                  (map (lambda (var) (cons var (%secret-file-for var)))
                       (cons "API_KEYS" %fleet-credential-vars)))
@@ -1189,7 +1189,7 @@
                    ;; the ACDC schema catalog at /oobi/{said} on port 8080,
                    ;; and KERIA (same box) resolves them from there at
                    ;; gateway boot via acdc-ensure-schemas-resolved!.
-                   ("PLAYNET_SCHEMA_SERVER" . "http://localhost:8080")
+                   ("LOCALCHIMERA_SCHEMA_SERVER" . "http://localhost:8080")
                    ;; Enable the durable-scope code path: scope KELs
                    ;; persist across restarts AND auto-publish into
                    ;; ^oobi-host so /oobi/{scope-aid} serves real bytes
@@ -1199,14 +1199,14 @@
                    ;; Without these set, scopes are in-memory only and
                    ;; nothing populates the OOBI host — every
                    ;; /oobi/{aid} request 404s. With them set, the
-                   ;; canonical "playnet" identity becomes a durable
+                   ;; canonical "localchimera" identity becomes a durable
                    ;; scope whose AID is the seed contact in the
                    ;; browser's contacts tab; the witness pool stays
                    ;; in its KERI-intended role (receipting KELs,
                    ;; not being the public face). See
                    ;; docs/governance/persistence-operations.md.
-                   ("PLAYNET_SCOPES_DURABLE"  . "1")
-                   ("PLAYNET_OOBI_AUTO_MIRROR" . "1")
+                   ("LOCALCHIMERA_SCOPES_DURABLE"  . "1")
+                   ("LOCALCHIMERA_OOBI_AUTO_MIRROR" . "1")
                    ;; GDPR deferral, not a capability gap: a real signup binds a
                    ;; real name/email to an AID (identity/seat.scm member
                    ;; record), which is the one place Articles 5(1)(e)/9/13/17/
@@ -1220,7 +1220,7 @@
                    ;; tools/dev/dev.sh does not set this — local dev keeps signing up
                    ;; real AIDs as it always has, which is the developer's own
                    ;; test data, not a third party's.
-                   ("PLAYNET_DISABLE_REAL_SIGNUP" . "1")
+                   ("LOCALCHIMERA_DISABLE_REAL_SIGNUP" . "1")
                    ;; The photo read (docs/observation/capture.md §9). The vision
                    ;; model is an enclave slug (TEE/…) that reads images, named in
                    ;; the provider's own config; unset, the see door answers
@@ -1228,7 +1228,7 @@
                    ;; person. The allotment is the unplanned reads a person gets
                    ;; a week (a count the plan asked for draws on the plan).
                    ("API_VISION_MODEL" . ,(or (getenv "API_VISION_MODEL") ""))
-                   ("PLAYNET_PHOTO_ALLOTMENT" . ,(or (getenv "PLAYNET_PHOTO_ALLOTMENT") "21"))
+                   ("LOCALCHIMERA_PHOTO_ALLOTMENT" . ,(or (getenv "LOCALCHIMERA_PHOTO_ALLOTMENT") "21"))
                    ;; The mail relay (the provider config's `mail`): with it
                    ;; the gateway offers email as a channel and sends through
                    ;; msmtp, under the same torsocks as the gateway itself.
@@ -1241,10 +1241,10 @@
       ;; origin (SPA + KERI OOBI + DID + security headers + MIME +
       ;; SPA index fallback). nginx proxies / → 8080 and adds TLS,
       ;; CDN allowlist, rate limits, default-server 444. See
-      ;; %playnet-locations comment for the thin-nginx rationale.
-      (service playnet-static-service-type
-               (playnet-static-configuration
-                (package %playnet-package)
+      ;; %localchimera-locations comment for the thin-nginx rationale.
+      (service localchimera-static-service-type
+               (localchimera-static-configuration
+                (package %localchimera-package)
                 (port 8080)
                 (operator (%operator-environment))
                 ;; this deployment's own clearnet face, from its own domain —
@@ -1254,36 +1254,36 @@
 
       ;; (Bridges to external chat networks and the headless QGIS worker
       ;; lived here; the compute-only repo carries none of them — see the
-      ;; playnet archive for the matrix/telegram/qgis service modules.)
+      ;; localchimera archive for the matrix/telegram/qgis service modules.)
 
-      ;; Dev REPL — Guile on a Unix socket, runs as playnet user.
-      ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/playnet/repl.sock
-      ;; Manual start only: herd start playnet-repl
-      (simple-service 'playnet-repl
+      ;; Dev REPL — Guile on a Unix socket, runs as localchimera user.
+      ;; Connect with: M-x geiser-connect-local RET guile RET /var/run/localchimera/repl.sock
+      ;; Manual start only: herd start localchimera-repl
+      (simple-service 'localchimera-repl
                       shepherd-root-service-type
                       (list (shepherd-service
-                             (provision '(playnet-repl))
+                             (provision '(localchimera-repl))
                              (documentation "Guile REPL for live hacking via Geiser")
                              (requirement '(networking user-processes))
                              (start #~(make-forkexec-constructor
                                        (list #$(file-append guile-3.0 "/bin/guile")
-                                             "-L" "/home/playnet/playnet-repo/module"
+                                             "-L" "/home/localchimera/localchimera-repo/module"
                                              "-c"
-                                             "(use-modules (system repl server)) (run-server (make-unix-domain-server-socket #:path \"/var/run/playnet/repl.sock\"))")
-                                       #:user "playnet"
+                                             "(use-modules (system repl server)) (run-server (make-unix-domain-server-socket #:path \"/var/run/localchimera/repl.sock\"))")
+                                       #:user "localchimera"
                                        #:group "users"
-                                       #:log-file "/var/log/playnet/repl.log"
+                                       #:log-file "/var/log/localchimera/repl.log"
                                        #:environment-variables
                                        (list (string-append "GUILE_LOAD_PATH="
                                               "/run/current-system/profile/share/guile/site/3.0:"
-                                              "/home/playnet/playnet-repo/module")
+                                              "/home/localchimera/localchimera-repo/module")
                                              (string-append "GUILE_LOAD_COMPILED_PATH="
                                               "/run/current-system/profile/lib/guile/3.0/site-ccache")
-                                             "HOME=/home/playnet")))
+                                             "HOME=/home/localchimera")))
                              (stop #~(lambda (pid)
                                       ((make-kill-destructor) pid)
-                                      (when (file-exists? "/var/run/playnet/repl.sock")
-                                        (delete-file "/var/run/playnet/repl.sock"))
+                                      (when (file-exists? "/var/run/localchimera/repl.sock")
+                                        (delete-file "/var/run/localchimera/repl.sock"))
                                       #f))
                              (respawn? #f)
                              (auto-start? #f))))
@@ -1310,21 +1310,21 @@
                                                      (string-append
                                                       "listener 1883 127.0.0.1\n"
                                                       "allow_anonymous false\n"
-                                                      "password_file /var/lib/playnet/mosquitto/passwd\n"
-                                                      "acl_file /var/lib/playnet/mosquitto/acl\n"
+                                                      "password_file /var/lib/localchimera/mosquitto/passwd\n"
+                                                      "acl_file /var/lib/localchimera/mosquitto/acl\n"
                                                       "log_dest stderr\n")))
-                                       ;; Run as playnet — owns the passwd/acl files
+                                       ;; Run as localchimera — owns the passwd/acl files
                                        ;; from activation. Avoids the default
                                        ;; drop-privs-to-nonexistent-'mosquitto'-user
                                        ;; warning that mosquitto 2.x emits.
-                                       #:user "playnet"
+                                       #:user "localchimera"
                                        #:log-file "/var/log/mosquitto.log"))
                              (stop #~(make-kill-destructor))
                              (respawn? #t))))
 
       ;; Dev bridge — MQTT subscriber that launches Claude Code on deficit signals.
       ;; (The dev-bridge one-shot lived here — it ran server/dev-bridge.scm,
-      ;; which the compute-only repo does not carry; see the playnet archive.)
+      ;; which the compute-only repo does not carry; see the localchimera archive.)
 
       ;; Radicle P2P seed node — decentralized git hosting.
       ;; Listens on 0.0.0.0:8776 so the Tor hidden-service mapping
@@ -1335,16 +1335,16 @@
       ;; radicle-configure one-shot after first `rad auth`.
       ;;
       ;; After first deploy:
-      ;;   sudo -u playnet HOME=/var/lib/playnet/radicle rad auth
+      ;;   sudo -u localchimera HOME=/var/lib/localchimera/radicle rad auth
       ;;   sudo herd start radicle-configure
       (service radicle-service-type
                (radicle-configuration
-                (data-dir "/var/lib/playnet/radicle")
+                (data-dir "/var/lib/localchimera/radicle")
                 (listen "0.0.0.0:8776")
-                (user "playnet")
+                (user "localchimera")
                 ;; Public, network-wide gossiped name: project only.
-                (alias "playnet-seed")
-                ;; Seed playnet with scope=all so commit objects fetch
+                (alias "localchimera-seed")
+                ;; Seed localchimera with scope=all so commit objects fetch
                 ;; from any peer (not only the 3 delegates). Closes the
                 ;; sigref-arrives-but-objects-don't gap that silently
                 ;; broke auto-deploy.
@@ -1352,20 +1352,20 @@
                 ;; list is derived, so a RID added for its mirror route is
                 ;; seeded on the same reconfigure.
                 (seed-rids-all
-                 (cons %playnet-rid
+                 (cons %localchimera-rid
                        (map (lambda (bare) (string-append "rad:" bare))
-                            %playnet-satellite-rids-bare)))))
+                            %localchimera-satellite-rids-bare)))))
 
       ;; Radicle HTTP daemon (OFFICIAL, read-only) — HTTP/JSON gateway over the
       ;; node storage. Localhost:8088. Reserved for a future *modern* Radicle
       ;; Explorer (its apiVersion differs from the boards stack's fork below);
-      ;; not on the boards critical path. The "playnet" alias shortens URLs.
+      ;; not on the boards critical path. The "localchimera" alias shortens URLs.
       (service radicle-httpd-service-type
                (radicle-httpd-configuration
-                (data-dir "/var/lib/playnet/radicle")
+                (data-dir "/var/lib/localchimera/radicle")
                 (listen "127.0.0.1:8088")
-                (user "playnet")
-                (aliases (list (cons "playnet" %playnet-rid)))))
+                (user "localchimera")
+                (aliases (list (cons "localchimera" %localchimera-rid)))))
 
       ;; Radicle HTTP API (cytechmobile WRITE fork) — the Planning Boards
       ;; backend: read + session-gated write (card moves = issue-label COB
@@ -1376,14 +1376,14 @@
       ;; empirically verified (label round-trip). See radicle-http-api-service.scm.
       (service radicle-http-api-service-type
                (radicle-http-api-configuration
-                (data-dir "/var/lib/playnet/radicle")
+                (data-dir "/var/lib/localchimera/radicle")
                 (listen "127.0.0.1:8089")
-                (user "playnet")))
+                (user "localchimera")))
 
       ;; Radicle CI — watches radicle-node events for ref updates, triggers
       ;; deploy/reload.  Runs in parallel with GitHub Actions during transition.
       ;; Manual start: sudo herd start radicle-ci
-      ;; Requires: PLAYNET_RID env var set to the Radicle project ID after rad init.
+      ;; Requires: LOCALCHIMERA_RID env var set to the Radicle project ID after rad init.
       (simple-service 'radicle-ci
                       shepherd-root-service-type
                       (list (shepherd-service
@@ -1392,20 +1392,20 @@
                              (requirement '(networking radicle-node))
                              (start #~(make-forkexec-constructor
                                        (list #$(file-append bash "/bin/bash")
-                                             "/home/playnet/playnet-repo/deploy/scripts/radicle-ci-hook.sh")
-                                       #:user "playnet"
+                                             "/home/localchimera/localchimera-repo/deploy/scripts/radicle-ci-hook.sh")
+                                       #:user "localchimera"
                                        #:group "users"
-                                       #:log-file "/var/log/playnet/radicle-ci.log"
+                                       #:log-file "/var/log/localchimera/radicle-ci.log"
                                        #:environment-variables
-                                       (list "HOME=/var/lib/playnet/radicle"
-                                             "RAD_HOME=/var/lib/playnet/radicle/.radicle"
-                                             "DEPLOY_DIR=/home/playnet/playnet-repo"
-                                             (string-append "PLAYNET_RID=" #$%playnet-rid)
+                                       (list "HOME=/var/lib/localchimera/radicle"
+                                             "RAD_HOME=/var/lib/localchimera/radicle/.radicle"
+                                             "DEPLOY_DIR=/home/localchimera/localchimera-repo"
+                                             (string-append "LOCALCHIMERA_RID=" #$%localchimera-rid)
                                              ;; Shell patch-CI OFF by default: the
                                              ;; native radicle-ci-broker service
                                              ;; (below) is the CI engine now; this
                                              ;; hook keeps doing DEPLOY only. The
-                                             ;; flag file /var/lib/playnet/patch-ci-enabled
+                                             ;; flag file /var/lib/localchimera/patch-ci-enabled
                                              ;; still force-enables the shell CI as a
                                              ;; fallback if the broker is ever stopped.
                                              "PATCH_CI_ENABLE=0"
@@ -1475,7 +1475,7 @@
       ;;     and needs no network; do not reboot mid-job.
       ;;
       ;; This is also the single explicit mcron instance that
-      ;; playnet-backup-service-type extends (see backup-service.scm);
+      ;; localchimera-backup-service-type extends (see backup-service.scm);
       ;; its job composes into the jobs list below.
       ;;
       ;; EVERY JOB ON THIS BOX STARTS IN ITS OWN MINUTE (residue mod 5).
@@ -1501,11 +1501,11 @@
                               "/run/current-system/profile/bin/guix system delete-generations 1m; /run/current-system/profile/bin/guix gc -F 25G")
                        ;; the host reads itself every five minutes: running
                        ;; services + kernel capacity → a retained snapshot on
-                       ;; playnet/facts/host/<hostname>, so any subscriber
+                       ;; localchimera/facts/host/<hostname>, so any subscriber
                        ;; (a scope syncing its live-registry, a dashboard)
                        ;; gets the freshest reading on connect. System mcron
                        ;; jobs run as root (same as the gc/delete-generations
-                       ;; jobs above, no su) — NOT dropped to playnet: `herd
+                       ;; jobs above, no su) — NOT dropped to localchimera: `herd
                        ;; status` needs to reach /var/run/shepherd/socket,
                        ;; and that directory is root-only (drwx------) by
                        ;; design, since herd can also control services, not
@@ -1522,7 +1522,7 @@
                        ;; pick it up from ~/.bash_profile, but a bare `sh -c`
                        ;; job never sources that, and host-facts.scm
                        ;; transitively needs goblins (via store-utils.scm)
-                       ;; the same way playnet-gateway-service.scm and
+                       ;; the same way localchimera-gateway-service.scm and
                        ;; dev-bridge's shepherd definitions already
                        ;; explicitly set it rather than relying on any
                        ;; ambient profile. Found live: the job's very first
@@ -1532,7 +1532,7 @@
                        ;; One instance at a time, bounded: the job ends in a
                        ;; `herd status`, and on 2026-09-06 that call hung
                        ;; (shepherd's control socket wedged after a log
-                       ;; rotation hit a full /var/log/playnet) — every five
+                       ;; rotation hit a full /var/log/localchimera) — every five
                        ;; minutes another mcron→guile→herd chain joined the
                        ;; queue, 80 chains and 4 GB later the box was in an
                        ;; OOM spiral. flock refuses a second instance while
@@ -1541,7 +1541,7 @@
                        ;; schedule runs at :02 rather than :00 so it never
                        ;; coincides with shepherd's hourly log rotation.
                        #~(job "2-59/5 * * * *"
-                              "export GUILE_LOAD_PATH=/run/current-system/profile/share/guile/site/3.0; cd /home/playnet/playnet-repo && /run/current-system/profile/bin/flock -n /run/host-facts.lock /run/current-system/profile/bin/timeout 240 /run/current-system/profile/bin/guile --no-auto-compile -L module tools/dev/host-facts.scm --publish >> /var/log/playnet/host-facts.log 2>&1")
+                              "export GUILE_LOAD_PATH=/run/current-system/profile/share/guile/site/3.0; cd /home/localchimera/localchimera-repo && /run/current-system/profile/bin/flock -n /run/host-facts.lock /run/current-system/profile/bin/timeout 240 /run/current-system/profile/bin/guile --no-auto-compile -L module tools/dev/host-facts.scm --publish >> /var/log/localchimera/host-facts.log 2>&1")
                        ;; Weekly OpenVTC parity check, Sundays 07:00 UTC
                        ;; (docs/planning/identity/openvtc-parity.md). The check
                        ;; (tools/lint/openvtc-parity-check.sh) is a deterministic
@@ -1556,43 +1556,43 @@
                               #$(string-append
                                  "export GUILE_LOAD_PATH=/run/current-system/profile/share/guile/site/3.0; "
                                  "export API_KEYS=\"$(cat /run/secrets/api-keys 2>/dev/null)\"; "
-                                 "cd /home/playnet/playnet-repo && "
+                                 "cd /home/localchimera/localchimera-repo && "
                                  "/run/current-system/profile/bin/flock -n /run/openvtc-parity.lock "
                                  "/run/current-system/profile/bin/timeout 300 "
                                  "/run/current-system/profile/bin/guile --no-auto-compile -L module "
-                                 "tools/lint/openvtc-parity-narrate.scm >> /var/log/playnet/openvtc-parity.log 2>&1"))))))
+                                 "tools/lint/openvtc-parity-narrate.scm >> /var/log/localchimera/openvtc-parity.log 2>&1"))))))
 
       ;; Daily encrypted backup of the at-risk persistent state
       ;; (KERIA witness keystores, Tor onion key, SporeStack token,
       ;; Goblins vat snapshots). Snapshots land at
-      ;; /var/lib/playnet/backups/state-<ISO>.tar.age and, if
-      ;; PLAYNET_BACKUP_RID is set in the environment at deploy time,
+      ;; /var/lib/localchimera/backups/state-<ISO>.tar.age and, if
+      ;; LOCALCHIMERA_BACKUP_RID is set in the environment at deploy time,
       ;; are also pushed to a sister Radicle peer. Restore via
       ;; deploy/scripts/backup-restore.sh.
-      (service playnet-backup-service-type
-               (playnet-backup-configuration
-                (backup-rid (or (getenv "PLAYNET_BACKUP_RID") ""))))
+      (service localchimera-backup-service-type
+               (localchimera-backup-configuration
+                (backup-rid (or (getenv "LOCALCHIMERA_BACKUP_RID") ""))))
 
       ;; Per-host liveness heartbeat — publishes
-      ;; playnet/signals/liveness/<host-id> every 30s. The fleet-bridge
+      ;; localchimera/signals/liveness/<host-id> every 30s. The fleet-bridge
       ;; subscribes to all of these and tells the reconciler which
       ;; providers have gone fully silent so 'auto' selection routes
       ;; around them. The actual loop lives in
-      ;; deploy/scripts/playnet-liveness.sh (rsync'd into place by
+      ;; deploy/scripts/localchimera-liveness.sh (rsync'd into place by
       ;; reconfigure.sh).
-      (simple-service 'playnet-liveness
+      (simple-service 'localchimera-liveness
                       shepherd-root-service-type
                       (list (shepherd-service
-                             (provision '(playnet-liveness))
+                             (provision '(localchimera-liveness))
                              (documentation "MQTT liveness heartbeat publisher")
                              (requirement '(networking mosquitto))
                              (start
                               #~(make-forkexec-constructor
                                  (list #$(file-append bash "/bin/bash")
-                                       "/home/playnet/playnet-repo/deploy/scripts/playnet-liveness.sh")
-                                 #:user "playnet"
+                                       "/home/localchimera/localchimera-repo/deploy/scripts/localchimera-liveness.sh")
+                                 #:user "localchimera"
                                  #:group "users"
-                                 #:log-file "/var/log/playnet/liveness.log"
+                                 #:log-file "/var/log/localchimera/liveness.log"
                                  #:environment-variables
                                  (list (string-append "PATH="
                                         "/run/current-system/profile/bin:"
@@ -1620,7 +1620,7 @@
 
       ;; YubiKey / FIDO2 security key udev rules. Required for
       ;; age-plugin-yubikey to communicate with the hardware key
-      ;; for secrets decryption. The playnet and deploy users need
+      ;; for secrets decryption. The localchimera and deploy users need
       ;; to be in the "plugdev" group to access the USB device.
       ;; Per Guix cookbook §3.4: "Using security keys".
       (udev-rules-service 'fido2 libfido2 #:groups '("plugdev"))
@@ -1657,7 +1657,7 @@
 # Port 80: ONION traffic only. The Tor hidden-service maps 80 →
 # 127.0.0.1:80, which arrives over `lo` and is already accepted
 # above. Blocking external :80 prevents IP-scanning from
-# fingerprinting this host as the playnet origin by fetching the
+# fingerprinting this host as the localchimera origin by fetching the
 # same content the .onion serves.
 -A INPUT -p tcp --dport 80 -j DROP
 # Port 443: CDN-edge ONLY. nginx already returns 444 for
@@ -1723,26 +1723,26 @@ COMMIT
       ;; trusted-daemon? #f: --trusted-daemon is for a daemon we run.
       (service monero-service-type
                (monero-configuration
-                (data-dir       "/var/lib/playnet/monero")
+                (data-dir       "/var/lib/localchimera/monero")
                 (daemon-address "plowsof3t5hogddwabaeiyrno25efmzfxyro2vligremt7sxpsclfaid.onion:18089")
                 (trusted-daemon? #f)
                 ;; This wallet was created 2026-09-16 (tip ≈ 3,763,800);
                 ;; a rotation sets this to the new wallet's birth height.
                 (restore-height 3760000)
-                (user           "playnet")
-                ;; The wallet service runs as playnet-wallet and reads
+                (user           "localchimera")
+                ;; The wallet service runs as localchimera-wallet and reads
                 ;; rpc-login.txt through the service group.
-                (rpc-login-group "playnet-svc")))
+                (rpc-login-group "localchimera-svc")))
 
       ;; Isolated wallet process — runs ^monero-wallet + ^wallet-policy
       ;; in a separate process from the gateway. Exposes only the policy
       ;; actor via OCapN WebSocket on localhost:9092. Gateway resolves the
-      ;; sturdyref at /var/lib/playnet/wallet-sref.txt — no raw wallet
+      ;; sturdyref at /var/lib/localchimera/wallet-sref.txt — no raw wallet
       ;; methods reachable from the gateway process.
       ;;
       ;; spend-policy is a Scheme datum in the format produced by
-      ;; (serialize-policy) from (playnet monero policy). The activation
-      ;; writes it to /var/lib/playnet/wallet-policy.scm; wallet-service
+      ;; (serialize-policy) from (localchimera monero policy). The activation
+      ;; writes it to /var/lib/localchimera/wallet-policy.scm; wallet-service
       ;; reads it at startup. Starts with an empty allowlist — the fleet
       ;; reconciler adds per-invoice entries via authorize-invoice before
       ;; each transfer, so direct XMR provider payments work without
@@ -1754,10 +1754,10 @@ COMMIT
                     5        ; monthly budget: 5 XMR
                     2        ; default per-tx cap: 2 XMR
                     ()       ; allowlist: populated at runtime by reconciler
-                    "playnet production budget"))))
+                    "localchimera production budget"))))
 
        ;; (The SMS-wall one-shot lived here; it rode the sms module the
-       ;; compute-only repo does not carry — see the playnet archive.)
+       ;; compute-only repo does not carry — see the localchimera archive.)
 
        ;; Activation: materialize /run/secrets/* from the encrypted
       ;; secrets blob (deploy/secrets.scm.age, baked into the system
@@ -1766,8 +1766,8 @@ COMMIT
       ;; survive reboots with zero operator action.
       ;;
       ;; One-time operator bootstrap per host:
-      ;;   scp deploy/.age-key.txt root@HOST:/var/lib/playnet/.age-key.txt
-      ;;   ssh root@HOST chmod 400 /var/lib/playnet/.age-key.txt
+      ;;   scp deploy/.age-key.txt root@HOST:/var/lib/localchimera/.age-key.txt
+      ;;   ssh root@HOST chmod 400 /var/lib/localchimera/.age-key.txt
       ;; That's it — the key never enters the Guix store; the
       ;; encrypted blob does (and is encrypted-at-rest), so a leaked
       ;; system gen alone reveals nothing without the key.
@@ -1775,14 +1775,14 @@ COMMIT
       ;; Mapping: each entry in %map is
       ;;   (ENV_VAR_NAME file mode group-or-#f)
       ;; The activation extracts each ENV_VAR's value from the
-      ;; decrypted setenv-style file and writes it, owner playnet. Add
+      ;; decrypted setenv-style file and writes it, owner localchimera. Add
       ;; entries here when a service needs a secret at run time.
       ;;
       ;; The Monero pair lands where monero-wallet-rpc and the wallet
       ;; service read it, and API_KEYS where the gateway reads it at
-      ;; start — so a reconfigure carries PLAYNET_PROVIDER and nothing
+      ;; start — so a reconfigure carries LOCALCHIMERA_PROVIDER and nothing
       ;; secret, and every secret comes from the blob. rpc-login.txt is
-      ;; group-readable to playnet-svc for the wallet service (the same
+      ;; group-readable to localchimera-svc for the wallet service (the same
       ;; mode monero-configuration's rpc-login-group keeps). The wallet
       ;; SEED stays out of this map on purpose: it is a cold-start input
       ;; (MONERO_WALLET_SEED exported once, when no wallet file exists)
@@ -1808,14 +1808,14 @@ COMMIT
                                        `(("SMTP_PASSWORD" ,%smtp-password-file #o400 #f))
                                        '())
                                 ("RAD_PASSPHRASE"    "/run/secrets/rad-passphrase"      #o400 #f)
-                                ("PLAYNET_VAULT_KEY" "/run/secrets/playnet-vault-key"   #o400 #f)
+                                ("LOCALCHIMERA_VAULT_KEY" "/run/secrets/localchimera-vault-key"   #o400 #f)
                                 ("KERIA_BRAN"        "/run/secrets/keria-bran"          #o400 #f)
                                 ("API_KEYS"          "/run/secrets/api-keys"            #o400 #f)
                                 ("MONERO_WALLET_PASSWORD"
-                                 "/var/lib/playnet/monero/wallet-password.txt"          #o600 #f)
+                                 "/var/lib/localchimera/monero/wallet-password.txt"          #o600 #f)
                                 ("MONERO_RPC_PASSWORD"
-                                 "/var/lib/playnet/monero/rpc-login.txt"                #o640 "playnet-svc")))
-                            (define age-key "/var/lib/playnet/.age-key.txt")
+                                 "/var/lib/localchimera/monero/rpc-login.txt"                #o640 "localchimera-svc")))
+                            (define age-key "/var/lib/localchimera/.age-key.txt")
                             (define run-dir "/run/secrets")
                             (define (log* fmt . args)
                               (apply format #t (string-append "[secrets] " fmt "~%") args))
@@ -1851,7 +1851,7 @@ COMMIT
                                                     var
                                                     "\" \"([^\"]*)\"\\)")))
                                             (m    (regexp-exec rx text))
-                                            (pw   (getpwnam "playnet")))
+                                            (pw   (getpwnam "localchimera")))
                                        (cond
                                         ((not m)
                                          (log* "~a not found in decrypted secrets — skipping ~a"
@@ -1866,39 +1866,39 @@ COMMIT
                                                   (if group
                                                       (group:gid (getgrnam group))
                                                       (passwd:gid pw)))
-                                           (log* "wrote ~a (~a bytes, mode ~a, owner playnet~a)"
+                                           (log* "wrote ~a (~a bytes, mode ~a, owner localchimera~a)"
                                                  path (string-length val)
                                                  (number->string mode 8)
                                                  (if group (string-append ":" group) "")))))))
                                    %map)))))))))
 
-      ;; Activation: set up playnet user environment.
+      ;; Activation: set up localchimera user environment.
       ;; Uses mkdir-p because on first deploy, user-homes may not have
       ;; created the home directory yet when activation runs.
-      (simple-service 'playnet-setup
+      (simple-service 'localchimera-setup
                       activation-service-type
                       #~(begin
                           (use-modules (guix build utils)
                                        (ice-9 ftw)       ; scandir (for the seeded check)
                                        (ice-9 format))
-                          (let ((pw (getpwnam "playnet")))
+                          (let ((pw (getpwnam "localchimera")))
                             ;; Home directory (mkdir-p may create it before user-homes).
                             ;; 0711 lets other service users (deploy-runner,
                             ;; reconciler, liveness, etc.) traverse into
-                            ;; /home/playnet/playnet-repo for shared source
-                            ;; without being able to list playnet's HOME.
+                            ;; /home/localchimera/localchimera-repo for shared source
+                            ;; without being able to list localchimera's HOME.
                             ;; Default user-account home mode is 0700 which
                             ;; breaks every service that runs as a different
                             ;; user and references a path inside this tree.
-                            (mkdir-p "/home/playnet")
-                            (chown "/home/playnet" (passwd:uid pw) (passwd:gid pw))
-                            (chmod "/home/playnet" #o711)
+                            (mkdir-p "/home/localchimera")
+                            (chown "/home/localchimera" (passwd:uid pw) (passwd:gid pw))
+                            (chmod "/home/localchimera" #o711)
                             ;; The fleet's provisioning key: the public half is
                             ;; handed to each host the reconciler launches, the
                             ;; private half is how the deploy runner reaches it.
                             ;; Made once, on the box, and kept across
                             ;; reconfigures and reboots; it never leaves.
-                            (let* ((ssh-dir "/home/playnet/.ssh")
+                            (let* ((ssh-dir "/home/localchimera/.ssh")
                                    (key (string-append ssh-dir "/id_ed25519")))
                               (mkdir-p ssh-dir)
                               (chown ssh-dir (passwd:uid pw) (passwd:gid pw))
@@ -1906,27 +1906,27 @@ COMMIT
                               (unless (file-exists? key)
                                 (system* #$(file-append openssh-sans-x "/bin/ssh-keygen")
                                          "-q" "-t" "ed25519" "-N" ""
-                                         "-C" "playnet-fleet" "-f" key)
+                                         "-C" "localchimera-fleet" "-f" key)
                                 (for-each (lambda (f)
                                             (when (file-exists? f)
                                               (chown f (passwd:uid pw) (passwd:gid pw))))
                                           (list key (string-append key ".pub")))))
-                            ;; Socket directory for REPL (playnet-writable, on tmpfs)
-                            (let ((run-dir "/var/run/playnet"))
+                            ;; Socket directory for REPL (localchimera-writable, on tmpfs)
+                            (let ((run-dir "/var/run/localchimera"))
                               (mkdir-p run-dir)
                               (chown run-dir (passwd:uid pw) (passwd:gid pw)))
-                            ;; Identity tags for the playnet-liveness
+                            ;; Identity tags for the localchimera-liveness
                             ;; heartbeat publisher. Both values come
                             ;; straight from the provider config and
                             ;; are rewritten on every reconfigure —
                             ;; declarative end-to-end.
-                            (let ((id-dir "/etc/playnet"))
+                            (let ((id-dir "/etc/localchimera"))
                               (mkdir-p id-dir)
                               (call-with-output-file
                                   (string-append id-dir "/host-id")
                                 (lambda (p)
                                   (display #$(or (provider-ref 'host-name)
-                                                 "playnet") p)))
+                                                 "localchimera") p)))
                               (call-with-output-file
                                   (string-append id-dir "/provider-tag")
                                 (lambda (p)
@@ -1951,10 +1951,10 @@ COMMIT
                                     (when (file-exists? conf)
                                       (delete-file conf)))))
                             ;; Mosquitto auth — password file + ACL
-                            ;; Only the playnet user's processes can
+                            ;; Only the localchimera user's processes can
                             ;; publish signals (fleet, planner, dev-bridge).
-                            (let ((mqtt-dir "/var/lib/playnet/mosquitto")
-                                  (mqtt-pw  #$(or (getenv "MOSQUITTO_PASSWORD") "playnet-mqtt")))
+                            (let ((mqtt-dir "/var/lib/localchimera/mosquitto")
+                                  (mqtt-pw  #$(or (getenv "MOSQUITTO_PASSWORD") "localchimera-mqtt")))
                               (mkdir-p mqtt-dir)
                               (chown mqtt-dir (passwd:uid pw) (passwd:gid pw))
                               ;; Per-service MQTT users + topic-restricted ACLs.
@@ -1967,42 +1967,42 @@ COMMIT
                                 (lambda (port)
                                   ;; publisher: planner signal-publisher writes all signals
                                   (format port "user publisher~%")
-                                  (format port "topic write playnet/signals/#~%")
+                                  (format port "topic write localchimera/signals/#~%")
                                   (format port "~%")
                                   ;; dev-bridge: reads deficit + liveness signals,
                                   ;; writes ONLY its own narrow alert topic — never
-                                  ;; playnet/signals/# (that stays publisher-only,
+                                  ;; localchimera/signals/# (that stays publisher-only,
                                   ;; so a compromised dev-bridge still cannot
                                   ;; trigger fleet-changed or auto-deploy)
                                   (format port "user dev-bridge~%")
-                                  (format port "topic read playnet/signals/deficit/#~%")
-                                  (format port "topic read playnet/signals/liveness/#~%")
-                                  (format port "topic write playnet/alerts/dev-bridge~%")
+                                  (format port "topic read localchimera/signals/deficit/#~%")
+                                  (format port "topic read localchimera/signals/liveness/#~%")
+                                  (format port "topic write localchimera/alerts/dev-bridge~%")
                                   (format port "~%")
                                   ;; reconciler: writes fleet-changed only
                                   (format port "user reconciler~%")
-                                  (format port "topic write playnet/signals/fleet-changed~%")
+                                  (format port "topic write localchimera/signals/fleet-changed~%")
                                   (format port "~%")
                                   ;; deploy-runner: reads fleet-changed only
                                   (format port "user deploy-runner~%")
-                                  (format port "topic read playnet/signals/fleet-changed~%")
+                                  (format port "topic read localchimera/signals/fleet-changed~%")
                                   (format port "~%")
                                   ;; liveness: writes its own host's heartbeat only
                                   (format port "user liveness~%")
-                                  (format port "topic write playnet/signals/liveness/#~%")
+                                  (format port "topic write localchimera/signals/liveness/#~%")
                                   (format port "~%")
                                   ;; host-facts: writes the host's retained
                                   ;; capacity/placement snapshot only
                                   ;; (tools/dev/host-facts.scm --publish, on the
                                   ;; mcron timer below)
                                   (format port "user host-facts~%")
-                                  (format port "topic write playnet/facts/host/#~%")
+                                  (format port "topic write localchimera/facts/host/#~%")
                                   (format port "~%")
                                   ;; gateway: reads the retained host snapshots
                                   ;; into the founding commune's live-registry
                                   ;; (facts-sync.scm) — read-only on the wire
                                   (format port "user gateway~%")
-                                  (format port "topic read playnet/facts/#~%")))
+                                  (format port "topic read localchimera/facts/#~%")))
                               ;; Generate separate password files per MQTT user.
                               ;; Each service reads its own password file (0600).
                               (let ((passwd-file (string-append mqtt-dir "/passwd"))
@@ -2018,7 +2018,7 @@ COMMIT
                                 ;; on every later reconfigure from whatever
                                 ;; MOSQUITTO_PASSWORD the operator's shell
                                 ;; happened to have exported that time (or the
-                                ;; "playnet-mqtt" fallback when it didn't) — any
+                                ;; "localchimera-mqtt" fallback when it didn't) — any
                                 ;; reconfigure after the first with a different
                                 ;; env silently drifted the plaintext files away
                                 ;; from what mosquitto actually authenticates
@@ -2062,7 +2062,7 @@ COMMIT
                             ;; Firewall moved to iptables-service-type (declarative).
                             ;; See the (service iptables-service-type ...) block below.
                             ;; Emacs config
-                            (let* ((emacs-dir "/home/playnet/.emacs.d")
+                            (let* ((emacs-dir "/home/localchimera/.emacs.d")
                                    (init-target (string-append emacs-dir "/init.el")))
                               (mkdir-p emacs-dir)
                               (when (file-exists? init-target)
@@ -2071,7 +2071,7 @@ COMMIT
                               (chown init-target (passwd:uid pw) (passwd:gid pw))
                               (chown emacs-dir (passwd:uid pw) (passwd:gid pw)))
                             ;; Helper scripts
-                            (let* ((bin-dir "/home/playnet/bin")
+                            (let* ((bin-dir "/home/localchimera/bin")
                                    (repl-eval (string-append bin-dir "/repl-eval")))
                               (mkdir-p bin-dir)
                               (when (file-exists? repl-eval)
@@ -2086,17 +2086,17 @@ COMMIT
                             ;; install the directory is empty, so services that
                             ;; reference files inside it (radicle-ci-hook.sh,
                             ;; server/fleet-bridge.scm, server/dev-bridge.scm,
-                            ;; deploy/scripts/playnet-liveness.sh, etc.) crash
+                            ;; deploy/scripts/localchimera-liveness.sh, etc.) crash
                             ;; with ENOENT. Seed it from the immutable Guix
-                            ;; package's share/playnet tree so every service
+                            ;; package's share/localchimera tree so every service
                             ;; has a working starting point; operators can
                             ;; still rsync over it for live hacking.
-                            (let* ((repo-dir "/home/playnet/playnet-repo")
+                            (let* ((repo-dir "/home/localchimera/localchimera-repo")
                                    (seed-src (string-append
-                                              #$%playnet-package
-                                              "/share/playnet"))
+                                              #$%localchimera-package
+                                              "/share/localchimera"))
                                    (sentinel (string-append
-                                              repo-dir "/.playnet-seeded")))
+                                              repo-dir "/.localchimera-seeded")))
                               ;; If it's an old immutable symlink, remove it
                               (when (and (file-exists? repo-dir)
                                          (symbolic-link? repo-dir))
@@ -2118,7 +2118,7 @@ COMMIT
                                                           (lambda (n)
                                                             (not (member n
                                                                          '("." ".."
-                                                                           ".playnet-seeded")))))))
+                                                                           ".localchimera-seeded")))))))
                                   (copy-recursively seed-src repo-dir
                                                     #:keep-mtime? #t)
                                   (system* "chown" "-R"
@@ -2134,16 +2134,16 @@ COMMIT
                             ;; Dev checkout symlink. Preferred target: the
                             ;; agent's own rad clone (a REAL git repo with a
                             ;; `rad` remote — created once per box with
-                            ;; `rad clone` as playnet; dev-bridge's workflow
+                            ;; `rad clone` as localchimera; dev-bridge's workflow
                             ;; needs git fetch/branch/push, which the rsync'd
-                            ;; playnet-repo cannot do). Falls back to the
+                            ;; localchimera-repo cannot do). Falls back to the
                             ;; rsync target so a box without the clone still
                             ;; has a readable checkout for prompts/paths.
-                            (let* ((dev-dir "/home/playnet/dev-checkout")
-                                   (agent   "/home/playnet/agent-checkout")
+                            (let* ((dev-dir "/home/localchimera/dev-checkout")
+                                   (agent   "/home/localchimera/agent-checkout")
                                    (target  (if (file-exists? agent)
                                                 agent
-                                                "/home/playnet/playnet-repo")))
+                                                "/home/localchimera/localchimera-repo")))
                               (when (and (file-exists? dev-dir)
                                          (not (symbolic-link? dev-dir)))
                                 ;; Old git clone — remove it
@@ -2166,7 +2166,7 @@ COMMIT
                           (for-each
                            (lambda (username)
                              (let* ((home     (string-append "/home/" username))
-                                    (repo-dir (string-append home "/playnet-repo"))
+                                    (repo-dir (string-append home "/localchimera-repo"))
                                     (bin-dir  (string-append home "/bin"))
                                     (pw       (false-if-exception (getpwnam username))))
                                (when pw
@@ -2176,12 +2176,12 @@ COMMIT
                                  ;; ~/bin
                                  (mkdir-p bin-dir)
                                  (chown bin-dir (passwd:uid pw) (passwd:gid pw))
-                                 ;; Shared mutable checkout (symlink to playnet's copy)
+                                 ;; Shared mutable checkout (symlink to localchimera's copy)
                                  (when (and (file-exists? repo-dir)
                                             (symbolic-link? repo-dir))
                                    (delete-file repo-dir))
                                  (unless (file-exists? repo-dir)
-                                   (symlink "/home/playnet/playnet-repo" repo-dir)))))
+                                   (symlink "/home/localchimera/localchimera-repo" repo-dir)))))
                            '#$%dynamic-user-names)))
 
        ) ;; end of services list

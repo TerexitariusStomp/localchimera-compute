@@ -132,7 +132,7 @@ stack.")
   ;; symlinks radicle-http-api-activation sets up. It does NOT run with
   ;; HOME set to this path (see private-home below).
   (data-dir  radicle-http-api-configuration-data-dir
-             (default "/var/lib/playnet/radicle"))
+             (default "/var/lib/localchimera/radicle"))
   ;; The daemon's OWN HOME. Deliberately NOT the same directory as
   ;; radicle-node/radicle-httpd's data-dir: this fork is vendored from a
   ;; "radicle 0.13.0 base" (see the module header COMPAT NOTE), while
@@ -142,7 +142,7 @@ stack.")
   ;; ("Migrating COBs cache.. / Migration ... complete (version=N)",
   ;; logged by radicle-node at every start) and that was never checked.
   ;; Running both builds against the same cache.db is what silently
-  ;; wedged issue/patch caching for the playnet repo for over two months
+  ;; wedged issue/patch caching for the localchimera repo for over two months
   ;; (2026-09-15 incident: cache.db held 0 issues despite continuous
   ;; successful fetches) — no crash, no error logged, just a cache that
   ;; stopped accepting writes.
@@ -161,13 +161,13 @@ stack.")
   ;; cache; watch for further "unable to open database file" reports if
   ;; some other file under node/ turns out to matter too.
   (private-home radicle-http-api-configuration-private-home
-             (default "/var/lib/playnet/radicle-http-api-home"))
+             (default "/var/lib/localchimera/radicle-http-api-home"))
   ;; Localhost only; nginx + serve-static front it. 8089 — distinct from the
   ;; read-only radicle-httpd (8088) and serve-static (8080).
   (listen    radicle-http-api-configuration-listen
              (default "127.0.0.1:8089"))
   (user      radicle-http-api-configuration-user
-             (default "playnet"))
+             (default "localchimera"))
   ;; Same 0400 passphrase-file mechanism as radicle-service.scm: the write
   ;; fork must decrypt the node keystore to sign COB writes / verify sessions.
   (passphrase-file radicle-http-api-configuration-passphrase-file
@@ -216,7 +216,7 @@ stack.")
                #:group "users"
                #:directory #$private-home
                #:environment-variables env
-               #:log-file "/var/log/playnet/radicle-http-api.log")))))
+               #:log-file "/var/log/localchimera/radicle-http-api.log")))))
       (stop #~(make-kill-destructor #:grace-period 5))
       (respawn? #t)))))
 
@@ -226,7 +226,7 @@ stack.")
         (user         (radicle-http-api-configuration-user config)))
     #~(begin
         (use-modules (guix build utils))
-        (mkdir-p "/var/log/playnet")
+        (mkdir-p "/var/log/localchimera")
         ;; Give this fork its own $HOME, sharing keys, storage,
         ;; config.json and node/ with the radicle-node/radicle-httpd
         ;; data-dir, but never cobs/cache.db or this fork's own httpd
@@ -313,7 +313,7 @@ stack.")
                "/run/current-system/profile/bin/flock -n /run/radicle-http-api-cache.lock "
                "/run/current-system/profile/bin/timeout 100 sh -c \""
                (rad-cache "patch") " && " (rad-cache "issue")
-               "\" > /dev/null 2>> /var/log/playnet/radicle-http-api-cache.log"))))))
+               "\" > /dev/null 2>> /var/log/localchimera/radicle-http-api-cache.log"))))))
 
 ;;; ── Service type ────────────────────────────────────────────────────────────
 

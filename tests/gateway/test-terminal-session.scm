@@ -9,10 +9,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/gateway/test-terminal-session.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (goblins)
              (ice-9 binary-ports) (rnrs bytevectors) (ice-9 rdelim)
-             (playnet gateway terminal))
+             (localchimera gateway terminal))
 
 (setvbuf (current-output-port) (quote none))
 (define vat (spawn-vat #:name "term-test"))

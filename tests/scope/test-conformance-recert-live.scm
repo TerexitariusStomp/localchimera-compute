@@ -15,9 +15,9 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/scope/test-conformance-recert-live.scm
 
-(use-modules (playnet test harness) (playnet test scope)
-             (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
+(use-modules (localchimera test harness) (localchimera test scope)
+             (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 ;; every day: the plan stands on TODAY (no partition declared), whatever day that is

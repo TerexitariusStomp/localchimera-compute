@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # gather-repos.sh — move the core and its sibling repos under one parent folder.
 #
-# The core finds each satellite as ../playnet-<name> and the OpenVTC cache as
+# The core finds each satellite as ../localchimera-<name> and the OpenVTC cache as
 # ../openvtc-upstream, and `make link-satellites` links them by relative path,
 # so the set moves as a unit with every name kept:
 #
-#   <parent>/playnet  <parent>/playnet-keri  <parent>/playnet-explorer  …
+#   <parent>/localchimera  <parent>/localchimera-keri  <parent>/localchimera-explorer  …
 #
-#   tools/dev/gather-repos.sh ~/Programs/playnet-repos
+#   tools/dev/gather-repos.sh ~/Programs/localchimera-repos
 #
 # A directory that is renamed keeps its inode, so an editor, terminal or agent
 # session working inside keeps working; what goes stale is the PATH it holds.
@@ -28,7 +28,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PARENT="$(dirname "$ROOT")"
 CORE="$(basename "$ROOT")"
 
-mapfile -t REPOS < <(cd "$PARENT" && ls -d "$CORE" playnet-* openvtc-upstream 2>/dev/null)
+mapfile -t REPOS < <(cd "$PARENT" && ls -d "$CORE" localchimera-* openvtc-upstream 2>/dev/null)
 echo "[gather] from $PARENT → $DEST:"; printf '           %s\n' "${REPOS[@]}"
 
 mkdir -p "$DEST"; DEST="$(cd "$DEST" && pwd)"

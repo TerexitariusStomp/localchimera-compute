@@ -20,13 +20,13 @@
 ;;; cost, not the reliance). The load the plan routes through the edge is what a silent
 ;;; miss would cost — see edge-reliance in vf/formulas/cadence.scm.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner \
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner \
 ;;;         tests/solve/test-inspection-dual-closure.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve solver))               ; mk-bar/mk-frag/mk-des/solve-native/*kappa*
-(use-modules (playnet vf formulas cadence) (playnet vf facts validity))   ; edge-reliance/reliance->valid-until/custody-cred-live?
-(use-modules (playnet knowledge catalogues conformance)) ; the GOVERNED confidence-barrier steepness
+(use-modules (localchimera solve solver))               ; mk-bar/mk-frag/mk-des/solve-native/*kappa*
+(use-modules (localchimera vf formulas cadence) (localchimera vf facts validity))   ; edge-reliance/reliance->valid-until/custody-cred-live?
+(use-modules (localchimera knowledge catalogues conformance)) ; the GOVERNED confidence-barrier steepness
 
 (set! *kappa* 1.0)
 (define WCONF (conformance-frag-weight))   ; confidence barrier steepness — read from the governed profile

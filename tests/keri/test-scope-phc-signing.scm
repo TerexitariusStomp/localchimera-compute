@@ -8,9 +8,9 @@
 ;;; gateway. This guards that issue-phc / invite sign with the scope's OWN
 ;;; keypair by default (not only when a caller passes one).
 
-(use-modules (playnet test harness))
-(use-modules (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
-(use-modules ((playnet keri citizen-sig)
+(use-modules (localchimera test harness))
+(use-modules (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera keri first-person predicates))
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair)))
 (use-modules (goblins) (goblins vat) (rnrs bytevectors))
 

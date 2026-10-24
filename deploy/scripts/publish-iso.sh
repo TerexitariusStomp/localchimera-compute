@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# publish-iso.sh — build + pin + publish a playnet bootable ISO.
+# publish-iso.sh — build + pin + publish a localchimera bootable ISO.
 #
 # Output: a content-addressed download URL the VPS provider (or any other
 # provider requiring an HTTPS URL) can fetch from. The flow is:
@@ -91,7 +91,7 @@ case "${PUBLISH_ISO_PIN_SERVICE:-none}" in
     curl -fsSL -X POST "https://api.pinata.cloud/pinning/pinByHash" \
       -H "Authorization: Bearer $PINATA_JWT" \
       -H "Content-Type: application/json" \
-      -d "{\"hashToPin\": \"$CID\", \"pinataMetadata\": {\"name\": \"playnet-iso-$(date -u +%Y%m%d-%H%M%S)\"}}" \
+      -d "{\"hashToPin\": \"$CID\", \"pinataMetadata\": {\"name\": \"localchimera-iso-$(date -u +%Y%m%d-%H%M%S)\"}}" \
       | head -c 200
     echo
     ;;
@@ -122,7 +122,7 @@ esac
 COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 BUILT_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 cat > deploy/iso-cid.txt <<EOF
-# playnet ISO content identifier — updated by deploy/scripts/publish-iso.sh.
+# localchimera ISO content identifier — updated by deploy/scripts/publish-iso.sh.
 # CI commits this file back on push to main with the new CID + commit SHA.
 # Consumers (VPS provider bring-up, fleet provisioning) read this and fetch via
 # any IPFS gateway: https://ipfs.io/ipfs/<CID>

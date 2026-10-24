@@ -24,8 +24,8 @@
 ;;; Run from repo root:
 ;;;   guile --no-auto-compile -q -L module tests/solve/test-kernel-isa-guard.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve solver)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format)
              (system foreign))

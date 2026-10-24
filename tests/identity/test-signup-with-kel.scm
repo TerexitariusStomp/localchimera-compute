@@ -12,12 +12,12 @@
 ;;; browser keeps and what the recovery file holds) parses back to the
 ;;; exact event alists, so the signatures still verify after a reload.
 
-(use-modules (playnet test harness)
-             (playnet keri signify-portable)
-             ((playnet keri cesr) #:select (cesr-bytes->qb64))
-             ((playnet keri citizen-sig) #:select (verify-said-signature))
-             (playnet identity seat)
-             (playnet identity oobi-host)
+(use-modules (localchimera test harness)
+             (localchimera keri signify-portable)
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64))
+             ((localchimera keri citizen-sig) #:select (verify-said-signature))
+             (localchimera identity seat)
+             (localchimera identity oobi-host)
              (goblins)
              (goblins utils hashmap)
              (rnrs bytevectors)

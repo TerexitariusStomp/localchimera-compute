@@ -32,15 +32,15 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-granary-under-uncertainty.scm
 
-(use-modules (playnet solve plan) (playnet test planner prelude)
-             (playnet solve engine) (playnet solve robust)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge worlds bioregions)
+(use-modules (localchimera solve plan) (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve robust)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge worlds bioregions)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet knowledge worlds doon-valley))
-(primitive-load (or (%search-load-path "playnet/knowledge/recipes/navdanya-farm.scm")
-                    "module/playnet/knowledge/recipes/navdanya-farm.scm"))
+(use-modules (localchimera knowledge worlds doon-valley))
+(primitive-load (or (%search-load-path "localchimera/knowledge/recipes/navdanya-farm.scm")
+                    "module/localchimera/knowledge/recipes/navdanya-farm.scm"))
 
 ;; ── the farm: land as a renewable per-season capacity, rice, food storable ──
 (define PLACE "doon-farm") (define PEOPLE 28) (define HA 2.0)

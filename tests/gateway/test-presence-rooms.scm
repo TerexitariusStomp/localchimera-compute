@@ -15,12 +15,12 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/gateway/test-presence-rooms.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap)
-             (playnet gateway presence)
-             ((playnet doors lobby) #:select (^lobby-session))
+             (localchimera gateway presence)
+             ((localchimera doors lobby) #:select (^lobby-session))
              (srfi srfi-1))
 
 (define vat (spawn-vat))

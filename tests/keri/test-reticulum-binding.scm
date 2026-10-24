@@ -18,13 +18,13 @@
 ;;;
 ;;; Run: make test-keri-reticulum-binding
 
-(use-modules (playnet test harness)
-             (playnet keri signify-portable)
-             (playnet keri signify)              ; installs server backend
-             (playnet keri reticulum-binding)
-             ((playnet keri crypto-primitives)
+(use-modules (localchimera test harness)
+             (localchimera keri signify-portable)
+             (localchimera keri signify)              ; installs server backend
+             (localchimera keri reticulum-binding)
+             ((localchimera keri crypto-primitives)
               #:select (keri-crypto-ed25519-from-seed))
-             ((playnet utils hex) #:select (bv->hex hex->bv))
+             ((localchimera utils hex) #:select (bv->hex hex->bv))
              (rnrs bytevectors)
              (ice-9 popen)
              (ice-9 textual-ports)
@@ -181,7 +181,7 @@ const fs = require('fs');
   (build-icp #:keys  (list (public-key->aid-prefix
                             (ed25519-keypair-public kp)))
              #:nkeys (list (next-key-digest (ed25519-keypair-public kp)))
-             #:anchors `((("playnet-reticulum-pub" . ,%live-pub)))))
+             #:anchors `((("localchimera-reticulum-pub" . ,%live-pub)))))
 
 (define aid (assoc-ref icp-alist "i"))
 
@@ -261,7 +261,7 @@ const fs = require('fs');
        (verify-oobi-body-binding body) #t)
 
 ;;; ── 5. pre-anchor persona retrofits the binding via a rot anchor ────────────
-;;; Identities created before the playnet-reticulum-pub anchor verify as
+;;; Identities created before the localchimera-reticulum-pub anchor verify as
 ;;; 'no-anchor. The remedy: the next rotation seals the pubkey
 ;;; (build-rot #:anchors) and verifiers read the LATEST anchor across
 ;;; the KEL.
@@ -279,7 +279,7 @@ const fs = require('fs');
                             (ed25519-keypair-public kp)))
              #:nkeys (list (next-key-digest (ed25519-keypair-public kp)))
              #:sn 1
-             #:anchors `((("playnet-reticulum-pub" . ,%live-pub)))))
+             #:anchors `((("localchimera-reticulum-pub" . ,%live-pub)))))
 
 ;; Rot-era replies for THIS AID, exactly as the browser re-ships them
 ;; alongside the retrofit rotation (mesh loc included).

@@ -11,10 +11,10 @@
 ;;; order, a node's standing total and the walk over the live tree are the same
 ;;; value — which is why a rebuild can never disagree with the increments.
 
-(use-modules (playnet test harness)
-             (playnet vf aggregation fold-node)
-             (playnet vf aggregation scope-tree)
-             (playnet utils hashmap)
+(use-modules (localchimera test harness)
+             (localchimera vf aggregation fold-node)
+             (localchimera vf aggregation scope-tree)
+             (localchimera utils hashmap)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

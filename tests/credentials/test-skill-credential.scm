@@ -5,9 +5,9 @@
 ;;; (the test-custody-lift discipline), so it is independent of the blake3
 ;;; backend. Run: guile -L module tests/credentials/test-skill-credential.scm
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules )
-(use-modules (playnet credentials work) (playnet keri acdc) (playnet keri acdc))
+(use-modules (localchimera credentials work) (localchimera keri acdc) (localchimera keri acdc))
 (use-modules (srfi srfi-1))
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -20,7 +20,7 @@
                                     #:worker-aid "EWorker"
                                     #:skill "spec:surgeon"
                                     #:founding-event-said "Efounding-work-said")))
-  (check "schema is playnet-skill" (cred-schema cred) *schema-playnet-skill*)
+  (check "schema is localchimera-skill" (cred-schema cred) *schema-localchimera-skill*)
   (check "issuer is the scope"     (cred-issuer cred) "EScope")
   (check "holder is the worker"    (cred-holder cred) "EWorker")
   (check "skill claim"             (cred-claim cred 'skill) "spec:surgeon")

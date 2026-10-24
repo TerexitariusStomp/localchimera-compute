@@ -12,16 +12,16 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-solve-settings-reach-every-path.scm
 
-(use-modules (playnet solve world) (playnet solve robust) (playnet solve records) ((playnet utils units) #:select (%effort-unit)))
-(use-modules ((playnet solve keywords) #:select (%solve-keywords solve-keywords-of solve-keyword-kind pick-keywords caps-under)) ((playnet solve plan) #:select (%plan-from-records)) ((playnet scope live) #:select (scope-world)) ((playnet solve engine) #:select (apply-solve-settings!)) (srfi srfi-1) ((ice-9 session) #:select (procedure-arguments)))
-(use-modules (playnet test harness) (playnet test scope)
-             (playnet vf schemas) (playnet scope live)
+(use-modules (localchimera solve world) (localchimera solve robust) (localchimera solve records) ((localchimera utils units) #:select (%effort-unit)))
+(use-modules ((localchimera solve keywords) #:select (%solve-keywords solve-keywords-of solve-keyword-kind pick-keywords caps-under)) ((localchimera solve plan) #:select (%plan-from-records)) ((localchimera scope live) #:select (scope-world)) ((localchimera solve engine) #:select (apply-solve-settings!)) (srfi srfi-1) ((ice-9 session) #:select (procedure-arguments)))
+(use-modules (localchimera test harness) (localchimera test scope)
+             (localchimera vf schemas) (localchimera scope live)
              (goblins) (goblins utils hashmap)
              (srfi srfi-1))
 
 ;; a dial is a settings field (engine.scm `define-context settings`): the name is
 ;; read in the engine's module, as the engine reads it
-(define-syntax-rule (engine-var name) (eval 'name (resolve-module '(playnet solve engine))))
+(define-syntax-rule (engine-var name) (eval 'name (resolve-module '(localchimera solve engine))))
 
 (define COMMUNE "ECommune") (define PLACE "town")
 (define procs (list (make-recipe-process #:id "bake" #:name "Bake")))

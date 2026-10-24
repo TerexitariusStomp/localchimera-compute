@@ -10,7 +10,7 @@
 ;;;
 ;;; Run: guile -L module tests/ai/test-corpus-sqlite-spike.scm
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules (sqlite3))
 (use-modules (rnrs bytevectors))
 (use-modules (srfi srfi-1))

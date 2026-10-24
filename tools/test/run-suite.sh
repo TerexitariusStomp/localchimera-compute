@@ -13,7 +13,7 @@
 #   - --no-auto-compile, so no test process writes the compiled-file cache.
 #   - Of the nine suites that touch disk, seven build their paths with getpid;
 #     the two fixed ones (/tmp/legal-registry-portrait.scm and
-#     /tmp/playnet-fp-portability-test) are each used by exactly one suite.
+#     /tmp/localchimera-fp-portability-test) are each used by exactly one suite.
 #   Re-check with: grep -l 'output-file\|delete-file\|mkdir' tests/*/*.scm
 #
 # THE CACHE THE SUITE READS IS A CACHE THE SUITE FILLED. Two facts decide this:
@@ -60,9 +60,9 @@ export XDG_CACHE_HOME
 XDG_CACHE_HOME=$(bash tools/test/own-ccache.sh)
 
 # the hot roots: everything the planner+governance suites load through
-guile -L module -c '(use-modules (playnet solve solver) (playnet solve engine)
-                                 (playnet scope live) (playnet doors service)
-                                 (playnet boot prelude))' 2>&1 \
+guile -L module -c '(use-modules (localchimera solve solver) (localchimera solve engine)
+                                 (localchimera scope live) (localchimera doors service)
+                                 (localchimera boot prelude))' 2>&1 \
   | grep -v "^;;; \|^$" | grep -v "failed to install locale" || true
 
 JOBS="${JOBS:-$(( $(nproc 2>/dev/null || echo 4) - 2 ))}"
@@ -87,7 +87,7 @@ run_one() {
   local t="$1" out="$2"
   local b; b=$(basename "$t" .scm)
   # -L module ONLY, exactly as the Makefile invokes these (Makefile:878). Adding
-  # `-L tests` looks harmless — the test harness is (playnet test harness), which
+  # `-L tests` looks harmless — the test harness is (localchimera test harness), which
   # lives under module/ and never needed it — and it silently broke 34 of the 268
   # suites: once a script's own path resolves through a -L directory, guile's
   # (current-filename) returns #f, and `(dirname (current-filename))` is how these

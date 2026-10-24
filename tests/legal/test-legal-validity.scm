@@ -15,8 +15,8 @@
 ;;;
 ;;; Run: guile -L module tests/legal/test-legal-validity.scm
 
-(use-modules (playnet test harness) (playnet legal registry)
-             (playnet legal registry-actor)
+(use-modules (localchimera test harness) (localchimera legal registry)
+             (localchimera legal registry-actor)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
 (define ctx (legal-context #:crossings '(public-sale) #:place-path '("ville" "pays")))

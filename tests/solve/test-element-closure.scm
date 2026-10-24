@@ -32,8 +32,8 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-element-closure.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

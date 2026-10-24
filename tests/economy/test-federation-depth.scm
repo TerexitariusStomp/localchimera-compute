@@ -12,10 +12,10 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/economy/test-federation-depth.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness)
-             (playnet vf schemas) (srfi srfi-1)
-             (playnet credentials custody) (playnet economy socialization)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (srfi srfi-1)
+             (localchimera credentials custody) (localchimera economy socialization)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

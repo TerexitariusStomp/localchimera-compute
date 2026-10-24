@@ -8,10 +8,10 @@
 ;;; verify-scope! checks a sealed brand-token that only real ^scope
 ;;; instances (in the same vat) can produce.
 
-(use-modules (playnet test harness))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet scope root))
-(use-modules (playnet boot scope))
+(use-modules (localchimera test harness))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera scope root))
+(use-modules (localchimera boot scope))
 (use-modules (goblins) (goblins vat) (goblins actor-lib methods)
              (fibers) (fibers conditions) (ice-9 atomic))
 

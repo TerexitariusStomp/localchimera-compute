@@ -24,13 +24,13 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-direction.scm
 
-(use-modules (playnet test harness)
-             (playnet federation async)
-             (playnet solve admm-link)
-             ((playnet solve engine) #:select (lg cell)) ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus)) ((playnet solve federation-solve) #:select (commune->scope-record federated-solve federated-flows loose-gives federated-dilemma close-stranded-links))
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet test planner federation-wire-fixture)
+(use-modules (localchimera test harness)
+             (localchimera federation async)
+             (localchimera solve admm-link)
+             ((localchimera solve engine) #:select (lg cell)) ((localchimera solve federation-oracle) #:select (make-boundary-oracle solve-consensus)) ((localchimera solve federation-solve) #:select (commune->scope-record federated-solve federated-flows loose-gives federated-dilemma close-stranded-links))
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera test planner federation-wire-fixture)
              (srfi srfi-1) (ice-9 format))
 
 (load (string-append (dirname (current-filename)) "/federation-crossing-fixture.scm"))

@@ -22,7 +22,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-training-located.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world))
+(use-modules (localchimera solve engine) (localchimera solve world))
 
 (define PER '(0 1 2 3))
 (define (setup demand)                         ; demand: ((period . qty) …)

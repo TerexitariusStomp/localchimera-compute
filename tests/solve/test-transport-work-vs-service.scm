@@ -17,14 +17,14 @@
 ;;;
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-transport-work-vs-service.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve report) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
-             ((playnet knowledge recipes transport) #:select (mode-recipe)))
+(use-modules (localchimera solve engine) (localchimera solve report) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
+             ((localchimera knowledge recipes transport) #:select (mode-recipe)))
 (define (svc id spec rq proc)(make-recipe-flow #:id id #:action 'deliver-service
                                                #:resource-conforms-to spec
                                                #:resource-quantity (make-measure rq %count-unit)

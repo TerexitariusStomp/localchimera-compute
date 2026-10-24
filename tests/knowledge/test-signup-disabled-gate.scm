@@ -1,5 +1,5 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; tests/knowledge/test-signup-disabled-gate.scm — PLAYNET_DISABLE_REAL_SIGNUP
+;;; tests/knowledge/test-signup-disabled-gate.scm — LOCALCHIMERA_DISABLE_REAL_SIGNUP
 ;;; refuses identity-creating doors, leaves witnessing/seat-checking alone.
 ;;;
 ;;; A GDPR-deferral switch (see docs/legal/gdpr-analysis.md), checked
@@ -8,11 +8,11 @@
 ;;; threads are running is unspecified behavior in Guile, so this lives in its
 ;;; own file rather than toggling mid-test in test-lobby-seat-gate.scm.
 
-(setenv "PLAYNET_DISABLE_REAL_SIGNUP" "1")
+(setenv "LOCALCHIMERA_DISABLE_REAL_SIGNUP" "1")
 
-(use-modules (playnet test harness)
-             (playnet test identity)
-             ((playnet knowledge law product) #:select (product-feature feature-doors))
+(use-modules (localchimera test harness)
+             (localchimera test identity)
+             ((localchimera knowledge law product) #:select (product-feature feature-doors))
              (goblins)
              (srfi srfi-1))
 

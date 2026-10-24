@@ -8,8 +8,8 @@
 // (we wire `etc.sha512Sync` from noble-hashes/sha512 so that
 // noble-ed25519 doesn't need WebCrypto's async digest path).
 //
-// The surface mirrors (playnet keri crypto-primitives) on the Scheme
-// side; (playnet keri crypto-primitives-browser) does the FFI binding.
+// The surface mirrors (localchimera keri crypto-primitives) on the Scheme
+// side; (localchimera keri crypto-primitives-browser) does the FFI binding.
 
 import * as ed25519 from '../vendor/noble/ed25519.js';
 import { blake3 }   from '../vendor/noble/blake3.js';

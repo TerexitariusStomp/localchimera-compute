@@ -14,9 +14,9 @@
 ;;;     housing: the invariant is one function applied at the end of each.
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/knowledge/test-standard-lift.scm
-(use-modules (playnet test harness)
-             (playnet knowledge catalogues subsistence)
-             (playnet knowledge catalogues housing)
+(use-modules (localchimera test harness)
+             (localchimera knowledge catalogues subsistence)
+             (localchimera knowledge catalogues housing)
              (srfi srfi-1))
 
 (define (row prof n) (find (lambda (b) (equal? (sub-spec b) n)) prof))

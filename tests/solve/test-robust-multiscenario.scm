@@ -27,7 +27,7 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-robust-multiscenario.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve solver))
+(use-modules (localchimera solve solver))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

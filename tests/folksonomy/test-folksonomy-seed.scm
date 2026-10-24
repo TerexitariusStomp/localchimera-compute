@@ -9,12 +9,12 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/folksonomy/test-folksonomy-seed.scm
 
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet folksonomy actor)
-             (playnet folksonomy graph)
-             (playnet folksonomy seed)
-             (playnet vf schemas) (srfi srfi-1)                 ; make-resource-specification
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera folksonomy actor)
+             (localchimera folksonomy graph)
+             (localchimera folksonomy seed)
+             (localchimera vf schemas) (srfi srfi-1)                 ; make-resource-specification
              (goblins)
              (goblins actor-lib methods)
              (srfi srfi-1))

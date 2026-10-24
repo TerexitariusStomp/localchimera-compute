@@ -8,10 +8,10 @@
 ;;; read/write behaviour but spawns it WITHOUT a keypair (unsigned), so the
 ;;; signing path had no permanent coverage until this file.
 
-;; the host crypto backend: loading (playnet keri signify) installs it
-(use-modules ((playnet keri signify) #:select ()))
-(use-modules (playnet voice index-oracle) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet test harness)
-             ((playnet keri citizen-sig)
+;; the host crypto backend: loading (localchimera keri signify) installs it
+(use-modules ((localchimera keri signify) #:select ()))
+(use-modules (localchimera voice index-oracle) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera test harness)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         verify-said-signature))
              (goblins) (srfi srfi-1))

@@ -23,12 +23,12 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-doctor-rider-located.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
-             ((playnet knowledge recipes transport) #:select (mode-recipe)))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
+             ((localchimera knowledge recipes transport) #:select (mode-recipe)))
 
 
 (define WALK (mode-recipe "walk" #:skill "walk" #:pace 0.15))                                       ; the mover walks: bears "walk", 0.15 h/km (slow)

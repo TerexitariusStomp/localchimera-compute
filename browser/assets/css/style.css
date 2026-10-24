@@ -724,14 +724,14 @@ p {
   margin: 0;
 }
 
-/* Playnet title header */
-.playnet-header {
+/* LocalChimera title header */
+.localchimera-header {
   width: 100%;
   padding: 0;
   text-align: center;
 }
 
-.playnet-header p {
+.localchimera-header p {
   font-size: clamp(48px, 12vw, 80px);
   margin: 0;
   line-height: 1.2;

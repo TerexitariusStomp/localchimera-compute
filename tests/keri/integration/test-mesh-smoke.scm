@@ -18,8 +18,8 @@
 ;;;
 ;;; Run: make test-mesh-smoke
 
-(use-modules (playnet test harness)
-             ((playnet test keri-integration) #:select (check-call))
+(use-modules (localchimera test harness)
+             ((localchimera test keri-integration) #:select (check-call))
              (ice-9 popen)
              (ice-9 rdelim)
              (ice-9 textual-ports)
@@ -35,7 +35,7 @@
 ;; rns shared-instance socket — kill them before anything else.
 (system "pkill -9 -f '[r]ns-bridge --control-socket /tmp/mesh-smoke' 2>/dev/null")
 
-(define %root (or (getenv "PLAYNET_ROOT") (getcwd)))
+(define %root (or (getenv "LOCALCHIMERA_ROOT") (getcwd)))
 (define %bridge-bin (string-append %root "/server/rns-bridge/target/debug/rns-bridge"))
 (define %tmp (string-append (or (getenv "TMPDIR") "/tmp")
                             "/mesh-smoke-" (number->string (getpid))))

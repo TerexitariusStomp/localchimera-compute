@@ -6,17 +6,17 @@
 > move), **Fellows** ($40k + flights + housing for ~3 months at their
 > Austin TX campus — conditional on residency feasibility).
 > No published AI policy; FUTO's whole thesis — "computers belong to
-> you", challenging the tech oligopoly — is playnet's story almost
+> you", challenging the tech oligopoly — is localchimera's story almost
 > verbatim.
 
 ## Email draft
 
-Subject: playnet-compute — a browser-native machine-resource commons
+Subject: localchimera — a browser-native machine-resource commons
 (FUTO intro)
 
 Hi —
 
-I'm building playnet-compute, an AGPL-licensed commons where a browser
+I'm building localchimera, an AGPL-licensed commons where a browser
 tab is an accountable machine-resource node: no daemon, no install, no
 datacenter. Members lend spare compute/storage/bandwidth as
 content-addressed job envelopes; every result is a signed replayable

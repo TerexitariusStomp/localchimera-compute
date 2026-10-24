@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-greg-degeneracy.scm — the right tool for the wrong problem.
 ;;;
-;;; Spec: docs/playnet.typ §7.12 (the gradient-regularized Newton step, after
+;;; Spec: docs/localchimera.typ §7.12 (the gradient-regularized Newton step, after
 ;;;       Doikov–Nesterov: λ = c·√‖g‖, scaled to the gradient norm so it fades to
 ;;;       zero at the optimum) and §7.11 (the primal-dual predictor-corrector as
 ;;;       the tool for a DEGENERATE flat optimum).
@@ -28,9 +28,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-greg-degeneracy.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet test planner worked-example)
-             (playnet solve solver)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera test planner worked-example)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
 

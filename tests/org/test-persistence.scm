@@ -5,16 +5,16 @@
 (define %project-root (string-append (dirname (current-filename)) "/../.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules (goblins)
              (goblins actor-lib methods)
              (goblins actor-lib sealers)
              (goblins actor-lib ward)
              (goblins persistence-store bloblin)
              ((goblins utils crypto) #:select (generate-key-pair key-pair->public-key))
-             (playnet org factories)
-             (playnet org gplay)
-             (playnet utils endorsement)
+             (localchimera org factories)
+             (localchimera org gplay)
+             (localchimera utils endorsement)
              (ice-9 receive)
              (ice-9 match)
              (srfi srfi-1))
@@ -26,7 +26,7 @@
 
 (define (make-test-dir name)
   (set! test-counter (+ test-counter 1))
-  (let ((dir (string-append "/tmp/playnet-test-persist-"
+  (let ((dir (string-append "/tmp/localchimera-test-persist-"
                             name "-"
                             (number->string (getpid)) "-"
                             (number->string test-counter))))

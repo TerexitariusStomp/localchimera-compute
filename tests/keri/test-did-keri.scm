@@ -1,8 +1,8 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-did-keri.scm — did:keri helpers + serve-static route.
 
-(use-modules (playnet test harness)
-             (playnet keri did)
+(use-modules (localchimera test harness)
+             (localchimera keri did)
              (ice-9 format))
 
 (define %aid "DNUlpJGAE--lBKM2QVuwHlN3YsaewouoNTNIiOJPifJ4")

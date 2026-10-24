@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """lift-fragment.py — turn a planner include-fragment into a real module.
 
-    tools/edit/lift-fragment.py utils/store-utils.scm "(playnet utils store-utils)" \
-        ["#:use-module (playnet utils clock)"]
+    tools/edit/lift-fragment.py utils/store-utils.scm "(localchimera utils store-utils)" \
+        ["#:use-module (localchimera utils clock)"]
 
 Mechanical half of the conversion documented in schemas.scm's header:
 
@@ -33,9 +33,9 @@ import os, re, sys, textwrap
 # has to ask the LIVE module system what each umbrella publishes, and pairing
 # the two by list index broke the moment a third umbrella joined.
 UMBRELLAS = {
-    "module/playnet/boot/prelude.scm":       "(playnet boot prelude)",
-    "module/playnet/deprecated/planner.scm": "(playnet deprecated planner)",
-    "module/playnet/deprecated/federation-a.scm": "(playnet deprecated federation-a)",
+    "module/localchimera/boot/prelude.scm":       "(localchimera boot prelude)",
+    "module/localchimera/deprecated/planner.scm": "(localchimera deprecated planner)",
+    "module/localchimera/deprecated/federation-a.scm": "(localchimera deprecated federation-a)",
 }
 
 def defined_names(path):
@@ -259,7 +259,7 @@ def exported_but_unbound():
     module's `define-actor` constructor can vanish and the umbrella still load.
     """
     import subprocess
-    # FOUR modules, not two. (playnet scope live) and (playnet doors
+    # FOUR modules, not two. (localchimera scope live) and (localchimera doors
     # service) re-export planner names too, and this check was blind to them
     # for the whole first half of the lift arc — it reported "clean" while live
     # carried a hollow #:export of holding-capacity, which shadowed the real
@@ -270,8 +270,8 @@ def exported_but_unbound():
    (module-for-each
     (lambda (k v) (unless (variable-bound? v) (format #t "~a~%" k)))
     (module-public-interface (resolve-module m))))
- (list (quote (playnet boot prelude)) (quote (playnet deprecated planner))
-       (quote (playnet scope live)) (quote (playnet doors service))))
+ (list (quote (localchimera boot prelude)) (quote (localchimera deprecated planner))
+       (quote (localchimera scope live)) (quote (localchimera doors service))))
 '''
     out = subprocess.run(["guile","--no-auto-compile","-L","module","-c",scm],
                          capture_output=True, text=True)
@@ -340,7 +340,7 @@ def _label(umb):
     """Both umbrellas basename to "planner.scm". Report the part that differs —
     the same collision silently overwrote one umbrella's scan results with the
     other's when a shell loop used `basename` for its output filename."""
-    return umb.replace("module/playnet/", "").replace(".scm", "")
+    return umb.replace("module/localchimera/", "").replace(".scm", "")
 
 
 def includes_of(umb):
@@ -581,7 +581,7 @@ def main():
             missing = unbound(p)
             print("%-58s %s" % (p, missing if missing else "clean"))
         return
-    # --fix-overrides "(playnet ddmrp buffers)"
+    # --fix-overrides "(localchimera ddmrp buffers)"
     # Run AFTER a lift whose pre-flight reported an OVERRIDE COLLISION.
     if sys.argv[1] == "--fix-overrides":
         for m in sys.argv[2:]:
@@ -601,7 +601,7 @@ def main():
         return
     frag, modname = sys.argv[1], sys.argv[2]
     imports = sys.argv[3:]
-    path = "module/playnet/" + frag
+    path = "module/localchimera/" + frag
     refuse_if_primitive_loaded(frag, path)
     names = defined_names(path)
     print("%s -> %s : %d names" % (frag, modname, len(names)))
@@ -614,7 +614,7 @@ def main():
             print("    %-34s also in %s" % (n, ", ".join(where)))
     add_module_header(path, modname, imports, names)
     for umb in UMBRELLAS:
-        if update_umbrella(umb, modname, set(names), "playnet/" + frag,
+        if update_umbrella(umb, modname, set(names), "localchimera/" + frag,
                            "from " + modname):
             print("  updated " + umb)
     hollow = exported_but_unbound()

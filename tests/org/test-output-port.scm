@@ -5,9 +5,9 @@
 (define %project-root (string-append (dirname (current-filename)) "/../.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (playnet test harness))
-(use-modules (playnet org gplay)
-             (playnet org factories)
+(use-modules (localchimera test harness))
+(use-modules (localchimera org gplay)
+             (localchimera org factories)
              (goblins))
 
 ;;; ── Harness ─────────────────────────────────────────────────────────────────

@@ -9,11 +9,11 @@
 
 (setvbuf (current-output-port) 'line)
 
-(use-modules ((playnet test scope) #:select (account!)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (srfi srfi-11))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet federation vows) (playnet voice ballot) (playnet voice delegation-map) (playnet voice voice-signer))
+(use-modules ((localchimera test scope) #:select (account!)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (srfi srfi-11))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera federation vows) (localchimera voice ballot) (localchimera voice delegation-map) (localchimera voice voice-signer))
 (use-modules (goblins) (goblins utils hashmap)
              (goblins vat) (srfi srfi-1)
              (fibers)

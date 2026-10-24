@@ -1,6 +1,6 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-bioregion-containment.scm — a bioregion is an ECOLOGICAL AGENT = a
-;;; SpatialThing CONTAINER (playnet.typ §bioregion). It is NOT a bespoke index:
+;;; SpatialThing CONTAINER (localchimera.typ §bioregion). It is NOT a bespoke index:
 ;;; the containment relation the planner already has IS the index. This test binds
 ;;; BOTH things a bioregion carries to ONE container id ("doon-shed"), each reached
 ;;; by containment the codebase already walks:
@@ -16,18 +16,18 @@
 ;;; contained-in the bioregion" — both its weather and its ecological limits then
 ;;; resolve by the walk up the containment tree. No per-region code.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-bioregion-containment.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-bioregion-containment.scm
 
-(use-modules (playnet solve ingest))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge worlds bioregions)
+(use-modules (localchimera solve ingest))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge worlds bioregions)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet knowledge worlds doon-valley))     ; *doon-valley-scenarios/tail-robust* (data)
+(use-modules (localchimera knowledge worlds doon-valley))     ; *doon-valley-scenarios/tail-robust* (data)
 
 ;; ── The SpatialThing containment tree: a terrace inside a farm inside the shed ──
 ;; biosphere ⊃ doon-shed (the bioregion, at Dehradun) ⊃ navdanya-plot ⊃ terrace-3.

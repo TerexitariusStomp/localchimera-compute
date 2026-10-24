@@ -11,11 +11,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-scenario-shocks.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve robust)
-             (playnet vf formulas shocks)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge dsl shorthand)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve robust)
+             (localchimera vf formulas shocks)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 (define (~= a b) (< (abs (- a b)) 1e-6))

@@ -9,10 +9,10 @@
 ;;;   GUIX_ENVIRONMENT=<profile-with-libblake3> guile -L module \
 ;;;     tests/observation/test-skill-mint.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet observation observer) (playnet vf schemas))
-(use-modules (playnet observation credentials) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera observation observer) (localchimera vf schemas))
+(use-modules (localchimera observation credentials) (localchimera credentials work) (localchimera keri acdc) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 (define (rec-work! obs aid skill hours eid)
@@ -22,7 +22,7 @@
 
 (define (skills-for acdc skill)
   (filter (lambda (c) (equal? (cred-claim c 'skill) skill))
-          ($ acdc 'by-schema *schema-playnet-skill*)))
+          ($ acdc 'by-schema *schema-localchimera-skill*)))
 
 (define vat (spawn-vat))
 (with-vat vat
@@ -39,20 +39,20 @@
       (let ((e (cred-edge (car s) 'founding-event)))
         (check-pred "skill edges to a founding work event" (pair? e))))
     (check "one work-event ACDC issued"
-           (length ($ acdc 'by-schema *schema-playnet-work-event*)) 1)
+           (length ($ acdc 'by-schema *schema-localchimera-work-event*)) 1)
 
     (display "\n── Repeat work does NOT re-mint (mint-once) ──\n")
     (rec-work! obs "EAda" "spec:surgeon" 5 "ev2")
     (check "still exactly one surgeon skill" (length (skills-for acdc "spec:surgeon")) 1)
     (check "but two work-event ACDCs (one per event)"
-           (length ($ acdc 'by-schema *schema-playnet-work-event*)) 2)
+           (length ($ acdc 'by-schema *schema-localchimera-work-event*)) 2)
 
     (display "\n── A different skill mints its own token ──\n")
     (rec-work! obs "EAda" "spec:baker" 3 "ev3")
     (check "ada now holds baker too" (length (skills-for acdc "spec:baker")) 1)
     (check "two distinct skills total for ada"
            (length (filter (lambda (c) (equal? (cred-holder c) "EAda"))
-                           ($ acdc 'by-schema *schema-playnet-skill*))) 2)
+                           ($ acdc 'by-schema *schema-localchimera-skill*))) 2)
 
     (display "\n── Another worker, same skill: separate token ──\n")
     (rec-work! obs "EBob" "spec:surgeon" 8 "ev4")

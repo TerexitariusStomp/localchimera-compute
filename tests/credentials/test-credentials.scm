@@ -1,8 +1,8 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-credentials.scm — ACDC constructors + mandate-spec compile
 
-(use-modules (playnet test harness))
-(use-modules (playnet credentials commitments) (playnet credentials delegation) (playnet credentials membership) (playnet credentials registry) (playnet keri acdc) (playnet keri acdc))
+(use-modules (localchimera test harness))
+(use-modules (localchimera credentials commitments) (localchimera credentials delegation) (localchimera credentials membership) (localchimera credentials registry) (localchimera keri acdc) (localchimera keri acdc))
 (use-modules (goblins) (goblins utils hashmap))
 
 
@@ -17,8 +17,8 @@
                                      #:franchise 'federation
                                      #:fraction 0.4
                                      #:mandate-spec #f)))
-  (check-pred "schema is playnet-delegation/v1"
-              (equal? *schema-playnet-delegation* (cred-schema c)))
+  (check-pred "schema is localchimera-delegation/v1"
+              (equal? *schema-localchimera-delegation* (cred-schema c)))
   (check-pred "issuer alice"   (equal? "alice" (cred-issuer c)))
   (check-pred "holder bob"     (equal? "bob"   (cred-holder c)))
   (check-pred "fraction 0.4"   (= 0.4 (cred-claim c 'fraction)))
@@ -67,7 +67,7 @@
                               #:ccf 0
                               #:assessed-at "2026-04-15"
                               #:reason "advanced dementia")))
-  (check-pred "ccf schema" (equal? *schema-playnet-ccf-assessment* (cred-schema c)))
+  (check-pred "ccf schema" (equal? *schema-localchimera-ccf-assessment* (cred-schema c)))
   (check-pred "ccf 0"      (= 0 (cred-claim c 'ccf)))
   (check-pred "commune"    (equal? "Watershed" (cred-claim c 'commune))))
 
@@ -76,7 +76,7 @@
                                     #:commune "Watershed"
                                     #:excluded-at "2026-04-15")))
   (check-pred "exclusion schema"
-              (equal? *schema-playnet-exclusion* (cred-schema c))))
+              (equal? *schema-localchimera-exclusion* (cred-schema c))))
 
 (let ((c (make-federation-membership-credential #:issuer-group-aid "river-fed-gov"
                                                  #:commune-aid "watershed-aid"
@@ -84,7 +84,7 @@
                                                  #:commune-id "watershed"
                                                  #:admitted-at "2026-04-15")))
   (check-pred "fed-mem schema"
-              (equal? *schema-playnet-federation-membership* (cred-schema c)))
+              (equal? *schema-localchimera-federation-membership* (cred-schema c)))
   (check-pred "commune-id watershed"
               (equal? "watershed" (cred-claim c 'commune-id))))
 
@@ -93,7 +93,7 @@
                                      #:commune "Watershed"
                                      #:admitted-at "2026-04-15")))
   (check-pred "membership schema"
-              (equal? *schema-playnet-membership* (cred-schema c))))
+              (equal? *schema-localchimera-membership* (cred-schema c))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════

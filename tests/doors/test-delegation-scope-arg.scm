@@ -21,9 +21,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-delegation-scope-arg.scm
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet boot governance) (playnet keri acdc-store)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera boot governance) (localchimera keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap))
 
 (define vat (spawn-vat))

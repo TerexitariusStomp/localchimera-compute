@@ -5,14 +5,14 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-cascadia.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge worlds bioregions)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge worlds bioregions)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet knowledge worlds cascadia)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera knowledge worlds cascadia)
+             (localchimera knowledge dsl shorthand))
 
 (format #t "~%── Cascadia: a real bioregion, its own winter-wet climate ──~%")
 
@@ -45,8 +45,8 @@
        (equal? (bioregion-of spatials "willamette-farm") "cascadia"))
 
 ;; 4. it does NOT collide with Doon — two real bioregions, distinct
-(use-modules (playnet knowledge worlds doon-valley))
-(use-modules (playnet knowledge worlds doon-shed))
+(use-modules (localchimera knowledge worlds doon-valley))
+(use-modules (localchimera knowledge worlds doon-shed))
 (check "Doon + Cascadia coexist as distinct registered bioregions"
        (and (equal? (bioregion-id *doon-shed*) "doon-shed")
             (not (equal? (casc-prob "normal") (assoc-ref *doon-derived-scenario-probs* "normal")))))

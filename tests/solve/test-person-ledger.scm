@@ -10,12 +10,12 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-person-ledger.scm
 
-(use-modules (playnet solve world) (playnet test planner prelude)
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf facts availability)
-             (playnet vf facts agent-time)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
+(use-modules (localchimera solve world) (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf facts availability)
+             (localchimera vf facts agent-time)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
              (srfi srfi-1) (ice-9 format))
 
 (define *pass* 0) (define *fail* 0)

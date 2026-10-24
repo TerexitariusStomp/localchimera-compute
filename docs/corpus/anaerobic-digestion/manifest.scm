@@ -4,7 +4,7 @@
 ;;; Phase 1 of docs/planning/food/natural-processes-research-plan.md, and the domain
 ;;; chosen to CLOSE A LOOP rather than stand alone: digestion takes biomass and
 ;;; returns fuel *and* digestate, so it joins composting → energy → soil across
-;;; two of the six instances docs/playnet.typ names. Both ends already exist in
+;;; two of the six instances docs/localchimera.typ names. Both ends already exist in
 ;;; the repo — humisoil.scm ferments biomass into a soil amendment, and grow.scm
 ;;; consumes soil-N/P/K explicitly — so the digestate has somewhere to land.
 ;;;

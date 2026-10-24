@@ -10,13 +10,13 @@
 ;;; wrote. N·T, the free-time base, is the sum of what every body leaves.
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-rest-standard-reaches-solve.scm
-(use-modules (playnet solve world) (playnet test planner prelude)
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf facts availability) (playnet vf facts agent-time)
-             (playnet vf schemas) (playnet knowledge dsl shorthand)
-             ((playnet knowledge catalogues rest) #:select (disposable-hours))
-             ((playnet scope live) #:select (agent->subsistence-ctx))   ; installs the live reservation-of-rest hook
-             (playnet test harness)
+(use-modules (localchimera solve world) (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf facts availability) (localchimera vf facts agent-time)
+             (localchimera vf schemas) (localchimera knowledge dsl shorthand)
+             ((localchimera knowledge catalogues rest) #:select (disposable-hours))
+             ((localchimera scope live) #:select (agent->subsistence-ctx))   ; installs the live reservation-of-rest hook
+             (localchimera test harness)
              (srfi srfi-1))
 
 (define spatials (list (place* "town")))

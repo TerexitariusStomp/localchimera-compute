@@ -8,13 +8,13 @@
 ;;; fills its output port.
 ;;; Run: guile -L module tests/knowledge/test-holes.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet vf schemas))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet knowledge dsl world))
-(use-modules (playnet knowledge dsl holes))
-(use-modules ((playnet knowledge recipes store) #:select (^recipe-store)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera vf schemas))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera knowledge dsl world))
+(use-modules (localchimera knowledge dsl holes))
+(use-modules ((localchimera knowledge recipes store) #:select (^recipe-store)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1))
 
 (define vat (spawn-vat))

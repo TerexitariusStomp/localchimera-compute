@@ -16,10 +16,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-event-agents.scm
 
-(use-modules (playnet test harness)
-             (playnet test books)
-             (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
-             (playnet scope live)
+(use-modules (localchimera test harness)
+             (localchimera test books)
+             (localchimera vf schemas) (srfi srfi-1) (srfi srfi-11)
+             (localchimera scope live)
              (goblins) (goblins vat)
              (srfi srfi-1) (srfi srfi-13))
 

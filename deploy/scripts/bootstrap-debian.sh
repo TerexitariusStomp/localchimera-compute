@@ -23,7 +23,7 @@ set -euo pipefail
 # Prerequisites:
 #   - A running Debian VM with SSH root access (any provider)
 #   - The VM's IPv4 address
-#   - PLAYNET_LUKS_PASSPHRASE set (from secrets.scm)
+#   - LOCALCHIMERA_LUKS_PASSPHRASE set (from secrets.scm)
 #   - An SSH key that the VM accepts
 #
 # After success:
@@ -35,7 +35,7 @@ set -euo pipefail
 #   4. Run `guix deploy deploy/machines.scm`.
 #
 # Usage:
-#   PLAYNET_LUKS_PASSPHRASE="..." ./deploy/scripts/bootstrap-debian.sh <IP>
+#   LOCALCHIMERA_LUKS_PASSPHRASE="..." ./deploy/scripts/bootstrap-debian.sh <IP>
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SECRETS="$SCRIPT_DIR/../secrets.scm"
@@ -47,7 +47,7 @@ if [ $# -lt 1 ]; then
     echo "Usage: $0 <server-ip>"
     echo ""
     echo "Environment:"
-    echo "  PLAYNET_LUKS_PASSPHRASE  — LUKS encryption passphrase (required)"
+    echo "  LOCALCHIMERA_LUKS_PASSPHRASE  — LUKS encryption passphrase (required)"
     echo "  DEPLOY_SSH_IDENTITY      — SSH private key (default: ~/.ssh/id_ed25519)"
     exit 1
 fi
@@ -55,10 +55,10 @@ fi
 SERVER_IP="$1"
 
 # Load passphrase from env or secrets.scm
-if [ -z "${PLAYNET_LUKS_PASSPHRASE:-}" ] && [ -f "$SECRETS" ]; then
-    PLAYNET_LUKS_PASSPHRASE=$(guile -c "(primitive-load \"$SECRETS\") (display (getenv \"PLAYNET_LUKS_PASSPHRASE\"))")
+if [ -z "${LOCALCHIMERA_LUKS_PASSPHRASE:-}" ] && [ -f "$SECRETS" ]; then
+    LOCALCHIMERA_LUKS_PASSPHRASE=$(guile -c "(primitive-load \"$SECRETS\") (display (getenv \"LOCALCHIMERA_LUKS_PASSPHRASE\"))")
 fi
-: "${PLAYNET_LUKS_PASSPHRASE:?Set PLAYNET_LUKS_PASSPHRASE}"
+: "${LOCALCHIMERA_LUKS_PASSPHRASE:?Set LOCALCHIMERA_LUKS_PASSPHRASE}"
 
 # ── TOFU mitigation ──────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ STRICT_MODE="accept-new"
 
 if [ -f "$HOSTS_FILE" ]; then
     HOST_KEY=$(guile -L "$(dirname "$SCRIPT_DIR")/../module" -c "
-      (use-modules (playnet fleet records) (srfi srfi-1))
+      (use-modules (localchimera fleet records) (srfi srfi-1))
       (let* ((hosts (primitive-load \"$HOSTS_FILE\"))
              (m (find (lambda (h) (equal? (materialized-host-ipv4 h) \"$SERVER_IP\")) hosts)))
         (when m (display (or (materialized-host-ssh-host-key m) \"\"))))" 2>/dev/null || true)
@@ -125,7 +125,7 @@ done
 echo "=== 2. Preparing boot-phase installer ==="
 
 # Pass the LUKS passphrase via a temporary file on the remote side
-ssh_cmd bash -c 'cat > /tmp/.luks-pw && chmod 600 /tmp/.luks-pw' <<< "$PLAYNET_LUKS_PASSPHRASE"
+ssh_cmd bash -c 'cat > /tmp/.luks-pw && chmod 600 /tmp/.luks-pw' <<< "$LOCALCHIMERA_LUKS_PASSPHRASE"
 
 ssh_cmd bash <<'REMOTE_PREP'
 set -e
@@ -140,13 +140,13 @@ apt-get install -y -qq cryptsetup parted dosfstools e2fsprogs \
 # This runs from initramfs context (Before=local-fs-pre.target),
 # so no filesystems are mounted and the disk is free for repartitioning.
 
-cat > /usr/local/sbin/playnet-install.sh <<'INSTALL_SCRIPT'
+cat > /usr/local/sbin/localchimera-install.sh <<'INSTALL_SCRIPT'
 #!/bin/bash
 set -euo pipefail
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
-exec > /root/playnet-install.log 2>&1
+exec > /root/localchimera-install.log 2>&1
 
-echo "=== playnet-install.sh starting ==="
+echo "=== localchimera-install.sh starting ==="
 date
 
 # ── Determine root disk ───────────────────────────────────────────────
@@ -282,7 +282,7 @@ cat > /tmp/fleet-os.scm << EOF_OS
 (use-service-modules base networking ssh)
 (use-system-modules linux-initrd)
 (operating-system
-  (host-name "playnet-fleet")
+  (host-name "localchimera-fleet")
   (timezone "Etc/UTC")
   (bootloader (bootloader-configuration
                (bootloader grub-efi-bootloader)
@@ -317,7 +317,7 @@ cat > /tmp/fleet-os.scm << EOF_OS
                    (tor-configuration
                     (hidden-services
                      (list (tor-onion-service-configuration
-                            (name "playnet-fleet")
+                            (name "localchimera-fleet")
                             (mapping '((9090 "127.0.0.1:9090")
                                        (22 "127.0.0.1:22"))))))))
           %base-services)))
@@ -341,7 +341,7 @@ echo "===== GUIX INSTALL COMPLETE ====="
 echo "Rebooting into Guix System..."
 INSTALL_SCRIPT
 
-chmod +x /usr/local/sbin/playnet-install.sh
+chmod +x /usr/local/sbin/localchimera-install.sh
 
 # ── Move LUKS passphrase to /root (accessible before mount) ───────────
 mv /tmp/.luks-pw /root/.luks-pw
@@ -352,17 +352,17 @@ chmod 600 /root/.luks-pw
 # At that point no partitions are in use, so parted/cryptsetup work.
 # The service deletes itself after running (one-shot).
 
-cat > /etc/systemd/system/playnet-install.service <<'SERVICE'
+cat > /etc/systemd/system/localchimera-install.service <<'SERVICE'
 [Unit]
-Description=Playnet LUKS+Guix Installer (one-shot)
+Description=LocalChimera LUKS+Guix Installer (one-shot)
 After=network-online.target
 Wants=network-online.target
 ConditionPathExists=/root/.luks-pw
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/playnet-install.sh
-ExecStartPost=/bin/sh -c 'systemctl disable playnet-install.service; rm -f /etc/systemd/system/playnet-install.service /usr/local/sbin/playnet-install.sh /root/.luks-pw'
+ExecStart=/usr/local/sbin/localchimera-install.sh
+ExecStartPost=/bin/sh -c 'systemctl disable localchimera-install.service; rm -f /etc/systemd/system/localchimera-install.service /usr/local/sbin/localchimera-install.sh /root/.luks-pw'
 TimeoutStartSec=7200
 StandardOutput=journal+console
 StandardError=journal+console
@@ -371,7 +371,7 @@ StandardError=journal+console
 WantedBy=multi-user.target
 SERVICE
 
-systemctl enable playnet-install.service
+systemctl enable localchimera-install.service
 
 echo "[remote] Boot-phase installer ready. Rebooting in 3s..."
 REMOTE_PREP
@@ -389,7 +389,7 @@ echo "LUKS passphrase. SSH into the initrd dropbear to unlock:"
 echo ""
 echo "  ssh root@$SERVER_IP  (during early boot)"
 echo ""
-echo "The install log will be at /root/playnet-install.log"
+echo "The install log will be at /root/localchimera-install.log"
 echo ""
 
 ssh_cmd "reboot" 2>/dev/null || true
@@ -440,9 +440,9 @@ done
 
 echo ""
 echo "Timeout waiting for Guix boot. The VM may be:"
-echo "  1. Still running the boot-phase installer (check /root/playnet-install.log)"
+echo "  1. Still running the boot-phase installer (check /root/localchimera-install.log)"
 echo "  2. Waiting for LUKS unlock (SSH to initrd dropbear)"
 echo "Server: $SERVER_IP"
 echo ""
 echo "To check the install log if the first reboot is still in progress:"
-echo "  ssh -i $SSH_KEY root@$SERVER_IP 'cat /root/playnet-install.log'"
+echo "  ssh -i $SSH_KEY root@$SERVER_IP 'cat /root/localchimera-install.log'"

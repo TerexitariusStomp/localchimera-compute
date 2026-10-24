@@ -19,9 +19,9 @@
 (define-module (server serve-static)
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-9)
-  #:use-module ((playnet utils operator) #:select (operator-config contact-uri))
-  #:use-module (playnet utils paths)
-  #:use-module ((playnet vf facts limits) #:select (%feedback-max-bytes %report-max-bytes))
+  #:use-module ((localchimera utils operator) #:select (operator-config contact-uri))
+  #:use-module (localchimera utils paths)
+  #:use-module ((localchimera vf facts limits) #:select (%feedback-max-bytes %report-max-bytes))
   #:use-module (ice-9 match)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 binary-ports)
@@ -34,23 +34,23 @@
   #:use-module ((srfi srfi-1)  #:select (any filter-map append-map))
   #:use-module ((srfi srfi-13) #:select (string-suffix? string-drop-right
                                           string-index string-filter string-every))
-  #:use-module ((playnet keri signify-portable)
+  #:use-module ((localchimera keri signify-portable)
                 #:select (cesr-stream-event cesr-stream-kel
                           scm->json-canonical))
-  #:use-module ((playnet keri did) #:select (aid->did-keri))
-  #:use-module ((playnet keri schemas) #:select (schema-document-for-said))
-  #:use-module ((playnet identity oobi-host)
+  #:use-module ((localchimera keri did) #:select (aid->did-keri))
+  #:use-module ((localchimera keri schemas) #:select (schema-document-for-said))
+  #:use-module ((localchimera identity oobi-host)
                 #:select ((read-oobi-entry-from-dir . read-oobi-entry)
                           (read-oobi-entries-from-dir . read-oobi-entries)))
   ;; Read-only scope discovery — use the path-level helpers from
-  ;; (playnet utils paths) rather than (playnet scope recovery), because
-  ;; the latter transitively loads (playnet keri signify),
-  ;; which dlopens libsodium. The playnet-static service runs in a
+  ;; (localchimera utils paths) rather than (localchimera scope recovery), because
+  ;; the latter transitively loads (localchimera keri signify),
+  ;; which dlopens libsodium. The localchimera-static service runs in a
   ;; minimal env without libsodium and would crash-loop on startup.
-  #:use-module ((playnet utils paths)
-                #:select (playnet-state-dir read-scope-kind
+  #:use-module ((localchimera utils paths)
+                #:select (localchimera-state-dir read-scope-kind
                           scope-acdc-dir))
-  #:use-module ((playnet utils common)
+  #:use-module ((localchimera utils common)
                 #:select (read-sexp-file read-all-sexps-file))
   #:use-module (ice-9 ftw)   ; scandir, for inline list-known-scopes
   #:use-module ((srfi srfi-13) #:select (string-trim-both string-null?))
@@ -70,13 +70,13 @@
             handle-operator
             handle-security-txt))
 
-;;; The on-disk layout used here is owned by (playnet identity oobi-host); we
+;;; The on-disk layout used here is owned by (localchimera identity oobi-host); we
 ;;; route reads through `read-oobi-entry-from-dir` so the bucket-prefix
 ;;; convention can't drift between writer (actor) and reader (HTTP).
 
 ;;; ── Routes ──────────────────────────────────────────────────────────────────
 ;;;
-;;; JSON emission delegates to (playnet keri signify-portable)'s
+;;; JSON emission delegates to (localchimera keri signify-portable)'s
 ;;; `scm->json-canonical` — same emitter the SAID computation uses,
 ;;; which guarantees byte-identical output to guile-json. It accepts
 ;;; both string and symbol alist keys, so OOBI entry alists (symbol
@@ -146,10 +146,10 @@
   '((cross-origin-embedder-policy . "require-corp")
     (cross-origin-opener-policy   . "same-origin")))
 
-;; Dev mode (make serve sets PLAYNET_DEV=1): serve assets no-store so live edits
+;; Dev mode (make serve sets LOCALCHIMERA_DEV=1): serve assets no-store so live edits
 ;; to app.html / dial JS / CSS show on the very next reload, instead of the
 ;; browser holding a stale copy for max-age. Prod keeps the CDN-friendly cache.
-(define %dev-no-cache? (and (getenv "PLAYNET_DEV") #t))
+(define %dev-no-cache? (and (getenv "LOCALCHIMERA_DEV") #t))
 
 (define (asset-cache-headers ext)
   "Cache headers for static SPA assets. Short max-age in prod (behind a CDN, the
@@ -242,7 +242,7 @@
   "Serve an ACDC schema document to a resolver. KERIA GETs
    /oobi/{schemaSAID} and re-derives the SAID over the body it
    receives, so DOC is the on-disk bytes verbatim (field order is what
-   the derivation canonicalizes over — see (playnet keri schemas)).
+   the derivation canonicalizes over — see (localchimera keri schemas)).
    Content-addressed, hence immutable and cacheable forever, unlike the
    controller OOBIs below whose KELs must stay fresh."
   (values (build-response
@@ -328,7 +328,7 @@
     ("ogg"  . audio/ogg)
     ("wav"  . audio/wav)
     ("webmanifest" . application/manifest+json)
-    ;; the scroll's "the latest spec" download links (docs/playnet.{pdf,epub},
+    ;; the scroll's "the latest spec" download links (docs/localchimera.{pdf,epub},
     ;; built by deploy/scripts/build-docs-epub.sh)
     ("pdf"  . application/pdf)
     ("epub" . application/epub+zip)))
@@ -377,7 +377,7 @@
 (define (filename-extension filename)
   ;; Only a dot in the BASENAME (after the last slash) is an extension.
   ;; A dot in an intermediate path segment — e.g. the seed host in a board
-  ;; route like /boards/playnet.earth:443/<rid> — must NOT count, or the SPA
+  ;; route like /boards/localchimera.earth:443/<rid> — must NOT count, or the SPA
   ;; fallback misfires and the deep route 404s instead of serving index.html.
   (let ((dot (string-rindex filename #\.))
         (slash (string-rindex filename #\/)))
@@ -471,7 +471,7 @@
                 cache))))
      body)))
 
-;; The dial is the front door: playnet.earth/ serves app.html. The
+;; The dial is the front door: localchimera.earth/ serves app.html. The
 ;; repl keeps the whole machine reachable on its own subdomain —
 ;; repl.<domain>/ serves index.html — and stays addressable everywhere
 ;; (the onion included) as /index.html. One directory, two faces.
@@ -534,32 +534,32 @@
             (else (spa-fallback work-dir page)))))
         (file-name (file-response file-name)))))
 
-;;; ── /playnet-identity.json ────────────────────────────────────────────────
+;;; ── /localchimera-identity.json ────────────────────────────────────────────────
 ;;;
-;;; Canonical "playnet" identity for browser-side contacts seeding.
-;;; Lazily reads /var/lib/playnet/playnet-scope-aid.txt (one-line file
-;;; containing the durable-scope AID for the playnet org); if absent,
+;;; Canonical "localchimera" identity for browser-side contacts seeding.
+;;; Lazily reads /var/lib/localchimera/localchimera-scope-aid.txt (one-line file
+;;; containing the durable-scope AID for the localchimera org); if absent,
 ;;; returns 404 — the browser falls back to a no-op seed and the
 ;;; contacts tab just starts empty. Once the gateway has been used to
-;;; create a "playnet" durable scope (via REPL: `(durable-scope-aid
-;;; "playnet")` or similar — see docs/governance/persistence-
+;;; create a "localchimera" durable scope (via REPL: `(durable-scope-aid
+;;; "localchimera")` or similar — see docs/governance/persistence-
 ;;; operations.md), the operator writes the AID to that file and this
 ;;; endpoint starts serving.
 ;;;
 ;;; The published AID is auto-mirrored into ^oobi-host by the gateway
-;;; (PLAYNET_OOBI_AUTO_MIRROR=1), so /oobi/{aid} on the same origin
+;;; (LOCALCHIMERA_OOBI_AUTO_MIRROR=1), so /oobi/{aid} on the same origin
 ;;; returns its KEL — the browser can use this endpoint's URL as a
 ;;; one-stop seed contact.
 
-;; Same PLAYNET_DATA_DIR convention as the gateway writes it under.
+;; Same LOCALCHIMERA_DATA_DIR convention as the gateway writes it under.
 ;; A PROCEDURE, not a constant — state-file reads the env at call time,
 ;; so a test's sandbox dir (set after module load) is honoured.
-(define (playnet-identity-file) (state-file "playnet-scope-aid.txt"))
+(define (localchimera-identity-file) (state-file "localchimera-scope-aid.txt"))
 
 ;;; ── /entry-points.json ────────────────────────────────────────────────────
 ;;;
 ;;; The gateway writes its current OCapN sturdyref to
-;;; /var/lib/playnet/gateway-sref.txt on every boot. The previous
+;;; /var/lib/localchimera/gateway-sref.txt on every boot. The previous
 ;;; design served browser/entry-points.json as a static file with a
 ;;; hand-edited sref — which silently went stale every time the
 ;;; gateway minted a new swiss number on restart, locking clients
@@ -573,7 +573,7 @@
 ;;; (window.location-derived "self" entry or one of the configured
 ;;; tor/clearnet entries) at connection time.
 
-;; Same PLAYNET_DATA_DIR convention as server/gateway.scm, so a local
+;; Same LOCALCHIMERA_DATA_DIR convention as server/gateway.scm, so a local
 ;; full-stack (gateway + serve-static) runs without /var/lib or root.
 (define %gateway-sref-file (state-file "gateway-sref.txt"))
 
@@ -614,11 +614,11 @@
 ;; one in gateway-onion.txt (absent → onion face simply omitted).
 (define %gateway-onion-file (state-file "gateway-onion.txt"))
 
-(define %clearnet-ws (getenv "PLAYNET_CLEARNET_WS"))
+(define %clearnet-ws (getenv "LOCALCHIMERA_CLEARNET_WS"))
 
 (define (gateway-entries)
   "Build the gateway entry vector: a Tor onion face (when configured) followed
-   by the clearnet face (when PLAYNET_CLEARNET_WS names one — deploy/os.scm
+   by the clearnet face (when LOCALCHIMERA_CLEARNET_WS names one — deploy/os.scm
    derives it from the provider config's clearnet-domain; there is NO default,
    so a deployment that never set it advertises no one else's gateway). The
    browser's discoverGateway() prepends a window.location-derived 'self' entry,
@@ -663,7 +663,7 @@
                      %keri-no-cache-headers)))
            (scm->json-canonical
             (append
-             `(("comment" . "Entry points for the playnet OCapN gateway. Generated at request time: the sref reflects the running gateway's current identity (from gateway-sref.txt) and the gateway faces are operator config — the clearnet ws and the optional Tor onion (gateway-onion.txt) are read here, never hardcoded. discoverGateway() also prepends a 'self' entry derived from window.location so a working ws is always available.")
+             `(("comment" . "Entry points for the localchimera OCapN gateway. Generated at request time: the sref reflects the running gateway's current identity (from gateway-sref.txt) and the gateway faces are operator config — the clearnet ws and the optional Tor onion (gateway-onion.txt) are read here, never hardcoded. discoverGateway() also prepends a 'self' entry derived from window.location so a working ws is always available.")
               ("sref"    . ,sref)
               ("gateway" . ,(gateway-entries)))
               (if direct `(("directWs" . ,direct)) '())))))
@@ -676,7 +676,7 @@
                    %keri-no-cache-headers)))
          (scm->json-canonical
           `(("error" . "gateway sref not yet written")
-            ("hint"  . "wait for the playnet-gateway service to finish booting")))))))
+            ("hint"  . "wait for the localchimera-gateway service to finish booting")))))))
 
 (define (read-trimmed-line path)
   (and (file-exists? path)
@@ -685,8 +685,8 @@
               (let ((t (string-trim-both s)))
                 (and (not (string-null? t)) t))))))
 
-(define (handle-playnet-identity)
-  (let ((aid (read-trimmed-line (playnet-identity-file))))
+(define (handle-localchimera-identity)
+  (let ((aid (read-trimmed-line (localchimera-identity-file))))
     (if aid
         (values
          (build-response
@@ -696,7 +696,7 @@
            (append `((content-type . (application/json (charset . "utf-8"))))
                    %keri-no-cache-headers)))
          (scm->json-canonical
-          `(("name"  . "playnet")
+          `(("name"  . "localchimera")
             ("aid"   . ,aid)
             ("oobi"  . ,(string-append "/oobi/" aid))
             ("did"   . ,(aid->did-keri aid)))))
@@ -708,30 +708,30 @@
            (append '((content-type . (application/json)))
                    %keri-no-cache-headers)))
          (scm->json-canonical
-          `(("error" . "playnet identity not yet provisioned")
-            ("hint"  . "operator: create a durable 'playnet' scope and write its AID to /var/lib/playnet/playnet-scope-aid.txt")))))))
+          `(("error" . "localchimera identity not yet provisioned")
+            ("hint"  . "operator: create a durable 'localchimera' scope and write its AID to /var/lib/localchimera/localchimera-scope-aid.txt")))))))
 
 ;;; ── /universal-commune.json ──────────────────────────────────────────────
 ;;;
-;;; Sibling of /playnet-identity.json, but for the Universal Commune —
+;;; Sibling of /localchimera-identity.json, but for the Universal Commune —
 ;;; the scope at the planning-time root of the federation tree, whose
 ;;; member-list is reactively derived from orphan scopes (those with no
 ;;; parent). The gateway writes its AID to
-;;; /var/lib/playnet/universal-commune-aid.txt once at boot after
+;;; /var/lib/localchimera/universal-commune-aid.txt once at boot after
 ;;; spawning or restoring the UC. Browsers fetching this endpoint can
 ;;; use the returned `oobi` URL on the same origin to verify the UC's
 ;;; KEL (auto-mirrored by ^oobi-host-mirror).
 ;;;
 ;;; The two endpoints are split rather than conflated because the
-;;; "playnet org identity" (operator-curated brand AID) and the
+;;; "localchimera org identity" (operator-curated brand AID) and the
 ;;; "Universal Commune AID" (algorithmic root) are different things;
 ;;; conflating them would create migration pain when an operator
 ;;; deployment wants its org-identity to differ from the UC (and it
 ;;; usually should — the org is a member, not the root).
 
-;; Same PLAYNET_DATA_DIR convention as the gateway writes it under — a
+;; Same LOCALCHIMERA_DATA_DIR convention as the gateway writes it under — a
 ;; `make dev` stack answers /universal-commune.json for ITS gateway.
-;; A procedure for the same reason as playnet-identity-file above.
+;; A procedure for the same reason as localchimera-identity-file above.
 (define (universal-commune-file) (state-file "universal-commune-aid.txt"))
 
 (define (handle-universal-commune)
@@ -758,7 +758,7 @@
                    %keri-no-cache-headers)))
          (scm->json-canonical
           `(("error" . "universal commune not yet provisioned")
-            ("hint"  . "the gateway writes this file at boot when PLAYNET_SCOPES_DURABLE=1; check the gateway log for spawn errors")))))))
+            ("hint"  . "the gateway writes this file at boot when LOCALCHIMERA_SCOPES_DURABLE=1; check the gateway log for spawn errors")))))))
 
 ;;; ── /scopes ──────────────────────────────────────────────────────────────
 ;;;
@@ -778,10 +778,10 @@
 ;;; scope is admitted/removed.
 
 (define (list-known-scopes-inline)
-  "Mirror of (playnet scope recovery)'s list-known-scopes
+  "Mirror of (localchimera scope recovery)'s list-known-scopes
    — inlined here to keep serve-static's import surface minimal (no
    libsodium dependency chain)."
-  (let ((dir (string-append (playnet-state-dir) "/scopes")))
+  (let ((dir (string-append (localchimera-state-dir) "/scopes")))
     (cond
      ((not (file-exists? dir)) '())
      (else
@@ -801,7 +801,7 @@
 (define (handle-witness-files kind)
   (if (not (member kind '("requests" "attests")))
       (bad-request)
-      (let* ((dir (string-append (playnet-state-dir) "/witness/" kind))
+      (let* ((dir (string-append (localchimera-state-dir) "/witness/" kind))
              (names (if (file-exists? dir)
                         (or (scandir dir (lambda (e) (string-suffix? ".json" e))) '())
                         '()))
@@ -854,7 +854,7 @@
 ;;; cache-control: no-store (membership churn).
 
 ;; Direct disk read of federation-membership ACDCs without dragging the
-;; governance umbrella (and libsodium) into playnet-static.
+;; governance umbrella (and libsodium) into localchimera-static.
 ;;
 ;; Layout (owned by ^acdc-store):
 ;;   <state>/scopes/<aid>/acdc/<2-char prefix>/<said>.scm  ← (write cred)
@@ -862,7 +862,7 @@
 ;;
 ;; cred is a plain alist; we read it back with `read` and pick fields
 ;; with assq. No need to share constructor code.
-(define %fed-membership-schema "playnet-federation-membership/v1")
+(define %fed-membership-schema "localchimera-federation-membership/v1")
 
 (define (assq-ref* alist key)
   (let ((p (assq key alist))) (and p (cdr p))))
@@ -958,7 +958,7 @@
 
 ;; Computed lazily — the resolvers read env vars at call time, so a test
 ;; harness pointing at a tmp dir isn't frozen out by module-load order.
-;; All three follow PLAYNET_DATA_DIR, because that is where the gateway
+;; All three follow LOCALCHIMERA_DATA_DIR, because that is where the gateway
 ;; WRITES them: federation-status and peer-status always did (this reader
 ;; alone was on the XDG state dir, so both probes read a file nothing
 ;; wrote), and pending-grants moved there with the gateway's writer.
@@ -981,7 +981,7 @@
              %keri-no-cache-headers)))
    (scm->json-canonical body)))
 
-;; read-sexp-file and read-all-sexps-file live in (playnet utils common)
+;; read-sexp-file and read-all-sexps-file live in (localchimera utils common)
 ;; and are imported at the top — same defensive shape, shared with
 ;; pending-grants.scm.
 
@@ -1002,7 +1002,7 @@
            ;; two UC facts, named apart — `uc-aid` used to carry only the
            ;; upward parent, so the UC's OWN gateway read as "no UC":
            ;;   federation-parent-uc — who we push membership up to
-           ;;     (PLAYNET_UC_AID; empty on the UC's own gateway, correctly)
+           ;;     (LOCALCHIMERA_UC_AID; empty on the UC's own gateway, correctly)
            ;;   local-uc — the UC minted/hosted HERE, joined from the same
            ;;     aid file /universal-commune.json serves
            ;; the old `uc-aid` key is still read as a fallback so a status
@@ -1017,7 +1017,7 @@
 ;;; /peer-status.json — KERIA's view of each known contact AID
 ;;;
 ;;; Reads <data>/peer-status.scm written by the gateway's peer-status
-;;; ticker (every PLAYNET_PEER_STATUS_TICK_SEC, default 60s). Each
+;;; ticker (every LOCALCHIMERA_PEER_STATUS_TICK_SEC, default 60s). Each
 ;;; entry is the gateway's last-known answer to "is this peer
 ;;; reachable?": resolved? + pending-ops count + oobi-known?. A peer
 ;;; with resolved?=#f or persistent pending-ops>0 is the silent-grant-
@@ -1057,9 +1057,9 @@
 ;;; here, with the binding verdict against its icp-anchored pubkey.
 ;;; Consumers: the future persona announcer, dashboards, mesh routers.
 ;;;
-;;; (playnet keri reticulum-binding) is loaded lazily and the sha256
+;;; (localchimera keri reticulum-binding) is loaded lazily and the sha256
 ;;; backend installed from gcrypt on first use — this server runs in a
-;;; minimal env (no libsodium, deliberately no (playnet keri signify)),
+;;; minimal env (no libsodium, deliberately no (localchimera keri signify)),
 ;;; so when gcrypt/json are absent the endpoint degrades to a hint
 ;;; instead of crashing the service.
 
@@ -1067,8 +1067,8 @@
   (delay
     (catch #t
       (lambda ()
-        (let ((binding (resolve-interface '(playnet keri reticulum-binding)))
-              (prims   (resolve-interface '(playnet keri crypto-primitives)))
+        (let ((binding (resolve-interface '(localchimera keri reticulum-binding)))
+              (prims   (resolve-interface '(localchimera keri crypto-primitives)))
               (gch     (resolve-interface '(gcrypt hash))))
           ((module-ref prims 'set-keri-crypto-backend!)
            #:sha256 (module-ref gch 'sha256))
@@ -1155,11 +1155,11 @@
 ;;; disk). Operator-visible signal: "did this federation pass its
 ;;; last cycle?"
 
-(define %audit-pass-schema       "playnet-audit-pass/v1")
-(define %incoherence-schema      "playnet-incoherence-alert/v1")
+(define %audit-pass-schema       "localchimera-audit-pass/v1")
+(define %incoherence-schema      "localchimera-incoherence-alert/v1")
 
 (define (handle-audit aid)
-  (let* ((acdc-dir (string-append (playnet-state-dir) "/scopes/" aid "/acdc"))
+  (let* ((acdc-dir (string-append (localchimera-state-dir) "/scopes/" aid "/acdc"))
          (cred-files
           (cond
            ((not (file-exists? acdc-dir)) '())
@@ -1198,7 +1198,7 @@
        404
        `(("error" . "no audit credentials yet for this scope")
          ("aid"   . ,aid)
-         ("hint"  . "the auditor fiber emits one audit-pass per cycle; check PLAYNET_AUDIT_INTERVAL_SEC and gateway logs"))))
+         ("hint"  . "the auditor fiber emits one audit-pass per cycle; check LOCALCHIMERA_AUDIT_INTERVAL_SEC and gateway logs"))))
      (else
       (%json-response
        200
@@ -1210,9 +1210,9 @@
          ("revoked"    . ,(if (assq-ref newest 'revoked?) #t #f))))))))
 
 ;;; ── The operator (/operator.json, /.well-known/security.txt) ────────────────
-;;; Who runs THIS gateway, from PLAYNET_OPERATOR_* in the environment — the
+;;; Who runs THIS gateway, from LOCALCHIMERA_OPERATOR_* in the environment — the
 ;;; fields, and why they are configuration and not repository content, are in
-;;; (playnet utils operator). Every field is optional; one left out is left out
+;;; (localchimera utils operator). Every field is optional; one left out is left out
 ;;; of the answer and the notices render it as a visibly unfilled placeholder.
 
 (define (handle-operator)
@@ -1258,7 +1258,7 @@
 ;;; itself (viewport, face, path) lives inside its own JSON.
 ;;;
 ;;; The admin surface (list / delete) is token-gated: the token is the first
-;;; line of <data>/feedback-admin-token, presented in the X-Playnet-Admin
+;;; line of <data>/feedback-admin-token, presented in the X-LocalChimera-Admin
 ;;; HEADER. A header rather than a query parameter for two reasons — a query
 ;;; string lands in nginx's access log, and it can enter a CDN cache key, so
 ;;; a URL that returns the whole pool would be edge-cacheable. While the token
@@ -1278,7 +1278,7 @@
   pool?
   (label pool-label)            ; "feedback" | "report" — the word the errors use
   (file pool-file-name)         ; under the state dir
-  (token-file pool-token-file)  ; first line = the X-Playnet-Admin token
+  (token-file pool-token-file)  ; first line = the X-LocalChimera-Admin token
   (max-body pool-max-body)      ; bytes (vf/facts/limits.scm)
   (keep-ua? pool-keep-ua?))     ; store the transport-observed User-Agent?
 
@@ -1317,7 +1317,7 @@
 
 (define (pool-admin-authorized? pool request)
   (let ((tok (pool-admin-token pool))
-        (given (assq-ref (request-headers request) 'x-playnet-admin)))
+        (given (assq-ref (request-headers request) 'x-localchimera-admin)))
     (and tok (string? given) (string=? tok given))))
 
 (define (handle-pool-post pool request body)
@@ -1434,8 +1434,8 @@
     (('GET ".well-known" "security.txt")
      (handle-security-txt
       (lambda () (serve-static-file work-dir components (host-default-page request)))))
-    (('GET "playnet-identity.json")
-     (handle-playnet-identity))
+    (('GET "localchimera-identity.json")
+     (handle-localchimera-identity))
     (('GET "universal-commune.json")
      (handle-universal-commune))
     (('GET "scopes")
@@ -1494,7 +1494,7 @@
   (format #t "  /report (POST)                → reports of unlawful or harmful content, kept apart from feedback~%")
   (format #t "  (else)                        → static files from ~a~%~%"
           work-dir)
-  ;; A LOCAL gateway (PLAYNET_DATA_DIR convention) has no nginx /ws proxy in
+  ;; A LOCAL gateway (LOCALCHIMERA_DATA_DIR convention) has no nginx /ws proxy in
   ;; front of it, so browser self-ws discovery can't reach it — the ?gateway=
   ;; param is the local mechanism. Hand the operator the ready-made URLs.
   (let ((sref (read-trimmed-line %gateway-sref-file)))
@@ -1515,14 +1515,14 @@
 ;; tiles) keeps being served concurrently. Loading (web server fibers) both registers
 ;; the 'fibers impl and lets us detect availability; fall back to the stable
 ;; single-threaded 'http impl if guile-fibers isn't in this environment.
-;; The fibers backend is OPT-IN via PLAYNET_FIBERS=1 (set by `make serve`), not
+;; The fibers backend is OPT-IN via LOCALCHIMERA_FIBERS=1 (set by `make serve`), not
 ;; the default. `make serve` has exercised it for the whole dev loop, but it is
 ;; not yet verified on the box, so prod keeps the stock single-threaded `http`
 ;; backend it has always run — a slow upstream fetch briefly blocks, same as
-;; before, and nginx buffers in front. Flip the default (or set PLAYNET_FIBERS in
+;; before, and nginx buffers in front. Flip the default (or set LOCALCHIMERA_FIBERS in
 ;; the prod service) once fibers is smoke-tested on the box.
 (define (server-impl)
-  (if (and (getenv "PLAYNET_FIBERS")
+  (if (and (getenv "LOCALCHIMERA_FIBERS")
            (false-if-exception (begin (resolve-interface '(web server fibers)) #t)))
       (begin (format #t "  (server: fibers backend — non-blocking, concurrent)~%")
              'fibers)

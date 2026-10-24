@@ -23,9 +23,9 @@
 (use-modules (goblins)
              (goblins vat)
              (goblins actor-lib methods)
-             (playnet test harness)
-             (playnet monero wallet)
-             (playnet monero topup)
+             (localchimera test harness)
+             (localchimera monero wallet)
+             (localchimera monero topup)
              (srfi srfi-1)
              (ice-9 ftw)
              (ice-9 format))
@@ -129,7 +129,7 @@
 
 ;;; ── The journal, in a directory of this run's ─────────────────────────────
 
-(define %dir (format #f "/tmp/playnet-test-topup-~a" (getpid)))
+(define %dir (format #f "/tmp/localchimera-test-topup-~a" (getpid)))
 (define (clear-dir!)
   (when (file-exists? %dir)
     (for-each (lambda (f) (delete-file (string-append %dir "/" f)))

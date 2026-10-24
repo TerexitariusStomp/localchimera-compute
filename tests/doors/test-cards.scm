@@ -15,19 +15,19 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-cards.scm
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet identity cards)
-             ((playnet keri citizen-sig)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera identity cards)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
-             ((playnet keri signify-portable) #:select (scm->json-canonical))
+             ((localchimera keri signify-portable) #:select (scm->json-canonical))
              (goblins) (goblins vat) (goblins actor-lib methods)
              (ice-9 ftw)
              ((srfi srfi-1) #:select (find filter)))
 
-(define data (string-append (or (getenv "TMPDIR") "/tmp") "/playnet-cards-test-" (number->string (getpid))))
+(define data (string-append (or (getenv "TMPDIR") "/tmp") "/localchimera-cards-test-" (number->string (getpid))))
 (mkdir data)
-(setenv "PLAYNET_DATA_DIR" data)
+(setenv "LOCALCHIMERA_DATA_DIR" data)
 
 (define ana-id (make-keri-identity)) (define ben-id (make-keri-identity)) (define cy-id (make-keri-identity))
 (define ANA (keri-identity-aid ana-id)) (define BEN (keri-identity-aid ben-id)) (define CY (keri-identity-aid cy-id))

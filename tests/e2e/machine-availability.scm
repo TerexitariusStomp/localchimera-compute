@@ -10,13 +10,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module -L tests tests/e2e/machine-availability.scm
 
-(use-modules (playnet test harness)
-             (playnet test e2e)
-             (playnet machine specs)
-             (playnet machine receipt)
-             (playnet machine registry)
-             (playnet machine envelope)
-             (playnet boot governance)
+(use-modules (localchimera test harness)
+             (localchimera test e2e)
+             (localchimera machine specs)
+             (localchimera machine receipt)
+             (localchimera machine registry)
+             (localchimera machine envelope)
+             (localchimera boot governance)
              (goblins) (goblins vat)
              (goblins utils hashmap)
              (srfi srfi-1))

@@ -8,10 +8,10 @@
 ;;;
 ;;; Run: guile -L module tests/notify/test-notify-router.scm
 
-(use-modules (playnet test harness)
-             (playnet notify router)
-             (playnet notify recipient)
-             (playnet notify rendered)
+(use-modules (localchimera test harness)
+             (localchimera notify router)
+             (localchimera notify recipient)
+             (localchimera notify rendered)
              (goblins)
              (goblins actor-lib methods)
              (goblins vat)
@@ -36,7 +36,7 @@
 ;; Three channels, three styles.
 (define bindings
   (list (make-binding 'browser  'inbox-a  'terse)
-        (make-binding 'email    "hiro@playnet.earth" 'rich)
+        (make-binding 'email    "hiro@localchimera.earth" 'rich)
         (make-binding 'telegram 42       'markdown)))
 
 (define (send-adapters sends) (map car sends))

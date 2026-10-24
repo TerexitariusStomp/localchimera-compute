@@ -28,7 +28,7 @@ Sources: cadastre.data.gouv.fr (Etalab GeoJSON), apicarto.ign.fr/api/gpu.
 """
 import gzip, json, math, re, sys, urllib.request
 
-UA = {"User-Agent": "playnet-law-ingest/1.0"}
+UA = {"User-Agent": "localchimera-law-ingest/1.0"}
 
 def fetch(url, gz=False, tries=4):
     # the open services reset a connection now and then; a bulk pull that dies

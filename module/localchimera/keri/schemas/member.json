@@ -1,0 +1,82 @@
+{
+  "$id": "EPweAuxyIzZgjyEsJp6t-fl6-ao0DlX0CBY9Xk9jMehI",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LocalChimera Member Credential",
+  "description": "Credential asserting that the holder is a registered member of localchimera.",
+  "type": "object",
+  "credentialType": "LocalChimeraMemberCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Optional salt for privacy-preserving presentations"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Human-readable display name"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "name"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

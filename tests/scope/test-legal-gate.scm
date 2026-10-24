@@ -16,15 +16,15 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-legal-gate.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet legal crossings) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness) (localchimera legal crossings) (localchimera vf schemas) (srfi srfi-1) (localchimera scope live)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 string-fun))
 
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(use-modules (playnet legal crossings))                                  ; recipe → crossings
-(use-modules (playnet legal registry)) ; crossings → demands
+(use-modules (localchimera legal crossings))                                  ; recipe → crossings
+(use-modules (localchimera legal registry)) ; crossings → demands
 
 ;; ── the recipe: recover produce → cook → share a meal. Crossings are DECLARED
 ;;    as `crossing:<x>` classification tags on the specs (per §11) — derived, not

@@ -17,12 +17,12 @@
 ;;;         tests/solve/test-transport-recipe-rates.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile))
 ;; transport.scm is a module now — use-modules, not primitive-load. A
 ;; define-module inside a primitive-loaded file switches current-module for
 ;; the REST of this file and never switches back.
-(use-modules (playnet knowledge recipes transport))
+(use-modules (localchimera knowledge recipes transport))
 
 (define *pass* 0) (define *fail* 0)
 (define (check label ok)

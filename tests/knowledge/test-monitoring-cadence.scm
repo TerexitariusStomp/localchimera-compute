@@ -20,13 +20,13 @@
 ;;; earned, not spent into recklessness — and it costs real hours, priced by the
 ;;; same inspection-intensity every skill edge already pays.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/knowledge/test-monitoring-cadence.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
 ;; edge-reliance / inspection-intensity / reliance->valid-until — the generic
 ;; inspection chain (formulas/cadence), which the catalogue below imports.
-(use-modules (playnet knowledge catalogues eco))
+(use-modules (localchimera knowledge catalogues eco))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

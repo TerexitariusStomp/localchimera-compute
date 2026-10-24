@@ -12,7 +12,7 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/gateway/test-websocket-fragments.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (web socket frame)
              (rnrs bytevectors)
              (ice-9 binary-ports)

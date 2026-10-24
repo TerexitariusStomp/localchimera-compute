@@ -11,12 +11,12 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/solve/test-cap-combine.scm
 
-(use-modules (playnet solve ingest))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet test harness)
-             (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas))
+(use-modules (localchimera solve ingest))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera test harness)
+             (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas))
 
 (define place (place* "shop"))
 (define (cap good t v) (cons (lg good (cell "shop" t)) v))

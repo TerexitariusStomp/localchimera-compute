@@ -10,11 +10,11 @@
 ;;;
 ;;; Run: guile -L module tests/economy/test-socialization-contribution.scm
 
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas)
-             (playnet boot scope) (playnet economy socialization)
-             (playnet credentials commitments) (playnet credentials custody)
-             (playnet keri acdc) (playnet keri acdc-store)
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas)
+             (localchimera boot scope) (localchimera economy socialization)
+             (localchimera credentials commitments) (localchimera credentials custody)
+             (localchimera keri acdc) (localchimera keri acdc-store)
              (goblins) (goblins vat) (srfi srfi-1))
 
 (define OWNER   "EAlice")

@@ -12,7 +12,7 @@ cd "$(dirname "$0")/../.."
 
 export GUILE_AUTO_COMPILE=0
 
-# The rift check, on by default in CI (playnet.typ §"the free raw"): every draw
+# The rift check, on by default in CI (localchimera.typ §"the free raw"): every draw
 # must be produced, stocked, or barrier-bounded. STARVED — consumed with no
 # producer, stock, or barrier — fails the suite: it is a good conjuring itself,
 # and the plan's default is fail-closed. EXTERNALITIES are printed, not failed:
@@ -278,8 +278,8 @@ run_suite "Pin book"                  "test-pins.scm"
 # said is refused. The second suite hosts one commune in a CHILD PROCESS behind
 # a websocket sturdyref — the same solve across a real process boundary.
 run_suite "Federation Wire"           "test-federation-wire.scm"
-# the two-process suites wait on real ticks (minutes); PLAYNET_WIRE_TESTS=0 leaves them out
-[ "${PLAYNET_WIRE_TESTS:-1}" != 0 ] && run_suite "Federation Wire (2 procs)" "test-federation-wire-procs.scm"
+# the two-process suites wait on real ticks (minutes); LOCALCHIMERA_WIRE_TESTS=0 leaves them out
+[ "${LOCALCHIMERA_WIRE_TESTS:-1}" != 0 ] && run_suite "Federation Wire (2 procs)" "test-federation-wire-procs.scm"
 
 # The same solve with no coordinator and no rounds: peers messaging along the
 # links, on a network that reorders, loses and repeats; then as signed actors.
@@ -300,7 +300,7 @@ run_suite "Crossing custody"        "test-crossing-custody.scm"
 run_suite "Federation rotation"      "test-federation-rotation.scm"
 run_suite "Federation Async"          "test-federation-async.scm"
 run_suite "Federation Peer"           "test-federation-peer.scm"
-[ "${PLAYNET_WIRE_TESTS:-1}" != 0 ] && run_suite "Federation Peer (2 procs)"  "test-federation-peer-procs.scm"
+[ "${LOCALCHIMERA_WIRE_TESTS:-1}" != 0 ] && run_suite "Federation Peer (2 procs)"  "test-federation-peer-procs.scm"
 run_suite "Federation scope record"    "test-federation-scope-record.scm"
 run_suite "Federation spec"            "test-federation-spec.scm"
 run_suite "Federation desk"            "test-federation-desk.scm"

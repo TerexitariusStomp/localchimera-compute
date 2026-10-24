@@ -12,13 +12,13 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-cost-share.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet legal crossings)
-             (playnet legal bodies)
-             (playnet scope agents)
-             (playnet observation observer)
-             (playnet knowledge dsl findings)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera legal crossings)
+             (localchimera legal bodies)
+             (localchimera scope agents)
+             (localchimera observation observer)
+             (localchimera knowledge dsl findings)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

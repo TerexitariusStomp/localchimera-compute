@@ -10,10 +10,10 @@
 ;;; fires once THRESHOLD-K distinct recognised members have each signed
 ;;; the ceremony's own statement and someone calls 'finalize.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet boot scope) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials))
-(use-modules ((playnet keri citizen-sig)
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera boot scope) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials))
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         sign-said))
              (goblins) (goblins vat) (goblins utils hashmap))

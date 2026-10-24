@@ -12,8 +12,8 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module tests/solve/test-externality.scm
 
-(use-modules (playnet test harness) (srfi srfi-1) (ice-9 format)
-             (playnet solve externality))
+(use-modules (localchimera test harness) (srfi srfi-1) (ice-9 format)
+             (localchimera solve externality))
 
 (define (~= a b tol) (< (abs (- a b)) tol))
 

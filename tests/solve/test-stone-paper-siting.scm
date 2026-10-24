@@ -48,14 +48,14 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-stone-paper-siting.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
 (define here (dirname (current-filename)))
 (define root (dirname (dirname here)))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas))
 
 ;; ── coefficients ────────────────────────────────────────────────────────────
 (define RESIN-H  0.02)     ; h/kg — HDPE resin

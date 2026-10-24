@@ -7,10 +7,10 @@
 ;;; leaves Radicle as it stands.
 ;;;
 ;;;   issues   every open issue is a want for its deliverable
-;;;            (module/playnet/dev/priorities.scm issue-facts)
+;;;            (module/localchimera/dev/priorities.scm issue-facts)
 ;;;   people   docs/dev-scope.sexp, or DEV_SCOPE_PATH
-;;;            (module/playnet/dev/recipes.scm)
-;;;   plan     module/playnet/dev/plan.scm
+;;;            (module/localchimera/dev/recipes.scm)
+;;;   plan     module/localchimera/dev/plan.scm
 ;;;
 ;;; Usage:
 ;;;   make dev-plan
@@ -24,11 +24,11 @@
 ;;; Requires: rad on PATH (unless --issues), and the planner's solve
 ;;; environment (the dev-test manifest; `make dev-plan` supplies it).
 
-(use-modules (playnet scope root)
-             (playnet dev priorities)
-             (playnet dev plan)
-             (playnet dev rad-issues)
-             ((playnet dev recipes) #:select (person-ref))
+(use-modules (localchimera scope root)
+             (localchimera dev priorities)
+             (localchimera dev plan)
+             (localchimera dev rad-issues)
+             ((localchimera dev recipes) #:select (person-ref))
              (goblins) (goblins vat)
              (ice-9 format)
              (ice-9 pretty-print)
@@ -86,14 +86,14 @@
           (exit 2))
         (let* ((span   (dev-week-span))
                (result (with-vat (spawn-vat #:name "dev-plan")
-                         (let ((scope (spawn-scope-root "playnet development")))
+                         (let ((scope (spawn-scope-root "localchimera development")))
                            (seed-dev-scope! scope facts people)
                            (plan-dev-week scope facts people #:span span))))
                (rows   (read-dev-plan result facts people))
                (totals (dev-plan-totals result rows people))
                (of     (lambda (state) (filter (lambda (r) (eq? state (row-ref r 'state))) rows)))
                (who    (option "--for")))
-          (format #t "~%playnet development — the week ~a … ~a~%" (car span) (cdr span))
+          (format #t "~%localchimera development — the week ~a … ~a~%" (car span) (cdr span))
           (format #t "~a open issue~:p asking ~,1f hours; the plan places ~,1f~%"
                   (length rows) (assq-ref totals 'asked) (assq-ref totals 'planned))
           (format #t "~%  ~12a ~8@a ~8@a~%" "" "stated" "planned")

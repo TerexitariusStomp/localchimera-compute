@@ -20,19 +20,19 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module tests/solve/test-subsistence-consumption.scm
 
-;; self-locate the `module` dir so (playnet knowledge catalogues substances) resolves
-;; under any -L (the test-tensions loop passes -L module/playnet/planner).
+;; self-locate the `module` dir so (localchimera knowledge catalogues substances) resolves
+;; under any -L (the test-tensions loop passes -L module/localchimera/planner).
 (use-modules (srfi srfi-1) (ice-9 format))
 (let ((self (find file-exists? (filter string? (cons (false-if-exception (current-filename)) (command-line))))))
   (when self (add-to-load-path (string-append (dirname self) "/../../module"))))
-(use-modules (playnet test harness)
-             (playnet knowledge catalogues substances)   ; nutrient-content · menu-carries · menu-starves
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
-             (playnet knowledge dsl world)
-             (playnet knowledge recipes bread-commune-seed)
-             (playnet knowledge catalogues subsistence))
+(use-modules (localchimera test harness)
+             (localchimera knowledge catalogues substances)   ; nutrient-content · menu-carries · menu-starves
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
+             (localchimera knowledge dsl world)
+             (localchimera knowledge recipes bread-commune-seed)
+             (localchimera knowledge catalogues subsistence))
 
 ;; ── the table: what the bread town produces that carries nutrition
 (define TABLE

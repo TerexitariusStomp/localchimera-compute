@@ -25,19 +25,19 @@
 ;;;      since the restart.
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-peer-procs.scm
-;;; With PLAYNET_FED_REMOTE=<ssh target> B runs on that machine (the fixture:
+;;; With LOCALCHIMERA_FED_REMOTE=<ssh target> B runs on that machine (the fixture:
 ;;; a checkout there, the crypto libraries on its path, one ssh session
 ;;; carrying the wire both ways), and the round trips are that network's.
 
-(use-modules (playnet solve federation-solve))
-(use-modules (playnet test harness)
-             (playnet federation peer)
-             (playnet federation host)
-             (playnet federation federate)
-             ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
-             ((playnet credentials membership) #:select (make-federation-sturdyref-credential))
-             ((playnet federation sturdyref-credential) #:select (sturdyref-credential-end))
+(use-modules (localchimera solve federation-solve))
+(use-modules (localchimera test harness)
+             (localchimera federation peer)
+             (localchimera federation host)
+             (localchimera federation federate)
+             ((localchimera solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
+             ((localchimera credentials membership) #:select (make-federation-sturdyref-credential))
+             ((localchimera federation sturdyref-credential) #:select (sturdyref-credential-end))
              (goblins actor-lib joiners) (goblins actor-lib timers)
              (goblins) (goblins vat)
              (goblins actor-lib on)
@@ -48,10 +48,10 @@
              (srfi srfi-1))
 
 (setvbuf (current-output-port) 'line)
-(use-modules (playnet test planner federation-wire-fixture))
+(use-modules (localchimera test planner federation-wire-fixture))
 
 (define tmp (or (getenv "TMPDIR") "/tmp"))
-(define run-id (string-append "playnet-fed-peer-" (number->string (getpid))))
+(define run-id (string-append "localchimera-fed-peer-" (number->string (getpid))))
 (define state-a (string-append tmp "/" run-id ".state-a"))
 (define state-f (string-append tmp "/" run-id ".state-f"))
 ;; what B keeps, and what the two keep for each other: on B's machine

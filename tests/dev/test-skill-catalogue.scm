@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-skill-catalogue.scm — the catalogue $\mathcal{K}$: every area, a real law.
 ;;;
-;;; docs/playnet.typ names the catalogue as theory; knowledge/skills/ is its
+;;; docs/localchimera.typ names the catalogue as theory; knowledge/skills/ is its
 ;;; code. This suite pins two properties the migration
 ;;; (knowledge/recipes/dev.scm, recipes/meeting.scm) depends on: every
 ;;; `area:` docs/radicle-issues.md's taxonomy states has a matching entry —
@@ -12,16 +12,16 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/dev/test-skill-catalogue.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             ((playnet vf schemas)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             ((localchimera vf schemas)
               #:select (resource-specification-id resource-specification-resource-classified-as
                         resource-specification-default-unit-of-resource
                         resource-specification-default-unit-of-effort))
-             ((playnet vf formulas skill-law) #:select (skill-law-of))
-             ((playnet knowledge skills skill-catalogue)
+             ((localchimera vf formulas skill-law) #:select (skill-law-of))
+             ((localchimera knowledge skills skill-catalogue)
               #:select (%skill-catalogue catalogue-skill))
-             ((playnet dev recipes) #:select (dev-skill))
+             ((localchimera dev recipes) #:select (dev-skill))
              (srfi srfi-1))
 
 ;; the taxonomy docs/radicle-issues.md states under `### area:` — read as a

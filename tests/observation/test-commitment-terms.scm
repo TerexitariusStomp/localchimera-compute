@@ -13,9 +13,9 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module -L . -L tests tests/observation/test-commitment-terms.scm
 
-(use-modules (playnet test harness) (playnet test events)
-             (playnet observation observer) (playnet vf schemas) (playnet observation states)
-             ((playnet observation account) #:select (claim-commitment claim-terms claim-fulfillments open-claim-for))
+(use-modules (localchimera test harness) (localchimera test events)
+             (localchimera observation observer) (localchimera vf schemas) (localchimera observation states)
+             ((localchimera observation account) #:select (claim-commitment claim-terms claim-fulfillments open-claim-for))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

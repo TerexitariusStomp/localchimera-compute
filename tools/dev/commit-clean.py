@@ -70,8 +70,8 @@ DEFAULT_WARM = 'make lint-compile warm-ccache'     # lint-compile checks every l
 DEFAULT_EMIT = 'make emit-all'
 DEFAULT_BOOT = 'bash tools/test/boot-smoke.sh'
 MAX_ROUNDS = 3
-MODULE_NAME = re.compile(r'\(playnet((?: [a-z0-9*+_-]+)+)\)')
-INCLUDE = re.compile(r'include-from-path "(playnet/[^"]+\.scm)"')
+MODULE_NAME = re.compile(r'\(localchimera((?: [a-z0-9*+_-]+)+)\)')
+INCLUDE = re.compile(r'include-from-path "(localchimera/[^"]+\.scm)"')
 
 
 def git(*args, **kw):
@@ -196,13 +196,13 @@ def sweep_stale_go(wt, changed, cache_root):
             if n.endswith('.scm'):
                 path = os.path.relpath(os.path.join(dirpath, n), wt)
                 text = open(os.path.join(wt, path), errors='replace').read()
-                files[path] = ({'playnet' + m.group(1) for m in MODULE_NAME.finditer(text)},
+                files[path] = ({'localchimera' + m.group(1) for m in MODULE_NAME.finditer(text)},
                                {'module/' + m.group(1) for m in INCLUDE.finditer(text)})
-                uses['playnet ' + path[len('module/playnet/'):-4].replace('/', ' ')] = path
+                uses['localchimera ' + path[len('module/localchimera/'):-4].replace('/', ' ')] = path
     reverse = {}
     for path, (names, includes) in files.items():
         for name in names:
-            target = uses.get(name.replace('playnet', 'playnet', 1))
+            target = uses.get(name.replace('localchimera', 'localchimera', 1))
             if target:
                 reverse.setdefault(target, set()).add(path)
         for inc in includes:
@@ -342,7 +342,7 @@ def main(argv):
         'emit_cmd': take_option(args, '--emit-cmd', DEFAULT_EMIT),
         'warm_cmd': take_option(args, '--warm-cmd', DEFAULT_WARM),
         'boot_cmd': take_option(args, '--boot-cmd', DEFAULT_BOOT),
-        'gate_wt': take_option(args, '--gate-wt', '~/.cache/playnet/gate-wt'),
+        'gate_wt': take_option(args, '--gate-wt', '~/.cache/localchimera/gate-wt'),
         'branch': take_option(args, '--branch'),
         'cache_root': os.path.expanduser(take_option(args, '--cache-root', '~/.cache/guile')),
     }

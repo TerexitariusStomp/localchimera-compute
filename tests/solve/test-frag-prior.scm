@@ -12,12 +12,12 @@
 ;;; under the remaining headroom; (c) prior + draw never crosses the true tip; (d) prior=0 recovers the
 ;;; full-headroom behaviour.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-prior.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-prior.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 (define s-tip 10.0)   ; co2 tip = quantile_0.5 of [8,12]
 (define (emit-recipe)

@@ -24,9 +24,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/scope/test-snlt-order-invariance.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet algorithms rollup) (playnet algorithms sne) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera algorithms rollup) (localchimera algorithms sne) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

@@ -184,7 +184,7 @@ const modelCache = {
         if (this._db || typeof indexedDB === "undefined")
             return this._db;
         this._db = await new Promise((res, rej) => {
-            const r = indexedDB.open("playnet-models", 1);
+            const r = indexedDB.open("localchimera-models", 1);
             r.onupgradeneeded = () => r.result.createObjectStore("models");
             r.onsuccess = () => res(r.result);
             r.onerror = () => rej(r.error);

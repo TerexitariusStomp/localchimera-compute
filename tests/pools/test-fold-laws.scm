@@ -18,11 +18,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/pools/test-fold-laws.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas) (playnet vf beyond schedules) (srfi srfi-1)
-             (playnet pools availability-pool)
-             ((playnet algorithms elastic) #:select (credit-combine))
-             ((playnet vf aggregation fold-node) #:select (keyed-sum-monoid monoid-combine))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (localchimera vf beyond schedules) (srfi srfi-1)
+             (localchimera pools availability-pool)
+             ((localchimera algorithms elastic) #:select (credit-combine))
+             ((localchimera vf aggregation fold-node) #:select (keyed-sum-monoid monoid-combine))
              (srfi srfi-1))
 
 ;; a fixed-seed generator: the same inputs every run

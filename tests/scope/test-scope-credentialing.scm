@@ -11,10 +11,10 @@
 ;;;   guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -L module tests/scope/test-scope-credentialing.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas))
-(use-modules (playnet observation credentials) (playnet boot scope) (playnet credentials commitments) (playnet credentials work) (playnet keri acdc-store))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas))
+(use-modules (localchimera observation credentials) (localchimera boot scope) (localchimera credentials commitments) (localchimera credentials work) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 (define vat (spawn-vat))
@@ -45,10 +45,10 @@
       (define (creds schema) ($ acdc 'by-schema schema))
 
       (display "\n── A live scope mints the whole credential family ──\n")
-      (check "work-event ACDC issued"  (length (creds *schema-playnet-work-event*)) 1)
-      (check "skill ACDC minted"       (length (creds *schema-playnet-skill*)) 1)
-      (check "intent ACDC issued"      (length (creds *schema-playnet-intent*)) 1)
-      (check "claim ACDC issued"       (length (creds *schema-playnet-claim*)) 1)
+      (check "work-event ACDC issued"  (length (creds *schema-localchimera-work-event*)) 1)
+      (check "skill ACDC minted"       (length (creds *schema-localchimera-skill*)) 1)
+      (check "intent ACDC issued"      (length (creds *schema-localchimera-intent*)) 1)
+      (check "claim ACDC issued"       (length (creds *schema-localchimera-claim*)) 1)
 
       (display "\n── on-intent still forwards to the Validation Gate ──\n")
       ;; the composed hook ran register-intent, so the work validated (gross 30)
@@ -58,8 +58,8 @@
       (check "observer credit-balance = 30 − 10 = 20" ($ obs 'credit-balance "ada") 20)
       (check "reconstructed credit-balance matches the live observer"
              (reconstruct-credit-balance "ada"
-                                         (creds *schema-playnet-work-event*)
-                                         (creds *schema-playnet-claim*))
+                                         (creds *schema-localchimera-work-event*)
+                                         (creds *schema-localchimera-claim*))
              ($ obs 'credit-balance "ada")))))
 
 ;; ── a duration is counted in hours wherever it is read ──────────────────────
@@ -82,8 +82,8 @@
       (define (near-1.5? x) (< (abs (- x 1.5)) 1e-9))
       (check-pred "the observer counts ninety minutes as 1.5 hours" (near-1.5? ($ obs 'validated-gross "cy")))
       (check-pred "the credentials rebuild to the same 1.5"
-                  (near-1.5? (reconstruct-credit-balance "cy" ($ acdc 'by-schema *schema-playnet-work-event*)
-                                                         ($ acdc 'by-schema *schema-playnet-claim*)))))))
+                  (near-1.5? (reconstruct-credit-balance "cy" ($ acdc 'by-schema *schema-localchimera-work-event*)
+                                                         ($ acdc 'by-schema *schema-localchimera-claim*)))))))
 
 ;; ── spawn-commune turns the substrate on by itself (no manual install) ───────
 (with-vat (spawn-vat)
@@ -96,9 +96,9 @@
                             #:provider "bob" #:effort-quantity (make-measure 5 %effort-unit)
                             #:has-point-in-time "2026-03-03T08:00:00Z" #:in-scope-of '()))
     (check "commune auto-minted a work-event ACDC"
-           (length ($ acdc 'by-schema *schema-playnet-work-event*)) 1)
+           (length ($ acdc 'by-schema *schema-localchimera-work-event*)) 1)
     (check "commune auto-minted bob's skill ACDC"
-           (length ($ acdc 'by-schema *schema-playnet-skill*)) 1)))
+           (length ($ acdc 'by-schema *schema-localchimera-skill*)) 1)))
 
 (display "\n")
 (test-summary!)

@@ -18,13 +18,13 @@
 ;;; branch exists to hold. If someone deletes the confirming pass because nothing
 ;;; seems to exercise it, the property is what should fail.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/solve/test-backend-verdict-parity.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas))
 ;; A period here is a WEEK: the roster's Monday 00:00–12:00 is twelve hours a period, on any date.
 (set-period-length! 1.0 "week")
 

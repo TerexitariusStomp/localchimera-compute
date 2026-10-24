@@ -1,5 +1,5 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; deploy/manifests/dev-manifest.scm — development environment for playnet hacking
+;;; deploy/manifests/dev-manifest.scm — development environment for localchimera hacking
 ;;;
 ;;; Usage: guix shell -m deploy/manifests/dev-manifest.scm
 ;;;

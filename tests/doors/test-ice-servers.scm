@@ -14,8 +14,8 @@
 
 (add-to-load-path "module")
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
              (goblins) (goblins vat) (goblins actor-lib on)
              (ice-9 rdelim) (ice-9 popen)
              (srfi srfi-1))

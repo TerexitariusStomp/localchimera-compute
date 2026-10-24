@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-decomposed-optimality.scm — when may the federation stop coordinating?
 ;;;
-;;; Spec: docs/playnet.typ §7.15 / §10 (scope decomposition, pull-coordination),
+;;; Spec: docs/localchimera.typ §7.15 / §10 (scope decomposition, pull-coordination),
 ;;;       docs/social-category.typ §6 (constraints glue exactly, objectives glue
 ;;;       by iterating boundary pulls).
 ;;;
@@ -25,10 +25,10 @@
 ;;;
 ;;; Run: guile tests/solve/test-decomposed-optimality.scm
 
-(use-modules (playnet solve decomposed))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine)
-             (playnet solve solver)
+(use-modules (localchimera solve decomposed))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
 

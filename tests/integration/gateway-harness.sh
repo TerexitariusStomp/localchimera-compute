@@ -25,8 +25,8 @@ gw_cleanup() {
 }
 
 gw_setup() {
-    TMPA=$(mktemp -d -t playnet-gw-a.XXXXXX)
-    TMPB=$(mktemp -d -t playnet-gw-b.XXXXXX)
+    TMPA=$(mktemp -d -t localchimera-gw-a.XXXXXX)
+    TMPB=$(mktemp -d -t localchimera-gw-b.XXXXXX)
     PORT_A=$((9100 + RANDOM % 800))
     PORT_B=$((9100 + RANDOM % 800))
     while [ "$PORT_A" -eq "$PORT_B" ]; do PORT_B=$((9100 + RANDOM % 800)); done
@@ -37,7 +37,7 @@ gw_setup() {
 
 gw_spawn() {
     local name="$1" tmpdir="$2" port="$3"; shift 3
-    env PLAYNET_DATA_DIR="$tmpdir" \
+    env LOCALCHIMERA_DATA_DIR="$tmpdir" \
         LTDL_LIBRARY_PATH="${GUIX_ENVIRONMENT:+$GUIX_ENVIRONMENT/lib}${LTDL_LIBRARY_PATH:+:$LTDL_LIBRARY_PATH}" \
         "$@" \
         guile --no-auto-compile -L module -L . -s server/gateway.scm --host 127.0.0.1 --port "$port" \

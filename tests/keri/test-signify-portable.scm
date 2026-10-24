@@ -9,12 +9,12 @@
 ;;; This test pins the equivalence on the alist shapes that flow
 ;;; through saidify.
 
-(use-modules (playnet test harness)
-             (playnet keri signify-portable)
-             (playnet keri signify)
-             ((playnet keri crypto-primitives)
+(use-modules (localchimera test harness)
+             (localchimera keri signify-portable)
+             (localchimera keri signify)
+             ((localchimera keri crypto-primitives)
               #:select (keri-crypto-random-bytes))
-             ((playnet keri citizen-sig)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity?
                         keri-identity-aid))
              (rnrs bytevectors)

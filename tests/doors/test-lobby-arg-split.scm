@@ -17,9 +17,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-lobby-arg-split.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet doors lobby)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
              (goblins) (goblins vat) (goblins actor-lib methods))
 
 (define vat (spawn-vat))

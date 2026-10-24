@@ -1,6 +1,6 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-units-fallback.scm — unit conversion where GNU units is absent, and where
-;;; it is present (module/playnet/utils/units.scm).
+;;; it is present (module/localchimera/utils/units.scm).
 ;;;
 ;;; The gateway's box has no GNU units. A conversion used to ask the operating
 ;;; system for it every time: a failed fork and a line on stderr per conversion,
@@ -31,15 +31,15 @@
 (chdir %project-root)
 
 (add-to-load-path "module")
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet utils units)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera utils units)
              (srfi srfi-1)
              (ice-9 format))
 
-(define state (@@ (playnet utils units) %units-state))
-(define categories (@@ (playnet utils units) *substance-categories*))
-(define table (@@ (playnet utils units) *unit->base*))
+(define state (@@ (localchimera utils units) %units-state))
+(define categories (@@ (localchimera utils units) *substance-categories*))
+(define table (@@ (localchimera utils units) *unit->base*))
 
 (display "\n── No GNU units on PATH ──\n")
 (check "it is not available" (units-available?) #f)

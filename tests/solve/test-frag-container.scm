@@ -12,14 +12,14 @@
 ;;; fragility (tip 100), logging eases off below it; (c) without it, logging runs to the stock — so the
 ;;; container barrier, not the tree's own cap, is what holds the line.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-container.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-container.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define amazon-tip 100.0)   ; quantile_0.5(80,120)
 ;; a TREE resource, contained-in the Amazon: its place IS the Amazon, and it is one of the Amazon's contents

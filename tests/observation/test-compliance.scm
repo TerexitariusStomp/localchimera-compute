@@ -9,13 +9,13 @@
 ;;; Pure data path (seed-resource, no ACDC) ⇒ no blake3.
 ;;; Run: guile -L module tests/observation/test-compliance.scm
 
-(use-modules (playnet test harness) (playnet observation observer) (playnet vf schemas) (playnet vf beyond lot) (srfi srfi-1)
+(use-modules (localchimera test harness) (localchimera observation observer) (localchimera vf schemas) (localchimera vf beyond lot) (srfi srfi-1)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet legal crossings))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal registry-actor))
-(use-modules (playnet legal compliance))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal registry-actor))
+(use-modules (localchimera legal compliance))
 (load (string-append (dirname (current-filename)) "/legal-example-rules.scm"))
 
 ;; a held credential = a resource conforming to the demand-name spec, held by an

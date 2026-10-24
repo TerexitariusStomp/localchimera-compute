@@ -13,8 +13,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-planner-facet.scm
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
              (goblins)
              (goblins vat)
              (goblins actor-lib methods)

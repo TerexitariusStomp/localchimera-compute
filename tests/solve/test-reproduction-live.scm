@@ -21,9 +21,9 @@
 ;;; Run:  guile --no-auto-compile -L module tests/solve/test-reproduction-live.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 ;; A period here is a WEEK: the roster's window every day is 56 h a period, the
 ;; labour these floors were sized on, and the same on any date.

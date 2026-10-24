@@ -10,15 +10,15 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module -L tests tests/economy/test-fp-present-bundle.scm
 
-(use-modules (playnet test harness)
-             (playnet scope root) (srfi srfi-1)
-             (playnet boot governance) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
-             (playnet keri signify-portable)
-             ((playnet keri citizen-sig)
+(use-modules (localchimera test harness)
+             (localchimera scope root) (srfi srfi-1)
+             (localchimera boot governance) (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera keri first-person predicates)
+             (localchimera keri signify-portable)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         aid-signer-keys-resolver))
-             ((playnet identity seat) #:select (verify-carried-kel))
-             ((playnet identity oobi-host)
+             ((localchimera identity seat) #:select (verify-carried-kel))
+             ((localchimera identity oobi-host)
               #:select (oobi-write-entry-to-dir! read-oobi-entry-from-dir oobi-current-key-from-dir))
              (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (ice-9 ftw) (srfi srfi-1) (srfi srfi-13))
@@ -109,9 +109,9 @@
            (schemas (map (lambda (c) (assoc-ref c "s")) creds)))
       (check "the bundle is a JSON string" (and (eq? 'ok (car r)) (string? json)) #t)
       (check "it carries the blessing, two personhoods and the vouch"
-             (list (count (lambda (s) (equal? s *schema-playnet-authorized-issuer*)) schemas)
-                   (count (lambda (s) (equal? s *schema-playnet-personhood*)) schemas)
-                   (count (lambda (s) (equal? s *schema-playnet-relationship*)) schemas))
+             (list (count (lambda (s) (equal? s *schema-localchimera-authorized-issuer*)) schemas)
+                   (count (lambda (s) (equal? s *schema-localchimera-personhood*)) schemas)
+                   (count (lambda (s) (equal? s *schema-localchimera-relationship*)) schemas))
              '(1 2 1))
       (check "it carries Alice's key log, rotation included"
              (vector-length (assoc-ref (assoc-ref (assoc-ref parsed "kels") ALICE) "rotations")) 1)

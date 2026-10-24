@@ -1,5 +1,5 @@
-/* ── Playnet palette ─────────────────────────────────────────────────────── */
-/* Kept in sync with module/playnet/ui/calendar.scm                          */
+/* ── LocalChimera palette ─────────────────────────────────────────────────────── */
+/* Kept in sync with module/localchimera/ui/calendar.scm                          */
 
 .cal-view {
   --pn-mint: #a8e6cf;     /* matched / yours / fulfilled         */

@@ -13,14 +13,14 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-provider-away.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet test harness)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera test harness)
              (goblins)
-             (playnet scope root) (playnet vf schemas)
-             (playnet vf schemas)
-             ((playnet plan accepts) #:select (accepts->pins))
-             (playnet scope root))
+             (localchimera scope root) (localchimera vf schemas)
+             (localchimera vf schemas)
+             ((localchimera plan accepts) #:select (accepts->pins))
+             (localchimera scope root))
 
 (define flows
   (list (wk* "aW" "farming" 2.0 "growB")

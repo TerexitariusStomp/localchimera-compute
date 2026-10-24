@@ -1,12 +1,12 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; test-gplay.scm — tests for (playnet org gplay)
+;;; test-gplay.scm — tests for (localchimera org gplay)
 ;;; Run with:  guile -L module tests/test-gplay.scm
 
 (define %project-root (string-append (dirname (current-filename)) "/../.."))
 (add-to-load-path (string-append %project-root "/module"))
 
-(use-modules (playnet test harness))
-(use-modules (playnet org gplay)
+(use-modules (localchimera test harness))
+(use-modules (localchimera org gplay)
              (goblins)
              (goblins actor-lib methods)
              (goblins actor-lib sealers)

@@ -22,11 +22,11 @@
 ;;;
 ;;; Run:  guile -q -L module tests/pools/test-reading-fold.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet pools reading-fold)
-             (playnet vf aggregation fold-node)
-             ((playnet solve engine) #:select (observed-shocks))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera pools reading-fold)
+             (localchimera vf aggregation fold-node)
+             ((localchimera solve engine) #:select (observed-shocks))
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))

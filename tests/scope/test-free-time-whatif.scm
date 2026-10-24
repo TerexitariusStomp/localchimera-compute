@@ -8,11 +8,11 @@
 ;;; (the live planner's) publishes.
 ;;;
 ;;; Run:  guile -L module tests/scope/test-free-time-whatif.scm
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet algorithms elastic) (playnet vf schemas)
-             (playnet scope live)
-             (playnet test planner bread)
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera algorithms elastic) (localchimera vf schemas)
+             (localchimera scope live)
+             (localchimera test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

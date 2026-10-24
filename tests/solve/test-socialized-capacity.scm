@@ -16,15 +16,15 @@
 ;;; declared — the mapping below emits nothing, and a lapsed grant likewise stops
 ;;; contributing).
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/solve/test-socialized-capacity.scm
+;;; Run:  guile -L module/localchimera/planner tests/solve/test-socialized-capacity.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
-(use-modules (playnet vf formulas capacity))  ; svc-eco-caps
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
+(use-modules (localchimera vf formulas capacity))  ; svc-eco-caps
 
 ;; deliver 1 parcel per bike-hour: a `use` of the bike (Svc|bike) + a produced good.
 (define deliver-tpl

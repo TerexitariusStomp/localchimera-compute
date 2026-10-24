@@ -9,7 +9,7 @@
 #
 # Opsec posture (deliberate):
 #   - Tor-only, no clearnet fallback. The host is an ssh-config ALIAS (default
-#     `playnet-server`) whose ProxyCommand routes through the local Tor SOCKS
+#     `localchimera-server`) whose ProxyCommand routes through the local Tor SOCKS
 #     proxy. No host/IP/.onion is hardcoded here — it lives only in ~/.ssh/config.
 #   - Hard Tor gate: if the SOCKS proxy is not reachable, SKIP cleanly (exit 0)
 #     rather than attempt any connection. A down proxy must never cause a direct
@@ -19,18 +19,18 @@
 #     deploy/scripts/backup-restore.sh when actually recovering.
 #
 # Env (all optional):
-#   PLAYNET_HOST          ssh alias (default: playnet-server)
-#   PLAYNET_BACKUP_USER   remote user (default: root — the archives are root-only)
-#   PLAYNET_BACKUP_REMOTE remote dir  (default: /var/lib/playnet/backups/)
-#   PLAYNET_BACKUP_LOCAL  local dir   (default: $HOME/playnet-backups)
+#   LOCALCHIMERA_HOST          ssh alias (default: localchimera-server)
+#   LOCALCHIMERA_BACKUP_USER   remote user (default: root — the archives are root-only)
+#   LOCALCHIMERA_BACKUP_REMOTE remote dir  (default: /var/lib/localchimera/backups/)
+#   LOCALCHIMERA_BACKUP_LOCAL  local dir   (default: $HOME/localchimera-backups)
 #   TOR_SOCKS             host:port   (default: 127.0.0.1:9050)
 
 set -euo pipefail
 
-HOST="${PLAYNET_HOST:-playnet-server}"
-RUSER="${PLAYNET_BACKUP_USER:-root}"
-REMOTE="${PLAYNET_BACKUP_REMOTE:-/var/lib/playnet/backups/}"
-LOCAL="${PLAYNET_BACKUP_LOCAL:-$HOME/playnet-backups}"
+HOST="${LOCALCHIMERA_HOST:-localchimera-server}"
+RUSER="${LOCALCHIMERA_BACKUP_USER:-root}"
+REMOTE="${LOCALCHIMERA_BACKUP_REMOTE:-/var/lib/localchimera/backups/}"
+LOCAL="${LOCALCHIMERA_BACKUP_LOCAL:-$HOME/localchimera-backups}"
 SOCKS="${TOR_SOCKS:-127.0.0.1:9050}"
 
 # --- Tor gate: proceed only if the SOCKS proxy is up. No Tor → no pull. -------

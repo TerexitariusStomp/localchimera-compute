@@ -4,9 +4,9 @@
 ;;; durable timers — workflow start + signal wires. Invariant leg pins
 ;;; the wires; live leg starts a real workflow over the HTTP bridge.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
              (srfi srfi-1))
 
 (let ((w (temporal-start-wire "dispute-d1" "dispute-deadline"
@@ -25,7 +25,7 @@
          (equal? (cdr (assoc "path" w))
                  "/workflows/dispute-d1/signal/receipt-landed") #t))
 
-(parity-live-delegate "PLAYNET_TEMPORAL_URL"
+(parity-live-delegate "LOCALCHIMERA_TEMPORAL_URL"
   "temporal starts a workflow"
   (lambda (t) (make-temporal-delegate t))
   (lambda (d) (d (temporal-start-wire "parity-wf-1" "noop" "parity" '())))

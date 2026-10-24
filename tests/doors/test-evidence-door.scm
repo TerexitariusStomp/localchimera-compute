@@ -17,13 +17,13 @@
 
 (add-to-load-path "module")
 
-(define %dir (string-append (or (getenv "TMPDIR") "/tmp") "/playnet-evidence-test-"
+(define %dir (string-append (or (getenv "TMPDIR") "/tmp") "/localchimera-evidence-test-"
                             (number->string (getpid))))
-(setenv "PLAYNET_DATA_DIR" %dir)
+(setenv "LOCALCHIMERA_DATA_DIR" %dir)
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet gateway evidence)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera gateway evidence)
              (gcrypt base64) (rnrs bytevectors)
              (goblins) (goblins vat) (goblins actor-lib methods)
              (goblins actor-lib on)

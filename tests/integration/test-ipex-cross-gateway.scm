@@ -15,19 +15,19 @@
 ;;;
 ;;; Run: guile -L module -L . tests/integration/test-ipex-cross-gateway.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri credentials)
-             (playnet keys exchange)
-             (playnet keri signify)
-             (playnet keri signify-portable)
-             (playnet keri crypto-primitives)
-             (playnet federation ipex-policy)
-             (playnet credentials membership)
-             (playnet federation scope-graph)
-             (playnet keys pending-grants)
-             (playnet keys keria-store)
-             (playnet utils hex)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri credentials)
+             (localchimera keys exchange)
+             (localchimera keri signify)
+             (localchimera keri signify-portable)
+             (localchimera keri crypto-primitives)
+             (localchimera federation ipex-policy)
+             (localchimera credentials membership)
+             (localchimera federation scope-graph)
+             (localchimera keys pending-grants)
+             (localchimera keys keria-store)
+             (localchimera utils hex)
              (goblins) (goblins vat)
              (goblins actor-lib on)
              (fibers)
@@ -47,7 +47,7 @@
 (declare-opaque-header! "signify-timestamp")
 
 ;; handle-ipex-grant is not exported; reach in via module-ref
-(define notif-mod (resolve-module '(playnet federation keria-notifications)))
+(define notif-mod (resolve-module '(localchimera federation keria-notifications)))
 (define handle-ipex-grant (module-ref notif-mod 'handle-ipex-grant))
 
 (format #t "=== IPEX Cross-Gateway Integration Test ===~%~%")
@@ -60,7 +60,7 @@
 (define %gov-b-aid   "EGovB00000000000000000000000000000000000000b")
 (define %cred-said   "ECredXGW00000000000000000000000000000000000")
 (define %grant-said  "EGrantXGW0000000000000000000000000000000000")
-(define %schema      *schema-playnet-federation-membership*)
+(define %schema      *schema-localchimera-federation-membership*)
 
 ;;; ── Mock state tracking ─────────────────────────────────────────────
 
@@ -91,7 +91,7 @@
 
      ;; AID lookup
      ((and (eq? method 'GET) (string-prefix? "/identifiers/" path))
-      (with-json 200 `(("name" . "playnet-governance")
+      (with-json 200 `(("name" . "localchimera-governance")
                        ("prefix" . ,%gov-a-aid)
                        ("d" . ,%gov-a-aid)
                        ("k" . ,(vector "Dfake")))))
@@ -109,7 +109,7 @@
      ;; List local AIDs (for outbound filter)
      ((and (eq? method 'GET) (string=? path "/identifiers"))
       (with-json 200 (vector `(("prefix" . ,%gov-a-aid)
-                               ("name" . "playnet-governance")))))
+                               ("name" . "localchimera-governance")))))
 
      (else (with-json 404 `(("title" . "Not Found")))))))
 
@@ -127,7 +127,7 @@
 
      ;; AID lookup
      ((and (eq? method 'GET) (string-prefix? "/identifiers/" path))
-      (with-json 200 `(("name" . "playnet-governance")
+      (with-json 200 `(("name" . "localchimera-governance")
                        ("prefix" . ,%gov-b-aid)
                        ("d" . ,%gov-b-aid)
                        ("k" . ,(vector "Dfake")))))
@@ -174,7 +174,7 @@
      ;; List local AIDs
      ((and (eq? method 'GET) (string=? path "/identifiers"))
       (with-json 200 (vector `(("prefix" . ,%gov-b-aid)
-                               ("name" . "playnet-governance")))))
+                               ("name" . "localchimera-governance")))))
 
      ;; Notification poll (empty — we inject directly)
      ((and (eq? method 'GET) (string=? path "/notifications"))
@@ -320,14 +320,14 @@
 (format #t "~%── 5. Policy table verification ──~%")
 
 ;; Verify federation-membership schema is registered with correct predicate
-(let ((policy (lookup-grant-policy *schema-playnet-federation-membership*)))
+(let ((policy (lookup-grant-policy *schema-localchimera-federation-membership*)))
   (check "federation-membership policy registered" (grant-policy? policy))
   (check "federation-membership uses issuer-has-resolvable-kel?"
          (eq? (grant-policy-expected-issuer? policy)
               issuer-has-resolvable-kel?)))
 
 ;; Verify a permissive schema also exists
-(let ((policy (lookup-grant-policy *schema-playnet-membership*)))
+(let ((policy (lookup-grant-policy *schema-localchimera-membership*)))
   (check "membership policy registered" (grant-policy? policy))
   (check "membership accepts any issuer"
          ((grant-policy-expected-issuer? policy) "anyone" "anyone" '())))

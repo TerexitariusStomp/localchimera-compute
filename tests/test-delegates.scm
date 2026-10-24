@@ -3,8 +3,8 @@
 ;;; fail-closed defaults refuse, injected transports answer. Same rule as
 ;;; the compute adapters — the thin shipped is the wire the upstream reads.
 
-(use-modules (playnet test harness)
-             (playnet delegates)
+(use-modules (localchimera test harness)
+             (localchimera delegates)
              (srfi srfi-1))
 
 ;; a transport that records what it was asked and answers a fixed body —
@@ -144,11 +144,11 @@
 ;; %env-transport — a deployable delegate: the environment names the
 ;; endpoint, unset still fails closed.
 (check "%env-transport answers #f when the env is silent"
-       (%env-transport "PLAYNET_TEST_UNSET_URL") #f)
+       (%env-transport "LOCALCHIMERA_TEST_UNSET_URL") #f)
 (begin
-  (setenv "PLAYNET_TEST_SET_URL" "http://upstream:9")
+  (setenv "LOCALCHIMERA_TEST_SET_URL" "http://upstream:9")
   (check "%env-transport builds a live transport when the env names one"
-         (procedure? (%env-transport "PLAYNET_TEST_SET_URL")) #t)
-  (unsetenv "PLAYNET_TEST_SET_URL"))
+         (procedure? (%env-transport "LOCALCHIMERA_TEST_SET_URL")) #t)
+  (unsetenv "LOCALCHIMERA_TEST_SET_URL"))
 
 (test-summary!)

@@ -1,0 +1,159 @@
+{
+  "$id": "EACoo3XftDGWFsMKni6VCPt7_km5d2He8fHw2vX150Nd",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LocalChimera Commitment Credential",
+  "description": "Attests a planning commitment (a provider's promise to a receiver) with its quantities, plan membership, and the intent it satisfies.",
+  "type": "object",
+  "credentialType": "LocalChimeraCommitmentCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Optional salt"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the provider)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the receiver)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "commitment-id": {
+              "type": "string"
+            },
+            "action": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "resource-conforms-to": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "resource-classified-as": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "resource-quantity": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "(qty . unit) pair"
+            },
+            "effort-quantity": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "(qty . unit) pair"
+            },
+            "due": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "plan-id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "process-id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "satisfies": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Intent SAID this satisfies"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "commitment-id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "e": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Edge-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "description": "ACDC edge block: named edges to other credentials",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Edge-block SAID"
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

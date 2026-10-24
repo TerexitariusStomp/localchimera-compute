@@ -26,12 +26,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-nutrition-band.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet knowledge catalogues subsistence))
+(use-modules (localchimera knowledge catalogues subsistence))
 
 (define RDA 1500.0) (define UL 2300.0) (define PER-MEAL 800.0) (define WANT 5.0)
 

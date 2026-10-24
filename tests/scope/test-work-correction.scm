@@ -22,13 +22,13 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-work-correction.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules ((playnet test events) #:select (ev)))
-(use-modules (playnet observation observer) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet observation credentials) (playnet keri acdc) (playnet keri acdc-store))
-(use-modules ((playnet observation observer) #:select (void-event)))
-(use-modules ((playnet observation credentials)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules ((localchimera test events) #:select (ev)))
+(use-modules (localchimera observation observer) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera observation credentials) (localchimera keri acdc) (localchimera keri acdc-store))
+(use-modules ((localchimera observation observer) #:select (void-event)))
+(use-modules ((localchimera observation credentials)
               #:select (make-credentialing-on-event skill-attestation-standing)))
 (use-modules (goblins)
              (goblins persistence-store memory)

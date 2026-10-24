@@ -14,11 +14,11 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/solve/test-frag-budget-section-law.scm
 
-(use-modules (playnet solve ingest))
-(use-modules (playnet test harness) (srfi srfi-1)
-             (playnet solve engine) (playnet solve world) (playnet solve compile)
-             (playnet solve solver) (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve ingest))
+(use-modules (localchimera test harness) (srfi srfi-1)
+             (localchimera solve engine) (localchimera solve world) (localchimera solve compile)
+             (localchimera solve solver) (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define wprofile (list 80.0 120.0 0.5 50.0))   ; the shed's water: ~100 m3 a period
 

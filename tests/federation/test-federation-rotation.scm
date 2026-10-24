@@ -21,21 +21,21 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/federation/test-federation-rotation.scm
 
-(use-modules (playnet test harness)
-             (playnet credentials membership) (playnet credentials registry) (playnet keri acdc) (playnet keys kel-store) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri inception)
-             (playnet federation federate)
-             ((playnet keys kel-store) #:select (spawn-kel-store))
-             ((playnet federation sturdyref-credential) #:select (verified-spec sturdyref-credential-end census-credential-goods))
-             ((playnet keri inception) #:select (governance-create-scope-aid! scope-inception-aid scope-inception-bran
+(use-modules (localchimera test harness)
+             (localchimera credentials membership) (localchimera credentials registry) (localchimera keri acdc) (localchimera keys kel-store) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri inception)
+             (localchimera federation federate)
+             ((localchimera keys kel-store) #:select (spawn-kel-store))
+             ((localchimera federation sturdyref-credential) #:select (verified-spec sturdyref-credential-end census-credential-goods))
+             ((localchimera keri inception) #:select (governance-create-scope-aid! scope-inception-aid scope-inception-bran
                                                  scope-inception-keypair scope-inception-next-keypair
                                                  scope-inception-signed-icp))
-             ((playnet keri key-state) #:select (events->key-state key-in-force-at state-key state-sn))
-             ((playnet keri citizen-sig) #:select (sign-bytes-under-aid sign-said))
-             ((playnet keri signify-portable) #:select (ed25519-keypair-public public-key->aid-prefix
+             ((localchimera keri key-state) #:select (events->key-state key-in-force-at state-key state-sn))
+             ((localchimera keri citizen-sig) #:select (sign-bytes-under-aid sign-said))
+             ((localchimera keri signify-portable) #:select (ed25519-keypair-public public-key->aid-prefix
                                                          next-key-digest))
-             ((playnet utils hex) #:select (bv->hex))
-             ((playnet federation wire) #:select (signed-reply verify-signed make-key-ledger))
-             ((playnet federation peer) #:select (^attestation-fold))
+             ((localchimera utils hex) #:select (bv->hex))
+             ((localchimera federation wire) #:select (signed-reply verify-signed make-key-ledger))
+             ((localchimera federation peer) #:select (^attestation-fold))
              (goblins) (goblins vat) (rnrs bytevectors) (srfi srfi-1))
 
 (define vat (spawn-vat))

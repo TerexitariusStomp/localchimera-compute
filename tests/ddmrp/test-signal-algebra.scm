@@ -11,8 +11,8 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-signal-algebra.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet ddmrp buffers) (playnet algorithms signals) (playnet scope root) (playnet vf schemas) (playnet ddmrp records) (playnet utils store-utils) (srfi srfi-11))
+(use-modules (localchimera test harness))
+(use-modules (localchimera ddmrp buffers) (localchimera algorithms signals) (localchimera scope root) (localchimera vf schemas) (localchimera ddmrp records) (localchimera utils store-utils) (srfi srfi-11))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

@@ -9,12 +9,12 @@
 ;;; scope, and signs a credential whose signature validates against
 ;;; the original AID prefix.
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules )
-(use-modules (playnet credentials keys) (playnet keri acdc) (playnet utils paths) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig))
-(use-modules (playnet keys keri-backend live))
-(use-modules (playnet scope recovery))
-(use-modules (playnet keri signify))   ;; install crypto backend
+(use-modules (localchimera credentials keys) (localchimera keri acdc) (localchimera utils paths) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig))
+(use-modules (localchimera keys keri-backend live))
+(use-modules (localchimera scope recovery))
+(use-modules (localchimera keri signify))   ;; install crypto backend
 (use-modules (rnrs bytevectors))
 (use-modules (goblins) (goblins vat))
 (use-modules (ice-9 format))
@@ -23,11 +23,11 @@
   (number->string (random 100000000)))
 
 (define base-state-dir
-  (string-append "/tmp/playnet-persistence-"
+  (string-append "/tmp/localchimera-persistence-"
                  (number->string (current-time)) "-" (rand-suffix)))
 
-(setenv "PLAYNET_STATE_DIR" base-state-dir)
-(setenv "PLAYNET_VAULT_KEY"
+(setenv "LOCALCHIMERA_STATE_DIR" base-state-dir)
+(setenv "LOCALCHIMERA_VAULT_KEY"
         ;; A deterministic but obviously-test-only host vault key
         ;; (32 bytes of 0xAB, encoded as 64 hex chars).
         (let loop ((i 0) (acc ""))
@@ -97,7 +97,7 @@
 
 (format #t "~%=== Shamir-mode persistence: spawn with share-holders, restore ===~%")
 
-(setenv "PLAYNET_STATE_DIR"
+(setenv "LOCALCHIMERA_STATE_DIR"
         (string-append base-state-dir "-shamir"))
 
 (define vat3 (spawn-vat))
@@ -132,7 +132,7 @@
     (check "share-store carries 3 bran-share ACDCs"
            (= 3 (length (filter
                          (lambda (c)
-                           (and (equal? *schema-playnet-bran-share*
+                           (and (equal? *schema-localchimera-bran-share*
                                         (cred-schema c))
                                 (equal? aid (cred-claim c 'subject-aid))))
                          ($ share-store 'all)))))
@@ -161,10 +161,10 @@
 
 (format #t "~%=== a rotated scope restores at its log's depth ===~%")
 
-(use-modules ((playnet keri key-state) #:select (events->key-state state-key state-sn))
-             ((playnet keri citizen-sig) #:select (verify-said-signature-under-key)))
+(use-modules ((localchimera keri key-state) #:select (events->key-state state-key state-sn))
+             ((localchimera keri citizen-sig) #:select (verify-said-signature-under-key)))
 
-(setenv "PLAYNET_STATE_DIR" (string-append base-state-dir "-rotated"))
+(setenv "LOCALCHIMERA_STATE_DIR" (string-append base-state-dir "-rotated"))
 (define vat4 (spawn-vat))
 (define rotated-aid #f)
 (with-vat vat4
@@ -193,7 +193,7 @@
 (format #t "~%=== list-known-scopes inventory ===~%")
 
 ;; Switch back to the vault state-dir to enumerate
-(setenv "PLAYNET_STATE_DIR" base-state-dir)
+(setenv "LOCALCHIMERA_STATE_DIR" base-state-dir)
 (let ((known (list-known-scopes)))
   (check "list-known-scopes finds the vault scope"
          (member vault-aid known)))

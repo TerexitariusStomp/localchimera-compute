@@ -30,11 +30,11 @@ Canonical production: Guix system via `deploy/os.scm`, Shepherd services:
 
 | service | file | supervision |
 |---------|------|-------------|
-| `playnet-gateway` | `deploy/guix/playnet-gateway-service.scm` | Shepherd, respawns, `PLAYNET_DATA_DIR=/var/lib/playnet` |
-| `playnet-static` | `deploy/guix/playnet-static-service.scm` | Shepherd, `respawn? #t`, binds `127.0.0.1:8080`, serves the dynamic `/entry-points.json` |
+| `localchimera-gateway` | `deploy/guix/localchimera-gateway-service.scm` | Shepherd, respawns, `LOCALCHIMERA_DATA_DIR=/var/lib/localchimera` |
+| `localchimera-static` | `deploy/guix/localchimera-static-service.scm` | Shepherd, `respawn? #t`, binds `127.0.0.1:8080`, serves the dynamic `/entry-points.json` |
 | nginx | `deploy/os.scm` | `/ws` → gateway WS, everything else → serve-static |
 | `keria` | `deploy/guix/keria-service.scm` | KERIA agent the gateway delegates to |
-| `playnet-watchdog` | `deploy/guix/playnet-watchdog-service.scm` | health |
+| `localchimera-watchdog` | `deploy/guix/localchimera-watchdog-service.scm` | health |
 
 Dev-equivalent (this container): `server/gateway.scm` +
 `server/serve-static.scm #:host 0.0.0.0` behind
@@ -51,13 +51,13 @@ retryable/missing-sref condition until the new one lands).
 
 | var | default | meaning |
 |-----|---------|---------|
-| `PLAYNET_DATA_DIR` | `/var/lib/playnet` | KELs, srefs, registry state — must be a persistent volume |
-| `PLAYNET_SEED_DEMO` | unset | seeds the demo commune on boot (dev/e2e only) |
+| `LOCALCHIMERA_DATA_DIR` | `/var/lib/localchimera` | KELs, srefs, registry state — must be a persistent volume |
+| `LOCALCHIMERA_SEED_DEMO` | unset | seeds the demo commune on boot (dev/e2e only) |
 | `KERIA_URL` | `http://127.0.0.1:3901` | KERIA agent endpoint the gateway delegates to |
-| `PLAYNET_WS_HOST` / `PLAYNET_WS_PORT` | `0.0.0.0` / `9090` | OCapN listener |
-| `PLAYNET_STATIC_HOST` / `_PORT` | `127.0.0.1` / `9091` | discovery + oobi HTTP |
-| `PLAYNET_PUBLIC_WS_URL` | — | `wss://` URL baked into the emitted sref |
-| `PLAYNET_HTTP_DOOR_PORT` | `9091`-adjacent | door endpoints (`/api/mcp`, `/api/session/`, …) |
+| `LOCALCHIMERA_WS_HOST` / `LOCALCHIMERA_WS_PORT` | `0.0.0.0` / `9090` | OCapN listener |
+| `LOCALCHIMERA_STATIC_HOST` / `_PORT` | `127.0.0.1` / `9091` | discovery + oobi HTTP |
+| `LOCALCHIMERA_PUBLIC_WS_URL` | — | `wss://` URL baked into the emitted sref |
+| `LOCALCHIMERA_HTTP_DOOR_PORT` | `9091`-adjacent | door endpoints (`/api/mcp`, `/api/session/`, …) |
 
 ## Deploy steps
 
@@ -68,7 +68,7 @@ retryable/missing-sref condition until the new one lands).
 2. `wrangler pages deploy browser/` (the local gate runs
    trufflehog/trivy/semgrep first).
 3. Start the gateway + serve-static under supervision with
-   `PLAYNET_DATA_DIR` on a persistent volume.
+   `LOCALCHIMERA_DATA_DIR` on a persistent volume.
 4. Point the public `wss://<gateway>/ws` at the mux/nginx path that
    forwards to the gateway's WS listener — **no path rewrite**: the
    production nginx stanza (`deploy/os.scm`) passes `/ws` through as-is.
@@ -89,9 +89,9 @@ retryable/missing-sref condition until the new one lands).
 |---------|-------|----------|
 | `err:sign in first` after signup | signup raced the spine connect | wait for `status: connected` (probe-lib does this) |
 | discovery 503/empty | gateway booting, sref not yet written | retry — the client backoff handles it |
-| `err:refused` on a machine call | session door missing from `(playnet doors protocol)` | `check-declared-heads!` — drift gate |
+| `err:refused` on a machine call | session door missing from `(localchimera doors protocol)` | `check-declared-heads!` — drift gate |
 | `table index out of bounds` at boot | a quoted registry list over ~150 entries (hoot bundle limit) | split the list — see `day-boot.scm` machine* boundary |
-| OCapN handshake hang | sref's `wsUrl` doesn't reach a live listener | check `PLAYNET_PUBLIC_WS_URL` + mux wiring |
+| OCapN handshake hang | sref's `wsUrl` doesn't reach a live listener | check `LOCALCHIMERA_PUBLIC_WS_URL` + mux wiring |
 
 ## Artifacts
 

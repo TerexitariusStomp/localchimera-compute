@@ -2,7 +2,7 @@
 ;;; tests/keri/test-keri-bridge-extra.scm — extended bridge coverage
 ;;;
 ;;; Complements test-keri-bridge.scm (which covers boot/connect/create-aid/
-;;; OOBI/signature) by exercising the rest of (playnet keri bridge):
+;;; OOBI/signature) by exercising the rest of (localchimera keri bridge):
 ;;;
 ;;;   - keri-rotate-keys, keri-list-aids, keri-get-aid, keri-get-keystate,
 ;;;     keri-add-end-role, keri-get-aid-members
@@ -17,8 +17,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keri/test-keri-bridge-extra.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
              (web server)
              (web request)
              (web response)
@@ -257,7 +257,7 @@
 (reset-capture!)
 ;; The signify-ts body needs: caller name + member prefixes + per-member
 ;; signing keys + per-member next-key digests.
-(keri-create-group "playnet-gov"
+(keri-create-group "localchimera-gov"
                    "alice"                                  ; caller AID name
                    (list %aid "EMem2" "EMem3")              ; member prefixes (caller first)
                    '("DKey1" "DKey2" "DKey3")               ; member signing keys
@@ -283,9 +283,9 @@
        (= 3 (vector-length (assoc-ref %last-body "rmids"))))
 
 (reset-capture!)
-(let ((g (keri-get-group-aid "playnet-gov")))
+(let ((g (keri-get-group-aid "localchimera-gov")))
   (check "get-group-aid is an alias for get-aid"
-         (string=? "/identifiers/playnet-gov" %last-path))
+         (string=? "/identifiers/localchimera-gov" %last-path))
   (check "returns alist with prefix" (assoc-ref g "prefix")))
 
 ;;; ── Contacts ────────────────────────────────────────────────────────

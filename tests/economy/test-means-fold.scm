@@ -8,10 +8,10 @@
 ;;; a live span declaration moves the KEY a capacity rises under — the fold and
 ;;; the pool-builder read the same rule, so they cannot disagree.
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet vf formulas capacity) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet economy means-fold))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera vf formulas capacity) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera economy means-fold))
 (use-modules (goblins))
 (use-modules (srfi srfi-1))
 

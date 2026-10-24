@@ -8,13 +8,13 @@
 ;;;   (B) EDGE: observed prior already PAST the tip ⇒ no headroom ⇒ the draw is blocked (0).
 ;;;   (C) EDGE: an empty catalogue ⇒ an empty policy (no spurious forms).
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-integration.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-integration.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
-(use-modules (playnet knowledge catalogues eco))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
+(use-modules (localchimera knowledge catalogues eco))
 
 (define (recipes)
   (compile-recipe

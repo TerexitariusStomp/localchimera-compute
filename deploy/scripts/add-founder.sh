@@ -19,8 +19,8 @@
 set -euo pipefail
 
 AID="${1:?usage: add-founder.sh <AID>}"
-BOX="${PLAYNET_BOX:?set PLAYNET_BOX=root@<host-or-onion> (not hardcoded — opsec)}"
-FOUNDERS_FILE="${PLAYNET_DATA_DIR:-/var/lib/playnet}/founders.txt"
+BOX="${LOCALCHIMERA_BOX:?set LOCALCHIMERA_BOX=root@<host-or-onion> (not hardcoded — opsec)}"
+FOUNDERS_FILE="${LOCALCHIMERA_DATA_DIR:-/var/lib/localchimera}/founders.txt"
 
 # KERI AID sanity: a 44-char CESR prefix in base64url. Catches typos /
 # truncation before we write it to the gateway.
@@ -42,15 +42,15 @@ torsocks ssh "$BOX" "
     echo '[add-founder] appended. founders.txt now:'
     sed 's/^/  /' '$FOUNDERS_FILE'
   fi
-  echo '[add-founder] restarting playnet-gateway…'
-  herd restart playnet-gateway >/dev/null 2>&1
+  echo '[add-founder] restarting localchimera-gateway…'
+  herd restart localchimera-gateway >/dev/null 2>&1
   sleep 32
   if (ss -ltn 2>/dev/null || netstat -ltn 2>/dev/null) | grep -q ':9090'; then
     echo '[add-founder] gateway is up (OCapN :9090).'
   else
-    echo '[add-founder] WARN: :9090 not listening — check /var/log/playnet/gateway.log'
+    echo '[add-founder] WARN: :9090 not listening — check /var/log/localchimera/gateway.log'
   fi
-  if tail -200 /var/log/playnet/gateway.log | grep -aq 'seeded founder PHC: $AID'; then
+  if tail -200 /var/log/localchimera/gateway.log | grep -aq 'seeded founder PHC: $AID'; then
     echo '[add-founder] ✓ founder PHC seeded — First-Person is enforcing.'
   else
     echo '[add-founder] note: no fresh seed line (already held a live PHC, or check the log).'

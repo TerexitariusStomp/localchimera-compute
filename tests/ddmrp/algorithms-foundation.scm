@@ -4,9 +4,9 @@
 ;;; Tests: propagation (SNLT, duration), SNE, DDMRP (ADU, DLT, NFP, zones),
 ;;;        signals (signal->intent, intent->signal round-trip).
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet ddmrp buffers) (playnet algorithms propagation) (playnet algorithms signals) (playnet algorithms sne) (playnet scope root) (playnet vf schemas) (playnet ddmrp records) (playnet utils store-utils) (srfi srfi-11))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera ddmrp buffers) (localchimera algorithms propagation) (localchimera algorithms signals) (localchimera algorithms sne) (localchimera scope root) (localchimera vf schemas) (localchimera ddmrp records) (localchimera utils store-utils) (srfi srfi-11))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

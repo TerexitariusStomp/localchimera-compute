@@ -1,0 +1,143 @@
+{
+  "$id": "ECC6XPsv6cJ2lGaxo-2Eamw6Lj5BB2I4HD4tL60Xbg7Q",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LocalChimera Ownership Attestation",
+  "description": "Title token: the issuer claims the rights over one economic resource (primary-accountable, as a credential). kind 'declared' is a self-assertion (issuer = holder = owner); a governed passage supersedes it with the receiving scope as holder. Carries no derived quantities; the resource's own measure is the truth.",
+  "type": "object",
+  "credentialType": "LocalChimeraOwnershipAttestation",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Optional salt"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the owner asserting title)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the owner; a passage names the receiving scope)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "resource-id": {
+              "type": "string",
+              "description": "The EconomicResource id the title is over"
+            },
+            "resource-spec": {
+              "type": "string",
+              "description": "The ResourceSpecification id"
+            },
+            "kind": {
+              "type": "string",
+              "description": "'declared' (self-assertion) | 'passage' (governed transfer)"
+            },
+            "valid-from": {
+              "type": [
+                "string",
+                "number",
+                "null"
+              ]
+            },
+            "valid-until": {
+              "type": [
+                "string",
+                "number",
+                "null"
+              ],
+              "description": "Optional expiry; past means lapsed"
+            },
+            "qty": {
+              "type": [
+                "string",
+                "number",
+                "null"
+              ]
+            },
+            "qty-unit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "issued-by": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "resource-id",
+            "resource-spec",
+            "kind"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "e": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Edge-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "description": "Named edges: 'supersedes' (I2I, prior title in the chain), 'stake' (NI2I, auditor's SNLT stake attestation — the governed-passage seam)",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Edge-block SAID"
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

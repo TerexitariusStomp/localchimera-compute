@@ -12,11 +12,11 @@
 #   make map-tiles                       every region, every asset
 #   REGIONS=berlin make map-tiles        one region
 #   MAXZOOM=12 make map-tiles            a lighter cut (default 15)
-#   MAP_DIR=/var/lib/playnet/map make map-tiles   on the box
+#   MAP_DIR=/var/lib/localchimera/map make map-tiles   on the box
 #
 # Over Tor by default (go-pmtiles is a static Go binary: torsocks cannot wrap
 # it, so it reads HTTPS_PROXY instead); NO_TOR=1 goes direct. The go-pmtiles
-# release is pinned by version and sha256 and cached under ~/.cache/playnet.
+# release is pinned by version and sha256 and cached under ~/.cache/localchimera.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -26,7 +26,7 @@ GO_PMTILES_SHA256="3ed7dbf4ec2e6dfe5e25b6f70d1ffc932729f93c86db353bf514dd71010a3
 ASSETS_COMMIT="028c18f713baecad011301ff7a69acc39bcc2ae7"
 MAP_DIR="${MAP_DIR:-data/map}"
 MAXZOOM="${MAXZOOM:-15}"
-CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/playnet/go-pmtiles"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/localchimera/go-pmtiles"
 FONTS_DIR="browser/assets/map/fonts"
 
 # curl under torsocks; go-pmtiles under HTTPS_PROXY alone (torsocks would

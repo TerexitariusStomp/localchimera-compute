@@ -8,10 +8,10 @@
 ;;; title rail read for the span gate's standing (title-rights-of).
 ;;; docs/planning/federation/federation-flow-map.md §7 item 4.
 
-(use-modules (playnet credentials custody) (playnet credentials declarations) (playnet economy recipe-standing) (playnet boot governance) (playnet economy socialization) (playnet keri acdc-store) (playnet scope root) (playnet test harness)
-             ((playnet economy socialization) #:select (title-rights-of consented-span-of live-willingness-of))
-             ((playnet economy recipe-standing) #:select (live-regime-of))
-             ((playnet credentials custody) #:select (make-ownership-attestation-credential))
+(use-modules (localchimera credentials custody) (localchimera credentials declarations) (localchimera economy recipe-standing) (localchimera boot governance) (localchimera economy socialization) (localchimera keri acdc-store) (localchimera scope root) (localchimera test harness)
+             ((localchimera economy socialization) #:select (title-rights-of consented-span-of live-willingness-of))
+             ((localchimera economy recipe-standing) #:select (live-regime-of))
+             ((localchimera credentials custody) #:select (make-ownership-attestation-credential))
              (goblins) (srfi srfi-1))
 
 (define GOV "EGovernor") (define OTHER "EBystander")

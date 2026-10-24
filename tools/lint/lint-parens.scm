@@ -9,7 +9,7 @@
 ;;; nothing else in the build notices — an unbalanced form in a file no
 ;;; test happens to import.
 ;;;
-;;; That gap is real: (playnet utils parse-unit-definitions) is a
+;;; That gap is real: (localchimera utils parse-unit-definitions) is a
 ;;; standalone generator script, so no module imports it, so no compiler
 ;;; ever read it, so a missing close paren sat in it from its first
 ;;; commit onward.  A linter that only sees what the tests load would

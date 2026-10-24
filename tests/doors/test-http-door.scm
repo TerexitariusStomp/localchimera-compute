@@ -14,24 +14,24 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-http-door.scm
 
-(use-modules (playnet test harness)
-             (playnet doors http)
-             ((playnet vf schemas) #:select (make-measure))
-             (playnet identity devices)
-             ((playnet keri signify-portable)
+(use-modules (localchimera test harness)
+             (localchimera doors http)
+             ((localchimera vf schemas) #:select (make-measure))
+             (localchimera identity devices)
+             ((localchimera keri signify-portable)
               #:select (bran->signing-keypair bran->rotation-keypair public-key->aid-prefix
                         build-icp next-key-digest seed->ed25519-keypair sign-bytes))
-             ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
-             ((playnet keri cesr) #:select (cesr-bytes->qb64))
+             ((localchimera keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64))
                 ; installs the SAID blake3 backend
-             ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
+             ((localchimera keri first-person credentials) #:select (make-device-authorization-credential))
              (web request) (web response) (web uri)
              (rnrs bytevectors)
              (json)
              (srfi srfi-1))
 
 ;; ── a person, a device, an enrollment ─────────────────────────────────────
-(define tmp (let ((d (string-append "/tmp/playnet-http-door-" (number->string (getpid)))))
+(define tmp (let ((d (string-append "/tmp/localchimera-http-door-" (number->string (getpid)))))
               (mkdir d) d))
 (device-registry-dir tmp)
 

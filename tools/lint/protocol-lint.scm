@@ -5,13 +5,13 @@
 ;;;
 ;;; Three properties, each a refusal on its own:
 ;;;   1. every (object name args) head in the code (tools/lint/protocol-extract.scm)
-;;;      is declared in (playnet doors protocol) with the same args, and vice versa;
+;;;      is declared in (localchimera doors protocol) with the same args, and vice versa;
 ;;;   2. (gone: a door's seam is derived from the seam table, property 5)
 ;;;   3. no planner door is declared behind a session gate the planner does
 ;;;      not have (the lobby's facet allowlist is derived from the
 ;;;      declaration, so it cannot drift on its own);
 ;;;   4. every argument name on every door has a shape in
-;;;      (playnet protocol shapes), so no emit ever guesses a type;
+;;;      (localchimera protocol shapes), so no emit ever guesses a type;
 ;;;   5. the seam table and day-boot's registry name the same handlers, and
 ;;;      every door a handler sends is declared;
 ;;;   8. a door declared `#:offline` is sent by a seam handler, and one that stamps its
@@ -23,12 +23,12 @@
 ;;;
 ;;; Run: guile -L module tools/lint/protocol-lint.scm   (make check-protocol)
 
-(use-modules (playnet doors protocol)
-             (playnet protocol shapes)
-             (playnet protocol seam)
-             ((playnet wire rows) #:select (reply-table-ref))
-             (playnet wire replies)
-             ((playnet doors lobby) #:select (%planner-public-doors))
+(use-modules (localchimera doors protocol)
+             (localchimera protocol shapes)
+             (localchimera protocol seam)
+             ((localchimera wire rows) #:select (reply-table-ref))
+             (localchimera wire replies)
+             ((localchimera doors lobby) #:select (%planner-public-doors))
              (ice-9 popen) (ice-9 rdelim) (ice-9 regex) (ice-9 format)
              (srfi srfi-1))
 
@@ -108,7 +108,7 @@ the three the JS shell sets on HANDLERS itself (device key tiers/forget)."
                             (set! unknown (cons (list (door-object d) (door-name d) (car e)) unknown))))
                         (door-arg-shapes d)))
             %doors)
-  (for-each (lambda (u) (refuse "argument ~a on ~a ~a has no shape (module/playnet/protocol/shapes.scm)" (caddr u) (car u) (cadr u)))
+  (for-each (lambda (u) (refuse "argument ~a on ~a ~a has no shape (module/localchimera/protocol/shapes.scm)" (caddr u) (car u) (cadr u)))
             (reverse unknown))
   (format #t "shapes: ~a doors have an HTTP form~%" (count door-http? %doors)))
 
@@ -130,7 +130,7 @@ the three the JS shell sets on HANDLERS itself (device key tiers/forget)."
             %handlers)
   (for-each (lambda (n)
               (unless (handler-ref n)
-                (refuse "day-boot registers ~s, absent from (playnet protocol seam)" n)))
+                (refuse "day-boot registers ~s, absent from (localchimera protocol seam)" n)))
             reg)
   (format #t "seam table: ~a handlers, ~a local~%" (length %handlers) (count handler-local? %handlers)))
 
@@ -155,7 +155,7 @@ the three the JS shell sets on HANDLERS itself (device key tiers/forget)."
             %pushes)
   (for-each (lambda (n)
               (unless (push-ref n)
-                (refuse "day-boot.js calls seam.~a(…), absent from (playnet protocol seam) pushes" n)))
+                (refuse "day-boot.js calls seam.~a(…), absent from (localchimera protocol seam) pushes" n)))
             calls)
   (for-each (lambda (n)
               (unless (or (member n %sink-plumbing)

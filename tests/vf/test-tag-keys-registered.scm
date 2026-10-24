@@ -11,8 +11,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/vf/test-tag-keys-registered.scm
 
-(use-modules (playnet test harness)
-             ((playnet vf facts agent-tags) #:select (%tag-keys tag-value tag-values tag-key?))
+(use-modules (localchimera test harness)
+             ((localchimera vf facts agent-tags) #:select (%tag-keys tag-value tag-values tag-key?))
              (ice-9 ftw) (ice-9 rdelim) (ice-9 regex) (srfi srfi-1))
 
 (define %id-prefixes   ; keys of ids and store rows, read by the module that mints them
@@ -44,7 +44,7 @@
   (delete-duplicates
    (append-map (lambda (f)
                  (filter-map (lambda (k) (and (not (member k registered)) (cons f k))) (keys-read f)))
-               (scm-files "module/playnet/planner"))))
+               (scm-files "module/localchimera/planner"))))
 
 (display "\n── the readers ──\n")
 (check "tag-value reads a key" (tag-value '("diet:vegan" "age:40") "diet") "vegan")

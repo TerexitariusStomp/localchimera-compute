@@ -9,10 +9,10 @@
 ;;;
 ;;; Run: guile tests/solve/test-federated-reference-core.scm
 
-(use-modules (playnet solve decomposed))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine)
-             (playnet solve solver)
+(use-modules (localchimera solve decomposed))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
 

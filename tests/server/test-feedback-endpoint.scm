@@ -4,8 +4,8 @@
 ;;; Unit tests for the anonymous feedback pool in server/serve-static.scm:
 ;;;
 ;;;   POST /feedback              — append one entry (client JSON verbatim)
-;;;   GET  /feedback.json         — admin list (X-Playnet-Admin header)
-;;;   POST /feedback/{id}/delete  — admin prune (X-Playnet-Admin header)
+;;;   GET  /feedback.json         — admin list (X-LocalChimera-Admin header)
+;;;   POST /feedback/{id}/delete  — admin prune (X-LocalChimera-Admin header)
 ;;;
 ;;; File-driven like the observability endpoints: sandbox the data dir,
 ;;; drive the handlers directly, assert the JSON shape. No HTTP / no
@@ -13,8 +13,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/server/test-feedback-endpoint.scm
 
-(use-modules (playnet test harness)
-             ((playnet utils paths) #:select (ensure-directory!))
+(use-modules (localchimera test harness)
+             ((localchimera utils paths) #:select (ensure-directory!))
              ((server serve-static)
               #:select (handle-feedback-post
                         handle-feedback-list
@@ -25,13 +25,13 @@
              (rnrs bytevectors)
              (json))
 
-;; Sandbox the data dir (the pool follows PLAYNET_DATA_DIR).
+;; Sandbox the data dir (the pool follows LOCALCHIMERA_DATA_DIR).
 (define %tmp-root
-  (let ((p (string-append "/tmp/playnet-feedback-test-"
+  (let ((p (string-append "/tmp/localchimera-feedback-test-"
                           (number->string (getpid)))))
     (ensure-directory! p)
     p))
-(setenv "PLAYNET_DATA_DIR" %tmp-root)
+(setenv "LOCALCHIMERA_DATA_DIR" %tmp-root)
 
 (define (call-handler thunk)
   ;; Handlers return (values response body); package the pair as a list.
@@ -56,7 +56,7 @@
   (build-request (string->uri "http://localhost/feedback.json")
                  #:method 'GET
                  #:headers (if token
-                               `((x-playnet-admin . ,token))
+                               `((x-localchimera-admin . ,token))
                                '())))
 
 (define (post! payload)

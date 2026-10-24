@@ -10,20 +10,20 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module -L tests tests/scope/test-witness-relay-bundle.scm
 
-(use-modules (playnet test harness)
-             (playnet scope root)
-             (playnet personhood attestation-ceremony) (playnet personhood enrollment) (playnet utils paths) (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates)
-             ((playnet utils paths) #:select (current-playnet-state-dir-override))
-             ((playnet personhood witness-relay)
+(use-modules (localchimera test harness)
+             (localchimera scope root)
+             (localchimera personhood attestation-ceremony) (localchimera personhood enrollment) (localchimera utils paths) (localchimera boot governance) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera keri first-person predicates)
+             ((localchimera utils paths) #:select (current-localchimera-state-dir-override))
+             ((localchimera personhood witness-relay)
               #:select (publish-witness-attest! land-remote-attests!))
-             ((playnet personhood attestation-ceremony)
+             ((localchimera personhood attestation-ceremony)
               #:select (current-aid-key-resolver))
-             (playnet keri signify-portable)
-             ((playnet keri citizen-sig)
+             (localchimera keri signify-portable)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         aid-signer-keys-resolver sign-said))
-             ((playnet identity seat) #:select (verify-carried-kel))
-             ((playnet identity oobi-host)
+             ((localchimera identity seat) #:select (verify-carried-kel))
+             ((localchimera identity oobi-host)
               #:select (oobi-write-entry-to-dir! read-oobi-entry-from-dir oobi-current-key-from-dir))
              (json)
              (goblins) (goblins vat) (goblins utils hashmap)
@@ -37,7 +37,7 @@
 (define (aid id) (keri-identity-aid id))
 (define (q kp) (public-key->aid-prefix (ed25519-keypair-public kp)))
 (define (nd kp) (next-key-digest (ed25519-keypair-public kp)))
-(define (at-state dir thunk) (parameterize ((current-playnet-state-dir-override dir)) (thunk)))
+(define (at-state dir thunk) (parameterize ((current-localchimera-state-dir-override dir)) (thunk)))
 
 ;; Tia: a browser-born AID, her log held at B
 (define bran "tia-witnesses-from-afar-00")

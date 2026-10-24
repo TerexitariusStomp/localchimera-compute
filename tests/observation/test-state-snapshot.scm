@@ -8,9 +8,9 @@
 ;;;   GUIX_ENVIRONMENT=<profile-with-libblake3> guile -L module \
 ;;;     tests/observation/test-state-snapshot.scm
 
-(use-modules (playnet test harness))
+(use-modules (localchimera test harness))
 (use-modules )
-(use-modules (playnet observation credentials) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera observation credentials) (localchimera credentials work) (localchimera keri acdc) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 (define vat (spawn-vat))
@@ -29,7 +29,7 @@
 
     (display "\n── Snapshot crystallizes the expected set ──\n")
     (define snap (snapshot-over acdc "EAuditor" "EScope"
-                                (list *schema-playnet-skill*) '((note . "skills@t1"))))
+                                (list *schema-localchimera-skill*) '((note . "skills@t1"))))
     (check "snapshot edges to both skill creds" (length (snapshot-input-saids snap)) 2)
     (check-pred "complete against the full held set" (snapshot-complete? snap (list s1 s2)))
 

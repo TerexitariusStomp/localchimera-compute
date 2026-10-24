@@ -22,10 +22,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-box-propagation.scm
 
-(use-modules (playnet solve decomposed) (playnet test planner prelude)
-             (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
+(use-modules (localchimera solve decomposed) (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
 
@@ -124,7 +124,7 @@
 ;;; with it, while a monolithic program of the same shape would derive one. That
 ;;; is the price of the certificate on the federated path, and it is a price —
 ;;; not a free win — which is why it is asserted here rather than assumed.
-(primitive-load "module/playnet/test/planner/federated-fixtures.scm")
+(primitive-load "module/localchimera/test/planner/federated-fixtures.scm")
 
 (display "\n── the federated case: bounded scopes are the exception ──\n")
 (define fed

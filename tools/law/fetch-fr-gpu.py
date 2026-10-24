@@ -25,7 +25,7 @@ zones moved.
 """
 import json, sys, urllib.request, urllib.parse, datetime
 
-UA = {"User-Agent": "playnet-law-ingest/1.0"}
+UA = {"User-Agent": "localchimera-law-ingest/1.0"}
 
 def get(url, **params):
     if params:

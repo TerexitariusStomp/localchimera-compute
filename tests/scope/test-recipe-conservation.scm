@@ -36,11 +36,11 @@
 ;;; Run from repo root:
 ;;;   guile --no-auto-compile -q -L module tests/scope/test-recipe-conservation.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet knowledge catalogues substances))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera knowledge catalogues substances))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
-(use-modules ((playnet knowledge dsl vf-lint) #:select (recipe-seeders)))
+(use-modules ((localchimera knowledge dsl vf-lint) #:select (recipe-seeders)))
 
 ;;; EVERY seeder knowledge/recipes/ exports, DISCOVERED rather than listed. A hand-written
 ;;; list is a second place to keep true, and it was wrong: it named 43 and matched 27,

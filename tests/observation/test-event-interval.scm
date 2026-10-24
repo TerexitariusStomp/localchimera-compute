@@ -15,12 +15,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/observation/test-event-interval.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet test events)
-             (playnet observation observer) (playnet vf schemas)
-             (playnet observation observer)
-             ((playnet utils clock) #:select (civil->instant now days->seconds instant->civil))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera test events)
+             (localchimera observation observer) (localchimera vf schemas)
+             (localchimera observation observer)
+             ((localchimera utils clock) #:select (civil->instant now days->seconds instant->civil))
              (goblins) (goblins vat)
              (srfi srfi-1))
 

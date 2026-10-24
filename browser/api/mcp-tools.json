@@ -1,8 +1,8 @@
 {
   "protocolVersion": "2025-06-18",
   "serverInfo": {
-    "name": "playnet gateway",
-    "title": "playnet gateway doors",
+    "name": "localchimera gateway",
+    "title": "localchimera gateway doors",
     "version": "1"
   },
   "tools": [
@@ -16,23 +16,23 @@
           "username": {
             "type": "string",
             "description": "the seat's login handle, a plain string chosen at signup",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "email": {
             "type": "string",
             "description": "the seat's contact email, display-only on the member record",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "aid-prefix": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "oobi-url": {
             "type": "string",
             "description": "the KERIA-hosted OOBI URL where this AID's key state can be resolved",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -47,9 +47,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/signup"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/signup"
     },
     {
       "name": "lobby.signup-with-icp",
@@ -61,29 +61,29 @@
           "username": {
             "type": "string",
             "description": "the seat's login handle, a plain string chosen at signup",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "email": {
             "type": "string",
             "description": "the seat's contact email, display-only on the member record",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "aid-prefix": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "icp-alist": {
             "type": "object",
             "additionalProperties": true,
             "description": "the AID's inception event as a JSON object (KERI icp fields, serialized)",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           },
           "sigs": {
             "type": "array",
             "description": "a JSON array of CESR qb64 signatures over the event, one per signing key",
-            "x-playnet-shape": "list"
+            "x-localchimera-shape": "list"
           }
         },
         "required": [
@@ -99,9 +99,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/signup-with-icp"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/signup-with-icp"
     },
     {
       "name": "lobby.signup-with-kel",
@@ -113,34 +113,34 @@
           "username": {
             "type": "string",
             "description": "the seat's login handle, a plain string chosen at signup",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "email": {
             "type": "string",
             "description": "the seat's contact email, display-only on the member record",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "aid-prefix": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "icp-alist": {
             "type": "object",
             "additionalProperties": true,
             "description": "the AID's inception event as a JSON object (KERI icp fields, serialized)",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           },
           "sigs": {
             "type": "array",
             "description": "a JSON array of CESR qb64 signatures over the event, one per signing key",
-            "x-playnet-shape": "list"
+            "x-localchimera-shape": "list"
           },
           "rotations": {
             "type": "array",
             "description": "a JSON array of the AID's rotation events after inception, each a KERI rot object",
-            "x-playnet-shape": "list"
+            "x-localchimera-shape": "list"
           }
         },
         "required": [
@@ -157,9 +157,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/signup-with-kel"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/signup-with-kel"
     },
     {
       "name": "lobby.extend-kel",
@@ -172,12 +172,12 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "rotations": {
             "type": "array",
             "description": "a JSON array of the AID's rotation events after inception, each a KERI rot object",
-            "x-playnet-shape": "list"
+            "x-localchimera-shape": "list"
           }
         },
         "required": [
@@ -190,9 +190,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/extend-kel"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/extend-kel"
     },
     {
       "name": "lobby.join",
@@ -204,18 +204,18 @@
           "username": {
             "type": "string",
             "description": "the seat's login handle, a plain string chosen at signup",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "email": {
             "type": "string",
             "description": "the seat's contact email, display-only on the member record",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "aid-prefix": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -229,9 +229,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/join"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/join"
     },
     {
       "name": "lobby.has-seat",
@@ -244,7 +244,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -256,9 +256,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/has-seat"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/has-seat"
     },
     {
       "name": "lobby.register-oobi-replies",
@@ -271,12 +271,12 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "replies": {
             "type": "array",
             "description": "a JSON array of CESR-framed OKEA endpoint reply events (/end/role/add, /loc/scheme)",
-            "x-playnet-shape": "list"
+            "x-localchimera-shape": "list"
           }
         },
         "required": [
@@ -289,9 +289,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/register-oobi-replies"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/register-oobi-replies"
     },
     {
       "name": "lobby.fetch-icp",
@@ -304,7 +304,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -316,9 +316,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/fetch-icp"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/fetch-icp"
     },
     {
       "name": "lobby.find-icp",
@@ -330,7 +330,7 @@
           "event-key": {
             "type": "string",
             "description": "a qb64 public key an identity's log carries as a signing key, in an event's k[0] — the first key a passcode derives is one",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -342,9 +342,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/find-icp"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/find-icp"
     },
     {
       "name": "lobby.keri-challenge",
@@ -357,7 +357,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -369,9 +369,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/keri-challenge"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/keri-challenge"
     },
     {
       "name": "lobby.keri-authenticate",
@@ -384,18 +384,18 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "signature-qb64": {
             "type": "string",
             "description": "a CESR qb64 signature",
-            "x-playnet-shape": "qb64"
+            "x-localchimera-shape": "qb64"
           },
           "nonce": {
             "type": "string",
             "pattern": "^[0-9a-f]*$",
             "description": "the 32-byte challenge from keri-challenge as lowercase hex; expires 120 s after issue",
-            "x-playnet-shape": "hex"
+            "x-localchimera-shape": "hex"
           }
         },
         "required": [
@@ -409,9 +409,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/keri-authenticate"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/keri-authenticate"
     },
     {
       "name": "lobby.keri-authenticate-device",
@@ -424,24 +424,24 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "wire-json": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           },
           "signature-qb64": {
             "type": "string",
             "description": "a CESR qb64 signature",
-            "x-playnet-shape": "qb64"
+            "x-localchimera-shape": "qb64"
           },
           "nonce": {
             "type": "string",
             "pattern": "^[0-9a-f]*$",
             "description": "the 32-byte challenge from keri-challenge as lowercase hex; expires 120 s after issue",
-            "x-playnet-shape": "hex"
+            "x-localchimera-shape": "hex"
           }
         },
         "required": [
@@ -456,9 +456,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/lobby/keri-authenticate-device"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/lobby/keri-authenticate-device"
     },
     {
       "name": "lobby.leave",
@@ -470,7 +470,7 @@
           "name": {
             "type": "string",
             "description": "on announce/leave the caller's display name; on declare-place the human name of the new place; on declare-need/declare-means the row's own display name, default SPEC (need) or \"AGENT's SPEC\" (means)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -482,9 +482,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/lobby/leave"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/lobby/leave"
     },
     {
       "name": "lobby.who",
@@ -499,9 +499,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/lobby/who"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/lobby/who"
     },
     {
       "name": "lobby.signal",
@@ -513,23 +513,23 @@
           "target-name": {
             "type": "string",
             "description": "the display name of the peer the signal or introduction is addressed to",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "from-name": {
             "type": "string",
             "description": "the display name of the peer sending the signal",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "signal-type": {
             "type": "string",
             "description": "the WebRTC signal kind, one of walkie-offer, walkie-answer, walkie-ice, walkie-cam (on or off: whether the sender is sending video) or invite, room-suffixed",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "signal-data": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -544,9 +544,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/lobby/signal"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/lobby/signal"
     },
     {
       "name": "lobby.ice-servers",
@@ -561,9 +561,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/lobby/ice-servers"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/lobby/ice-servers"
     },
     {
       "name": "lobby.get-mailbox",
@@ -575,7 +575,7 @@
           "identity-key": {
             "type": "string",
             "description": "a KERI AID prefix or legacy org pubkey naming the caller; the gate is removed, always errors",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -587,9 +587,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "operations",
-      "x-playnet-http": "/api/lobby/get-mailbox"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "operations",
+      "x-localchimera-http": "/api/lobby/get-mailbox"
     },
     {
       "name": "lobby.online-users",
@@ -604,9 +604,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/lobby/online-users"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/lobby/online-users"
     },
     {
       "name": "lobby.has-role?",
@@ -619,12 +619,12 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "role": {
             "type": "string",
             "description": "a role name; the role ceremony is removed, so has-role? always replies #f",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -637,9 +637,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/lobby/has-role?"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/lobby/has-role?"
     },
     {
       "name": "lobby.get-result",
@@ -651,7 +651,7 @@
           "id": {
             "type": "string",
             "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -663,9 +663,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/lobby/get-result"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/lobby/get-result"
     },
     {
       "name": "lobby.list-proposals",
@@ -680,9 +680,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "anonymous",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/lobby/list-proposals"
+      "x-localchimera-auth": "anonymous",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/lobby/list-proposals"
     },
     {
       "name": "session.whoami",
@@ -697,9 +697,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/whoami"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/whoami"
     },
     {
       "name": "session.leave",
@@ -711,7 +711,7 @@
           "name": {
             "type": "string",
             "description": "on announce/leave the caller's display name; on declare-place the human name of the new place; on declare-need/declare-means the row's own display name, default SPEC (need) or \"AGENT's SPEC\" (means)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -723,9 +723,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/session/leave"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/session/leave"
     },
     {
       "name": "session.present-contact-point",
@@ -738,7 +738,7 @@
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -750,9 +750,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/present-contact-point"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/present-contact-point"
     },
     {
       "name": "session.confirm-contact-point",
@@ -764,17 +764,17 @@
           "kind": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "ctx": {
             "type": "string",
             "description": "the notification channel's destination address for KIND (an email, a push endpoint, …)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "code": {
             "type": "string",
             "description": "a label's code: the six characters a resource is known by in its scope",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -788,9 +788,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/confirm-contact-point"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/confirm-contact-point"
     },
     {
       "name": "session.withdraw-contact-point",
@@ -802,12 +802,12 @@
           "kind": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "ctx": {
             "type": "string",
             "description": "the notification channel's destination address for KIND (an email, a push endpoint, …)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -820,9 +820,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/withdraw-contact-point"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/withdraw-contact-point"
     },
     {
       "name": "session.my-contact-points",
@@ -837,9 +837,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/my-contact-points"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/my-contact-points"
     },
     {
       "name": "session.sync-log",
@@ -852,7 +852,7 @@
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -864,9 +864,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "commitments",
-      "x-playnet-http": "/api/session/sync-log"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "commitments",
+      "x-localchimera-http": "/api/session/sync-log"
     },
     {
       "name": "session.list-log",
@@ -881,9 +881,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "commitments",
-      "x-playnet-http": "/api/session/list-log"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "commitments",
+      "x-localchimera-http": "/api/session/list-log"
     },
     {
       "name": "session.profile",
@@ -898,9 +898,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/profile"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/profile"
     },
     {
       "name": "session.update-profile",
@@ -912,12 +912,12 @@
           "display-name": {
             "type": "string",
             "description": "the profile's display name shown to others",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "email": {
             "type": "string",
             "description": "the seat's contact email, display-only on the member record",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -930,9 +930,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/update-profile"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/update-profile"
     },
     {
       "name": "session.fp-status",
@@ -944,7 +944,7 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -956,9 +956,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-status"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-status"
     },
     {
       "name": "session.fp-vouch",
@@ -970,18 +970,18 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           },
           "subject-aid": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "rel": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           }
         },
         "required": [
@@ -995,9 +995,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-vouch"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-vouch"
     },
     {
       "name": "session.fp-vouch-preimage",
@@ -1009,24 +1009,24 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           },
           "subject-aid": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "rel": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "at": {
             "type": "string",
             "format": "date-time",
             "description": "civil ISO 8601 at the boundary",
-            "x-playnet-shape": "instant"
+            "x-localchimera-shape": "instant"
           }
         },
         "required": [
@@ -1041,9 +1041,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-vouch-preimage"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-vouch-preimage"
     },
     {
       "name": "session.fp-vouch-signed",
@@ -1055,29 +1055,29 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           },
           "subject-aid": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "rel": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "at": {
             "type": "string",
             "format": "date-time",
             "description": "civil ISO 8601 at the boundary",
-            "x-playnet-shape": "instant"
+            "x-localchimera-shape": "instant"
           },
           "signature": {
             "type": "string",
             "description": "a CESR qb64 signature",
-            "x-playnet-shape": "qb64"
+            "x-localchimera-shape": "qb64"
           }
         },
         "required": [
@@ -1093,9 +1093,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-vouch-signed"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-vouch-signed"
     },
     {
       "name": "session.fp-withdraw-vouch",
@@ -1107,13 +1107,13 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           },
           "subject-aid": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -1126,9 +1126,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-withdraw-vouch"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-withdraw-vouch"
     },
     {
       "name": "session.give-card",
@@ -1141,13 +1141,13 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "wire": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -1160,9 +1160,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/give-card"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/give-card"
     },
     {
       "name": "session.withdraw-card",
@@ -1175,7 +1175,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -1187,9 +1187,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/withdraw-card"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/withdraw-card"
     },
     {
       "name": "session.cards",
@@ -1204,9 +1204,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/cards"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/cards"
     },
     {
       "name": "session.fp-request-enroll",
@@ -1218,7 +1218,7 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -1230,9 +1230,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-request-enroll"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-request-enroll"
     },
     {
       "name": "session.fp-pending",
@@ -1244,7 +1244,7 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -1256,9 +1256,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-pending"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-pending"
     },
     {
       "name": "session.fp-my-ceremony",
@@ -1270,7 +1270,7 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -1282,9 +1282,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-my-ceremony"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-my-ceremony"
     },
     {
       "name": "session.fp-grant",
@@ -1296,13 +1296,13 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           },
           "candidate-aid": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -1315,9 +1315,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-grant"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-grant"
     },
     {
       "name": "session.fp-open-ceremony",
@@ -1329,18 +1329,18 @@
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           },
           "candidate-aid": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "k": {
             "type": "integer",
             "description": "a requested quorum count; ignored, the ecosystem's own personhood quorum applies",
-            "x-playnet-shape": "integer"
+            "x-localchimera-shape": "integer"
           }
         },
         "required": [
@@ -1354,9 +1354,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/fp-open-ceremony"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/fp-open-ceremony"
     },
     {
       "name": "session.my-phc",
@@ -1371,9 +1371,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/my-phc"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/my-phc"
     },
     {
       "name": "session.present-phc",
@@ -1386,7 +1386,7 @@
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -1398,9 +1398,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/present-phc"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/present-phc"
     },
     {
       "name": "session.present-bundle",
@@ -1413,7 +1413,7 @@
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -1425,9 +1425,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/present-bundle"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/present-bundle"
     },
     {
       "name": "session.sync-credentials",
@@ -1440,7 +1440,7 @@
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -1452,9 +1452,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/sync-credentials"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/sync-credentials"
     },
     {
       "name": "session.list-credential-backups",
@@ -1469,9 +1469,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/list-credential-backups"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/list-credential-backups"
     },
     {
       "name": "session.store-shamir-shares",
@@ -1484,17 +1484,17 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "threshold": {
             "type": "integer",
             "description": "the number of Shamir shares needed to reconstruct the bran",
-            "x-playnet-shape": "integer"
+            "x-localchimera-shape": "integer"
           },
           "shares": {
             "type": "array",
             "description": "a JSON array of the bran's Shamir shares, each addressed to a contact's AID",
-            "x-playnet-shape": "list"
+            "x-localchimera-shape": "list"
           }
         },
         "required": [
@@ -1508,9 +1508,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/store-shamir-shares"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/store-shamir-shares"
     },
     {
       "name": "session.get-shamir-shares",
@@ -1525,9 +1525,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/get-shamir-shares"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/get-shamir-shares"
     },
     {
       "name": "session.tier",
@@ -1542,9 +1542,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/tier"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/tier"
     },
     {
       "name": "session.my-devices",
@@ -1559,9 +1559,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/my-devices"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/my-devices"
     },
     {
       "name": "session.revoke-device",
@@ -1574,7 +1574,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a SAID",
-            "x-playnet-shape": "said"
+            "x-localchimera-shape": "said"
           }
         },
         "required": [
@@ -1586,9 +1586,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/revoke-device"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/revoke-device"
     },
     {
       "name": "session.relay-announce!",
@@ -1601,7 +1601,7 @@
             "type": "string",
             "pattern": "^[0-9a-f]*$",
             "description": "a signed Reticulum announce or DATA packet as lowercase hex bytes",
-            "x-playnet-shape": "hex"
+            "x-localchimera-shape": "hex"
           }
         },
         "required": [
@@ -1613,9 +1613,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/session/relay-announce!"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/session/relay-announce!"
     },
     {
       "name": "session.send-mesh-packet!",
@@ -1628,7 +1628,7 @@
             "type": "string",
             "pattern": "^[0-9a-f]*$",
             "description": "a signed Reticulum announce or DATA packet as lowercase hex bytes",
-            "x-playnet-shape": "hex"
+            "x-localchimera-shape": "hex"
           }
         },
         "required": [
@@ -1640,9 +1640,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/session/send-mesh-packet!"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/session/send-mesh-packet!"
     },
     {
       "name": "session.drain-mesh-mailbox",
@@ -1657,9 +1657,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "chat",
-      "x-playnet-http": "/api/session/drain-mesh-mailbox"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "chat",
+      "x-localchimera-http": "/api/session/drain-mesh-mailbox"
     },
     {
       "name": "session.list-credentials",
@@ -1674,9 +1674,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/list-credentials"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/list-credentials"
     },
     {
       "name": "session.issue-credential",
@@ -1689,7 +1689,7 @@
             "type": "object",
             "additionalProperties": true,
             "description": "a browser-built, browser-signed ACDC as a JSON object; issuance gate is removed, always errors",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -1701,9 +1701,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/issue-credential"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/issue-credential"
     },
     {
       "name": "session.revoke-credential",
@@ -1716,7 +1716,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a SAID",
-            "x-playnet-shape": "said"
+            "x-localchimera-shape": "said"
           }
         },
         "required": [
@@ -1728,9 +1728,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "identity",
-      "x-playnet-http": "/api/session/revoke-credential"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "identity",
+      "x-localchimera-http": "/api/session/revoke-credential"
     },
     {
       "name": "session.open",
@@ -1742,38 +1742,38 @@
           "kind": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "domain": {
             "type": "string",
             "description": "on corpus-search a corpus domain name or #f for all; on open the ballot domain (policy, recomposition, …)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "id": {
             "type": "string",
             "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "description": {
             "type": "string",
             "description": "the proposal's human-readable description",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "franchise": {
             "type": "string",
             "description": "who votes: the symbol federation, or the list (scope SCOPE-ID)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "target-ids": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           },
           "subject": {
             "type": "string",
             "description": "a \"kind:id\" string the forum resolves an open proposal against, e.g. \"recipe:bread\"",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -1789,9 +1789,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/open"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/open"
     },
     {
       "name": "session.admit-commune",
@@ -1804,24 +1804,24 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "commune-aid": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "sturdyref-uri": {
             "type": "string",
             "description": "the sturdyref the commune's peer answers at, an ocapn:// URI",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "ratification": {
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a SAID",
-            "x-playnet-shape": "said"
+            "x-localchimera-shape": "said"
           }
         },
         "required": [
@@ -1835,9 +1835,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/admit-commune"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/admit-commune"
     },
     {
       "name": "session.my-grants",
@@ -1852,9 +1852,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "custody",
-      "x-playnet-http": "/api/session/my-grants"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "custody",
+      "x-localchimera-http": "/api/session/my-grants"
     },
     {
       "name": "session.my-titles",
@@ -1869,9 +1869,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "custody",
-      "x-playnet-http": "/api/session/my-titles"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "custody",
+      "x-localchimera-http": "/api/session/my-titles"
     },
     {
       "name": "session.delegation-preimage",
@@ -1884,17 +1884,17 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "fraction": {
             "type": "number",
             "description": "the share of the caller's voice delegated, a number in (0, 1]",
-            "x-playnet-shape": "number"
+            "x-localchimera-shape": "number"
           },
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -1907,9 +1907,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/delegation-preimage"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/delegation-preimage"
     },
     {
       "name": "session.set-delegation-signed",
@@ -1922,22 +1922,22 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "fraction": {
             "type": "number",
             "description": "the share of the caller's voice delegated, a number in (0, 1]",
-            "x-playnet-shape": "number"
+            "x-localchimera-shape": "number"
           },
           "signature": {
             "type": "string",
             "description": "a CESR qb64 signature",
-            "x-playnet-shape": "qb64"
+            "x-localchimera-shape": "qb64"
           },
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -1951,9 +1951,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/set-delegation-signed"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/set-delegation-signed"
     },
     {
       "name": "session.close",
@@ -1965,7 +1965,7 @@
           "id": {
             "type": "string",
             "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -1977,9 +1977,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/close"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/close"
     },
     {
       "name": "session.get-result",
@@ -1991,7 +1991,7 @@
           "id": {
             "type": "string",
             "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2003,9 +2003,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/get-result"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/get-result"
     },
     {
       "name": "session.list-delegations",
@@ -2020,9 +2020,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/list-delegations"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/list-delegations"
     },
     {
       "name": "session.set-delegation",
@@ -2035,17 +2035,17 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "fraction": {
             "type": "number",
             "description": "the share of the caller's voice delegated, a number in (0, 1]",
-            "x-playnet-shape": "number"
+            "x-localchimera-shape": "number"
           },
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -2058,9 +2058,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/set-delegation"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/set-delegation"
     },
     {
       "name": "session.delegation-mandated-preimage",
@@ -2073,23 +2073,23 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "fraction": {
             "type": "number",
             "description": "the share of the caller's voice delegated, a number in (0, 1]",
-            "x-playnet-shape": "number"
+            "x-localchimera-shape": "number"
           },
           "mandate-spec": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           },
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -2103,9 +2103,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/delegation-mandated-preimage"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/delegation-mandated-preimage"
     },
     {
       "name": "session.set-delegation-mandated-signed",
@@ -2118,28 +2118,28 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "fraction": {
             "type": "number",
             "description": "the share of the caller's voice delegated, a number in (0, 1]",
-            "x-playnet-shape": "number"
+            "x-localchimera-shape": "number"
           },
           "mandate-spec": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           },
           "signature": {
             "type": "string",
             "description": "a CESR qb64 signature",
-            "x-playnet-shape": "qb64"
+            "x-localchimera-shape": "qb64"
           },
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -2154,9 +2154,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/set-delegation-mandated-signed"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/set-delegation-mandated-signed"
     },
     {
       "name": "session.revoke-delegation",
@@ -2169,12 +2169,12 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "scope-id": {
             "type": "string",
             "description": "a scope (commune) id",
-            "x-playnet-shape": "scope-id"
+            "x-localchimera-shape": "scope-id"
           }
         },
         "required": [
@@ -2186,9 +2186,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "governance",
-      "x-playnet-http": "/api/session/revoke-delegation"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "governance",
+      "x-localchimera-http": "/api/session/revoke-delegation"
     },
     {
       "name": "session.machine-offer",
@@ -2201,30 +2201,30 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "lane": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "classes": {
             "type": "array",
-            "x-playnet-shape": "list"
+            "x-localchimera-shape": "list"
           },
           "headroom": {
             "type": "number",
-            "x-playnet-shape": "number"
+            "x-localchimera-shape": "number"
           },
           "repro": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -2240,9 +2240,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-offer"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-offer"
     },
     {
       "name": "session.machine-retract",
@@ -2255,11 +2255,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "offer-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2272,9 +2272,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-retract"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-retract"
     },
     {
       "name": "session.machine-offers",
@@ -2287,7 +2287,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -2299,9 +2299,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-offers"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-offers"
     },
     {
       "name": "session.machine-submit",
@@ -2314,31 +2314,31 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "task-class": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "lane": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "repro": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "input-hash": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -2354,9 +2354,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-submit"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-submit"
     },
     {
       "name": "session.machine-withdraw",
@@ -2369,11 +2369,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "job-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2386,9 +2386,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-withdraw"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-withdraw"
     },
     {
       "name": "session.machine-jobs",
@@ -2401,7 +2401,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -2413,9 +2413,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-jobs"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-jobs"
     },
     {
       "name": "session.machine-match",
@@ -2428,11 +2428,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "job-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2445,9 +2445,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-match"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-match"
     },
     {
       "name": "session.machine-claim",
@@ -2460,21 +2460,21 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "job-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "offer-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -2488,9 +2488,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-claim"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-claim"
     },
     {
       "name": "session.machine-accept",
@@ -2503,11 +2503,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2520,9 +2520,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-accept"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-accept"
     },
     {
       "name": "session.machine-preempt",
@@ -2535,11 +2535,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2552,9 +2552,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-preempt"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-preempt"
     },
     {
       "name": "session.machine-claims",
@@ -2567,7 +2567,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -2579,9 +2579,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-claims"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-claims"
     },
     {
       "name": "session.machine-receipt",
@@ -2594,13 +2594,13 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "w": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -2613,9 +2613,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-receipt"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-receipt"
     },
     {
       "name": "session.machine-verify",
@@ -2628,7 +2628,7 @@
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -2640,9 +2640,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-verify"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-verify"
     },
     {
       "name": "session.machine-settle",
@@ -2655,13 +2655,13 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "w": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -2674,9 +2674,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-settle"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-settle"
     },
     {
       "name": "session.machine-statements",
@@ -2689,7 +2689,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -2701,9 +2701,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-statements"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-statements"
     },
     {
       "name": "session.machine-envelope",
@@ -2716,7 +2716,7 @@
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -2728,9 +2728,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-envelope"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-envelope"
     },
     {
       "name": "session.machine-fetch-envelope",
@@ -2743,11 +2743,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2760,9 +2760,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-fetch-envelope"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-fetch-envelope"
     },
     {
       "name": "session.machine-replay",
@@ -2775,11 +2775,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2792,9 +2792,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-replay"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-replay"
     },
     {
       "name": "session.machine-dispute",
@@ -2807,16 +2807,16 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "kind": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           }
         },
         "required": [
@@ -2830,9 +2830,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-dispute"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-dispute"
     },
     {
       "name": "session.machine-dispute-verdict",
@@ -2845,16 +2845,16 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "dispute-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "verdict": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           }
         },
         "required": [
@@ -2868,9 +2868,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-dispute-verdict"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-dispute-verdict"
     },
     {
       "name": "session.machine-disputes",
@@ -2883,7 +2883,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -2895,9 +2895,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-disputes"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-disputes"
     },
     {
       "name": "session.machine-dispute-close",
@@ -2910,11 +2910,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "dispute-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2927,9 +2927,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-dispute-close"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-dispute-close"
     },
     {
       "name": "session.machine-challenge",
@@ -2942,11 +2942,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -2959,9 +2959,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-challenge"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-challenge"
     },
     {
       "name": "session.machine-challenge-answer",
@@ -2974,15 +2974,15 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "challenge-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "answer": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -2996,9 +2996,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-challenge-answer"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-challenge-answer"
     },
     {
       "name": "session.machine-challenge-verify",
@@ -3011,19 +3011,19 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "challenge-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "expected": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "content-hash": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -3038,9 +3038,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-challenge-verify"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-challenge-verify"
     },
     {
       "name": "session.machine-challenges",
@@ -3053,11 +3053,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -3070,9 +3070,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-challenges"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-challenges"
     },
     {
       "name": "session.machine-signal",
@@ -3085,17 +3085,17 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "body": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -3109,9 +3109,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-signal"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-signal"
     },
     {
       "name": "session.machine-signals",
@@ -3124,17 +3124,17 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "claim-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -3147,9 +3147,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-signals"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-signals"
     },
     {
       "name": "session.machine-swarm-open",
@@ -3162,17 +3162,17 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "swarm-id": {
             "type": "string",
             "description": "the swarm coordination record's id",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "job-ids": {
             "type": "array",
             "description": "the member job-ids a swarm opens over, a JSON array of strings",
-            "x-playnet-shape": "list"
+            "x-localchimera-shape": "list"
           }
         },
         "required": [
@@ -3186,9 +3186,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-swarm-open"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-swarm-open"
     },
     {
       "name": "session.machine-swarm-of",
@@ -3201,12 +3201,12 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "swarm-id": {
             "type": "string",
             "description": "the swarm coordination record's id",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -3219,9 +3219,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-swarm-of"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-swarm-of"
     },
     {
       "name": "session.machine-swarm-signal",
@@ -3234,18 +3234,18 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "swarm-id": {
             "type": "string",
             "description": "the swarm coordination record's id",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "body": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -3259,9 +3259,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-swarm-signal"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-swarm-signal"
     },
     {
       "name": "session.machine-swarm-signals",
@@ -3274,18 +3274,18 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "swarm-id": {
             "type": "string",
             "description": "the swarm coordination record's id",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -3298,9 +3298,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-swarm-signals"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-swarm-signals"
     },
     {
       "name": "session.machine-bridge-submit",
@@ -3313,16 +3313,16 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "job-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           },
           "provider-name": {
             "type": "string",
             "description": "the ring-3 provider network a bridge leg routes to (golem/mysterium/storj…)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -3336,9 +3336,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-bridge-submit"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-bridge-submit"
     },
     {
       "name": "session.machine-bridge-attempts",
@@ -3351,11 +3351,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "job-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -3368,9 +3368,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-bridge-attempts"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-bridge-attempts"
     },
     {
       "name": "session.machine-payers",
@@ -3385,9 +3385,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-payers"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-payers"
     },
     {
       "name": "session.machine-payer-events",
@@ -3400,13 +3400,13 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -3418,9 +3418,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-payer-events"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-payer-events"
     },
     {
       "name": "session.machine-payer-settle",
@@ -3433,12 +3433,12 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "row-id": {
             "type": "string",
             "description": "on record-flow the plan's own id for the schedule row being confirmed, as the schedule carries it; absent, the row is found by its coordinates",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -3451,9 +3451,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-payer-settle"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-payer-settle"
     },
     {
       "name": "session.machine-demand-credit",
@@ -3466,28 +3466,28 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "key-hash": {
             "type": "string",
             "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "delta": {
             "type": "number",
             "description": "the signed credit a demand book gains (positive tops up, negative claws back)",
-            "x-playnet-shape": "number"
+            "x-localchimera-shape": "number"
           },
           "asset": {
             "type": "string",
             "description": "the denomination a demand book or row is priced in (\"sat\", \"usd\"…)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -3502,9 +3502,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-demand-credit"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-demand-credit"
     },
     {
       "name": "session.machine-demand-balance",
@@ -3517,12 +3517,12 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "key-hash": {
             "type": "string",
             "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -3535,9 +3535,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-demand-balance"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-demand-balance"
     },
     {
       "name": "session.machine-demand-intake",
@@ -3550,51 +3550,51 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "key-hash": {
             "type": "string",
             "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "payer-name": {
             "type": "string",
             "description": "the paying network a funded job is booked under (nostr-dvm, openrouter-style api payers…)",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "ref": {
             "type": "string",
             "description": "on the signing legs a caller nonce folded into the SAID (\"\" = none); on slots-watch a CapTP watcher reference",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "debit": {
             "type": "number",
             "description": "the prepaid units a funded intake draws from the customer's book",
-            "x-playnet-shape": "number"
+            "x-localchimera-shape": "number"
           },
           "task-class": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "lane": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "repro": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "input-hash": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -3614,9 +3614,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-demand-intake"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-demand-intake"
     },
     {
       "name": "session.machine-demand-resolve",
@@ -3628,7 +3628,7 @@
           "key-hash": {
             "type": "string",
             "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           }
         },
         "required": [
@@ -3640,9 +3640,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-demand-resolve"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-demand-resolve"
     },
     {
       "name": "session.machine-demand-job",
@@ -3655,11 +3655,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "job-id": {
             "type": "string",
-            "x-playnet-shape": "id"
+            "x-localchimera-shape": "id"
           }
         },
         "required": [
@@ -3672,9 +3672,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-demand-job"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-demand-job"
     },
     {
       "name": "session.machine-mesh-info",
@@ -3687,7 +3687,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -3699,9 +3699,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-mesh-info"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-mesh-info"
     },
     {
       "name": "session.machine-mesh-intake",
@@ -3714,37 +3714,37 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "result-dest": {
             "type": "string",
             "pattern": "^[0-9a-f]*$",
             "description": "the mesh requester's mailbox destination, a 64-char lowercase-hex Reticulum hash",
-            "x-playnet-shape": "hex"
+            "x-localchimera-shape": "hex"
           },
           "task-class": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "lane": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "repro": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           },
           "input-hash": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "opts": {
             "type": "object",
             "additionalProperties": true,
             "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-            "x-playnet-shape": "alist"
+            "x-localchimera-shape": "alist"
           }
         },
         "required": [
@@ -3761,9 +3761,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-mesh-intake"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-mesh-intake"
     },
     {
       "name": "session.machine-bind",
@@ -3776,13 +3776,13 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "w": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -3795,9 +3795,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-bind"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-bind"
     },
     {
       "name": "session.machine-unbind",
@@ -3810,16 +3810,16 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "key": {
             "type": "string",
-            "x-playnet-shape": "string"
+            "x-localchimera-shape": "string"
           },
           "side": {
             "type": "string",
             "description": "a symbol, sent as its name",
-            "x-playnet-shape": "symbol"
+            "x-localchimera-shape": "symbol"
           }
         },
         "required": [
@@ -3833,9 +3833,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-unbind"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-unbind"
     },
     {
       "name": "session.machine-bindings",
@@ -3848,7 +3848,7 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           }
         },
         "required": [
@@ -3860,9 +3860,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-bindings"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-bindings"
     },
     {
       "name": "session.machine-payout",
@@ -3875,13 +3875,13 @@
             "type": "string",
             "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
             "description": "a KERI AID prefix",
-            "x-playnet-shape": "aid"
+            "x-localchimera-shape": "aid"
           },
           "w": {
             "type": "string",
             "contentMediaType": "application/json",
             "description": "a JSON document, as a string",
-            "x-playnet-shape": "json"
+            "x-localchimera-shape": "json"
           }
         },
         "required": [
@@ -3894,9 +3894,9 @@
         "readOnlyHint": false,
         "openWorldHint": false
       },
-      "x-playnet-auth": "device",
-      "x-playnet-topic": "stock",
-      "x-playnet-http": "/api/session/machine-payout"
+      "x-localchimera-auth": "device",
+      "x-localchimera-topic": "stock",
+      "x-localchimera-http": "/api/session/machine-payout"
     }
   ]
 }

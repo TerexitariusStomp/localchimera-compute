@@ -10,25 +10,25 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-wire-procs.scm
 
-(use-modules ((playnet solve solver) #:select (*last-certificate*)) (playnet test harness)
-             (playnet federation wire)
-             ((playnet solve federation-oracle) #:select (make-boundary-oracle))
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
+(use-modules ((localchimera solve solver) #:select (*last-certificate*)) (localchimera test harness)
+             (localchimera federation wire)
+             ((localchimera solve federation-oracle) #:select (make-boundary-oracle))
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins vat)
              (goblins actor-lib on)
              (goblins ocapn captp) (goblins ocapn ids)
              (goblins ocapn netlayer websocket)
              (goblins utils crypto)
              (fibers)
-             ((playnet federation host) #:select (read-kept))
+             ((localchimera federation host) #:select (read-kept))
              (ice-9 threads) (ice-9 format)
              (srfi srfi-1))
 
 (setvbuf (current-output-port) 'line)
-(use-modules (playnet test planner federation-wire-fixture))
+(use-modules (localchimera test planner federation-wire-fixture))
 
 (define sref-path (string-append (or (getenv "TMPDIR") "/tmp")
-                                 "/playnet-fed-wire-" (number->string (getpid)) ".sref"))
+                                 "/localchimera-fed-wire-" (number->string (getpid)) ".sref"))
 (when (file-exists? sref-path) (delete-file sref-path))
 
 ;; ── the in-process reference, before any finish settles the kernel floor ──

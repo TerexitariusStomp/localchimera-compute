@@ -7,8 +7,8 @@
 ;;;
 ;;; Run: guile -L module tests/org/test-ai-async-evaluator.scm
 
-(use-modules (playnet test harness)
-             (playnet org gplay)
+(use-modules (localchimera test harness)
+             (localchimera org gplay)
              (ice-9 format))
 
 ;; the handlers below ignore the org; a bare symbol stands in for it.

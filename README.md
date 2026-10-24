@@ -1,4 +1,4 @@
-# playnet-compute
+# localchimera
 
 A commons for sharing machine resources — compute, storage, bandwidth —
 between people who already trust each other, and only as far as they do.
@@ -10,9 +10,9 @@ receipts** — metered, replayable economic events that ride the routing
 rings: own devices first, then own commune, then peer communes, and only
 at the outside an anonymous market that settles against a treasury Safe.
 
-The compute vocabulary lives in [`spec/playnet-compute.md`](spec/playnet-compute.md)
+The compute vocabulary lives in [`spec/localchimera.md`](spec/localchimera.md)
 (vendored from `commons-spec`) and its code in
-[`module/playnet/machine/`](module/playnet/machine/): `specs.scm` carries
+[`module/localchimera/machine/`](module/localchimera/machine/): `specs.scm` carries
 compute `ResourceSpecification`s (model class, lane, `reproMode ∈
 exact|deterministic|none`), `receipt.scm` the `SignedReceipt` wire record
 whose canonical digest is byte-identical to the poi-compute TypeScript
@@ -20,7 +20,7 @@ implementation.
 
 ## What this repo is
 
-A **surface cut** of the playnet commons platform, not a rewrite. The
+A **surface cut** of the localchimera commons platform, not a rewrite. The
 substrate a compute commons needs is kept whole: KERI identity and ACDC
 credentials, scope membership and governor capabilities, the ValueFlows
 record layer, the matching and solver engine, federation crossing,
@@ -30,17 +30,17 @@ is the product surface that was not about machines: the chat-network
 bridges (Matrix, Telegram), the QGIS worker, the SMS wall, the corpus
 service, the dev bridge, and the benchmark/exo tooling.
 
-History is ported — `git log` reaches back through the playnet tree.
+History is ported — `git log` reaches back through the localchimera tree.
 
 ## Layout
 
-- `module/playnet/machine/` — compute specs + signed receipts
-- `module/playnet/fleet/` — declarative host fleet: records, reconciler,
+- `module/localchimera/machine/` — compute specs + signed receipts
+- `module/localchimera/fleet/` — declarative host fleet: records, reconciler,
   providers, keeper
-- `module/playnet/gateway/` — mesh mailbox, presence, HTTP door server
-- `module/playnet/doors/` — the capability door layer (identity,
+- `module/localchimera/gateway/` — mesh mailbox, presence, HTTP door server
+- `module/localchimera/doors/` — the capability door layer (identity,
   personhood, economy, offers, service, inventory, slots, assignments)
-- `module/playnet/{scope,vf,solve,federation,economy,pools}` — the
+- `module/localchimera/{scope,vf,solve,federation,economy,pools}` — the
   substrate spine: membership, records, engine, crossing, settlement
 - `server/` — gateway, fleet-bridge, fleet-keeper, deploy-runner
 - `ui/` + `browser/` — the dial (TypeScript → committed JS; opens on the

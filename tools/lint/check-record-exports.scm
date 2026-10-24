@@ -70,7 +70,7 @@
                     (set! bad (+ bad (length missing)))
                     (format #t "~a: ~a record name~p not in #:export: ~{~a ~}~%"
                             path (length missing) (length missing) missing)))))))
-     (scm-files "module/playnet"))
+     (scm-files "module/localchimera"))
     (unless print?
       (if (zero? bad)
           (format #t "check-record-exports: every record name is in its module's export list~%")

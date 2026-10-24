@@ -16,7 +16,7 @@ on each of their rows:
     mass(owner, key) = W · voice(owner) · raw(owner, key) / Σ_k raw(owner, k)
 
 and the demand fold's twin cell is the sum of those masses over every owner
-(playnet.typ §Desire as harmony: `w_d = Σ_p v_p · x̂_p(d)`). Four properties
+(localchimera.typ §Desire as harmony: `w_d = Σ_p v_p · x̂_p(d)`). Four properties
 are what the mechanism in `docs/planning/truth-telling.md` (stage 2) rests on,
 and they are proved here rather than pinned by example:
 

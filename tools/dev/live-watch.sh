@@ -12,10 +12,10 @@
 # tab without reloading the page. See docs/dev/LIVE_HACKING.md.
 #
 # Environment overrides (forwarded to tools/dev/live-reload.scm):
-#   PLAYNET_REPL_HOST   default 127.0.0.1
-#   PLAYNET_REPL_PORT   default 37146
-#   PLAYNET_REPL_TIMEOUT_MS  default 1500
-#   PLAYNET_NO_REFRESH  if non-empty, skip the trailing (refresh!)
+#   LOCALCHIMERA_REPL_HOST   default 127.0.0.1
+#   LOCALCHIMERA_REPL_PORT   default 37146
+#   LOCALCHIMERA_REPL_TIMEOUT_MS  default 1500
+#   LOCALCHIMERA_NO_REFRESH  if non-empty, skip the trailing (refresh!)
 #
 # Requires `inotifywait` (linux-only; from inotify-tools / Guix package
 # `inotify-tools`). The bootstrap VPS provider's VM has it via the live-watch shepherd
@@ -52,7 +52,7 @@ done
 cat <<EOF
 ═══════════════════════════════════════════════════════════════════
   live-watch: watching for *.scm changes
-  REPL relay: ${PLAYNET_REPL_HOST:-127.0.0.1}:${PLAYNET_REPL_PORT:-37146}
+  REPL relay: ${LOCALCHIMERA_REPL_HOST:-127.0.0.1}:${LOCALCHIMERA_REPL_PORT:-37146}
   paths:
 EOF
 for tgt in "$@"; do

@@ -7,8 +7,8 @@
 ;;;
 ;;; Run: guile -L module tests/folksonomy/test-pins.scm
 
-(use-modules (playnet test harness)
-             (playnet folksonomy pins)
+(use-modules (localchimera test harness)
+             (localchimera folksonomy pins)
              (srfi srfi-1))
 
 (define (doc lists pins) (make-pins-doc lists pins))

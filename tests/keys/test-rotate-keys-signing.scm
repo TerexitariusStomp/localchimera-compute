@@ -12,18 +12,18 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keys/test-rotate-keys-signing.scm
 
-(use-modules (playnet test harness)
-             (playnet keys kel-store) (playnet boot scope) (playnet keri citizen-sig)
-             ((playnet keys kel-store)
+(use-modules (localchimera test harness)
+             (localchimera keys kel-store) (localchimera boot scope) (localchimera keri citizen-sig)
+             ((localchimera keys kel-store)
               #:select (spawn-kel-store kel-event-said kel-event-seq))
-             ((playnet keri citizen-sig)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
-             ((playnet keri signify-portable)
+             ((localchimera keri signify-portable)
               #:select (build-icp sign-event next-key-digest
                         ed25519-keypair-public recompute-event-said
                         scm->json-canonical))
-             ((playnet keri cesr) #:select (cesr-qb64->bytes))
-             ((playnet keri crypto-primitives) #:select (keri-crypto-ed25519-verify))
+             ((localchimera keri cesr) #:select (cesr-qb64->bytes))
+             ((localchimera keri crypto-primitives) #:select (keri-crypto-ed25519-verify))
              ((srfi srfi-13) #:select (string-prefix?))
              (goblins) (goblins vat) (rnrs bytevectors))
 
@@ -33,7 +33,7 @@
   (define kel-store (spawn-kel-store))
 
   ;; A real, self-signed inception — same crypto shape production takes
-  ;; (module/playnet/keri/inception.scm's governance-create-scope-aid!),
+  ;; (module/localchimera/keri/inception.scm's governance-create-scope-aid!),
   ;; built by hand here so the test has no dependency beyond build-icp/
   ;; sign-event themselves.
   (define signer  (make-keri-identity (make-bytevector 32 91)))

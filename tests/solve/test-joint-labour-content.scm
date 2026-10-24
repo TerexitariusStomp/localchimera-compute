@@ -12,8 +12,8 @@
 ;;; Run:  guile -L module tests/solve/test-joint-labour-content.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve report)
-             (playnet solve compile))
+(use-modules (localchimera solve engine) (localchimera solve report)
+             (localchimera solve compile))
 
 (define (world procs flows)
   (declare-world! #:places '(("town" 0.0 0.0))

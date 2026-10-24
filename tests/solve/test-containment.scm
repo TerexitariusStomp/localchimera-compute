@@ -14,11 +14,11 @@
 ;;;
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-containment.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (srfi srfi-1) (ice-9 format) ((playnet solve world) #:select (*templates*)))
-(use-modules (playnet solve engine)
-             (playnet solve compile)
-             (playnet vf schemas))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (srfi srfi-1) (ice-9 format) ((localchimera solve world) #:select (*templates*)))
+(use-modules (localchimera solve engine)
+             (localchimera solve compile)
+             (localchimera vf schemas))
 
 ;; ── (1) store recipe over a temporal arc; spoilage = a consume of the good ─────────
 ;; (the relocation and the spoilage are SEPARATE flow entries on milk@0 — the solver sums them.)

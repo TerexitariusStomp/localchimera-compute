@@ -1,6 +1,6 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-counting.scm — the planned count's cadence, regime and grammar
-;;; (module/playnet/vf/formulas/counting.scm; docs/observation/capture.md §4).
+;;; (module/localchimera/vf/formulas/counting.scm; docs/observation/capture.md §4).
 ;;;
 ;;; What this pins, as properties of the schedule:
 ;;;
@@ -23,8 +23,8 @@
 (define %project-root (string-append (dirname (current-filename)) "/../.."))
 (chdir %project-root)
 (add-to-load-path "module")
-(use-modules (playnet test harness)
-             (playnet vf formulas counting)
+(use-modules (localchimera test harness)
+             (localchimera vf formulas counting)
              (srfi srfi-1))
 
 (define week 604800.0)

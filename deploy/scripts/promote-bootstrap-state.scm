@@ -8,7 +8,7 @@
 ;;; on an already-bootstrapped host is a no-op.
 ;;;
 ;;; On success, prints two lines to stdout that the bootstrap script
-;;; greps for to populate /etc/playnet/host-id and /etc/playnet/provider-tag
+;;; greps for to populate /etc/localchimera/host-id and /etc/localchimera/provider-tag
 ;;; on the new VM:
 ;;;
 ;;;   host=<name>
@@ -21,7 +21,7 @@
 ;;;   0  promotion succeeded (or host was already bootstrapped)
 ;;;   1  hosts.scm missing, no matching host, or write failed
 
-(use-modules (playnet fleet records)
+(use-modules (localchimera fleet records)
              (ice-9 format)
              (srfi srfi-1))
 
@@ -29,7 +29,7 @@
   (let* ((script-dir (dirname (car (command-line))))
          (candidates (list (string-append script-dir "/../hosts.scm")
                            "deploy/hosts.scm"
-                           "/home/playnet/playnet-repo/deploy/hosts.scm")))
+                           "/home/localchimera/localchimera-repo/deploy/hosts.scm")))
     (find file-exists? candidates)))
 
 (define (emit-tags! m)

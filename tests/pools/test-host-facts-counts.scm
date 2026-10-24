@@ -11,10 +11,10 @@
 ;;;
 ;;; Run:  guile -q -L module tests/pools/test-host-facts-counts.scm
 
-(use-modules (playnet test harness) (playnet observation host-facts) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet observation host-facts)
-             (playnet pools reading-fold)
-             ((playnet vf schemas) #:select (economic-resource-onhand-quantity measure-has-numerical-value
+(use-modules (localchimera test harness) (localchimera observation host-facts) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera observation host-facts)
+             (localchimera pools reading-fold)
+             ((localchimera vf schemas) #:select (economic-resource-onhand-quantity measure-has-numerical-value
                                                   economic-event-action economic-event-resource-quantity))
              (goblins) (srfi srfi-1))
 

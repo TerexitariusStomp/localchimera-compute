@@ -15,10 +15,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-robust-records.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve robust) (playnet solve plan)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge dsl shorthand)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve robust) (localchimera solve plan)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 

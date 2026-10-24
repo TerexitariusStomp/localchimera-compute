@@ -26,16 +26,16 @@
              (goblins persistence-store syrup)
              (ice-9 format)
              (srfi srfi-1)
-             (playnet test harness)
-             (playnet utils hashmap)   ; hashmap-keys
-             (playnet fleet records)
-             (playnet fleet sporestack) ; make-sporestack-creds, default-endpoint
-             (playnet fleet reconciler))
+             (localchimera test harness)
+             (localchimera utils hashmap)   ; hashmap-keys
+             (localchimera fleet records)
+             (localchimera fleet sporestack) ; make-sporestack-creds, default-endpoint
+             (localchimera fleet reconciler))
 
 ;;; ── Test data dir ────────────────────────────────────────────────────────
 
 (define test-dir
-  (let ((d (string-append "/tmp/playnet-recon-persist-test-"
+  (let ((d (string-append "/tmp/localchimera-recon-persist-test-"
                           (number->string (getpid)))))
     (when (file-exists? d)
       (system* "rm" "-rf" d))
@@ -51,7 +51,7 @@
 (call-with-output-file desired-path
   (lambda (port)
     (display ";; synthetic for persistence test\n" port)
-    (display "(use-modules (playnet fleet records))\n" port)
+    (display "(use-modules (localchimera fleet records))\n" port)
     (display "(list\n" port)
     (display "  (desired-host\n" port)
     (display "   #:name \"persist-test-1\"\n" port)
@@ -164,7 +164,7 @@
 ;; hosts it starts from then on carry that key.
 (call-with-output-file desired-path
   (lambda (port)
-    (display "(use-modules (playnet fleet records))\n(list\n" port)
+    (display "(use-modules (localchimera fleet records))\n(list\n" port)
     (for-each
      (lambda (name)
        (format port " (desired-host #:name ~s #:provider \"sporestack\" #:flavor \"vps-1vcpu-1gb\"
@@ -180,11 +180,11 @@
 (let ((entries (with-vat vat2 ($ reconciler2 'in-flight-entries))))
   (check "a host started after set-ssh-key carries the new key"
          (equal? "ssh-ed25519 ROTATED"
-                 ((@@ (playnet fleet reconciler) in-flight-entry-ssh-key-pub)
+                 ((@@ (localchimera fleet reconciler) in-flight-entry-ssh-key-pub)
                   (hashmap-ref entries "persist-test-2"))))
   (check "the host already in flight keeps the key it was started with"
          (equal? "ssh-ed25519 STUB"
-                 ((@@ (playnet fleet reconciler) in-flight-entry-ssh-key-pub)
+                 ((@@ (localchimera fleet reconciler) in-flight-entry-ssh-key-pub)
                   (hashmap-ref entries "persist-test-1")))))
 
 ;;; ── Phase 3: token-rotation persistence ──────────────────────────────────

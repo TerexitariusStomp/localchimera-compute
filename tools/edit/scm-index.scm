@@ -1,7 +1,7 @@
 #!/usr/bin/env -S guile --no-auto-compile -L module
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 !#
-;;; scm-index.scm — CLI over (playnet tools scm-index): scope-aware caller
+;;; scm-index.scm — CLI over (localchimera tools scm-index): scope-aware caller
 ;;; search and duplicate-shape detection.
 ;;;
 ;;;   tools/edit/scm-index.scm callers  <file> <name>   every genuine (unshadowed) use of NAME
@@ -18,7 +18,7 @@
 ;;; pair that top-level-index against `tools/edit/sexp.scm list`'s output to find
 ;;; the enclosing definition, then read it with `tools/edit/sexp.scm read`.
 
-(use-modules (playnet tools scm-index)
+(use-modules (localchimera tools scm-index)
              (ice-9 match)
              (ice-9 format)
              (srfi srfi-1)

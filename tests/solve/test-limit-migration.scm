@@ -26,15 +26,15 @@
 ;;; So removal enters as ordinary scope data, priced like any other recipe — which
 ;;; is what the last section here demonstrates.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/solve/test-limit-migration.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet vf formulas stocks))
-(use-modules (playnet knowledge catalogues eco)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera vf formulas stocks))
+(use-modules (localchimera knowledge catalogues eco)
+             (localchimera knowledge dsl shorthand))
 ;; A period here is a WEEK: the roster's 09:00–17:00 every day is 56 h a period,
 ;; the labour these limits were sized on, and the same on any date.
 (set-period-length! 1.0 "week")

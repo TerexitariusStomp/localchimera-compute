@@ -23,7 +23,7 @@
 (use-modules (goblins)
              (goblins vat)
              (goblins persistence-store memory)
-             (playnet test harness)
+             (localchimera test harness)
              (web client)
              (web request)
              (web response)
@@ -36,13 +36,13 @@
              (ice-9 threads)
              (ice-9 format)
              (json)
-             (playnet monero rpc-digest)
-             (playnet monero wallet))
+             (localchimera monero rpc-digest)
+             (localchimera monero wallet))
 
 ;;; ── Mock monero-wallet-rpc server ────────────────────────────────────────
 
 (define %realm "monero-wallet-rpc")
-(define %rpc-user "playnet")
+(define %rpc-user "localchimera")
 (define %rpc-pass "s3cr3t")
 (define (header-ref request name)
   (assq-ref (request-headers request) name))

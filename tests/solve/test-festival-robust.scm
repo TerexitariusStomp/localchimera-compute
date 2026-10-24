@@ -24,9 +24,9 @@
 
 ;; from the repository root (the Run: line); current-filename is #f or
 ;; -L-relative depending on invocation — both wrong for building paths
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas) (playnet vf beyond scenario)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))
 

@@ -3,11 +3,11 @@
 ;;;
 ;;; Two responsibilities:
 ;;;
-;;;   1. On infrastructure deficit signals (`playnet/signals/deficit/#`),
+;;;   1. On infrastructure deficit signals (`localchimera/signals/deficit/#`),
 ;;;      poke `^fleet-reconciler` to run a reconcile tick (after a random
 ;;;      0–600 s jitter, in a fresh thread).
 ;;;
-;;;   2. On per-host liveness heartbeats (`playnet/signals/liveness/#`),
+;;;   2. On per-host liveness heartbeats (`localchimera/signals/liveness/#`),
 ;;;      track last-seen time + provider per host. A background thread
 ;;;      every 60 s recomputes the set of unhealthy providers — a
 ;;;      provider is unhealthy iff every host claiming it has gone
@@ -16,14 +16,14 @@
 ;;;
 ;;; The bridge talks to the reconciler over OCapN: gateway/monero-boot.scm
 ;;; mints a sturdyref for the reconciler at startup and writes it to
-;;; /var/lib/playnet/reconciler-sref.txt. We enliven that sref once and
+;;; /var/lib/localchimera/reconciler-sref.txt. We enliven that sref once and
 ;;; reuse the cap. (Replaces the previous REPL-eval-over-Unix-socket
 ;;; approach, which was brittle text-protocol parsing.)
 ;;;
 ;;; Run as a Shepherd service or manually:
 ;;;   guile --no-auto-compile -L module -s server/fleet-bridge.scm
 
-(use-modules (playnet mqtt subscriber)
+(use-modules (localchimera mqtt subscriber)
              (goblins)
              (goblins vat)
              (goblins actor-lib on)
@@ -43,7 +43,7 @@
 
 (define RECONCILER_SREF_PATH
   (or (getenv "RECONCILER_SREF_PATH")
-      "/var/lib/playnet/reconciler-sref.txt"))
+      "/var/lib/localchimera/reconciler-sref.txt"))
 
 (define liveness-stale-seconds 120)
 (define liveness-recompute-seconds 60)
@@ -221,7 +221,7 @@ draining messages."
 (define (handle-message topic payload)
   (cond
    ;; deficit/...
-   ((string-prefix? "playnet/signals/deficit/" topic)
+   ((string-prefix? "localchimera/signals/deficit/" topic)
     ;; Cooldown is recorded at *schedule* time, not at poke time: a burst
     ;; of deficit signals in the next 5 min is suppressed even though the
     ;; jittered poke hasn't fired yet. That's deliberate — multiple
@@ -232,8 +232,8 @@ draining messages."
       (format #t "[fleet-bridge] deficit signal — scheduling reconcile~%")
       (schedule-jittered-reconcile!)))
    ;; liveness/<host-id>
-   ((string-prefix? "playnet/signals/liveness/" topic)
-    (let* ((host (substring topic (string-length "playnet/signals/liveness/")))
+   ((string-prefix? "localchimera/signals/liveness/" topic)
+    (let* ((host (substring topic (string-length "localchimera/signals/liveness/")))
            (parsed (parse-signal-json payload))
            (provider (and parsed (assoc-ref parsed "provider"))))
       (when (and host provider)
@@ -242,12 +242,12 @@ draining messages."
 
 (define MQTT_PASSWORD_FILE
   (or (getenv "MQTT_PASSWORD_FILE")
-      "/var/lib/playnet/mosquitto/pw-dev-bridge.txt"))
+      "/var/lib/localchimera/mosquitto/pw-dev-bridge.txt"))
 
 (start-health-recompute-thread!)
 
 (mqtt-subscribe
- #:topic "playnet/signals/#"
+ #:topic "localchimera/signals/#"
  #:log-prefix "[fleet-bridge]"
  #:username "dev-bridge"
  #:password-file MQTT_PASSWORD_FILE

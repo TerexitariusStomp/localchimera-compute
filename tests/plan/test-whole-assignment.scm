@@ -29,13 +29,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/plan/test-whole-assignment.scm
 
-(use-modules (playnet test harness)
-             (playnet algorithms deferred-acceptance)
-             (playnet plan assignment)
+(use-modules (localchimera test harness)
+             (localchimera algorithms deferred-acceptance)
+             (localchimera plan assignment)
              (srfi srfi-1))
-(use-modules (playnet solve engine) (playnet solve report) (playnet solve world)
-             (playnet solve solver)
-             (playnet vf schemas)
+(use-modules (localchimera solve engine) (localchimera solve report) (localchimera solve world)
+             (localchimera solve solver)
+             (localchimera vf schemas)
              (ice-9 format))
 (set! *backend* 'native-c)
 

@@ -132,7 +132,7 @@ if [[ -x "$(dirname "$0")/stale-go-sweep.sh" ]]; then
   "$(dirname "$0")/stale-go-sweep.sh" || true
 fi
 
-GOCOUNT=$(find "${XDG_CACHE_HOME:-$HOME/.cache}/guile/ccache" -path '*playnet*' -name '*.go' 2>/dev/null | wc -l)
+GOCOUNT=$(find "${XDG_CACHE_HOME:-$HOME/.cache}/guile/ccache" -path '*localchimera*' -name '*.go' 2>/dev/null | wc -l)
 LOAD1=$(cut -d' ' -f1 /proc/loadavg 2>/dev/null || echo '?')
 CORES=$(nproc 2>/dev/null || echo '?')
 if [[ "${PROGRESS:-1}" == 1 ]]; then

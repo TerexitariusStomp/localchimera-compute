@@ -17,13 +17,13 @@
 ;;;   guile -L module -L tests tests/fleet/test-token-rotation.scm
 
 ;; Redirect the token file, so 'confirmed writes here and not to the
-;; deployment's /var/lib/playnet. `sporestack-token-file` reads the
+;; deployment's /var/lib/localchimera. `sporestack-token-file` reads the
 ;; environment when it is CALLED, so this no longer has to precede the
 ;; module's load — but setting it first still reads best.
 (define %token-file
   (string-append "/tmp/test-sporestack-token-"
                  (number->string (getpid)) ".txt"))
-(setenv "PLAYNET_SPORESTACK_TOKEN_FILE" %token-file)
+(setenv "LOCALCHIMERA_SPORESTACK_TOKEN_FILE" %token-file)
 
 (use-modules (goblins)
              (goblins vat)
@@ -36,10 +36,10 @@
              (json)
              (ice-9 textual-ports)
              (srfi srfi-13)
-             (playnet test harness)
-             (playnet fleet sporestack)
-             (playnet fleet records)
-             (playnet fleet reconciler))
+             (localchimera test harness)
+             (localchimera fleet sporestack)
+             (localchimera fleet records)
+             (localchimera fleet reconciler))
 
 ;;; ── Mutable mock state ───────────────────────────────────────────────────
 
@@ -145,7 +145,7 @@
 ;; The write lands where the override says, and nowhere else. This is the
 ;; assertion whose absence let the two definitions of this path disagree:
 ;; the gateway's boot copy ignored the override entirely, so 'confirmed
-;; could write to /var/lib/playnet during a test run and only ever failed
+;; could write to /var/lib/localchimera during a test run and only ever failed
 ;; as a bare "No such file or directory" from open-file.
 (check "token written to the overridden path" (file-exists? %token-file))
 (check "token file holds the rotated token"

@@ -19,12 +19,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-stock-ingest.scm
 
-(use-modules (playnet solve ingest))
-(use-modules (playnet test harness)
-             (playnet knowledge dsl shorthand)
-             (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas)
+(use-modules (localchimera solve ingest))
+(use-modules (localchimera test harness)
+             (localchimera knowledge dsl shorthand)
+             (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas)
              (srfi srfi-1))
 
 (define (near? a b) (< (abs (- a b)) 1e-6))

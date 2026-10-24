@@ -22,7 +22,7 @@ set -euo pipefail
 #   5. Verifies firewall rules are active
 
 echo "╔══════════════════════════════════════════════╗"
-echo "║  PLAYNET SYSTEM INTEGRITY VERIFICATION       ║"
+echo "║  LOCALCHIMERA SYSTEM INTEGRITY VERIFICATION       ║"
 echo "╚══════════════════════════════════════════════╝"
 echo ""
 
@@ -30,13 +30,13 @@ PASS=0
 FAIL=0
 WARN=0
 
-# Same convention as every Scheme component (module/playnet/utils/paths.scm):
-# the deployment says where its state lives, and /var/lib/playnet is only the
+# Same convention as every Scheme component (module/localchimera/utils/paths.scm):
+# the deployment says where its state lives, and /var/lib/localchimera is only the
 # packaged default. Stating the literal here meant a deployment that moved its
 # data dir got its permissions audited at an address nothing was written to —
 # and since the loop below skips files it cannot find, that reads as a pass.
 # The skip is unchanged: this fixes where we look, not what silence means.
-DATA_DIR="${PLAYNET_DATA_DIR:-/var/lib/playnet}"
+DATA_DIR="${LOCALCHIMERA_DATA_DIR:-/var/lib/localchimera}"
 
 ok()   { PASS=$((PASS+1)); echo "  ✓ $1"; }
 fail() { FAIL=$((FAIL+1)); echo "  ✗ $1 — $2"; }
@@ -76,7 +76,7 @@ done
 # 3. Shepherd services — check for unexpected services
 echo ""
 echo "── Running services ──"
-EXPECTED_SERVICES="nginx tor ssh-daemon keria keri-witnesses mosquitto playnet-gateway radicle-node reticulum-bridge iptables"
+EXPECTED_SERVICES="nginx tor ssh-daemon keria keri-witnesses mosquitto localchimera-gateway radicle-node reticulum-bridge iptables"
 RUNNING=$(herd status 2>/dev/null | grep "^+" | sed 's/^ + //')
 
 for svc in $EXPECTED_SERVICES; do
@@ -88,7 +88,7 @@ for svc in $EXPECTED_SERVICES; do
 done
 
 # Check for unexpected services (not in our known list)
-KNOWN="console-font-tty|file-system|guix-daemon|loopback|networking|nscd|pam|root|ssh|term-|timer|transient|udev|urandom|user-|virtual-terminal|certbot|log-|monero|playnet|fleet|deploy|dev-bridge|live-watch|$EXPECTED_SERVICES"
+KNOWN="console-font-tty|file-system|guix-daemon|loopback|networking|nscd|pam|root|ssh|term-|timer|transient|udev|urandom|user-|virtual-terminal|certbot|log-|monero|localchimera|fleet|deploy|dev-bridge|live-watch|$EXPECTED_SERVICES"
 UNEXPECTED=$(echo "$RUNNING" | grep -vE "$KNOWN" || true)
 if [ -n "$UNEXPECTED" ]; then
     fail "UNEXPECTED SERVICES" "$UNEXPECTED"
@@ -110,7 +110,7 @@ echo ""
 echo "── Tor ──"
 if herd status tor 2>/dev/null | grep -q "It is running"; then
     ok "tor running"
-    ONION=$(cat /var/lib/tor/hidden-services/playnet/hostname 2>/dev/null || echo "")
+    ONION=$(cat /var/lib/tor/hidden-services/localchimera/hostname 2>/dev/null || echo "")
     if [ -n "$ONION" ]; then
         ok "onion address: ${ONION:0:16}..."
     else

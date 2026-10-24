@@ -31,13 +31,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-refine-gate.scm
 
-(use-modules (playnet solve decomposed))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine)
-             (playnet solve solver)
+(use-modules (localchimera solve decomposed))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
-(primitive-load "module/playnet/test/planner/federated-fixtures.scm")
+(primitive-load "module/localchimera/test/planner/federated-fixtures.scm")
 
 (define (bound-of scopes reconcile?)
   (call-with-values (lambda () (solve-decomposed scopes #:accel #t #:reconcile? reconcile?))

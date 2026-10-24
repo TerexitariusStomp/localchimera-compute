@@ -10,7 +10,7 @@
 ;;; Usage:
 ;;;   guile -L module deploy/scripts/fleet-discover.scm [--provider digitalocean]
 
-(use-modules (playnet fleet sporestack)
+(use-modules (localchimera fleet sporestack)
              (ice-9 format)
              (ice-9 getopt-long))
 

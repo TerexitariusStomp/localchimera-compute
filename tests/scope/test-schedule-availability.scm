@@ -11,9 +11,9 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-schedule-availability.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet plan schedule-book) (playnet scope root) (playnet plan recurrence) (playnet vf schemas) (playnet vf beyond schedules) (srfi srfi-1))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera plan schedule-book) (localchimera scope root) (localchimera plan recurrence) (localchimera vf schemas) (localchimera vf beyond schedules) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

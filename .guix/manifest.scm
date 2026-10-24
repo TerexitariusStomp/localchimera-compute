@@ -12,11 +12,11 @@
 (use-modules (guix profiles)
              (rns-bridge))
 
-;; The main playnet package (Guile modules, planner, server wrappers).
+;; The main localchimera package (Guile modules, planner, server wrappers).
 ;; Its build phase runs tests, so this doubles as a test step.
-(define %playnet
+(define %localchimera
   (load (string-append (dirname (current-filename)) "/../guix.scm")))
 
 (packages->manifest
-  (list %playnet       ;; main package — includes test suite
+  (list %localchimera       ;; main package — includes test suite
         rns-bridge))   ;; Rust Reticulum bridge

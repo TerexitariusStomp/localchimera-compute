@@ -3,14 +3,14 @@
 !#
 ;;; lint-keri-lib.scm — the import gate for the KERI library boundary.
 ;;;
-;;; module/playnet/keri/ is a self-contained Guile KERI/ACDC/Signify library
+;;; module/localchimera/keri/ is a self-contained Guile KERI/ACDC/Signify library
 ;;; (docs/planning/identity/keri-openvtc-library-split.md). This gate holds that: every
 ;;; file in the library names only library modules and a short list of
-;;; dependency-free support modules. Playnet wiring that speaks KERI lives in
-;;; module/playnet/keys/ and imports the library from outside.
+;;; dependency-free support modules. LocalChimera wiring that speaks KERI lives in
+;;; module/localchimera/keys/ and imports the library from outside.
 ;;;
 ;;; A module name counts wherever it appears in CODE — a #:use-module, a
-;;; use-modules, or a quoted '(playnet …) handed to resolve-module / @ / @@ —
+;;; use-modules, or a quoted '(localchimera …) handed to resolve-module / @ / @@ —
 ;;; so a lazy import is held to the same rule as a static one. Comments and
 ;;; strings are prose and pass freely.
 ;;;
@@ -21,16 +21,16 @@
 
 (use-modules (ice-9 ftw) (ice-9 match) (ice-9 format) (srfi srfi-1))
 
-(define %lib-dir "module/playnet/keri")
-(define %first-person-dir "module/playnet/keri/first-person")
+(define %lib-dir "module/localchimera/keri")
+(define %first-person-dir "module/localchimera/keri/first-person")
 
 ;; Dependency-free modules the library stands on; they ship with it.
 (define %support
-  '(((playnet utils clock)  . "module/playnet/utils/clock.scm")
-    ((playnet utils hex)    . "module/playnet/utils/hex.scm")
-    ((playnet utils common) . "module/playnet/utils/common.scm")
-    ((playnet utils said-store) . "module/playnet/utils/said-store.scm")
-    ((playnet test harness) . "module/playnet/test/harness.scm")))
+  '(((localchimera utils clock)  . "module/localchimera/utils/clock.scm")
+    ((localchimera utils hex)    . "module/localchimera/utils/hex.scm")
+    ((localchimera utils common) . "module/localchimera/utils/common.scm")
+    ((localchimera utils said-store) . "module/localchimera/utils/said-store.scm")
+    ((localchimera test harness) . "module/localchimera/test/harness.scm")))
 
 (define (scm-files dir)
   (if (file-exists? dir)
@@ -46,11 +46,11 @@
         (let ((f (read p)))
           (if (eof-object? f) (reverse acc) (loop (cons f acc))))))))
 
-(define (playnet-names form)
-  "Every (playnet sym …) list of symbols anywhere inside FORM."
+(define (localchimera-names form)
+  "Every (localchimera sym …) list of symbols anywhere inside FORM."
   (let walk ((x form) (acc '()))
     (cond
-     ((and (pair? x) (eq? (car x) 'playnet) (list? x) (pair? (cdr x))
+     ((and (pair? x) (eq? (car x) 'localchimera) (list? x) (pair? (cdr x))
            (every symbol? x))
       (cons x acc))
      ((pair? x) (walk (cdr x) (walk (car x) acc)))
@@ -58,7 +58,7 @@
      (else acc))))
 
 (define (names-in file)
-  (delete-duplicates (append-map (lambda (f) (playnet-names f)) (read-forms file))))
+  (delete-duplicates (append-map (lambda (f) (localchimera-names f)) (read-forms file))))
 
 (define (lib-name? n allowed-roots)
   (or (assoc n %support)
@@ -84,15 +84,15 @@
          (openvtc-files (scm-files %first-person-dir))
          (support-files (map cdr %support))
          ;; the KERI library stands alone; the OpenVTC layer stands on it
-         (bad (append (check keri-files    '((playnet keri)) "keri")
-                      (check openvtc-files '((playnet keri)) "first-person")
+         (bad (append (check keri-files    '((localchimera keri)) "keri")
+                      (check openvtc-files '((localchimera keri)) "first-person")
                       (check support-files '() "support"))))
     (cond
      ((member "--manifest" args)
       (for-each (lambda (f) (display f) (newline))
                 (append keri-files openvtc-files support-files
-                        (list "module/playnet/keri/schemas")
-                        (pure-tests "tests/keri" '((playnet keri))))))
+                        (list "module/localchimera/keri/schemas")
+                        (pure-tests "tests/keri" '((localchimera keri))))))
      ((null? bad)
       (format #t "keri-lib gate: ~a library + ~a first-person + ~a support files, every import inside the boundary\n"
               (length keri-files) (length openvtc-files) (length support-files)))

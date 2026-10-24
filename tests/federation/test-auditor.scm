@@ -1,10 +1,10 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-auditor.scm — ^federation-auditor + ^custody-half-life-watcher
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet federation auditor) (playnet credentials audit) (playnet credentials custody) (playnet keri acdc) (playnet boot scope) (playnet economy socialization) (playnet federation structural-invariants) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person predicates))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera federation auditor) (localchimera credentials audit) (localchimera credentials custody) (localchimera keri acdc) (localchimera boot scope) (localchimera economy socialization) (localchimera federation structural-invariants) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person predicates))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors)
              (srfi srfi-1))
@@ -49,11 +49,11 @@
     (let* ((auditor (spawn-federation-auditor top
                                               #:auditor-aid "EAUDIT"))
            (said    ($ auditor 'audit!))
-           (creds   ($ store 'by-schema *schema-playnet-audit-pass*)))
+           (creds   ($ store 'by-schema *schema-localchimera-audit-pass*)))
       (check-pred "audit returns SAID" (string? said))
       (check-pred "one audit-pass emitted" (= 1 (length creds)))
       (check-pred "no incoherence-alert"
-                  (null? ($ store 'by-schema *schema-playnet-incoherence-alert*)))
+                  (null? ($ store 'by-schema *schema-localchimera-incoherence-alert*)))
       (check-pred "auditor cycle bumped"
                   (= 1 ($ auditor 'cycle))))))
 
@@ -79,7 +79,7 @@
     (let* ((auditor (spawn-federation-auditor top
                                               #:auditor-aid "EAUDIT"))
            (said    ($ auditor 'audit!))
-           (alerts  ($ store 'by-schema *schema-playnet-incoherence-alert*)))
+           (alerts  ($ store 'by-schema *schema-localchimera-incoherence-alert*)))
       (check-pred "alert emitted" (= 1 (length alerts)))
       (let ((violations (cred-claim (car alerts) 'violations)))
         (check-pred "double-counted-members reported"
@@ -119,7 +119,7 @@
       (check-pred "one expired processed" (= 1 (length results)))
       (let* ((expired-said   (car (car results)))
              (reversion-said (cdr (car results)))
-             (revs ($ store 'by-schema *schema-playnet-reversion-attestation*))
+             (revs ($ store 'by-schema *schema-localchimera-reversion-attestation*))
              (rev (find (lambda (c) (equal? reversion-said (cred-said c))) revs)))
         (check-pred "expired SAID matches" (equal? (cred-said expired) expired-said))
         (check-pred "reversion attestation issued" (not (not rev)))
@@ -130,7 +130,7 @@
                             (edge-target (cred-edge rev 'reverted-from))))
         (check-pred "expired now revoked"
                     (let ((all ($ store 'by-schema
-                                   *schema-playnet-custody-attestation*)))
+                                   *schema-localchimera-custody-attestation*)))
                       (cred-revoked? (find (lambda (c)
                                              (equal? expired-said (cred-said c)))
                                            all))))))))
@@ -159,7 +159,7 @@
       (check-pred "no expired" (null? results))
       (check-pred "no reversion attestations"
                   (null? ($ store 'by-schema
-                             *schema-playnet-reversion-attestation*))))))
+                             *schema-localchimera-reversion-attestation*))))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -211,7 +211,7 @@
     (let* ((auditor (spawn-federation-auditor top))
            (said ($ auditor 'audit!))
            (cred (find (lambda (c) (equal? said (cred-said c)))
-                       ($ store 'by-schema *schema-playnet-audit-pass*))))
+                       ($ store 'by-schema *schema-localchimera-audit-pass*))))
       (check-pred "credential issued"  (not (not cred)))
       (check "audit-pass issuer = the audited federation"
              (cred-issuer cred) fed-aid)
@@ -268,7 +268,7 @@
            (cred    (find (lambda (c) (equal? said (cred-said c)))
                           ($ store 'all))))
       (check "the audit emits an incoherence alert"
-             (cred-schema cred) *schema-playnet-incoherence-alert*)
+             (cred-schema cred) *schema-localchimera-incoherence-alert*)
       (check "naming the contradicted resource and the claimed owner"
              (assq-ref (cred-claim cred 'violations) 'ownership-violations)
              (list (list "EOL" rid "EMallory"))))))

@@ -20,7 +20,7 @@
 ;;;
 ;;; No account, no email, no signup. The token IS the credential.
 
-(use-modules (playnet fleet sporestack)
+(use-modules (localchimera fleet sporestack)
              (ice-9 format)
              (ice-9 getopt-long)
              (srfi srfi-19))
@@ -117,7 +117,7 @@ deploy/secrets.scm as SPORESTACK_TOKEN.
                 (format #t "~%Timeout after 1 hour. The token is still valid:~%")
                 (format #t "  ~a~%" token)
                 (format #t "Check balance later with:~%")
-                (format #t "  guile -L module -c '(use-modules (playnet fleet sporestack)) (display (sporestack-balance (make-sporestack-creds \"~a\" \"~a\")))'~%"
+                (format #t "  guile -L module -c '(use-modules (localchimera fleet sporestack)) (display (sporestack-balance (make-sporestack-creds \"~a\" \"~a\")))'~%"
                         endpoint token))))))))
 
 (main (command-line))

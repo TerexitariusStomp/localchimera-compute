@@ -24,11 +24,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/observation/test-observer-corrections.scm
 
-(use-modules (playnet test harness)
-             ((playnet utils clock) #:select (civil->instant))
-             (playnet test events)
-             (playnet observation observer) (playnet vf schemas) (srfi srfi-1)
-             (playnet observation observer)
+(use-modules (localchimera test harness)
+             ((localchimera utils clock) #:select (civil->instant))
+             (localchimera test events)
+             (localchimera observation observer) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera observation observer)
              (goblins utils hashmap)
              (srfi srfi-1))
 

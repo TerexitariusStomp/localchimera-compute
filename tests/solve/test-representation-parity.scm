@@ -14,7 +14,7 @@
 ;;; the headroom and the level are the same number — they are two ways of writing
 ;;; one question, and they must give one answer.
 ;;;
-;;; They did not. `playnet.typ` is explicit that the two barrier families "differ
+;;; They did not. `localchimera.typ` is explicit that the two barrier families "differ
 ;;; only in their weight": a hard constraint carries the SWEPT weight and is
 ;;; ridden to the edge, a fragility profile carries a FIXED governance weight and
 ;;; is felt at the optimum, "which is precisely what lets the federation ease off
@@ -29,14 +29,14 @@
 ;;; difference would not show — which is why the regression survived a suite full
 ;;; of floors.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/solve/test-representation-parity.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
-(use-modules (playnet knowledge catalogues eco))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
+(use-modules (localchimera knowledge catalogues eco))
 ;; A period here is a WEEK: the roster's Monday 00:00–23:00 is twenty-three hours a period, on any date.
 (set-period-length! 1.0 "week")
 

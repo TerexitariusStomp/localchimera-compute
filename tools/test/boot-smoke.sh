@@ -17,7 +17,7 @@ if [ -z "$PORT" ]; then
 fi
 TMP=$(mktemp -d /tmp/pnb.XXXXXX)
 guix shell --pure -L deploy/guix -m deploy/manifests/keri-test-manifest.scm -- \
-  bash -c 'env LC_ALL=C.UTF-8 XDG_RUNTIME_DIR="$0" PLAYNET_DATA_DIR="$0" PLAYNET_SCOPES_DURABLE=0 LTDL_LIBRARY_PATH="$GUIX_ENVIRONMENT/lib" \
+  bash -c 'env LC_ALL=C.UTF-8 XDG_RUNTIME_DIR="$0" LOCALCHIMERA_DATA_DIR="$0" LOCALCHIMERA_SCOPES_DURABLE=0 LTDL_LIBRARY_PATH="$GUIX_ENVIRONMENT/lib" \
   bash tools/test/own-ccache.sh guile --no-auto-compile -L module -L . -s server/gateway.scm --host 127.0.0.1 --port "$1"' "$TMP" "$PORT" > "$TMP/gateway.log" 2>&1 &
 PID=$!
 for i in $(seq 1 150); do

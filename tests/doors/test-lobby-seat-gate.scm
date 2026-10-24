@@ -9,13 +9,13 @@
 ;;; the way the browser's take-seat! drives them. signup-agent sits in
 ;;; its own vat, as in the gateway, so the gated answer is a promise.
 
-(use-modules (playnet test harness)
-             (playnet test identity)
-             (playnet keri signify-portable)
-             ((playnet keri cesr) #:select (cesr-bytes->qb64))
-             (playnet identity seat)
-             (playnet identity oobi-host)
-             (playnet doors lobby)
+(use-modules (localchimera test harness)
+             (localchimera test identity)
+             (localchimera keri signify-portable)
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64))
+             (localchimera identity seat)
+             (localchimera identity oobi-host)
+             (localchimera doors lobby)
              (goblins)
              (goblins actor-lib methods)
              (goblins utils hashmap)

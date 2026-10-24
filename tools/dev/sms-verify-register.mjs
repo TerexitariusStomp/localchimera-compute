@@ -67,8 +67,8 @@ async function retrieveCode() {
   if (args['wallet-rpc-password-file']) {
     cmdArgs.push('--wallet-rpc-password-file', args['wallet-rpc-password-file']);
   } else if (!args['manual']) {
-    // Default to playnet's password file
-    cmdArgs.push('--wallet-rpc-password-file', '/var/lib/playnet/monero/rpc-login.txt');
+    // Default to localchimera's password file
+    cmdArgs.push('--wallet-rpc-password-file', '/var/lib/localchimera/monero/rpc-login.txt');
   } else {
     cmdArgs.push('--manual');
   }

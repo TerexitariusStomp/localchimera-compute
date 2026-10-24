@@ -2,19 +2,19 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # backup-to-vault.sh — refresh tier 3 (KeePass vault) from tier 2 cleartext.
 #
-# Adds (or updates) entries in ~/.playnet-secrets/playnet-vault.kdbx:
+# Adds (or updates) entries in ~/.localchimera-secrets/localchimera-vault.kdbx:
 #
-#   /Playnet/age-key      — attachment: age-key.txt
-#   /Playnet/secrets      — attachment: secrets.scm
+#   /LocalChimera/age-key      — attachment: age-key.txt
+#   /LocalChimera/secrets      — attachment: secrets.scm
 #
-# Run AFTER `make backup-laptop` has refreshed tier 2 (~/.playnet-secrets/).
+# Run AFTER `make backup-laptop` has refreshed tier 2 (~/.localchimera-secrets/).
 # You'll be prompted ONCE for the vault password.
 
 set -euo pipefail
 
-VAULT="${PLAYNET_VAULT:-$HOME/.playnet-secrets/playnet-vault.kdbx}"
-AGE_KEY="$HOME/.playnet-secrets/playnet.age-key.txt"
-SECRETS="$HOME/.playnet-secrets/playnet.secrets.scm"
+VAULT="${LOCALCHIMERA_VAULT:-$HOME/.localchimera-secrets/localchimera-vault.kdbx}"
+AGE_KEY="$HOME/.localchimera-secrets/localchimera.age-key.txt"
+SECRETS="$HOME/.localchimera-secrets/localchimera.secrets.scm"
 
 if [ ! -f "$VAULT" ]; then
     echo "error: vault not found at $VAULT" >&2
@@ -48,17 +48,17 @@ read -rsp "Vault password: " PW; echo
 # the actual content idempotently.
 kp() { printf '%s' "$PW" | keepassxc-cli "$@"; }
 
-kp mkdir "$VAULT" /Playnet                                                       || true
-kp add   "$VAULT" /Playnet/age-key -g \
+kp mkdir "$VAULT" /LocalChimera                                                       || true
+kp add   "$VAULT" /LocalChimera/age-key -g \
    --notes "age private key — decrypts deploy/secrets.scm.age (operator-only)"   || true
-kp add   "$VAULT" /Playnet/secrets -g \
+kp add   "$VAULT" /LocalChimera/secrets -g \
    --notes "decrypted secrets.scm — env vars consumed by activation gexp"        || true
 
 # Attachment-import IS idempotent with -f (force overwrite). A failure
 # here is a real error — the entry must already exist before this runs.
-kp attachment-import -f "$VAULT" /Playnet/age-key  age-key.txt   "$AGE_KEY"
-kp attachment-import -f "$VAULT" /Playnet/secrets  secrets.scm   "$SECRETS"
+kp attachment-import -f "$VAULT" /LocalChimera/age-key  age-key.txt   "$AGE_KEY"
+kp attachment-import -f "$VAULT" /LocalChimera/secrets  secrets.scm   "$SECRETS"
 
 echo ""
 echo "Vault updated. Verify with:"
-echo "  keepassxc-cli ls -R '$VAULT' /Playnet"
+echo "  keepassxc-cli ls -R '$VAULT' /LocalChimera"

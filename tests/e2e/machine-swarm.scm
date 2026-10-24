@@ -9,12 +9,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module -L tests tests/e2e/machine-swarm.scm
 
-(use-modules (playnet test harness)
-             (playnet test e2e)
-             (playnet machine registry)
-             (playnet machine swarm)
-             (playnet machine receipt)
-             (playnet boot governance)
+(use-modules (localchimera test harness)
+             (localchimera test e2e)
+             (localchimera machine registry)
+             (localchimera machine swarm)
+             (localchimera machine receipt)
+             (localchimera boot governance)
              (goblins) (goblins vat)
              (goblins actor-lib methods)
              (srfi srfi-1))

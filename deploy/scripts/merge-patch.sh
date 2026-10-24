@@ -27,14 +27,14 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PATCH="${1:?usage: merge-patch.sh <patch-id> [agent-name]}"
 AGENT="${2:-claude}"
-: "${PLAYNET_RID:=rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ}"
+: "${LOCALCHIMERA_RID:=rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ}"
 
 command -v rad >/dev/null || { echo "[merge-patch] ERROR: rad CLI not found"; exit 1; }
 
 echo "[merge-patch] resolving patch $PATCH"
 # Capture patch state once. `rad patch show` renders a box-drawing table; we
 # read the head SHA and the CI labels off it.
-SHOW="$(rad patch show "$PATCH" --repo "$PLAYNET_RID" 2>/dev/null)"
+SHOW="$(rad patch show "$PATCH" --repo "$LOCALCHIMERA_RID" 2>/dev/null)"
 # Head = the 40-hex on the "Head" row (robust to the │ borders / column padding).
 HEAD_SHA="$(echo "$SHOW" | grep -i head | grep -oiE '[0-9a-f]{40}' | head -1)"
 [ -n "$HEAD_SHA" ] || { echo "[merge-patch] ERROR: could not resolve head of patch $PATCH"; exit 1; }
@@ -48,12 +48,12 @@ echo "[merge-patch] patch head = $HEAD_SHA"
 # the patch's CI job passed on the board before merging; the fast-forward and
 # GPG-signature checks below still guard what actually ships.
 echo "[merge-patch] NOTE: CI is native (radicle-ci-broker job COB). Confirm it"
-echo "              passed at playnet.earth/radicle before merging this patch."
+echo "              passed at localchimera.earth/radicle before merging this patch."
 
 # Make sure we actually have the object locally (fetch the patch branch).
 if ! git cat-file -e "$HEAD_SHA^{commit}" 2>/dev/null; then
     echo "[merge-patch] fetching patch objects via rad"
-    rad patch checkout "$PATCH" --repo "$PLAYNET_RID" >/dev/null 2>&1 || true
+    rad patch checkout "$PATCH" --repo "$LOCALCHIMERA_RID" >/dev/null 2>&1 || true
 fi
 git cat-file -e "$HEAD_SHA^{commit}" 2>/dev/null \
     || { echo "[merge-patch] ERROR: patch head $HEAD_SHA not in local storage after checkout"; exit 1; }
@@ -75,7 +75,7 @@ bash "$HERE/promote.sh" "$HEAD_SHA" "$AGENT"
 # head is in canonical. So read the state back instead of trying to set it. A
 # patch that still reads "open" here has not synced from canonical to this node
 # yet (it shows merged once it does); it is not a failed step.
-status=$(rad patch show "$PATCH" --repo "$PLAYNET_RID" 2>/dev/null \
+status=$(rad patch show "$PATCH" --repo "$LOCALCHIMERA_RID" 2>/dev/null \
            | awk '/^│ Status/ {print $3}' || true)
 echo "[merge-patch] patch $PATCH: status ${status:-unknown} (Radicle marks it merged itself once its head is in canonical)"
 

@@ -15,13 +15,13 @@
 ;;; needs a linear -pi*net-flow objective term (see docs/planning/federation/FEDERATED-SOLVE.md,
 ;;; "the one solver hook"). This test pins the primal version, which needs no hook.
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/solve/test-federation-decomp.scm
+;;; Run:  guile -L module/localchimera/planner tests/solve/test-federation-decomp.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 (define (res spec loc q) (er (string-append spec "@" loc) spec #f #:place loc #:qty q #:unit "kg"))
 (define (place id lat lon) (place* id #:lat lat #:lon lon))
 (define (worker id loc) (person* id #:place loc #:tags '("general")))

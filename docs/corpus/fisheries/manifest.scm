@@ -4,7 +4,7 @@
 ;;; Phase 1 of docs/planning/food/natural-processes-research-plan.md. Fisheries is
 ;;; kept apart from aquaculture deliberately: aquaculture CULTIVATES, wild capture
 ;;; is a pure draw against regeneration with no production labour at all, which
-;;; makes it the limit case of the whole argument. docs/playnet.typ names it
+;;; makes it the limit case of the whole argument. docs/localchimera.typ names it
 ;;; directly — "a fishing scope stewards its fishery", and a coastal scope
 ;;; stewarding fishery, estuary and mangrove together.
 ;;;

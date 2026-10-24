@@ -26,12 +26,12 @@
 ;;;
 ;;; Run: guile -L module tests/solve/test-berlin-festival.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas) (playnet vf beyond scenario)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet knowledge worlds berlin-baumscheiben))
+(use-modules (localchimera knowledge worlds berlin-baumscheiben))
 
 ;; ── the ground: real pit counts per Bezirk, pooled at one festival place ──────
 ;; (intra-Berlin transport is out of scope; the districts stay distinguishable by

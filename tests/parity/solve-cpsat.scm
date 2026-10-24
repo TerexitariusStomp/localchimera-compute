@@ -4,9 +4,9 @@
 ;;; /solve; the upstream answers a status + assignment. Invariant leg
 ;;; pins the wire; live leg reads a real solver verdict.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
              (srfi srfi-1))
 
 ;; a two-variable fixture: maximize x+y subject to x+2y ≤ 4
@@ -23,7 +23,7 @@
   (check "cpsat wire carries the model proto"
          (equal? (cdr (assoc "model" w)) fixture-model) #t))
 
-(parity-live-delegate "PLAYNET_CPSAT_URL"
+(parity-live-delegate "LOCALCHIMERA_CPSAT_URL"
   "cp-sat sidecar answers a fixture solve"
   (lambda (t) (make-cpsat-delegate t))
   (lambda (d) (d fixture-model))

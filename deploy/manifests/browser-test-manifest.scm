@@ -10,7 +10,7 @@
 ;;; Or via Makefile:
 ;;;   make test-browser
 ;;;
-;;; Bypasses `guix time-machine` (and the playnet channel pin) for the
+;;; Bypasses `guix time-machine` (and the localchimera channel pin) for the
 ;;; same reason as deploy/manifests/keri-test-manifest.scm: the rad HTTPS
 ;;; gateway only canonicalizes the project's defaultBranch (main), so
 ;;; the (introduction)'s keyring branch isn't reachable as origin/keyring.

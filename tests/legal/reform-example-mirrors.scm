@@ -8,7 +8,7 @@
 ;;;
 ;;;   guile -L module tests/legal/reform-example-mirrors.scm      ; prints the program
 
-(use-modules (playnet legal reform) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
+(use-modules (localchimera legal reform) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
 (define *example-mirrors*
   (list

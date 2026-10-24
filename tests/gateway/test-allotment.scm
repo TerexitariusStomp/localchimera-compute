@@ -1,6 +1,6 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/gateway/test-allotment.scm — the week's unplanned photo reads
-;;; (module/playnet/gateway/allotment.scm; docs/observation/capture.md §5).
+;;; (module/localchimera/gateway/allotment.scm; docs/observation/capture.md §5).
 ;;;
 ;;; What this pins:
 ;;;   • a week opens on Monday 00:00 UTC, whole;
@@ -14,8 +14,8 @@
 ;;; Run: tools/test/own-ccache.sh guile --no-auto-compile -q -L module tests/gateway/test-allotment.scm
 
 (add-to-load-path "module")
-(use-modules (playnet test harness)
-             (playnet gateway allotment)
+(use-modules (localchimera test harness)
+             (localchimera gateway allotment)
              (srfi srfi-1))
 
 (display "\n── 1. the week ──\n")

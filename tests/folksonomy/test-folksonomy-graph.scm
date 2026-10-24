@@ -9,8 +9,8 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/folksonomy/test-folksonomy-graph.scm
 
-(use-modules (playnet test harness)
-             (playnet folksonomy graph)
+(use-modules (localchimera test harness)
+             (localchimera folksonomy graph)
              (srfi srfi-1))
 
 (define (assq-ref alist key) (let ((p (assq key alist))) (and p (cdr p))))

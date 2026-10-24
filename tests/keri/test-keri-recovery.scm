@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keri/test-keri-recovery.scm — server recovery tests
 ;;;
-;;; Exercises (playnet keri keria-reconnect):
+;;; Exercises (localchimera keri keria-reconnect):
 ;;;   - recovery-reconnect!   (set URLs + connect)
 ;;;   - recovery-sync!        (count AIDs / credentials / contacts)
 ;;;   - recovery-check-witnesses  (resolve each + classify reachable/unreachable)
@@ -16,11 +16,11 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keri/test-keri-recovery.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri credentials)
-             (playnet keri inception)
-             (playnet keri keria-reconnect)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri credentials)
+             (localchimera keri inception)
+             (localchimera keri keria-reconnect)
              (web server)
              (web request)
              (web response)
@@ -91,7 +91,7 @@
      ;; GET /identifiers/{name} — get AID (for gateway-controller-init!)
      ((and (eq? method 'GET) (string-prefix? "/identifiers/" path))
       (if %gov-exists?
-          (with-json 200 `(("name" . "playnet-governance")
+          (with-json 200 `(("name" . "localchimera-governance")
                            ("prefix" . ,%gov-aid)))
           (with-json 404 `(("title" . "Not Found")))))
 
@@ -102,7 +102,7 @@
      ((and (eq? method 'POST) (string=? path "/identifiers"))
       (with-json 200
         `(("done" . #t)
-          ("name" . "playnet-gateway")
+          ("name" . "localchimera-gateway")
           ("response" . (("i" . ,%gov-aid))))))
 
      ;; POST /credentials/query — honor skip so acdc-sync-credentials

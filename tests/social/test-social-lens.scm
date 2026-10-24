@@ -8,9 +8,9 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/social/test-social-lens.scm
 
-(use-modules (playnet test harness)
-             (playnet social lens)
-             (playnet social relationship-kinds)
+(use-modules (localchimera test harness)
+             (localchimera social lens)
+             (localchimera social relationship-kinds)
              (srfi srfi-1))
 
 (define book

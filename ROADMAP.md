@@ -31,7 +31,7 @@ worded so grant applications can cite it verbatim as a milestone.
 
 ## M1 — Public gateway deploy + demand API GA
 
-A playnet instance serving `/api/demand/*` at a public URL, behind the
+A localchimera instance serving `/api/demand/*` at a public URL, behind the
 existing caddy/compose stack, with an operator runbook. Acceptance: an
 external client can register a demand key, credit a book (manually),
 submit a chat-completion job, and read the receipt via

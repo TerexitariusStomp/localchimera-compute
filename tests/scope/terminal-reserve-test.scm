@@ -31,11 +31,11 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/scope/terminal-reserve-test.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope))
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope))
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1) (ice-9 format))

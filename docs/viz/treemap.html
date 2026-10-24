@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Playnet Commons — Federation Labour Allocation Surface</title>
+<title>LocalChimera Commons — Federation Labour Allocation Surface</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <style>
@@ -484,7 +484,7 @@ const CAT_COLOR = {
 };
 const colorOf = (d) => d._catColor || CAT_COLOR[d._cat] || PALETTE.hues.faint;
 
-// Shared rainbow spectrum — the Playnet logo letters and the "Playtime" label
+// Shared rainbow spectrum — the LocalChimera logo letters and the "Playtime" label
 // both spell across it (warm → cool, in cycle order). One source of truth.
 const SPECTRUM = [
   PALETTE.hues.plan,       PALETTE.hues.labour, PALETTE.hues.refuse,
@@ -532,7 +532,7 @@ const childrenFor = (d) =>
 // other portion. Their area-split equals f. Each one's fill shows Φ (the
 // social desire satisfaction within that domain).
 // Each node may declare its own presentation, so renderers stay generic:
-//   _titleRender   "rainbow" → multi-colour breadcrumb title (the Playnet logo)
+//   _titleRender   "rainbow" → multi-colour breadcrumb title (the LocalChimera logo)
 //   _totalCaption  string    → caption before the hours total in the header tab
 //   _zones         fn(pct)   → custom two-zone label recipe (else "% worked")
 
@@ -751,7 +751,7 @@ const RESOURCE_LEAVES = [
 ];
 
 const TREE = {
-  name: "playnet", _color: PALETTE.hues.means, _label: "Playnet · Q2 2027",
+  name: "localchimera", _color: PALETTE.hues.means, _label: "LocalChimera · Q2 2027",
   _titleRender: "rainbow", _totalCaption: "total social time",
   children: [
     // FREE TIME — what we win as productivity rises. Free time's own Φ.
@@ -792,7 +792,7 @@ const FED = TREE.children.find(c => c.name === "federation");
 FED._colChildren   = buildActivities(RESOURCE_LEAVES);  // activities ↓ (partition)
 FED._rowChildren   = buildCategories(RESOURCE_LEAVES);  // categories → (partition)
 FED.children = FED._colChildren;                         // default: activities
-// At the playnet root the federation renders as a single (scope-kind) tile, so
+// At the localchimera root the federation renders as a single (scope-kind) tile, so
 // d3 sizes it by `value` — fold that from the registry so it can never drift
 // from the activities/categories total (both = this sum).
 FED.value = FED._colChildren.reduce((s, c) => s + foldValue(c), 0);
@@ -805,7 +805,7 @@ FED._axisRoot = true;
 //   them sorted by proximity to the user.
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Sofia, Bulgaria (where playnet.earth is hosted).
+// Sofia, Bulgaria (where localchimera.earth is hosted).
 const USER_LOC = { lat: 42.6977, lng: 23.3219, label: "you" };
 
 // Resource catalogue keyed by resource-specification name (matches leaf.name
@@ -2024,7 +2024,7 @@ function drawZones(g, rect, zones) {
   }
 }
 
-// "Playtime" uses the shared rainbow spectrum (same as the Playnet title).
+// "Playtime" uses the shared rainbow spectrum (same as the LocalChimera title).
 const RAINBOW = SPECTRUM;
 
 function drawZoneLabel(g, { cx, cy, zH, w }, z) {

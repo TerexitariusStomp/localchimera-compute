@@ -14,10 +14,10 @@
 ;;; recertifying (the Phase-1 floor, now realised as an expiry policy).
 ;;; Design: docs/legal/inspection-in-plan.md §"The slices" (4).
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/vf/test-inspection-credential.scm
+;;; Run:  guile -L module/localchimera/planner tests/vf/test-inspection-credential.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet vf formulas cadence) (playnet vf facts validity))
+(use-modules (localchimera vf formulas cadence) (localchimera vf facts validity))
 
 ;; INDEPENDENT oracle: argmin over [0,1] of J(a) = ℓa + D·e^{−κa} (convex). Non-circular
 ;; — the closed form is nowhere plugged into itself.

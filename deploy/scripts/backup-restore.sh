@@ -31,7 +31,7 @@ AFFECTED_SERVICES=(
     keri-witness-wit keri-witness-wub keri-witness-wyz
     fleet-reconciler
     tor
-    playnet-gateway
+    localchimera-gateway
 )
 
 LOG_PREFIX="[backup-restore]"
@@ -72,7 +72,7 @@ fi
 
 # --- Stage --------------------------------------------------------------
 
-STAGE="$(mktemp -d -t playnet-restore.XXXXXX)"
+STAGE="$(mktemp -d -t localchimera-restore.XXXXXX)"
 trap 'rm -rf "$STAGE"' EXIT
 
 log "Decrypting $BLOB → $STAGE/"

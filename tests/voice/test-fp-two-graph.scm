@@ -9,11 +9,11 @@
 ;;;   2. B cross-recognises {B, A}        → A's person is ACCEPTED (multi-root).
 ;;;   3. A and B merge into C; B roots at C → A's person ACCEPTED via lineage.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope ballot-store) (playnet credentials recomposition) (playnet keri acdc) (playnet keri first-person credentials) (playnet boot scope) (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
-(use-modules (playnet scope ballot-store))
-(use-modules ((playnet keys exchange) #:select (governance-cred->wire)))
-(use-modules ((playnet keri citizen-sig)
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope ballot-store) (localchimera credentials recomposition) (localchimera keri acdc) (localchimera keri first-person credentials) (localchimera boot scope) (localchimera boot governance) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera keri first-person predicates))
+(use-modules (localchimera scope ballot-store))
+(use-modules ((localchimera keys exchange) #:select (governance-cred->wire)))
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair)))
 (use-modules (goblins) (goblins vat) (goblins actor-lib methods) (goblins utils hashmap)
              (json) (rnrs bytevectors))

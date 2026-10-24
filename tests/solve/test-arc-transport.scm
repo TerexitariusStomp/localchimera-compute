@@ -13,12 +13,12 @@
 ;;;
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-transport.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (srfi srfi-1) (ice-9 format) ((playnet solve world) #:select (*templates*)))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet solve engine)
-             (playnet solve compile)
-             (playnet vf schemas))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (srfi srfi-1) (ice-9 format) ((localchimera solve world) #:select (*templates*)))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera solve engine)
+             (localchimera solve compile)
+             (localchimera vf schemas))
 
 ;; a haul recipe: pickup widget @origin, dropoff widget @destination, driver 0.01 h/km
 (declare-world! #:places '(("A" 0.0 0.0) ("B" 0.0 0.9))   ; ~100 km east

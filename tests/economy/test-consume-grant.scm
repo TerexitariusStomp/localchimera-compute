@@ -11,12 +11,12 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/economy/test-consume-grant.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet scope live)
-             (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera scope live)
+             (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

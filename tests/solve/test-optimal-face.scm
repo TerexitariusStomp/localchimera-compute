@@ -3,7 +3,7 @@
 ;;; optimal FACE, not distance to a point.
 ;;;
 ;;; Spec: docs/social-category.typ §5.3 + §8 Obligation 8 (a plan carries its
-;;;       proof) and docs/playnet.typ §7.11.
+;;;       proof) and docs/localchimera.typ §7.11.
 ;;;
 ;;; The certified bound is f(x) − f(x*) ≤ m·μ + min(‖r‖·D, ‖r‖²/(2σ)). Where the
 ;;; objective is flat the curvature branch is +inf and only the geometry branch
@@ -33,12 +33,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-optimal-face.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve records)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             (playnet vf formulas tension-kinds)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve records)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             (localchimera vf formulas tension-kinds)
              (srfi srfi-1)
              (ice-9 format))
 

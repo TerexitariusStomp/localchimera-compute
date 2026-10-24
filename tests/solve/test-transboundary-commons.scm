@@ -1,5 +1,5 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; test-transboundary-commons.scm — the metabolic border (playnet.typ §"The
+;;; test-transboundary-commons.scm — the metabolic border (localchimera.typ §"The
 ;;; metabolic border" / §"A transboundary commons is one pooled budget").
 ;;;
 ;;; Two festival sites straddle a jurisdiction line and both draw on ONE shared
@@ -20,11 +20,11 @@
 ;;;
 ;;; Run: guile -L module tests/solve/test-transboundary-commons.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
              (srfi srfi-1)
              (ice-9 format))
 

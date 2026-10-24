@@ -32,7 +32,7 @@ rm -f "$SREF_FILE"
 
 # ── the static server ────────────────────────────────────────────────────
 # Started FIRST so the page is reachable while the gateway warms up (the
-# gateway takes tens of seconds to mint its sturdyref). PLAYNET_DATA_DIR
+# gateway takes tens of seconds to mint its sturdyref). LOCALCHIMERA_DATA_DIR
 # points serve-static at this run's state, so /entry-points.json carries the
 # LOCAL gateway's sref and /oobi serves the KELs this gateway actually wrote —
 # without it the dev page describes production while talking to localhost.
@@ -43,7 +43,7 @@ if curl -sf -o /dev/null "http://127.0.0.1:$STATIC_PORT/node.html" 2>/dev/null; 
   echo "    data dir — restart it under 'make dev' if /oobi looks wrong)"
 else
   echo "== starting static server on :$STATIC_PORT (state: $DATA) =="
-  setsid env PLAYNET_DATA_DIR="$DATA" \
+  setsid env LOCALCHIMERA_DATA_DIR="$DATA" \
     make serve PORT="$STATIC_PORT" OOBI_DIR="$DATA/oobi-host" \
     > "$DATA/static.log" 2>&1 < /dev/null &
   STATIC_PGID=$!
@@ -73,13 +73,13 @@ GOBLINS_CC="${GOBLINS_PATHS##*:}"
 # ── the demo commune ─────────────────────────────────────────────────────
 # An empty gateway has no scope, and a dial with no scope cannot open a chat
 # channel, a meeting room or anything else scope-shaped — you sign in and land
-# on a working page with nothing to act on. PLAYNET_SEED_DEMO gives it a
+# on a working page with nothing to act on. LOCALCHIMERA_SEED_DEMO gives it a
 # commune with recipes and intents.
 #
 # Seeded ONCE per state dir: the state is durable, so seeding every start would
 # pile the same demo data up again. SEED=1 forces a re-seed, SEED=0 never seeds.
 #
-# PLAYNET_SCOPES_DURABLE=1 (on the gateway line below) boots the WHOLE
+# LOCALCHIMERA_SCOPES_DURABLE=1 (on the gateway line below) boots the WHOLE
 # governance tier — UC, scope-graph, curator — the same shape production runs.
 # The demand fold (declared needs → the solve) reads the scope graph, so
 # without it a dev gateway plans an eternally empty day.
@@ -96,7 +96,7 @@ echo "== starting gateway on :$GW_PORT (state: $DATA, durable) =="
 # "signature does not verify". An isolated cache makes the gateway immune
 # to whatever the suites compiled since it last booted.
 setsid guix shell -L deploy/guix -m deploy/manifests/keri-test-manifest.scm -- \
-  bash -c "PLAYNET_DATA_DIR='$DATA' PLAYNET_SEED_DEMO='$SEED' PLAYNET_SCOPES_DURABLE=1 LTDL_LIBRARY_PATH=\"\$GUIX_ENVIRONMENT/lib\" \
+  bash -c "LOCALCHIMERA_DATA_DIR='$DATA' LOCALCHIMERA_SEED_DEMO='$SEED' LOCALCHIMERA_SCOPES_DURABLE=1 LTDL_LIBRARY_PATH=\"\$GUIX_ENVIRONMENT/lib\" \
     XDG_CACHE_HOME='$DATA/cache' \
     exec guile --no-auto-compile -L '$GOBLINS_LP' -C '$GOBLINS_CC' -L module -L . -L deploy/guix \
       -s server/gateway.scm --host 127.0.0.1 --port $GW_PORT" \

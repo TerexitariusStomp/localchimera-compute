@@ -24,20 +24,20 @@
 ;;; and stand the reef back above its wall by the last one. Nothing tells it to
 ;;; restore; it is simply the cheapest way to still be feasible at the end.
 ;;;
-;;; This is the oven's maintenance, read at the scale of a bay: playnet.typ has
+;;; This is the oven's maintenance, read at the scale of a bay: localchimera.typ has
 ;;; "a durable's CONDITION is a stock GOOD; wear is a `consume` flow, maintenance
 ;;; a `produce` flow" — and §The categories of social reproduction says the body's
 ;;; floors, the soil's envelope and the tool's condition are ONE barrier at three
 ;;; scales. A reef is that same object.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/solve/test-restoration-recipe.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
-             (playnet vf formulas stocks))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
+             (localchimera vf formulas stocks))
 
 (define *pass* 0) (define *fail* 0)
 (define (check-pred name ok)

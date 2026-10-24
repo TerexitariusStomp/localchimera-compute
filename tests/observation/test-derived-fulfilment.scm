@@ -20,13 +20,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/observation/test-derived-fulfilment.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness)
-             (playnet test events)
-             ((playnet test books) #:select (mq))
-             (playnet observation observer) (playnet vf schemas) (playnet observation states)
-             (playnet observation observer)
-             ((playnet vf serdes) #:select (vf-serialize))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera test events)
+             ((localchimera test books) #:select (mq))
+             (localchimera observation observer) (localchimera vf schemas) (localchimera observation states)
+             (localchimera observation observer)
+             ((localchimera vf serdes) #:select (vf-serialize))
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

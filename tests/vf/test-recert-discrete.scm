@@ -20,10 +20,10 @@
 ;;; falls with reliance D and drift κ — the new comparative static the continuous model
 ;;; cannot express.
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/vf/test-recert-discrete.scm
+;;; Run:  guile -L module/localchimera/planner tests/vf/test-recert-discrete.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet vf formulas cadence))
+(use-modules (localchimera vf formulas cadence))
 
 ;; exact average cost rate of a check every T periods.
 (define (cost-rate T D kappa K)

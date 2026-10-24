@@ -1,6 +1,6 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-mask-resolution.scm — subject-across-masks: a demand binds to WHICHEVER
-;;; per-door mask holds that door (playnet.typ: a mask is per-door, not per-asset).
+;;; per-door mask holds that door (localchimera.typ: a mask is per-door, not per-asset).
 ;;;
 ;;; `mask-subject-of` builds the `subject-of` reconcile/holding-status already take,
 ;;; so the compliance fold needs no change: an entity demand routes to the mask
@@ -8,13 +8,13 @@
 ;;;
 ;;; Run: guile -L module tests/observation/test-mask-resolution.scm
 
-(use-modules (playnet test harness) (playnet observation observer) (playnet vf schemas) (srfi srfi-1)
+(use-modules (localchimera test harness) (localchimera observation observer) (localchimera vf schemas) (srfi srfi-1)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet legal crossings))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal registry-actor))
-(use-modules (playnet legal compliance)) (use-modules (playnet legal adapters))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal registry-actor))
+(use-modules (localchimera legal compliance)) (use-modules (localchimera legal adapters))
 
 (define (held-cred id spec holder)
   (make-economic-resource #:id id #:name spec #:conforms-to spec #:classified-as '("credential")

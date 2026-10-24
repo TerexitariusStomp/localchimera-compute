@@ -1,9 +1,9 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-redistribution.scm — redistribution mandate + breach detection
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet federation auditor) (playnet credentials audit) (playnet credentials commitments) (playnet keri acdc) (playnet boot scope) (playnet federation structural-invariants) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera federation auditor) (localchimera credentials audit) (localchimera credentials commitments) (localchimera keri acdc) (localchimera boot scope) (localchimera federation structural-invariants) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -32,7 +32,7 @@
           #:threshold-spec '(custody-of-spec-above "spec:grain" 100)
           #:recipient-policy 'federation-pool)))
   (check-pred "schema correct"
-              (equal? *schema-playnet-redistribution-mandate*
+              (equal? *schema-localchimera-redistribution-mandate*
                       (cred-schema m)))
   (check-pred "issuer = federation" (equal? "EFED"  (cred-issuer m)))
   (check-pred "holder = leaf"       (equal? "ELEAF" (cred-holder m)))
@@ -155,7 +155,7 @@
     ($ leaf 'attest-custody gleaf "spec:grain" 500)
     (let* ((auditor (spawn-federation-auditor top))
            (_ ($ auditor 'audit!))
-           (alerts ($ store 'by-schema *schema-playnet-incoherence-alert*)))
+           (alerts ($ store 'by-schema *schema-localchimera-incoherence-alert*)))
       (check-pred "alert emitted" (= 1 (length alerts)))
       (let ((violations (cred-claim (car alerts) 'violations)))
         (check-pred "redistribution-breaches reported"

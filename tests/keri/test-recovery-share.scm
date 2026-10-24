@@ -13,12 +13,12 @@
 ;;; → each piece carried as a line of text by a different person → any k of
 ;;; those lines pasted back → the passcode itself, character for character.
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              ;; installs the gcrypt/libsodium backend the RNG behind
              ;; shamir-split needs — importing it is the whole of the setup
-             (playnet keri signify)
-             (playnet crypto shamir)
-             (playnet crypto recovery-share)
+             (localchimera keri signify)
+             (localchimera crypto shamir)
+             (localchimera crypto recovery-share)
              (srfi srfi-1)
              (rnrs bytevectors)
              (ice-9 format))

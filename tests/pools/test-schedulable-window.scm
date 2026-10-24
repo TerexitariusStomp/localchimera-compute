@@ -20,12 +20,12 @@
 ;;; Run:  guile --no-auto-compile -q -L module tests/pools/test-schedulable-window.scm
 
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet vf schemas) (playnet vf beyond schedules)
-             (playnet vf facts availability)
-             (playnet vf facts agent-time)
-             (playnet knowledge dsl shorthand)
-             (playnet pools availability-pool)
-             ((playnet solve engine) #:select (declare-world!)) ((playnet solve ingest) #:select (agent-window-hours)))
+             (localchimera vf schemas) (localchimera vf beyond schedules)
+             (localchimera vf facts availability)
+             (localchimera vf facts agent-time)
+             (localchimera knowledge dsl shorthand)
+             (localchimera pools availability-pool)
+             ((localchimera solve engine) #:select (declare-world!)) ((localchimera solve ingest) #:select (agent-window-hours)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

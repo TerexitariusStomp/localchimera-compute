@@ -22,7 +22,7 @@
 ;;
 ;; WebSockets as ports.
 ;;
-;; PLAYNET PATCH — guile-websocket 0.3.0's (web socket) with upstream commit
+;; LOCALCHIMERA PATCH — guile-websocket 0.3.0's (web socket) with upstream commit
 ;; 58c8708 ("Default to only masking client sockets", 2026-04-11, after the
 ;; 0.3.0 release) applied: `wrap-websocket` masks the frames it sends only when
 ;; it wraps the client end, as RFC 6455 requires.  0.3.0 masks every frame, and

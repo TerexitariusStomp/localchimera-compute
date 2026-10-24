@@ -23,7 +23,7 @@
 ;;; Run:
 ;;;   guile -L module -L tests tests/fleet/test-sporestack-client.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (web server)
              (web request)
              (web response)
@@ -35,7 +35,7 @@
              (ice-9 format)
              (ice-9 match)
              (json)
-             (playnet fleet sporestack))
+             (localchimera fleet sporestack))
 
 ;;; ── Mock SporeStack server ───────────────────────────────────────────────
 ;;;
@@ -59,7 +59,7 @@
   ;; a BYTEVECTOR body, not a string: (web server)'s respond auto-appends a
   ;; charset param to Content-Type for a string body by destructuring it as
   ;; (type . params) — incompatible with the bare-string form Content-Type is
-  ;; declared as everywhere in this codebase (playnet utils http-auth). A
+  ;; declared as everywhere in this codebase (localchimera utils http-auth). A
   ;; bytevector body skips that whole path.
   (values
    (build-response
@@ -148,7 +148,7 @@
          ("running" . ,%server-running?)
          ("flavor_slug" . "vps-1vcpu-1gb")
          ("operating_system" . "debian-12")
-         ("hostname" . "playnet-test-1")
+         ("hostname" . "localchimera-test-1")
          ("autorenew" . #f)
          ("billing_cycle" . "daily")
          ("deleted_at" . 0)
@@ -167,7 +167,7 @@
                             `(("machine_id" . ,%machine-id)
                               ("running" . ,%server-running?)
                               ("ipv4" . ,(if %server-running? "198.51.100.23" ""))
-                              ("hostname" . "playnet-test-1")
+                              ("hostname" . "localchimera-test-1")
                               ("flavor_slug" . "vps-1vcpu-1gb")
                               ("operating_system" . "debian-12")
                               ("provider" . "digitalocean")))
@@ -262,7 +262,7 @@
              #:operating-system "debian-12"
              #:provider "digitalocean"
              #:region "nyc1"
-             #:hostname "playnet-test-1"
+             #:hostname "localchimera-test-1"
              #:days 1
              #:user-data "#!/bin/bash\necho hello\n")))
   (check "launch returned a machine_id"

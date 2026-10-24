@@ -41,7 +41,7 @@ ok('what is stored is marked sealed', stored.startsWith('sealed:v1:'));
 ok('and carries none of the key’s bytes in the clear',
    !stored.includes(JSON.stringify(Array.from(first.privateKey())).slice(1, 40)));
 ok('the seal key is in the keystore, non-extractable',
-   idb.rows('playnet-keys', 'keypairs').get('local-seal').privateKey.extractable === false);
+   idb.rows('localchimera-keys', 'keypairs').get('local-seal').privateKey.extractable === false);
 
 console.log('\n── a return visit ──');
 const again = await meshIdentity(rns, ls);

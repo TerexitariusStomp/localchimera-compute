@@ -13,16 +13,16 @@
 #
 # Usage:
 #   deploy/scripts/check-deploy-freshness.sh
-#   PLAYNET_BOX=playnet-server BRANCH=main WARN_COMMITS=1 WARN_DAYS=2 …
+#   LOCALCHIMERA_BOX=localchimera-server BRANCH=main WARN_COMMITS=1 WARN_DAYS=2 …
 #
 # Exit codes: 0 = fresh (or within threshold), 1 = STALE (ship overdue),
 #             2 = could not determine (box unreachable / bad state).
 
 set -uo pipefail
 
-BOX="${PLAYNET_BOX:-playnet-server}"
+BOX="${LOCALCHIMERA_BOX:-localchimera-server}"
 BRANCH="${BRANCH:-main}"
-CO="${BOX_CHECKOUT:-/var/lib/playnet/radicle/checkout}"
+CO="${BOX_CHECKOUT:-/var/lib/localchimera/radicle/checkout}"
 WARN_COMMITS="${WARN_COMMITS:-1}"   # alarm if >= this many commits ahead
 WARN_DAYS="${WARN_DAYS:-3}"         # escalate wording past this staleness
 SSH_OPTS="-o ConnectTimeout=60 -o BatchMode=yes"

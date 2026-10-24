@@ -14,10 +14,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/bridge/test-event-legacy-fields.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet vf serdes)
-             (playnet bridge codec)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera vf serdes)
+             (localchimera bridge codec)
              (srfi srfi-1))
 
 (define ev

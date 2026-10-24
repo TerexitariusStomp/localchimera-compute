@@ -4,19 +4,19 @@
 ;;; check-crossing-catalogue.scm — the spec's crossing table and the code's
 ;;; crossing catalogue name the same crossings, each of the same kind.
 ;;;
-;;; docs/playnet.typ renders its crossings table and its by-branch grid from one
+;;; docs/localchimera.typ renders its crossings table and its by-branch grid from one
 ;;; Typst array, `crossing-catalogue`. The array's prose (the wrapper, the stand)
 ;;; is the spec's own; what it shares with the code is each row's `id` and
-;;; `kind`, which are `*default-crossings*` (module/playnet/legal/crossings.scm).
+;;; `kind`, which are `*default-crossings*` (module/localchimera/legal/crossings.scm).
 ;;; This reads both and reports a crossing one of them lacks, or a kind on which
 ;;; they differ.
 ;;;
 ;;; Exit 0 = they agree, 1 = they differ.
 ;;; Run: guile --no-auto-compile -L module tools/lint/check-crossing-catalogue.scm [SPEC]   (make check-crossing-catalogue)
 (use-modules (ice-9 rdelim) (ice-9 regex) (ice-9 format) (srfi srfi-1)
-             (playnet legal crossings))
+             (localchimera legal crossings))
 
-(define %spec "docs/playnet.typ")
+(define %spec "docs/localchimera.typ")
 
 (define (spec-rows path)
   "((id . kind) …) read off the `crossing-catalogue` array in PATH."

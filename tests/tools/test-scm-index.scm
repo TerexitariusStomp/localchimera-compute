@@ -3,8 +3,8 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/tools/test-scm-index.scm
 
-(use-modules (playnet test harness)
-             (playnet tools scm-index)
+(use-modules (localchimera test harness)
+             (localchimera tools scm-index)
              (srfi srfi-1))
 
 (define forms

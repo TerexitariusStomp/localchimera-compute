@@ -8,10 +8,10 @@
 ;;; is what lets the gateway's plan tick call the seed every interval.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-standing-window.scm
-(use-modules (playnet knowledge recipes berlin-festival-seed) (playnet scope root) (playnet vf schemas)
-             (playnet knowledge recipes berlin-festival-seed)
-             ((playnet vf facts tension-terms) #:select (with-tension-terms))
-             ((playnet utils clock) #:select (now instant->civil))
+(use-modules (localchimera knowledge recipes berlin-festival-seed) (localchimera scope root) (localchimera vf schemas)
+             (localchimera knowledge recipes berlin-festival-seed)
+             ((localchimera vf facts tension-terms) #:select (with-tension-terms))
+             ((localchimera utils clock) #:select (now instant->civil))
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

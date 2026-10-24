@@ -3,7 +3,7 @@
 ;;;
 ;;; Hours count the moment they are worked against a declared need; the spec's
 ;;; remedy is "a labour-voice-weighted decision to revoke accrued hours"
-;;; (docs/playnet.typ §Matching as validation). This pins that door end to end
+;;; (docs/localchimera.typ §Matching as validation). This pins that door end to end
 ;;; through ^governance-service: a member contests a recorded work event, the
 ;;; ballot opens in the event's own scope under producer voice there with the
 ;;; worker left out, the scope casts and closes, and at half the voice or more
@@ -11,13 +11,13 @@
 ;;; credit, the skill's standing and the portable record all follow. Below
 ;;; half, the work stands and nothing is written.
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas))
-(use-modules (playnet observation credentials) (playnet boot scope) (playnet boot governance) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable))
-(use-modules ((playnet observation credentials)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas))
+(use-modules (localchimera observation credentials) (localchimera boot scope) (localchimera boot governance) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri said-portable))
+(use-modules ((localchimera observation credentials)
               #:select (make-credentialing-on-event skill-attestation-standing)))
-(use-modules ((playnet keri citizen-sig)
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 

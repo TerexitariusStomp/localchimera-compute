@@ -195,7 +195,7 @@ directory of DOC; #f for any other cite."
 
 (define (scope-nodes-fields)
   "The constructor's field names, read off doors/planner/ctx.scm textually."
-  (let* ((lines (file-lines "module/playnet/doors/planner/ctx.scm"))
+  (let* ((lines (file-lines "module/localchimera/doors/planner/ctx.scm"))
          (n     (vector-length lines))
          (ctor  (let loop ((i 0))
                   (cond ((>= i n) #f)

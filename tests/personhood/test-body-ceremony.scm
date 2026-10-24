@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/personhood/test-body-ceremony.scm — a body's AID is its stewards' k-of-n group
 ;;;
-;;; What this pins (module/playnet/personhood/body-ceremony.scm and the
+;;; What this pins (module/localchimera/personhood/body-ceremony.scm and the
 ;;; threshold reader in keri/key-state.scm):
 ;;;   • three stewards, k = 2: any two signatures publish the body's log,
 ;;;     `current-keys` on the body AID reads the member keys in roster order,
@@ -16,19 +16,19 @@
 ;;; The single-key path is pinned by tests/identity/test-kel-in-hand.scm.
 ;;;
 ;;; Run: guile -L module tests/personhood/test-body-ceremony.scm
-(use-modules (playnet test harness)
-             (playnet keri signify)   ; installs the native crypto backend
-             ((playnet keri crypto-primitives) #:select (ed25519-keypair-public))
-             ((playnet keri signify-portable)
+(use-modules (localchimera test harness)
+             (localchimera keri signify)   ; installs the native crypto backend
+             ((localchimera keri crypto-primitives) #:select (ed25519-keypair-public))
+             ((localchimera keri signify-portable)
               #:select (bran->signing-keypair bran->rotation-keypair next-key-digest
                         public-key->aid-prefix build-icp build-rot sign-event
                         sign-event/indexed sign-bytes))
-             ((playnet keri cesr) #:select (cesr-bytes->qb64))
-             ((playnet keri key-state)
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64))
+             ((localchimera keri key-state)
               #:select (check-icp check-sigs/threshold events->key-state
                         state-keys state-kt state-nexts))
-             (playnet identity oobi-host)
-             (playnet personhood body-ceremony)
+             (localchimera identity oobi-host)
+             (localchimera personhood body-ceremony)
              (goblins)
              (rnrs bytevectors)
              (srfi srfi-1))

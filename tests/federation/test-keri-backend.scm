@@ -6,10 +6,10 @@
 ;;; AIDs. This test uses the stub-keri-backend (records calls) to verify
 ;;; the dispatch path is exercised correctly without touching KERIA.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (srfi srfi-1))
-(use-modules (playnet federation communes) (playnet boot scope) (playnet keri acdc-store))
-(use-modules (playnet keys keri-backend))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (srfi srfi-1))
+(use-modules (localchimera federation communes) (localchimera boot scope) (localchimera keri acdc-store))
+(use-modules (localchimera keys keri-backend))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

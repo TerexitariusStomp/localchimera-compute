@@ -6,9 +6,9 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/knowledge/test-federation-seed.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet knowledge recipes federation)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera knowledge recipes federation)
              (goblins) (srfi srfi-1))
 
 (define vat (spawn-vat #:name "fed-seed"))

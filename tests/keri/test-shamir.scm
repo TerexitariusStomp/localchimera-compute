@@ -4,9 +4,9 @@
 ;;; Verifies: GF(256) arithmetic, split/combine round-trip, threshold
 ;;; enforcement, all k-subsets, share serialization.
 
-(use-modules (playnet test harness))
-(use-modules (playnet keri signify))    ; installs the server keri-crypto backend (random-bytes ← /dev/urandom)
-(use-modules (playnet crypto shamir))
+(use-modules (localchimera test harness))
+(use-modules (localchimera keri signify))    ; installs the server keri-crypto backend (random-bytes ← /dev/urandom)
+(use-modules (localchimera crypto shamir))
 (use-modules (rnrs bytevectors)
              (srfi srfi-1))
 

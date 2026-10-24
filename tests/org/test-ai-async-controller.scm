@@ -9,8 +9,8 @@
 ;;;
 ;;; Run: guile -L module tests/org/test-ai-async-controller.scm
 
-(use-modules (playnet test harness)
-             (playnet org gplay)
+(use-modules (localchimera test harness)
+             (localchimera org gplay)
              (goblins) (goblins vat) (ice-9 format))
 
 (define base `((+ . ,+) (list . ,list)))

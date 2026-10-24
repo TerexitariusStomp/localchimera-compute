@@ -10,9 +10,9 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/folksonomy/test-folksonomy-actor.scm
 
-(use-modules (playnet test harness)
-             (playnet folksonomy actor)
-             (playnet folksonomy graph)
+(use-modules (localchimera test harness)
+             (localchimera folksonomy actor)
+             (localchimera folksonomy graph)
              (goblins)
              (srfi srfi-1))
 

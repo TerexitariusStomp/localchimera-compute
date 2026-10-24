@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-reproduction-diet.scm — the CONSTRAINT DIAL alone feeds everyone.
 ;;;
-;;; Claim (docs/playnet.typ §possibility-tensions · social-material.typ, the
+;;; Claim (docs/localchimera.typ §possibility-tensions · social-material.typ, the
 ;;; constraint dial): the reproduction of labour-power is defended by HARD barriers,
 ;;; not by desire — so even with desire left IN, the constraint side alone generates
 ;;; a food plan that clears every person's nutritional floor while staying inside the
@@ -19,9 +19,9 @@
 ;;; Run:  guile --no-auto-compile -L module tests/solve/test-reproduction-diet.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 ;; people: (id kcal-floor protein-floor)
 (define PEOPLE '(("ana" 2800 70) ("bo" 2200 55) ("cy" 1500 35)))

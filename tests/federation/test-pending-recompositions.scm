@@ -6,9 +6,9 @@
 ;;; the pattern combinators. Cross-gateway end-to-end goes in #47's
 ;;; integration test (deferred).
 
-(use-modules (playnet test harness)
-             (playnet credentials voting) (playnet keri acdc) (playnet keri acdc)
-             (playnet federation pending-recompositions)
+(use-modules (localchimera test harness)
+             (localchimera credentials voting) (localchimera keri acdc) (localchimera keri acdc)
+             (localchimera federation pending-recompositions)
              (goblins)
              (srfi srfi-1))
 
@@ -35,7 +35,7 @@
        (= 1 (with-vat vat ($ %reg 'count))))
 
 (define %synthetic-cred
-  (make-credential *schema-playnet-recomposition-ratification*
+  (make-credential *schema-localchimera-recomposition-ratification*
                    "E_uc_aid" "E_holder"
                    '((proposal-type . merge-with)
                      (predecessors  . ("E_fed_A" "E_fed_B")))

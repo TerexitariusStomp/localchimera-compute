@@ -9,19 +9,19 @@
 ;;; Real data (worlds/doon-shed.scm / data/sources.md): the shed's ERA5 climate scenarios
 ;;; + SoilGrids topsoil state; the fragility ranges are DRAFT (governance).
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-doon-shed.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-doon-shed.scm
 
-(use-modules (playnet solve ingest))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge worlds bioregions)
+(use-modules (localchimera solve ingest))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge worlds bioregions)
              (srfi srfi-1)
              (ice-9 format))
-(use-modules (playnet knowledge worlds doon-valley)
-             (playnet knowledge dsl shorthand))   ; scenarios (data)
-(use-modules (playnet knowledge worlds doon-shed))     ; the assembled bioregion (one <bioregion>)
+(use-modules (localchimera knowledge worlds doon-valley)
+             (localchimera knowledge dsl shorthand))   ; scenarios (data)
+(use-modules (localchimera knowledge worlds doon-shed))     ; the assembled bioregion (one <bioregion>)
 
 ;; everything the test needs is projected from the ONE object *doon-shed*:
 (define *doon-shed-id*  (bioregion-id *doon-shed*))

@@ -6,9 +6,9 @@
 ;;; passes in the pure test environment with no shepherd and no /proc
 ;;; dependence.
 
-(use-modules (playnet test harness))
-(use-modules (playnet observation host-facts) (playnet scope root) (srfi srfi-1))
-(use-modules ((playnet observation facts-sync) #:select (handle-snapshot!)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera observation host-facts) (localchimera scope root) (srfi srfi-1))
+(use-modules ((localchimera observation facts-sync) #:select (handle-snapshot!)))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1))
@@ -216,7 +216,7 @@ One-shot:
 (check "a snapshot payload syncs"
        (eq? 'synced
             (handle-snapshot! vat (lambda () scope)
-                              "playnet/facts/host/box"
+                              "localchimera/facts/host/box"
                               (object->string facts-fixture))))
 
 (with-vat vat
@@ -227,17 +227,17 @@ One-shot:
 (check "steward scope not up yet → held"
        (eq? 'no-scope
             (handle-snapshot! vat (lambda () #f)
-                              "playnet/facts/host/box"
+                              "localchimera/facts/host/box"
                               (object->string facts-fixture))))
 
 (check "garbage payload → unreadable, no crash"
        (eq? 'unreadable
             (handle-snapshot! vat (lambda () scope)
-                              "playnet/facts/host/box" "{json, not sexp")))
+                              "localchimera/facts/host/box" "{json, not sexp")))
 
 (check "non-facts sexp → unreadable"
        (eq? 'unreadable
             (handle-snapshot! vat (lambda () scope)
-                              "playnet/facts/host/box" "(1 2 3)")))
+                              "localchimera/facts/host/box" "(1 2 3)")))
 
 (test-summary!)

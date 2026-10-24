@@ -1,28 +1,28 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-earth-durability.scm — the planetary root, durable per commune.
 ;;;
-;;; Proves ^earth (module/playnet/scope/earth.scm) makes EACH commune's economic state
+;;; Proves ^earth (module/localchimera/scope/earth.scm) makes EACH commune's economic state
 ;;; durable, closing the old "everything re-links to meeting-scope" limit:
 ;;;
 ;;;   Phase 1 — earth is the persisted root of a vat; create a Berlin commune under it,
 ;;;             seed its farm, take a portrait, then rehydrate from the SAME store (with a
 ;;;             thunk that ERRORS if called): Berlin + its stores survive, keyed by its AID.
 ;;;   Phase 2 — two communes under one earth rehydrate INDEPENDENTLY (Berlin's farm ≠
-;;;             Playnet's), the thing the single-root shortcut could never do.
+;;;             LocalChimera's), the thing the single-root shortcut could never do.
 ;;;   Phase 3 — MIGRATION: an old v0 store rooted at a bare ^scope-root (meeting-scope)
 ;;;             upgrades to a v1 earth that WRAPS it, preserving its state under the planet.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module -L tests tests/scope/test-earth-durability.scm
 
-(use-modules (playnet test harness)
-             (playnet knowledge recipes berlin-commune-seed) (playnet scope earth) (playnet vf schemas) (srfi srfi-1)
+(use-modules (localchimera test harness)
+             (localchimera knowledge recipes berlin-commune-seed) (localchimera scope earth) (localchimera vf schemas) (srfi srfi-1)
              (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
              (srfi srfi-1))
 
 (define BERLIN "E_commune_Berlin")
-(define PLAYNET "E_commune_Playnet")
+(define LOCALCHIMERA "E_commune_LocalChimera")
 
 ;; ── Phase 1: earth as the persisted root; a commune born under it survives a reboot ──
 (display "\n── Phase 1: a commune under earth rehydrates with its state ──\n")
@@ -64,17 +64,17 @@
 (with-vat vatA
   (seed-berlin-commune! ($ earthA 'ensure-commune! BERLIN "Berlin/Brandenburg"))
   ;; a second, DIFFERENT commune: one land parcel only, no water — a distinct economy
-  (let ((p ($ earthA 'ensure-commune! PLAYNET "Playnet")))
+  (let ((p ($ earthA 'ensure-commune! LOCALCHIMERA "LocalChimera")))
     ($ ($ p 'observer) 'seed-resource
        (make-economic-resource #:id "field" #:conforms-to "land" #:classified-as '()
-         #:accounting-quantity (make-measure 5.0 "ha") #:onhand-quantity (make-measure 5.0 "ha") #:current-location "meadow" #:primary-accountable "playnet"))))
+         #:accounting-quantity (make-measure 5.0 "ha") #:onhand-quantity (make-measure 5.0 "ha") #:current-location "meadow" #:primary-accountable "localchimera"))))
 (define-values (vatB earthB)
   (spawn-persistent-vat earth-env (lambda () (error "thunk ran!")) store2))
 (with-vat vatB
   (check "REHYDRATED: earth holds BOTH communes" ($ earthB 'count) 2)
   (check "REHYDRATED: Berlin kept its resources" (length ($ ($ ($ earthB (quote commune) BERLIN) (quote observer)) (quote all-resources))) berlin-seeded)
-  (check "REHYDRATED: Playnet kept ITS 1 resource — separate economy"
-         (length ($ ($ ($ earthB 'commune PLAYNET) 'observer) 'all-resources)) 1))
+  (check "REHYDRATED: LocalChimera kept ITS 1 resource — separate economy"
+         (length ($ ($ ($ earthB 'commune LOCALCHIMERA) 'observer) 'all-resources)) 1))
 
 ;; ── Phase 3: REKEY — a commune born under a placeholder, moved to its real AID ──
 ;; The founding commune is created before its KERI AID is minted, so it starts under a
@@ -84,19 +84,19 @@
 (define-values (v3 earth3)
   (spawn-persistent-vat earth-env (lambda () (spawn-earth)) store3))
 (with-vat v3
-  (let ((root ($ earth3 'ensure-commune! "founding-commune" "Playnet")))   ; placeholder key
+  (let ((root ($ earth3 'ensure-commune! "founding-commune" "LocalChimera")))   ; placeholder key
     ($ ($ root 'observer) 'seed-resource
        (make-economic-resource #:id "granary" #:conforms-to "food" #:classified-as '()
-         #:accounting-quantity (make-measure 999.0 "kg") #:onhand-quantity (make-measure 999.0 "kg") #:current-location "town" #:primary-accountable "playnet")))
-  ($ earth3 'rekey-commune! "founding-commune" PLAYNET))   ; … then to its real AID
+         #:accounting-quantity (make-measure 999.0 "kg") #:onhand-quantity (make-measure 999.0 "kg") #:current-location "town" #:primary-accountable "localchimera")))
+  ($ earth3 'rekey-commune! "founding-commune" LOCALCHIMERA))   ; … then to its real AID
 (with-vat v3
   (check "REKEYED: still exactly 1 commune (single-keyed, not doubled)" ($ earth3 'count) 1)
-  (check-pred "REKEYED: now keyed by the real AID"        ($ earth3 'has-commune? PLAYNET))
+  (check-pred "REKEYED: now keyed by the real AID"        ($ earth3 'has-commune? LOCALCHIMERA))
   (check-pred "REKEYED: the placeholder key is gone"  (not ($ earth3 'has-commune? "founding-commune")))
   (check "REKEYED: its economic state moved with it (the 999kg granary)"
          (measure-has-numerical-value
           (economic-resource-accounting-quantity
-           ($ ($ ($ earth3 'commune PLAYNET) 'observer) 'get-resource "granary")))
+           ($ ($ ($ earth3 'commune LOCALCHIMERA) 'observer) 'get-resource "granary")))
          999.0))
 
 (test-summary!)

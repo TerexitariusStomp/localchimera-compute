@@ -78,7 +78,7 @@ case "$line" in
     fi ;;
   lsblk*)            printf '%b' "${DISKS:-vda disk\nsr0 rom\n}" ;;
   "findmnt "*"-no SOURCE /")     printf '%b' "${ROOT_SOURCE:-/dev/sdb1}\n" ;;
-  "[ -f /etc/playnet-installer ]") exit "${MARKER:-0}" ;;
+  "[ -f /etc/localchimera-installer ]") exit "${MARKER:-0}" ;;
   "[ -d /sys/firmware/efi ]") exit "${EFI_RC:-0}" ;;
   "cryptsetup luksUUID"*)     echo "11111111-1111-1111-1111-111111111111" ;;
   "blkid"*"3")       echo "33333333-3333-3333-3333-333333333333" ;;
@@ -108,8 +108,8 @@ run() {
   LOG="$ROOT/log-$1"; shift
   rm -rf "$LOG"; mkdir -p "$LOG"
   ( export LOG PATH="$ROOT/bin:$PATH" \
-           PLAYNET_KEEPER_SSH_PREFIX=torsocks PLAYNET_DATA_DIR="$ROOT/data" \
-           PLAYNET_PREFIX=24 PLAYNET_GATEWAY=203.0.113.1 "$@"
+           LOCALCHIMERA_KEEPER_SSH_PREFIX=torsocks LOCALCHIMERA_DATA_DIR="$ROOT/data" \
+           LOCALCHIMERA_PREFIX=24 LOCALCHIMERA_GATEWAY=203.0.113.1 "$@"
     bash "$SCRIPT" web-1 203.0.113.7 "$ROOT/child" "$ROOT/identity" \
       > "$LOG/stdout" 2> "$LOG/stderr"
     echo $? > "$LOG/exit" )

@@ -10,14 +10,14 @@
 ;;; ran-on demand names each. The fixture is test-demand-scope-horizon's.
 ;;;
 ;;; Run:  guile -L module -L tests tests/economy/test-owned-delivery.scm
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules ((playnet solve engine) #:select (set-dial! set-cap-scale!)))
-(use-modules ((playnet vf facts audit) #:select (plan-welfare)))
-(use-modules (playnet test harness)
-             (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
-             (playnet economy socialization) (playnet keri acdc-store)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules ((localchimera solve engine) #:select (set-dial! set-cap-scale!)))
+(use-modules ((localchimera vf facts audit) #:select (plan-welfare)))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
+             (localchimera economy socialization) (localchimera keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 

@@ -24,8 +24,8 @@ pattern="\\((string-append|string-prefix\\?|string-suffix\\?|format #f) \"(($bar
 joined="\\((string-append|format #f)[^;]*(~a#~a@|\"#\" [^;]*\"@\"|\"@\" \\(number->string)"
 
 # the files that OWN a grammar, and what is exempt with its reason
-owners='module/playnet/vf/facts/located.scm|module/playnet/vf/facts/work-ids.scm|module/playnet/federation/plan-bundle.scm|module/playnet/economy/payouts.scm'
-exempt='module/playnet/bench/'   # benchmarks read engine keys directly, as a stopwatch
+owners='module/localchimera/vf/facts/located.scm|module/localchimera/vf/facts/work-ids.scm|module/localchimera/federation/plan-bundle.scm|module/localchimera/economy/payouts.scm'
+exempt='module/localchimera/bench/'   # benchmarks read engine keys directly, as a stopwatch
 
 hits="$(grep -rnE "$pattern|$joined" module --include=*.scm \
         | grep -vE "^($owners)" | grep -vE "^$exempt" \

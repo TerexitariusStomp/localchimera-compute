@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# qemu-test-iso.sh — boot the playnet ISO locally in QEMU for smoke testing.
+# qemu-test-iso.sh — boot the localchimera ISO locally in QEMU for smoke testing.
 #
 # Usage:
 #   make qemu                                    # build + boot
@@ -9,7 +9,7 @@
 # Boots the ISO with:
 #   - 2 GiB RAM, 2 vCPUs, KVM acceleration if /dev/kvm is accessible
 #   - UEFI firmware (matches the ISO's grub-efi-bootloader)
-#   - A 10 GiB throwaway virtual disk for testing `playnet-install`
+#   - A 10 GiB throwaway virtual disk for testing `localchimera-install`
 #   - SSH port forward: host 2222 → guest 22
 #
 # In another terminal:
@@ -18,7 +18,7 @@
 #
 # Inside the VM, exercise the full installer:
 #   lsblk
-#   playnet-install /dev/vda
+#   localchimera-install /dev/vda
 #
 # After reboot off the virtual disk, ssh back in to verify the on-disk
 # Guix System came up with sshd + your key (the state `guix deploy`
@@ -34,7 +34,7 @@
 set -euo pipefail
 
 ISO="${1:-}"
-DISK="${QEMU_DISK:-/tmp/playnet-qemu-disk.img}"
+DISK="${QEMU_DISK:-/tmp/localchimera-qemu-disk.img}"
 SSH_PORT="${SSH_PORT:-2222}"
 
 if [[ -z "$ISO" ]]; then
@@ -47,7 +47,7 @@ if [[ ! -f "$ISO" ]]; then
   exit 1
 fi
 
-# Fresh disk unless KEEP_DISK=1, so playnet-install can wipe cleanly.
+# Fresh disk unless KEEP_DISK=1, so localchimera-install can wipe cleanly.
 if [[ "${KEEP_DISK:-0}" != "1" ]] || [[ ! -f "$DISK" ]]; then
   rm -f "$DISK"
   qemu-img create -f raw "$DISK" 10G >/dev/null
@@ -102,7 +102,7 @@ Quit: Ctrl-A then X.
 EOF
 
 exec qemu-system-x86_64 \
-  -name playnet-iso-test \
+  -name localchimera-iso-test \
   -machine type=q35,accel="$ACCEL" \
   -m 2G -smp 2 \
   -bios "$OVMF_CODE" \

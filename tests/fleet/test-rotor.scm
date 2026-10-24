@@ -5,8 +5,8 @@
 ;;;   guile -L module -L tests tests/fleet/test-rotor.scm
 
 (use-modules (srfi srfi-1)
-             (playnet test harness)
-             (playnet fleet reconciler))
+             (localchimera test harness)
+             (localchimera fleet reconciler))
 
 (define registry
   (list (cons "sporestack" 'fake-prov-1)

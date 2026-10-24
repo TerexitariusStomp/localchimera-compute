@@ -7,8 +7,8 @@
 ;;; The check itself stays a deterministic git diff (openvtc-parity-check.sh)
 ;;; — no LLM in the trust path, nothing here can make it miss or invent a
 ;;; commit. This wrapper only adds a narration pass on top of that ground
-;;; truth, via the same key-pool/nano-gpt stack the rest of playnet uses
-;;; (playnet key-pool / playnet ai llm) — not a third-party agent, not a
+;;; truth, via the same key-pool/nano-gpt stack the rest of localchimera uses
+;;; (localchimera key-pool / localchimera ai llm) — not a third-party agent, not a
 ;;; hosted routine. Best-effort: no API_KEYS, an API failure, or an empty
 ;;; flagged list all fall through to "raw output only" and exit 0. A check
 ;;; that could not run (no route upstream, a pin upstream has lost) exits with
@@ -17,11 +17,11 @@
 ;;; Run (from the repo root, same as openvtc-parity-check.sh assumes):
 ;;;   guile --no-auto-compile -L module tools/lint/openvtc-parity-narrate.scm
 ;;; Env: API_KEYS/OPENROUTER_KEYS, API_PROVIDER (nano-gpt default), AI_MODEL
-;;;      — same variables (playnet ai bridge) reads, so one export covers both.
+;;;      — same variables (localchimera ai bridge) reads, so one export covers both.
 
 (use-modules (ice-9 popen) (ice-9 textual-ports) (ice-9 format) (ice-9 regex)
              (srfi srfi-11) (srfi srfi-13)
-             (goblins) (playnet ai key-pool) (playnet ai llm))
+             (goblins) (localchimera ai key-pool) (localchimera ai llm))
 
 (define (read-all-output port)
   "The pipe's whole output and its exit status, as two values."
@@ -29,7 +29,7 @@
          (status (close-pipe port)))
     (values s (or (status:exit-val status) 1))))
 
-;; Same provider dispatch as (playnet ai bridge)'s env-provider — duplicated
+;; Same provider dispatch as (localchimera ai bridge)'s env-provider — duplicated
 ;; rather than imported because that binding is private to the gplay bridge
 ;; and this tool has no gplay dependency to justify pulling the module in.
 (define (env-provider)
@@ -92,7 +92,7 @@ edits — that's a human audit's job, not yours.")
 ;; runs as `torsocks guile` for that reason. This job takes the same route: with
 ;; no direct answer for the upstream host and a torsocks to hand, it re-executes
 ;; itself once under torsocks, so the fetch and the completion both have a way out.
-(define %torified-flag "PLAYNET_PARITY_TORIFIED")
+(define %torified-flag "LOCALCHIMERA_PARITY_TORIFIED")
 
 (define (direct-route?)
   (catch #t

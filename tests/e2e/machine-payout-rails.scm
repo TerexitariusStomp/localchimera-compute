@@ -11,11 +11,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module -L tests tests/e2e/machine-payout-rails.scm
 
-(use-modules (playnet test harness)
-             (playnet test e2e)
-             (playnet machine settlement)
-             (playnet machine payout)
-             (playnet machine binding)
+(use-modules (localchimera test harness)
+             (localchimera test e2e)
+             (localchimera machine settlement)
+             (localchimera machine payout)
+             (localchimera machine binding)
              (srfi srfi-1))
 
 (define HOME "did:keri:EHomeCommune")

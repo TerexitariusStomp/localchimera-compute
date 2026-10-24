@@ -27,24 +27,24 @@
               #:select (base64-decode base64-encode base64-url-alphabet))
              ;; k-of-n secret sharing, for handing pieces of your passcode to
              ;; people you trust (see "recovery friends" below)
-             ((playnet crypto shamir)
+             ((localchimera crypto shamir)
               #:select (shamir-split shamir-combine))
              ;; how one of those shares looks as a line a person can carry —
              ;; shared with the server side, and tested there
-             ((playnet crypto recovery-share)
+             ((localchimera crypto recovery-share)
               #:select (share->line line->share))
              (goblins abstract-types)
              ;; the one vocabulary a contact's tag and a vouch's kind are read in
-             ((playnet social relationship-kinds) #:select (normalize-rel))
+             ((localchimera social relationship-kinds) #:select (normalize-rel))
              (srfi srfi-1)
              (ice-9 match)
              ;; importing crypto-primitives-browser installs the noble.js
              ;; FFI backend, so signify-portable works on first call
-             ((playnet keri crypto-primitives)
+             ((localchimera keri crypto-primitives)
               #:select (keri-crypto-random-bytes))
-             (playnet keri crypto-primitives)
-             (playnet keri crypto-primitives-browser)
-             ((playnet keri signify-portable)
+             (localchimera keri crypto-primitives)
+             (localchimera keri crypto-primitives-browser)
+             ((localchimera keri signify-portable)
               #:select (bran->signing-keypair
                         bran->next-keypair
                         bran->rotation-keypair
@@ -66,27 +66,27 @@
                         ed25519-keypair-public))
              ;; the encryption key a person's inception event anchors — what a
              ;; card is sealed to
-             ((playnet keri reticulum-binding) #:select (kel-reticulum-pub))
+             ((localchimera keri reticulum-binding) #:select (kel-reticulum-pub))
              ;; the key log in hand: a passcode's chain of keys, the log's own
              ;; verification, the rotation that retires it — pure, tested natively
-             ((playnet identity kel)
+             ((localchimera identity kel)
               #:select (kel-icp kel-aid kel-k0 kel-rotations kel-depth kel-last-event
                         make-kel entry->kel kel-well-formed? kel-events
                         passcode-keypair keypair-key passcode-base kel-current-keypair
                         passcode-opens? kel-verifies? rotations-verify?
                         anchored-key-hex receipt->json retirement-rotation))
-             ((playnet utils hex) #:select (bv->hex))
-             ((playnet keri cesr) #:select (cesr-bytes->qb64 cesr-qb64->bytes))
+             ((localchimera utils hex) #:select (bv->hex))
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64 cesr-qb64->bytes))
              ;; a row of the wire, and the snapshot as the page reads it — shared
              ;; with the demo recorder, so a recording is what a gateway sends
-             (playnet wire rows)
-             ((playnet wire snapshot) #:select (fold-snapshots))
+             (localchimera wire rows)
+             ((localchimera wire snapshot) #:select (fold-snapshots))
              ;; Shared SAID derivation — the SAME code the server uses, so a
              ;; stance we sign here derives the identical SAID there. Without
              ;; this the client could only blind-sign whatever SAID the server
              ;; handed down; with it we re-derive from the claims we are
              ;; agreeing to before signing.
-             ((playnet keri said-portable)
+             ((localchimera keri said-portable)
               #:select (compute-said install-said-blake3!))
              ((rnrs bytevectors) #:select (string->utf8 utf8->string bytevector-length)))
 
@@ -1602,12 +1602,12 @@
 
 ;; ── contact points: a way to reach you, told to this commune ─────────────
 ;; The credential is built here exactly as the gateway rebuilds it
-;; ((playnet keri first-person credentials) make-contact-point-credential): symbol-keyed
+;; ((localchimera keri first-person credentials) make-contact-point-credential): symbol-keyed
 ;; claims into compute-said, KIND and STYLE as symbols, a fresh blinding
 ;; nonce — so the SAID signed here is the SAID the gateway derives from the
 ;; wire. The person is authoritative for every field, so there is no preimage
 ;; to fetch: build, sign, present.
-(define %schema-contact-point "playnet-contact-point/v1")
+(define %schema-contact-point "localchimera-contact-point/v1")
 (define (sym->str x) (cond ((symbol? x) (symbol->string x)) ((string? x) x) (else "")))
 (define (reach-style kind) (if (string=? kind "email") "rich" "terse"))
 (define (handle-reach-present kind value at cb)
@@ -1685,7 +1685,7 @@
 ;; receiver's own log — the latest one it anchors — and the log is verified
 ;; to be the one their identifier names (kel-verifies?), so the key sealed
 ;; to is theirs whoever served the log.
-(define %schema-card "playnet-card/v1")
+(define %schema-card "localchimera-card/v1")
 (define (handle-card-give aid content at cb)
   (cond
    ((not (and *session* *lobby*)) (reply! cb "err:sign in first"))
@@ -2078,7 +2078,7 @@
 ;; device-authorization credential it signs; the device keeps the wire
 ;; (localStorage) and from then on signs in and signs with its own key.
 (define %device-key "pn.device.wire")
-(define %schema-device-authorization "playnet-device-authorization/v1")
+(define %schema-device-authorization "localchimera-device-authorization/v1")
 (define (device-wire) (let ((w (ls-get-item %device-key)))
                         (and (string? w) (positive? (string-length w)) w)))
 (define (device-aid-of-pub pub-bv) (cesr-bytes->qb64 "B" pub-bv))
@@ -2623,7 +2623,7 @@
        (bind-reticulum! new first-in)
        (let* ((ret-pub (ret-public-key-hex))
               (anchors (if (and (string? ret-pub) (positive? (string-length ret-pub)))
-                           (list (list (cons "playnet-reticulum-pub" ret-pub)))
+                           (list (list (cons "localchimera-reticulum-pub" ret-pub)))
                            '())))
          (call-with-values
           (lambda ()
@@ -2806,7 +2806,7 @@
                            (and (kel-well-formed? k) k)))
               #:unwind? #t)))
     (cond
-     ((not kel) (reply! cb "err:not a playnet identity log"))
+     ((not kel) (reply! cb "err:not a localchimera identity log"))
      (else
       (kel-save! kel)
       (reply! cb (string-append "ok:" (kel-aid kel) "|" (kel-k0 kel)))))))
@@ -2833,7 +2833,7 @@
       (let* ((ret-pub (ret-public-key-hex))
              (anchors (if (and (string? ret-pub)
                                (positive? (string-length ret-pub)))
-                          (list (list (cons "playnet-reticulum-pub" ret-pub)))
+                          (list (list (cons "localchimera-reticulum-pub" ret-pub)))
                           '()))
              (extra-locs (reticulum-extra-locs)))
         (call-with-values
@@ -3505,7 +3505,7 @@
                                 ("mandated" . ,(and (pair? d) (caddr d) #t))))
                             (if (list? v) (filter pair? v) '())))))))))
 
-;; your two governance weights → {producer, consumer} (playnet.typ §Governance):
+;; your two governance weights → {producer, consumer} (localchimera.typ §Governance):
 ;; producer = labour share (production), consumer = pool share (consumption).
 (define (handle-my-voice cb)
   (if (not *session*) (reply! cb "err:sign in first")

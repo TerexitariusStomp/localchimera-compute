@@ -11,12 +11,12 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/doors/test-admit-commune-door.scm
 
-(use-modules (playnet test harness)
-             ((playnet test planner federation-wire-fixture) #:select (fx-identity))
-             (playnet doors lobby)
-             (playnet boot scope) (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri first-person credentials)
-             (playnet scope root)
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
+(use-modules (localchimera test harness)
+             ((localchimera test planner federation-wire-fixture) #:select (fx-identity))
+             (localchimera doors lobby)
+             (localchimera boot scope) (localchimera boot governance) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri first-person credentials)
+             (localchimera scope root)
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              (goblins) (goblins vat) (goblins actor-lib on)
              (srfi srfi-1) (rnrs bytevectors))
 

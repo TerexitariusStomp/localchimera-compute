@@ -47,7 +47,7 @@
                  ;; socket to appear and chmod 666 so the (non-root) gateway
                  ;; user can connect. The bridge creates the socket with the
                  ;; default 0755 umask which excludes write-for-others; the
-                 ;; playnet gateway then hits EACCES on connect(2).
+                 ;; localchimera gateway then hits EACCES on connect(2).
                  (let ((pid (apply
                              (make-forkexec-constructor
                               (list #$(file-append package "/bin/rns-bridge")
@@ -60,7 +60,7 @@
                    ;; Persistent guard, not a 30-try one-shot: a bridge
                    ;; respawn recreates the socket 0755 and was observed
                    ;; to slip past the one-shot (2026-06-06 19:28 — the
-                   ;; playnet gateway then crash-looped on EPERM until a
+                   ;; localchimera gateway then crash-looped on EPERM until a
                    ;; manual chmod). Re-assert 666 every 2s for the
                    ;; lifetime of the service; a stat every 2s is free.
                    ((module-ref (resolve-interface '(ice-9 threads)) 'call-with-new-thread)

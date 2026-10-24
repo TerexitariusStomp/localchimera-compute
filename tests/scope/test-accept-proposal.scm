@@ -7,9 +7,9 @@
 ;;;   - commitments-for-agreement filter resolves the set back
 ;;;   - reciprocal intents are promoted with counterparty flipped
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas)
              (goblins)
              (goblins utils hashmap)
              (srfi srfi-1))

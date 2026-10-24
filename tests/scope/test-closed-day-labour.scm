@@ -13,15 +13,15 @@
 ;;; nobody at work, and emitted no work.
 ;;;
 ;;; The window is built from today's weekday, so the suite reads the same on
-;;; every day of the week. Fixture: (playnet test planner bread).
+;;; every day of the week. Fixture: (localchimera test planner bread).
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/scope/test-closed-day-labour.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas) (playnet vf beyond schedules) (srfi srfi-11)
-             (playnet scope live)
-             (playnet test planner bread)
-             ((playnet utils clock) #:select (now instant->civil))
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (localchimera vf beyond schedules) (srfi srfi-11)
+             (localchimera scope live)
+             (localchimera test planner bread)
+             ((localchimera utils clock) #:select (now instant->civil))
              (goblins) (goblins vat)
              (srfi srfi-1))
 

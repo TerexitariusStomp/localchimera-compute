@@ -7,18 +7,18 @@
 ;;; runs assembled off its indexes (events-for-process + fulfillment links),
 ;;; the claim side injected as commitment-of, the sky each run lived under a
 ;;; scenario — and the recipe's response falling out read, per flow of its
-;;; own, as the curve every future of a solve takes (docs/playnet.typ, "Character
+;;; own, as the curve every future of a solve takes (docs/localchimera.typ, "Character
 ;;; is a measurement").
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness))
-(use-modules (playnet observation observer) (playnet scope root) (playnet solve recipe-response) (playnet vf schemas) (playnet vf beyond scenario) (srfi srfi-1))
-(use-modules ((playnet scope live) #:select (gather-recipes)))
-(use-modules (playnet credentials declarations) (playnet economy recipe-standing) (playnet keri acdc-store) (playnet solve recipe-response))
-(use-modules ((playnet solve recipe-response) #:select (capture-at response-shocks response-margin margin-shocks curve-reach
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness))
+(use-modules (localchimera observation observer) (localchimera scope root) (localchimera solve recipe-response) (localchimera vf schemas) (localchimera vf beyond scenario) (srfi srfi-1))
+(use-modules ((localchimera scope live) #:select (gather-recipes)))
+(use-modules (localchimera credentials declarations) (localchimera economy recipe-standing) (localchimera keri acdc-store) (localchimera solve recipe-response))
+(use-modules ((localchimera solve recipe-response) #:select (capture-at response-shocks response-margin margin-shocks curve-reach
                                                           recipe-response-report standing-position)))
-(use-modules ((playnet vf formulas shocks) #:select (scenario-factor-on normalize-shocks flows-stress flows-factor scenario-shocks)))
+(use-modules ((localchimera vf formulas shocks) #:select (scenario-factor-on normalize-shocks flows-stress flows-factor scenario-shocks)))
 (define (row-of rows ch) (find (lambda (r) (equal? ch (assq-ref r 'channel))) rows))
 (define (word-of rows ch) (assq-ref (row-of rows ch) 'word))
 (define (~= a b) (< (abs (- a b)) 1e-6))

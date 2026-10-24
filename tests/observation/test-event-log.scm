@@ -8,7 +8,7 @@
 ;;;     guile --no-auto-compile -q -L module \
 ;;;       tests/observation/test-event-log.scm
 
-(use-modules (playnet observation event-log)
+(use-modules (localchimera observation event-log)
              (srfi srfi-1)
              (srfi srfi-11)
              (ice-9 ftw))
@@ -68,7 +68,7 @@
   (ok? "forged entry fails SAID" (not (verify-entry forged))))
 
 (format #t "== entry versions: v1 corrections replace, v2 corrections are signed events ==~%")
-(let* ((make-entry (@@ (playnet observation event-log) make-entry))
+(let* ((make-entry (@@ (localchimera observation event-log) make-entry))
        (old (make-entry "PEL1" scope 0 "" (ev "work" "alice" 2.0)))
        (l1  (event-log-import (empty-event-log scope) (list old)))
        (l2  (call-with-values (lambda () (event-log-append l1 (ev "work" "bob" 1.0))) (lambda (nl _e) nl))))
@@ -78,7 +78,7 @@
   (ok? "the current payloads are the rest"       (equal? (event-log-current-payloads l2) (list (ev "work" "bob" 1.0)))))
 
 (format #t "== merge and rebase keep each entry's version ==~%")
-(let* ((make-entry (@@ (playnet observation event-log) make-entry))
+(let* ((make-entry (@@ (localchimera observation event-log) make-entry))
        (old   (make-entry "PEL1" scope 0 "" (ev "work" "alice" 2.0)))
        (ff    (event-log-merge (empty-event-log scope) (list old)))
        (base  (call-with-values (lambda () (event-log-append (empty-event-log scope) (ev "work" "bob" 1.0)))

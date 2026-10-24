@@ -23,10 +23,10 @@
 
 (use-modules (srfi srfi-1)
              (ice-9 format)
-             (playnet legal registry)
-             (playnet vf facts places)
-             (playnet knowledge catalogues us-states-fips)
-             (playnet knowledge law context-pack))
+             (localchimera legal registry)
+             (localchimera vf facts places)
+             (localchimera knowledge catalogues us-states-fips)
+             (localchimera knowledge law context-pack))
 
 (define root (dirname (dirname (dirname (current-filename)))))
 (define (rel p) (string-append root "/" p))

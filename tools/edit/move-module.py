@@ -3,15 +3,15 @@
 
     tools/edit/move-module.py [--dry-run] [--bare] OLD.scm NEW.scm
 
-OLD and NEW are paths under module/ (module/playnet/planner/comms-ai.scm
-module/playnet/comms/ai.scm). A Guile module's name is its path, so a
+OLD and NEW are paths under module/ (module/localchimera/planner/comms-ai.scm
+module/localchimera/comms/ai.scm). A Guile module's name is its path, so a
 move is four rewrites, done here the same way every time:
 
   1. `git mv`, so history follows the file as a rename.
-  2. The module name, wherever it is written: `(playnet planner comms-ai)`
-     becomes `(playnet comms ai)` in a define-module, an import, an `@`
+  2. The module name, wherever it is written: `(localchimera planner comms-ai)`
+     becomes `(localchimera comms ai)` in a define-module, an import, an `@`
      reference, a comment, a doc. The closing paren is part of the match, so
-     moving `(playnet comms)` leaves `(playnet comms ai)` alone.
+     moving `(localchimera comms)` leaves `(localchimera comms ai)` alone.
   3. The path, wherever it is written with a directory in front of it:
      `comms/ai.scm` in an include, the Makefile, a doc, a comment.
   4. tools/lint/module-layout.scm: the file's own `file` form goes, because the file
@@ -26,7 +26,7 @@ for a name other directories share (`adapters.scm`).
 by listing every line that still mentions the old name's stem, for a hand
 check: a list that names several files under one prefix (`vf/formulas/counting.scm,
 labels.scm`) carries the directory once, and only a reader sees that the second
-name moved elsewhere. Generated files (module/playnet/README.md,
+name moved elsewhere. Generated files (module/localchimera/README.md,
 browser/) are left to their generators, and docs/history/ is a record.
 
 A move changes which module a name comes from only by its path; when a definition
@@ -41,7 +41,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TEXT = ('.scm', '.md', '.typ', '.sh', '.py', '.mjs', '.cjs', '.ts', '.txt', '.org', '.json', '.sexp')
-SKIP = ('browser/', 'node_modules/', 'docs/history/', 'module/playnet/README.md', 'tools/edit/move-module.py')
+SKIP = ('browser/', 'node_modules/', 'docs/history/', 'module/localchimera/README.md', 'tools/edit/move-module.py')
 LAYOUT = 'tools/lint/module-layout.scm'
 
 
@@ -63,7 +63,7 @@ def rewrites(old, new, bare):
     """[(compiled regex, replacement)] for moving module file OLD to NEW."""
     o, n = module_name(old), module_name(new)
     name = re.compile(r'\(' + r'\s+'.join(map(re.escape, o)) + r'\)')
-    # the path below module/playnet/, with any directory spelling in front of it
+    # the path below module/localchimera/, with any directory spelling in front of it
     orel, nrel = '/'.join(o[1:]) + '.scm', '/'.join(n[1:]) + '.scm'
     path = re.compile(r'(?<![\w-])' + re.escape(orel))
     rs = [(name, '(' + ' '.join(n) + ')'), (path, nrel)]
@@ -98,7 +98,7 @@ def main(argv):
             out = rx.sub(rep, out)
         if f == LAYOUT:
             # the file's own `file` form goes: it now stands where the form said
-            rel = old[len('module/playnet/'):-len('.scm')]
+            rel = old[len('module/localchimera/'):-len('.scm')]
             out = re.sub(r'\n[ \t]*\(file "' + re.escape(rel) + r'" [^\n]*', '', out)
         if out != text:
             before, after = text.splitlines(), out.splitlines()
@@ -119,7 +119,7 @@ def main(argv):
     subprocess.check_call(['git', 'mv', old, new], cwd=ROOT)
     print(f'move-module: {old} → {new}: {count} line(s) rewritten')
     left = subprocess.run(['git', 'grep', '-nE', r'(^|[^\w/-])' + re.escape(stem) + r'(\.scm)?([^\w-]|$)', '--',
-                           '.', ':!browser', ':!module/playnet/README.md'],
+                           '.', ':!browser', ':!module/localchimera/README.md'],
                           cwd=ROOT, text=True, capture_output=True).stdout.splitlines()
     if left:
         print(f'still naming "{stem}" ({len(left)} lines; check by hand):')

@@ -14,15 +14,15 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-spec.scm
 
-(use-modules (playnet test harness)
-             ((playnet test planner federation-wire-fixture) #:select (fx-identity))
-             (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
-             ((playnet federation host) #:select (roster-ends))
-             ((playnet federation sturdyref-credential) #:select (sturdyref-credential-end spec-ready? verified-spec))
-             ((playnet federation federate) #:select (census-credential))
-             ((playnet keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-signature
+(use-modules (localchimera test harness)
+             ((localchimera test planner federation-wire-fixture) #:select (fx-identity))
+             (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig)
+             ((localchimera federation host) #:select (roster-ends))
+             ((localchimera federation sturdyref-credential) #:select (sturdyref-credential-end spec-ready? verified-spec))
+             ((localchimera federation federate) #:select (census-credential))
+             ((localchimera keri acdc) #:select (cred-said cred-schema cred-issuer cred-holder cred-signature
                                             make-credential cred-with-signature))
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid keri-identity-keypair))
              (goblins) (goblins vat)
              (rnrs bytevectors) (srfi srfi-1))
 

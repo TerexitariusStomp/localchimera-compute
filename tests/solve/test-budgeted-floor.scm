@@ -16,10 +16,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-budgeted-floor.scm
 
-(use-modules (playnet knowledge dsl shorthand))
+(use-modules (localchimera knowledge dsl shorthand))
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet solve engine) (playnet solve plan) (playnet vf schemas)
-             (playnet vf facts tension-terms))
+             (localchimera solve engine) (localchimera solve plan) (localchimera vf schemas)
+             (localchimera vf facts tension-terms))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

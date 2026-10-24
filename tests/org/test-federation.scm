@@ -1,10 +1,10 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-federation.scm — recursive scope-of-scopes
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet boot scope) (playnet boot scope) (playnet voice voice-signer) (playnet keri acdc) (playnet keri acdc-store) (playnet keri first-person credentials) (playnet keri first-person predicates))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera boot scope) (localchimera boot scope) (localchimera voice voice-signer) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri first-person credentials) (localchimera keri first-person predicates))
 (use-modules (goblins) (goblins utils hashmap) (srfi srfi-1))
 
 

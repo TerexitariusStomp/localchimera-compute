@@ -7,11 +7,11 @@
 ;;; core (the KERIA IPEX-multisig exchange that COLLECTS remote member sigs,
 ;;; and the keystate lookup that resolves the member set, sit above it).
 
-;; the host crypto backend: loading (playnet keri signify) installs it
-(use-modules ((playnet keri signify) #:select ()))
-(use-modules (playnet test harness))
-(use-modules (playnet keri acdc) (playnet keri citizen-sig) (playnet keri first-person credentials) (playnet keri first-person predicates))
-(use-modules ((playnet keri citizen-sig)
+;; the host crypto backend: loading (localchimera keri signify) installs it
+(use-modules ((localchimera keri signify) #:select ()))
+(use-modules (localchimera test harness))
+(use-modules (localchimera keri acdc) (localchimera keri citizen-sig) (localchimera keri first-person credentials) (localchimera keri first-person predicates))
+(use-modules ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid keri-identity-keypair)))
 (use-modules (goblins) (goblins vat) (rnrs bytevectors))
 

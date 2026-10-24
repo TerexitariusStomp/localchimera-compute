@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-pd-finiteness.scm — a plan must be made of numbers.
 ;;;
-;;; Spec: docs/playnet.typ §7.11 (the primal-dual predictor-corrector clears the
+;;; Spec: docs/localchimera.typ §7.11 (the primal-dual predictor-corrector clears the
 ;;;       degenerate flat optimum that stalls a plain path-follower).
 ;;;
 ;;; Mehrotra's predictor-corrector is exactly the right tool for a DEGENERATE
@@ -23,9 +23,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-pd-finiteness.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet test planner worked-example)
-             (playnet solve solver)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera test planner worked-example)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format))
 

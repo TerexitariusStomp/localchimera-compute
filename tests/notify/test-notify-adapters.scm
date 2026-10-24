@@ -13,9 +13,9 @@
 ;;;
 ;;; Run: guile -L module tests/notify/test-notify-adapters.scm
 
-(use-modules (playnet test harness)
-             (playnet notify rendered)
-             (playnet notify registry))
+(use-modules (localchimera test harness)
+             (localchimera notify rendered)
+             (localchimera notify registry))
 
 ;; sample canonical notifications
 (define buf
@@ -58,7 +58,7 @@
          "Buffer status change:\n\n  Item: tomato\n  On hand: 3\n  Zone: red\n  Thresholds: red=5 yellow=10 green=20")
   ;; robustness: unknown kinds and bare strings never break a channel
   (check "unknown kind falls back to info type" (rendered-type (terse '((kind . nope)))) 'info)
-  (check "unknown kind falls back to playnet title" (rendered-title (terse '((kind . nope)))) "playnet")
+  (check "unknown kind falls back to localchimera title" (rendered-title (terse '((kind . nope)))) "localchimera")
   (check "bare string becomes the body" (rendered-body (terse "ping")) "ping")
   (check "bare string keeps info type" (rendered-type (terse "ping")) 'info))
 

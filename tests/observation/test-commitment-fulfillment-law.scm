@@ -23,10 +23,10 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/observation/test-commitment-fulfillment-law.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet observation observer) (playnet vf schemas) (playnet observation states)
-             (playnet observation observer)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera observation observer) (localchimera vf schemas) (localchimera observation states)
+             (localchimera observation observer)
              (goblins)
              (srfi srfi-1))
 

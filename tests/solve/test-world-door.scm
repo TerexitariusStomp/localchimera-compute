@@ -80,15 +80,15 @@
                        (sites-in form set-of-door?))))
               (forms-of path)))
 
-(define engine "module/playnet/solve/engine.scm")
-(define ingest "module/playnet/solve/ingest.scm")   ; the records' side of the door: declares through it, layers through named doors
-(define satellites '("module/playnet/solve/robust.scm" "module/playnet/solve/plan.scm" "module/playnet/solve/records.scm" "module/playnet/solve/report.scm" 
-                     "module/playnet/solve/federation-solve.scm" "module/playnet/solve/federation-oracle.scm" "module/playnet/test/planner/worked-example.scm"))
+(define engine "module/localchimera/solve/engine.scm")
+(define ingest "module/localchimera/solve/ingest.scm")   ; the records' side of the door: declares through it, layers through named doors
+(define satellites '("module/localchimera/solve/robust.scm" "module/localchimera/solve/plan.scm" "module/localchimera/solve/records.scm" "module/localchimera/solve/report.scm" 
+                     "module/localchimera/solve/federation-solve.scm" "module/localchimera/solve/federation-oracle.scm" "module/localchimera/test/planner/worked-example.scm"))
 (define (scm-files-under dir)
   (let ((acc '()))
     (ftw dir (lambda (f st flag) (when (and (eq? flag 'regular) (string-suffix? ".scm" f)) (set! acc (cons f acc))) #t))
     acc))
-(define outside (append (scm-files-under "module/playnet/bench")
+(define outside (append (scm-files-under "module/localchimera/bench")
                         (scm-files-under "tests")))
 
 (define *pass* 0) (define *fail* 0)
@@ -121,7 +121,7 @@
 (let* ((module-files (append (list engine) satellites
                              (filter (lambda (f) (not (or (string-contains f "/tests/")
                                                           (string-contains f "/attic/"))))   ; the retired prototypes
-                                     (scm-files-under "module/playnet/planner"))))
+                                     (scm-files-under "module/localchimera/planner"))))
        (callers (lambda (name)
                   (delete-duplicates
                    (append-map (lambda (path)

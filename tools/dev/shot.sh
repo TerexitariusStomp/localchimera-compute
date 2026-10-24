@@ -5,7 +5,7 @@
 # headless under Wayland/snap confinement from a non-login shell).
 #
 #   bash tools/dev/shot.sh <url> <out.png> [width] [height] [settleMs]
-#   bash tools/dev/shot.sh 'http://127.0.0.1:8080/app.html?face=share' ~/playnet-dev-shots/share.png
+#   bash tools/dev/shot.sh 'http://127.0.0.1:8080/app.html?face=share' ~/localchimera-dev-shots/share.png
 #   SHOT_INIT='localStorage.setItem("onboard", ...)'  runs before the page's scripts;
 #   SHOT_EVAL='…'                                     runs after it has settled.
 #

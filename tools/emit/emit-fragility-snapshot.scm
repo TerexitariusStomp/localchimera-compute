@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; emit-fragility-snapshot.scm — the fragility face's data, straight from the
 ;;; encoded catalogue. Reads the WITNESS TABLES in
-;;; module/playnet/knowledge/catalogues/eco.scm (the real, cited planetary-boundary
+;;; module/localchimera/knowledge/catalogues/eco.scm (the real, cited planetary-boundary
 ;;; and climate-tipping figures) and the solver weights in *planetary-catalogue*,
 ;;; and emits browser/data/snapshots/fragility-snapshot.json — the offline fallback the
 ;;; fragility face renders. The live gateway pushes the same shape via
@@ -13,13 +13,13 @@
 ;;; `make check-fragility-fresh` regenerates and diffs the committed copy.
 ;;;
 ;;; The two witness tables and the solver catalogue come from
-;;; (playnet knowledge catalogues eco), imported below.
+;;; (localchimera knowledge catalogues eco), imported below.
 
 (use-modules (ice-9 format) (srfi srfi-1))
 
 (define root (dirname (dirname (dirname (current-filename)))))
 (define (rel p) (string-append root "/" p))
-(use-modules (playnet knowledge catalogues eco))
+(use-modules (localchimera knowledge catalogues eco))
 
 ;; ── governance weight w per control, from the solver catalogue where the
 ;; federation actually draws the limit; a default steepness elsewhere (witness-
@@ -56,7 +56,7 @@
 
 ;;; ─── the JSON writer the snapshot emitters share, plus this file's own
 ;;; number form (a missing figure is null) and its field-by-field object ──────
-(use-modules ((playnet utils json-emit) #:select (J:s J:b)))
+(use-modules ((localchimera utils json-emit) #:select (J:s J:b)))
 (define (J:n x) (cond ((not (number? x)) "null")
                       ((= x (round x)) (number->string (inexact->exact (round x))))
                       (else (number->string (exact->inexact x)))))
@@ -95,7 +95,7 @@
        *climate-tipping-points*))
 
 (define out
-  (J:obj (J:field "source" (J:s "Richardson et al. 2023 (nine planetary boundaries) + Armstrong McKay et al. 2022 (climate tipping elements), via module/playnet/knowledge/catalogues/eco.scm"))
+  (J:obj (J:field "source" (J:s "Richardson et al. 2023 (nine planetary boundaries) + Armstrong McKay et al. 2022 (climate tipping elements), via module/localchimera/knowledge/catalogues/eco.scm"))
          (J:field "warmingNow" (J:n *warming-now*))
          (J:field "controls" (J:arr controls))
          (J:field "tippingElements" (J:arr tips))))

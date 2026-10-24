@@ -10,7 +10,7 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -L module tests/solve/test-emphasis.scm
 
-(use-modules (playnet test harness) (srfi srfi-1) (ice-9 format) (playnet solve emphasis))
+(use-modules (localchimera test harness) (srfi srfi-1) (ice-9 format) (localchimera solve emphasis))
 
 (define (~= a b) (< (abs (- a b)) 1e-9))
 (define (mass-of ms owner key)

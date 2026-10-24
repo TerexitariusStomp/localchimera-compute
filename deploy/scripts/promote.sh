@@ -19,20 +19,20 @@
 #      ff succeeded, rad push.
 #
 # Tor-only: every remote touch is Tor-routed. By default we wrap ssh/git/scp in
-# `torsocks` (for a PLAYNET_BOX like root@<ip-or-onion> with no ProxyCommand).
-# BUT if PLAYNET_BOX is an ssh *alias* that already tunnels through Tor via a
+# `torsocks` (for a LOCALCHIMERA_BOX like root@<ip-or-onion> with no ProxyCommand).
+# BUT if LOCALCHIMERA_BOX is an ssh *alias* that already tunnels through Tor via a
 # ProxyCommand (e.g. `nc -X 5 -x 127.0.0.1:9050 %h %p`), torsocks would
 # DOUBLE-tor it — torsocks intercepts the local :9050 connect and rejects it.
 # In that case set PROMOTE_TORSOCKS= (empty) to let the ssh config do the Tor
-# routing:   PROMOTE_TORSOCKS= PLAYNET_BOX=playnet-server bash promote.sh <sha>
+# routing:   PROMOTE_TORSOCKS= LOCALCHIMERA_BOX=localchimera-server bash promote.sh <sha>
 set -euo pipefail
 
 COMMIT="${1:?usage: promote.sh <commit-ish> [agent-name]}"
 AGENT="${2:-claude}"
-BOX="${PLAYNET_BOX:?set PLAYNET_BOX=root@<host-or-onion> (not hardcoded — opsec)}"
+BOX="${LOCALCHIMERA_BOX:?set LOCALCHIMERA_BOX=root@<host-or-onion> (not hardcoded — opsec)}"
 # Unset → "torsocks"; set (even to empty) → used verbatim.
 TS="${PROMOTE_TORSOCKS-torsocks}"
-CO=/var/lib/playnet/radicle/checkout
+CO=/var/lib/localchimera/radicle/checkout
 REF="incoming-$AGENT"
 
 SHA=$(git rev-parse --verify "$COMMIT^{commit}")
@@ -88,12 +88,12 @@ $TS git push "ssh://$BOX$CO" "+$SHA:refs/heads/$REF"
 # push (`git push rad main` as ops) to have advanced home canonical to
 # $SHA first; if not, we warn and skip — the live site still deploys.
 # Same env-override-with-today's-default pattern as cdn.scm, merge-patch.sh,
-# canonicalize-keyring-ref.sh, playnet-sync.sh — every other deploy/ script
+# canonicalize-keyring-ref.sh, localchimera-sync.sh — every other deploy/ script
 # naming the RID. This one was the odd one out, hardcoded with no override at
 # all, which makes it the single file a RID transition would silently miss.
-RID_DIR="${PLAYNET_RID_BARE:-z27dFkN28LQAsSsG3DVHcfBqYAArQ}"
-OPS="${PLAYNET_OPS_DID:-z6MkhFnFe4dPHjHfZb4YAoYGf48AiaLAZHDj53yZBzfCJKVf}"
-STORE=/var/lib/playnet/radicle/.radicle/storage/$RID_DIR
+RID_DIR="${LOCALCHIMERA_RID_BARE:-z27dFkN28LQAsSsG3DVHcfBqYAArQ}"
+OPS="${LOCALCHIMERA_OPS_DID:-z6MkhFnFe4dPHjHfZb4YAoYGf48AiaLAZHDj53yZBzfCJKVf}"
+STORE=/var/lib/localchimera/radicle/.radicle/storage/$RID_DIR
 HS="${RAD_HOME:-$HOME/.radicle}/storage/$RID_DIR"
 NS="refs/namespaces/$OPS"
 BUNDLE=""
@@ -163,34 +163,34 @@ $TS ssh "$BOX" "
   # overwrite them. Placed satellite trees and built wasm are gitignored, so
   # a hard reset costs nothing they hold.
   # Root git use inside the checkout (a reconfigure run from that directory)
-  # leaves root-owned reflogs and objects that block the playnet user's own
+  # leaves root-owned reflogs and objects that block the localchimera user's own
   # ff and the CI fetch. This leg runs as root: give the tree back to its
   # owner, the way the top directory is owned.
   chown -R --reference=$CO $CO/.git
-  sudo -u playnet git -C $CO reset -q --hard main
-  if [ -n '$REWRITE' ]; then sudo -u playnet git -C $CO reset -q --hard $REF || exit 1
-  else sudo -u playnet git -C $CO merge --ff-only $REF || exit 1; fi
-  sudo -u playnet git -C $CO branch -D $REF
-  sudo -u playnet env RAD_PASSPHRASE=\"\$(cat /run/secrets/rad-passphrase)\" \
-    RAD_HOME=/var/lib/playnet/radicle/.radicle \
+  sudo -u localchimera git -C $CO reset -q --hard main
+  if [ -n '$REWRITE' ]; then sudo -u localchimera git -C $CO reset -q --hard $REF || exit 1
+  else sudo -u localchimera git -C $CO merge --ff-only $REF || exit 1; fi
+  sudo -u localchimera git -C $CO branch -D $REF
+  sudo -u localchimera env RAD_PASSPHRASE=\"\$(cat /run/secrets/rad-passphrase)\" \
+    RAD_HOME=/var/lib/localchimera/radicle/.radicle \
     git -C $CO push ${REWRITE:+-f} rad main 2>&1 | tail -1
   git -C $CO log --oneline -1 main
   if [ -f /tmp/ops-canon.bundle ]; then
     echo '[box] advancing Radicle canonical (ops delegate ref + set-head)'
-    chown playnet /tmp/ops-canon.bundle
-    if sudo -u playnet git -C $STORE cat-file -e $SHA 2>/dev/null \
-       && sudo -u playnet git -C $STORE fetch -q /tmp/ops-canon.bundle \"+$NS/*:$NS/*\"; then
-      sudo -u playnet git -C $STORE update-ref $NS/refs/heads/main $SHA
-      sudo -u playnet git -C $STORE update-ref refs/heads/main $SHA
+    chown localchimera /tmp/ops-canon.bundle
+    if sudo -u localchimera git -C $STORE cat-file -e $SHA 2>/dev/null \
+       && sudo -u localchimera git -C $STORE fetch -q /tmp/ops-canon.bundle \"+$NS/*:$NS/*\"; then
+      sudo -u localchimera git -C $STORE update-ref $NS/refs/heads/main $SHA
+      sudo -u localchimera git -C $STORE update-ref refs/heads/main $SHA
       herd restart radicle-httpd  >/dev/null 2>&1 || true
       herd restart radicle-http-api >/dev/null 2>&1 || true
-      echo \"[box] canonical refs/heads/main = \$(sudo -u playnet git -C $STORE rev-parse refs/heads/main)\"
+      echo \"[box] canonical refs/heads/main = \$(sudo -u localchimera git -C $STORE rev-parse refs/heads/main)\"
     else
       echo '[box] WARN: delegate-ref propagation failed — canonical NOT advanced (Explorer will lag)'
     fi
     rm -f /tmp/ops-canon.bundle
   fi
-  echo \"[box] CANONICAL=\$(sudo -u playnet git -C $STORE rev-parse refs/heads/main 2>/dev/null)\"
+  echo \"[box] CANONICAL=\$(sudo -u localchimera git -C $STORE rev-parse refs/heads/main 2>/dev/null)\"
 " | tee "$ONBOX_LOG"
 [ -n "$BUNDLE" ] && rm -f "$BUNDLE"
 box_canon=$(sed -n 's/^\[box\] CANONICAL=//p' "$ONBOX_LOG" | tail -1)
@@ -215,7 +215,7 @@ if [ "${PROMOTE_VERIFY:-1}" = 1 ]; then
     echo "[promote] verifying: the box deploys $short, then the gateway serves (PROMOTE_VERIFY=0 skips)"
     deployed=""
     while [ "$SECONDS" -lt "$deadline" ]; do
-        deployed=$(boxsh 'cut -c1-8 /home/playnet/playnet-repo/.deployed-sha')
+        deployed=$(boxsh 'cut -c1-8 /home/localchimera/localchimera-repo/.deployed-sha')
         [ "$deployed" = "$short" ] && break
         sleep 20
     done
@@ -235,7 +235,7 @@ if [ "${PROMOTE_VERIFY:-1}" = 1 ]; then
     done
     if [ "$ok" -lt 2 ]; then
         echo "[promote] FAILED: $short is deployed but the gateway is not serving (entry-points.json: ${code:-?})."
-        echo "          ssh $BOX 'herd status playnet-gateway; tail -30 /var/log/playnet/gateway.log'"
+        echo "          ssh $BOX 'herd status localchimera-gateway; tail -30 /var/log/localchimera/gateway.log'"
         exit 1
     fi
     echo "[promote] verified — $short deployed and the gateway is serving"

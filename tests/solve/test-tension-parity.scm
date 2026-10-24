@@ -12,7 +12,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-tension-parity.scm
 
 (use-modules (srfi srfi-1) (rnrs bytevectors) (ice-9 format))
-(use-modules (playnet solve solver))
+(use-modules (localchimera solve solver))
 (unless (kern-available?) (begin (display "C kernel unavailable; cannot check parity\n") (exit 1)))
 
 (define rs (seed->random-state 271828))

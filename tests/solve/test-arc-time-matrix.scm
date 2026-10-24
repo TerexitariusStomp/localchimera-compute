@@ -16,8 +16,8 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-arc-time-matrix.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world))
-(use-modules (playnet solve routing))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world))
+(use-modules (localchimera solve routing))
 
 (define (~= a b) (and a b (< (abs (- a b)) 1e-9)))
 (define (setup!)

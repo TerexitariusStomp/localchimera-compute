@@ -2,15 +2,15 @@
 ;;; test-first-person.scm — PHC + VRC shape, store queries, the I2I check, signed VRCs
 ;;;
 ;;; The First Person layer on its own two feet: credentials from
-;;; (playnet keri first-person credentials), verification from (playnet keri
-;;; first-person predicates), a store from (playnet keri acdc-store). The halves that run
+;;; (localchimera keri first-person credentials), verification from (localchimera keri
+;;; first-person predicates), a store from (localchimera keri acdc-store). The halves that run
 ;;; through a ^scope and the bootstrap ceremony are
 ;;; tests/org/test-first-person.scm.
 
-(use-modules (playnet test harness))
-(use-modules (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig)
-             (playnet keri first-person credentials) (playnet keri first-person predicates))
-(use-modules ((playnet keri signify) #:select (ed25519-keypair-public)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig)
+             (localchimera keri first-person credentials) (localchimera keri first-person predicates))
+(use-modules ((localchimera keri signify) #:select (ed25519-keypair-public)))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))
 
@@ -35,7 +35,7 @@
                                         #:enrolled-at "2026-04-23"
                                         #:enrollment-evidence-digest "h:abc")))
   (check-pred "PHC schema"
-              (equal? *schema-playnet-personhood* (cred-schema phc)))
+              (equal? *schema-localchimera-personhood* (cred-schema phc)))
   (check-pred "issuer = ecosystem"
               (equal? "E_eco" (cred-issuer phc)))
   (check-pred "holder = person"
@@ -58,7 +58,7 @@
                                          #:issuer-phc-said "E_phc_a"
                                         #:issued-at "2026-04-23")))
   (check-pred "VRC schema"
-              (equal? *schema-playnet-relationship* (cred-schema v1)))
+              (equal? *schema-localchimera-relationship* (cred-schema v1)))
   (check-pred "same content → same SAID"
               (equal? (cred-said v1) (cred-said v2)))
   (let ((edge (cred-edge v1 'issuer-phc)))

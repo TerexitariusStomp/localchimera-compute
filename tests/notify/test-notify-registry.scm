@@ -8,8 +8,8 @@
 ;;;
 ;;; Run: guile -L module tests/notify/test-notify-registry.scm
 
-(use-modules (playnet test harness)
-             (playnet notify registry))
+(use-modules (localchimera test harness)
+             (localchimera notify registry))
 
 ;; Render helper: collapse the (values type title body tag) into a list.
 (define (r event style)

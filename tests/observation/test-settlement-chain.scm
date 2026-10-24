@@ -10,10 +10,10 @@
 ;;;   guix shell -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -L module tests/observation/test-settlement-chain.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet observation observer) (playnet vf schemas))
-(use-modules (playnet observation credentials) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera observation observer) (localchimera vf schemas))
+(use-modules (localchimera observation credentials) (localchimera credentials work) (localchimera keri acdc) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 ;; CONTRIBUTION: recipient-side intent + a fully-satisfying work event (gross).
@@ -43,8 +43,8 @@
     (work!  obs "ada" "spec:surgeon" 20 "ev2" "in2")   ; gross = 30
     (claim! obs "ada" "spec:bread"   10 "cl1")          ; claimed = 10 ⇒ balance 20
 
-    (define work-creds  ($ acdc 'by-schema *schema-playnet-work-event*))
-    (define claim-creds ($ acdc 'by-schema *schema-playnet-claim*))
+    (define work-creds  ($ acdc 'by-schema *schema-localchimera-work-event*))
+    (define claim-creds ($ acdc 'by-schema *schema-localchimera-claim*))
 
     (display "\n── The consumption side is attested too ──\n")
     (check "one claim ACDC minted" (length claim-creds) 1)

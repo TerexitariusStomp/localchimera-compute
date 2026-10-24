@@ -18,8 +18,8 @@ case "$MODE" in
   *) echo "usage: $0 [--full|--pre-start]" >&2; exit 1 ;;
 esac
 
-REPO="${PLAYNET_REPO:-$HOME/playnet}"
-STATE="$HOME/.local/state/playnet"
+REPO="${LOCALCHIMERA_REPO:-$HOME/localchimera}"
+STATE="$HOME/.local/state/localchimera"
 GUIX="$HOME/.config/guix/current/bin/guix"
 [ -x "$GUIX" ] || GUIX="$(command -v guix)"
 

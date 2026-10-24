@@ -8,13 +8,13 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/scope/test-skill-e2e.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness))
-(use-modules (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet scope live))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness))
+(use-modules (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera scope live))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
-(use-modules ((playnet solve engine) #:select (set-period-length!)))
+(use-modules ((localchimera solve engine) #:select (set-period-length!)))
 ;; A period here is a WEEK: the roster's Monday–Friday 09:00–17:00 is a working week of hours, on any date.
 (set-period-length! 1.0 "week")
 

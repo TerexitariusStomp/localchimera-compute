@@ -8,7 +8,7 @@
 ;;; SSH host keys that must NEVER be committed.
 ;;;
 ;;; Deploy with:
-;;;   PLAYNET_PROVIDER=deploy/providers/my-server.scm \
+;;;   LOCALCHIMERA_PROVIDER=deploy/providers/my-server.scm \
 ;;;     bash deploy/scripts/reconfigure.sh
 
 (use-modules (gnu bootloader grub)
@@ -17,7 +17,7 @@
 ;; Provider config — an alist consumed by machines.scm.
 ;; Fill in values from your VPS provider's control panel.
 `((host-ip        . "YOUR_SERVER_IP")
-  (host-name      . "playnet")
+  (host-name      . "localchimera")
   (system         . "x86_64-linux")
   (ssh-host-key   . "ssh-ed25519 YOUR_HOST_KEY_HERE")
 
@@ -38,7 +38,7 @@
   ;; (the CDN terminates TLS at the edge with its own cert, and pulls
   ;; from origin with SSL verification disabled). No Let's Encrypt, no
   ;; Certificate Transparency log exposure. Per docs/deploy/CLEARNET-FACES.md.
-  (clearnet-domain    . #f)       ; e.g. "playnet.earth" when ready
+  (clearnet-domain    . #f)       ; e.g. "localchimera.earth" when ready
 
   ;; CDN edge IP allowlist — only these IPs reach the origin on 443; direct
   ;; IP access returns 444 (silent drop). Required with clearnet-domain:
@@ -46,7 +46,7 @@
   ;; (cdn-edge-ips . ("1.2.3.0/24" "2001:db8::/48"))
 
   ;; The CDN account that fronts clearnet-domain. `adapter` names a module
-  ;; under module/playnet/fleet/cdn/; `credential` is the key's name in
+  ;; under module/localchimera/fleet/cdn/; `credential` is the key's name in
   ;; secrets.scm. Drives the purge after each deploy, the no-cache rules
   ;; (deploy/scripts/cdn.scm), and fronting for fleet hosts that ask for it.
   ;; (cdn . ((adapter    . "NAME")
@@ -100,15 +100,15 @@
   ;;          (from . "noreply@example.org")))
 
   ;; Radicle project ID. The radicle-ci hook watches this RID for ref
-  ;; updates. Get it after `rad init`, or set PLAYNET_RID env var to
+  ;; updates. Get it after `rad init`, or set LOCALCHIMERA_RID env var to
   ;; override per-deploy.
   (radicle-rid        . "rad:REPLACE_ME_AFTER_RAD_INIT")
 
-  ;; Provider tag — published by playnet-liveness in MQTT heartbeats so
+  ;; Provider tag — published by localchimera-liveness in MQTT heartbeats so
   ;; the fleet rotor can mark a whole provider unhealthy when all its
   ;; hosts go silent. One of: "sporestack", "vpsbg", "flokinet", or
   ;; whatever you call this provider. Written declaratively to
-  ;; /etc/playnet/provider-tag at every reconfigure.
+  ;; /etc/localchimera/provider-tag at every reconfigure.
   (provider-tag       . "sporestack")
 
   ;; Hosting credentials the fleet on this box holds: the names they carry

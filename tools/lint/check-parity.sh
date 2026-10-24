@@ -6,7 +6,7 @@
 # adapter reproduces its semantics. Convention: a module keeps a parity
 # marker file naming its suite:
 #
-#   module/playnet/<area>/PARITY     →  one line: tests/parity/<suite>.scm
+#   module/localchimera/<area>/PARITY     →  one line: tests/parity/<suite>.scm
 #
 # The gate:
 #   1. Every module dir carrying a PARITY marker must point at a suite file

@@ -18,10 +18,10 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keri/test-bran-derivations.scm
 
-(use-modules (playnet test harness)
-             (playnet keri signify-portable)
-             (playnet keri signify)          ; installs the server crypto backend
-             ((playnet keri crypto-primitives)
+(use-modules (localchimera test harness)
+             (localchimera keri signify-portable)
+             (localchimera keri signify)          ; installs the server crypto backend
+             ((localchimera keri crypto-primitives)
               #:select (ed25519-keypair-public ed25519-keypair-secret))
              (rnrs bytevectors)
              ((srfi srfi-1) #:select (delete-duplicates iota))

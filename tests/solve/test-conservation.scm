@@ -20,13 +20,13 @@
 ;;; a second thing to keep true. What follows demonstrates the coverage instead of
 ;;; duplicating it — each law is broken on purpose, and each shows up the same way.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/solve/test-conservation.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas))
 ;; A period here is a WEEK: `hours h` names Monday 00:00–h:00, so a period holding the week holds h hours, on any date.
 (set-period-length! 1.0 "week")
 

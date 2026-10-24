@@ -1,15 +1,15 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/personhood/two-box/box2.scm — the WITNESS's box.
 ;;;
-;;; Own process, own PLAYNET_STATE_DIR, own static server; the only line to
+;;; Own process, own LOCALCHIMERA_STATE_DIR, own static server; the only line to
 ;;; box1 is HTTP. It publishes its citizen AID for the choreography, polls
 ;;; box1's served /witness/requests until the ask arrives in its OWN
 ;;; registries, co-signs the statement with the key that never leaves this
 ;;; process, and publishes the attest for box1's poll to land.
 
-(use-modules (playnet personhood witness-relay)
-             ((playnet personhood witnessed-work) #:select (witness-work-inbox))
-             ((playnet keri citizen-sig)
+(use-modules (localchimera personhood witness-relay)
+             ((localchimera personhood witnessed-work) #:select (witness-work-inbox))
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-aid
                         keri-identity-keypair sign-said))
              (rnrs bytevectors)

@@ -19,13 +19,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-declared-time.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver)
-             (playnet vf schemas)
-             ((playnet knowledge dsl shorthand) #:select (er place* all-week-window)))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver)
+             (localchimera vf schemas)
+             ((localchimera knowledge dsl shorthand) #:select (er place* all-week-window)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

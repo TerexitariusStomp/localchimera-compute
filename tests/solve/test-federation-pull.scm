@@ -21,12 +21,12 @@
 ;;;     crosses.
 ;;;   • flour is #:never-raw so it is not a free raw — B's only flour is what it draws.
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/solve/test-federation-pull.scm
+;;; Run:  guile -L module/localchimera/planner tests/solve/test-federation-pull.scm
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve decomposed) (playnet solve records)
-             (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve decomposed) (localchimera solve records)
+             (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 ;; `holding` = the shorthand's er; this suite binds `er` to its give recipe below
 (define (res spec loc q) (holding (string-append spec "@" loc) spec #f #:place loc #:qty q #:unit "kg"))

@@ -14,10 +14,10 @@
 (use-modules (goblins)
              (goblins vat)
              (goblins actor-lib methods)
-             (playnet test harness)
-             (playnet vf schemas) (srfi srfi-1)
-             (playnet monero wallet)
-             (playnet monero poller)
+             (localchimera test harness)
+             (localchimera vf schemas) (srfi srfi-1)
+             (localchimera monero wallet)
+             (localchimera monero poller)
              (srfi srfi-1)
              (ice-9 format))
 
@@ -67,7 +67,7 @@
                            ((resize new-total) (set! %pool-total new-total)))))))
       (values scope pool))))
 
-(define %state-file (format #f "/tmp/playnet-test-donation-watch-~a.state" (getpid)))
+(define %state-file (format #f "/tmp/localchimera-test-donation-watch-~a.state" (getpid)))
 (when (file-exists? %state-file) (delete-file %state-file))
 
 (define (tick!)

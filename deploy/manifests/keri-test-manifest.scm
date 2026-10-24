@@ -7,12 +7,12 @@
 ;;;
 ;;; ── Why not deploy/channels.scm? ────────────────────────────────────────────
 ;;;
-;;; channels.scm pins the `playnet` channel to a Radicle seed
+;;; channels.scm pins the `localchimera` channel to a Radicle seed
 ;;; (iris.radicle.xyz). The seed itself responds fine to bare `git
 ;;; ls-remote` in <2s, but `guix time-machine`'s libgit2 client times
 ;;; out trying to handshake with Radicle's git HTTP bridge. Same
 ;;; symptom on seed.radicle.garden. So every Make target wired through
-;;; `$(TIME_MACHINE)` hangs.  We don't need the playnet channel for
+;;; `$(TIME_MACHINE)` hangs.  We don't need the localchimera channel for
 ;;; running tests — only `guix pull` / `guix deploy` need it for
 ;;; reproducibility — so this manifest is consumed via plain
 ;;; `guix shell -L deploy/guix -m ...` that bypasses time-machine
@@ -44,7 +44,7 @@
          "guile-gcrypt"
          "guile-json"
          "libsodium"                       ; for Ed25519 seed → keypair FFI
-         "libgcrypt"                       ; for playnet/push/crypto.scm dlopen
+         "libgcrypt"                       ; for localchimera/push/crypto.scm dlopen
          "coreutils"
          "grep"
          "sed"

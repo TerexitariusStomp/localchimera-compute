@@ -9,11 +9,11 @@
 ;;; (docs/valueflows/assets/all_vf.TTL, "# Actions"; prose in
 ;;; docs/valueflows/concepts/actions.md) is the authority. This test PARSES that
 ;;; file at run time and compares every (action, property) cell with
-;;; `*action-definitions*` (module/playnet/vf/schemas.scm) through the
+;;; `*action-definitions*` (module/localchimera/vf/schemas.scm) through the
 ;;; schema accessors, one check per cell. A failing check is a real divergence
 ;;; from the published vocabulary.
 ;;;
-;;; Mapping table (TTL term → playnet symbol) lives in (playnet test vf-ttl) and
+;;; Mapping table (TTL term → localchimera symbol) lives in (localchimera test vf-ttl) and
 ;;; is repeated here for the reader:
 ;;;
 ;;;   eventQuantity       resource → resource-quantity   effort → effort-quantity   both → both
@@ -27,7 +27,7 @@
 ;;;                       update | updateTo → update-to | remove | new | notApplicable → no-effect
 ;;;   action name         camelCase → kebab-case (transferAllRights → transfer-all-rights)
 ;;;
-;;; Playnet-only symbols: `no-effect` is VF's notApplicable for every effect
+;;; LocalChimera-only symbols: `no-effect` is VF's notApplicable for every effect
 ;;; property and createResource; `not-applicable` is notApplicable for inputOutput;
 ;;; pairs-with `#f` is notApplicable for pairsWith. The record also carries two
 ;;; fields the vocabulary's action individuals do not (implies-transfer,
@@ -45,12 +45,12 @@
 ;;;   cd <repo> && guix shell --pure -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -q -L module tests/vf/vf-conformance-table-test.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas) (playnet vf formulas actions)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (localchimera vf formulas actions)
              (srfi srfi-1) (srfi srfi-13))
 
-(use-modules (playnet test vf-ttl))
-(use-modules ((playnet utils records) #:select (vf-record-accessor)))
+(use-modules (localchimera test vf-ttl))
+(use-modules ((localchimera utils records) #:select (vf-record-accessor)))
 
 (define root (vf-repo-root))
 (define ttl (ttl-action-table root))
@@ -148,7 +148,7 @@
                                            (not (eq? (ttl-value (car a) 'input-output) 'not-applicable)))))))
 
 ;;; ═════════════════════════════════════════════════════════════════════════════
-(display "\n── playnet-only fields, against concepts/transfers.md ──\n")
+(display "\n── localchimera-only fields, against concepts/transfers.md ──\n")
 ;; "Explicit and implied transfers": consume, produce imply a full transfer of
 ;; all rights and custody; pickup, dropoff, accept, modify imply custody only;
 ;; "…this would normally not be used as part of an agreement" for the custody-only

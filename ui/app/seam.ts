@@ -75,7 +75,7 @@ export type GrantKind = "use" | "consume";
  * convert.
  */
 // Both halves are GENERATED: ui/app/seam-wire.ts, emitted by
-// `make protocol-emit` from module/playnet/protocol/seam.scm — one entry per
+// `make protocol-emit` from module/localchimera/protocol/seam.scm — one entry per
 // handler the spine registers, with the doors each sends, and one per push it
 // makes. This file re-exports the types (above) so every importer reads them
 // from the seam.
@@ -83,7 +83,7 @@ export type GrantKind = "use" | "consume";
 /**
  * A row of the wire as the page reads it where a snapshot carries what it has:
  * every key of the row the planner's table states (wire-rows.ts, generated from
- * module/playnet/wire/*.scm and doors/record-rows.scm), optional, a figure
+ * module/localchimera/wire/*.scm and doors/record-rows.scm), optional, a figure
  * also as the string a demo or a draft writes it.
  */
 export type Wide<T> = { [K in keyof T]?: T[K] extends number | null ? number | string : T[K] };
@@ -274,7 +274,7 @@ export interface SeamData {
  *
  * `data` and `handlers` are the two containers both sides mutate and are
  * always present. Both halves are declared once in the protocol seam table
- * (module/playnet/protocol/seam.scm) and generated into seam-wire.ts:
+ * (module/localchimera/protocol/seam.scm) and generated into seam-wire.ts:
  * `handlers` is app → spine; the SeamPushes methods are spine → app, fixed
  * forwarders onto app/bus.ts installed below. Traffic between app modules
  * rides the bus directly and never appears here.

@@ -17,8 +17,8 @@
 ;;;     lets boot-time recovery (empty sealer registry, zero clients online)
 ;;;     reconstruct castable ballots. See test-recovery.scm for the replay side.
 
-(use-modules (playnet voice ballot) (playnet credentials commitments) (playnet credentials delegation) (playnet credentials voting) (playnet keri acdc) (playnet voice delegation-map) (playnet federation rebuild) (playnet boot scope) (playnet boot governance) (playnet keri acdc) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable) (playnet scope root) (srfi srfi-1) (playnet test harness)
-             ((playnet keri citizen-sig)
+(use-modules (localchimera voice ballot) (localchimera credentials commitments) (localchimera credentials delegation) (localchimera credentials voting) (localchimera keri acdc) (localchimera voice delegation-map) (localchimera federation rebuild) (localchimera boot scope) (localchimera boot governance) (localchimera keri acdc) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri said-portable) (localchimera scope root) (srfi srfi-1) (localchimera test harness)
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid
                         sign-said verify-said-signature))
              (goblins) (goblins utils hashmap) (srfi srfi-1))
@@ -67,7 +67,7 @@
              (let ((r ($ svc 'cast-signed citizen "p-1" 'yes ts sig)))
                (and (pair? r) (eq? 'error (car r))
                     (string-contains (cadr r) "nonce"))))
-      (let ((st (find (lambda (c) (equal? (cred-schema c) *schema-playnet-stance*))
+      (let ((st (find (lambda (c) (equal? (cred-schema c) *schema-localchimera-stance*))
                       ($ store 'all))))
         (check "stance ACDC issued" (and st #t))
         (check "client SAID == issued SAID" (equal? (cred-said st) said))
@@ -104,7 +104,7 @@
       (check "preimage holder = delegate"  (equal? (ar 'holder) bob))
       (check "set-delegation-signed accepted"
              (eq? 'ok ($ svc 'set-delegation-signed alice-aid bob 0.6 sig)))
-      (let ((dc (find (lambda (c) (equal? (cred-schema c) *schema-playnet-delegation*))
+      (let ((dc (find (lambda (c) (equal? (cred-schema c) *schema-localchimera-delegation*))
                       ($ store 'all))))
         (check "delegation ACDC citizen-issued" (equal? (cred-issuer dc) alice-aid))
         (check "carries the delegator's signature"
@@ -143,7 +143,7 @@
              (equal? spec (assq-ref (ar 'claims) 'mandate)))
       (check "set-delegation-mandated-signed accepted"
              (eq? 'ok ($ svc 'set-delegation-mandated-signed alice-aid bob 0.6 spec sig)))
-      (let ((dc (find (lambda (c) (equal? (cred-schema c) *schema-playnet-delegation*))
+      (let ((dc (find (lambda (c) (equal? (cred-schema c) *schema-localchimera-delegation*))
                       ($ store 'all))))
         (check "ACDC carries the mandate spec"
                (equal? spec (assq-ref (cred-claims dc) 'mandate)))
@@ -196,7 +196,7 @@
              (eq? 'ok ($ svc 'cast-signed late-aid "p-1" 'yes ts sig u)))
       (check "their stance ACDC exists and is citizen-signed"
              (let ((st (find (lambda (c)
-                               (and (equal? (cred-schema c) *schema-playnet-stance*)
+                               (and (equal? (cred-schema c) *schema-localchimera-stance*)
                                     (equal? (cred-issuer c) late-aid)))
                              ($ store 'all))))
                (and st (cred-signature st) #t))))))

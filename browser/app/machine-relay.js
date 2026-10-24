@@ -73,7 +73,7 @@ export const httpLeg = async (env) => {
 // params.destination names the URL the node fetches on the borrower's
 // behalf; the response bytes are the carried work and the meter counts
 // both directions. opts.allowDest is the lender-side policy gate — a
-// commune wires its OPA egress policy (deploy/policies/playnet/doors/
+// commune wires its OPA egress policy (deploy/policies/localchimera/doors/
 // egress.rego) here; the default admits only https:/wss: — never a scheme
 // the fetch can't hold, never a destination the policy didn't name. This
 // is the Mysterium user-side case inside the protocol: the exit is

@@ -17,8 +17,8 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/scope/test-floor-wall-live.scm
 
-(use-modules (playnet test harness) (playnet test scope)
-             (playnet vf schemas) (playnet scope live)
+(use-modules (localchimera test harness) (localchimera test scope)
+             (localchimera vf schemas) (localchimera scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 (define win (all-week-window "00:00" "23:00"))

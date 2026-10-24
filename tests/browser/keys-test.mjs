@@ -31,27 +31,27 @@ const store = (seed = {}, { failOn = null } = {}) => {
 const { K, KEY_TABLE, KEY_FAMILIES, migrateKeys } = await import('../../browser/app/keys.js');
 
 section('the migration');
-const s = store({ 'playnet-keri-kel': 'KEL', 'playnet-keri-id': 'aid|ana||k0', 'dial-log': '[1]', 'pn.theme': 'night',
-                  'playnet-avail-EAid': '[a]', 'playnet-events-local': '[e]', 'playnet.panel.shut.face.time': '1',
-                  'playnet-acme': 'an organisation’s store' });
+const s = store({ 'localchimera-keri-kel': 'KEL', 'localchimera-keri-id': 'aid|ana||k0', 'dial-log': '[1]', 'pn.theme': 'night',
+                  'localchimera-avail-EAid': '[a]', 'localchimera-events-local': '[e]', 'localchimera.panel.shut.face.time': '1',
+                  'localchimera-acme': 'an organisation’s store' });
 const moved = migrateKeys(s);
 check('every former name is moved', moved === 6, `${moved} moved`);
-check('the KEL is under its present name', s.getItem(K.idKel) === 'KEL' && s.getItem('playnet-keri-kel') === null);
+check('the KEL is under its present name', s.getItem(K.idKel) === 'KEL' && s.getItem('localchimera-keri-kel') === null);
 check('the identity hint too', s.getItem(K.idHint) === 'aid|ana||k0');
 check('a family moves with its id', s.getItem(K.ringAvail + 'EAid') === '[a]' && s.getItem(K.ringEvents + 'local') === '[e]'
                                     && s.getItem(K.panelShutFace + 'time') === '1');
 check('a key that kept its name is untouched', s.getItem(K.theme) === 'night');
-check('an organisation’s store is left alone', s.getItem('playnet-acme') === 'an organisation’s store');
+check('an organisation’s store is left alone', s.getItem('localchimera-acme') === 'an organisation’s store');
 check('a second run moves nothing', migrateKeys(s) === 0);
 
-const both = store({ 'playnet-keri-kel': 'OLD', [K.idKel]: 'NEW' });
+const both = store({ 'localchimera-keri-kel': 'OLD', [K.idKel]: 'NEW' });
 migrateKeys(both);
-check('where both names hold a value, the present name’s stands', both.getItem(K.idKel) === 'NEW' && both.getItem('playnet-keri-kel') === null);
+check('where both names hold a value, the present name’s stands', both.getItem(K.idKel) === 'NEW' && both.getItem('localchimera-keri-kel') === null);
 
-const full = store({ 'playnet-keri-kel': 'KEL', 'dial-log': '[1]' }, { failOn: K.idKel });
+const full = store({ 'localchimera-keri-kel': 'KEL', 'dial-log': '[1]' }, { failOn: K.idKel });
 let threw = false;
 try { migrateKeys(full); } catch { threw = true; }
-check('a store that refuses the copy keeps the former name', threw && full.getItem('playnet-keri-kel') === 'KEL');
+check('a store that refuses the copy keeps the former name', threw && full.getItem('localchimera-keri-kel') === 'KEL');
 
 section('the table');
 const all = [...KEY_TABLE, ...KEY_FAMILIES];
@@ -63,7 +63,7 @@ check('every family ends where its id begins', KEY_FAMILIES.every(e => /^pn\.[a-
 check('no former name is a present one', all.every(e => !e.was || !names.includes(e.was)));
 check('no former name is claimed twice', (w => new Set(w).size === w.length)(all.filter(e => e.was).map(e => e.was)));
 check('every entry says what it holds', all.every(e => e.holds.length > 8));
-check('no key sits under the organisations’ prefix', names.every(n => !n.startsWith('playnet-')));
+check('no key sits under the organisations’ prefix', names.every(n => !n.startsWith('localchimera-')));
 
 section('the readers that spell the names themselves');
 const read = (f) => fs.readFileSync(path.resolve(f), 'utf8');

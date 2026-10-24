@@ -20,19 +20,19 @@
 ;;; Usage: guile --no-auto-compile -q -L module tests/federation/federation-wire-host.scm \
 ;;;          A|B <sref-file> <seed-byte> [peer <state-dir> <spec-file>]
 
-(use-modules (playnet solve federation-solve))
-(use-modules (playnet test harness)
-             (playnet federation wire)
-             (playnet federation host)
-             (playnet federation federate)
-             ((playnet solve federation-oracle) #:select (make-boundary-oracle))
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
+(use-modules (localchimera solve federation-solve))
+(use-modules (localchimera test harness)
+             (localchimera federation wire)
+             (localchimera federation host)
+             (localchimera federation federate)
+             ((localchimera solve federation-oracle) #:select (make-boundary-oracle))
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins vat)
              (fibers)
              (ice-9 format) (srfi srfi-1))
 
 (setvbuf (current-output-port) 'line)
-(use-modules (playnet test planner federation-wire-fixture))
+(use-modules (localchimera test planner federation-wire-fixture))
 
 (define args (cdr (command-line)))
 (define (arg i) (and (> (length args) i) (list-ref args i)))

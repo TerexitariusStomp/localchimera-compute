@@ -18,8 +18,8 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-doctor-ride.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine)
-             (playnet solve solver))
+(use-modules (localchimera solve engine)
+             (localchimera solve solver))
 
 (define H    40.0)   ; Dana's hours
 (define HBOB 40.0)   ; Bob the driver's hours

@@ -2,7 +2,7 @@
 ;;; test-eisenberg-gale.scm — the E–G door against its closed forms.
 ;;; Competitive equilibrium from (un)equal incomes as one convex solve
 ;;; (solve/federation-solve.scm eisenberg-gale-split).
-(use-modules (playnet test harness)  (playnet solve engine) (playnet solve federation-solve) (srfi srfi-1))
+(use-modules (localchimera test harness)  (localchimera solve engine) (localchimera solve federation-solve) (srfi srfi-1))
 (define (~= a b) (< (abs (- a b)) 0.02))
 (display "\n── one good, budgets 1 and 3: allocation ∝ budget ──\n")
 (call-with-values

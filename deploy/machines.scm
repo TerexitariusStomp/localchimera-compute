@@ -6,12 +6,12 @@
 ;;; `guix deploy` expects) plus the fleet-host bookkeeping.
 ;;;
 ;;; Usage:
-;;;   PLAYNET_PROVIDER=deploy/providers/provider-1.scm \
+;;;   LOCALCHIMERA_PROVIDER=deploy/providers/provider-1.scm \
 ;;;     guix time-machine -C deploy/channels.scm -- \
 ;;;     deploy -L deploy/guix deploy/machines.scm
 ;;;
 ;;; Server-side counterpart (much smaller closure delta):
-;;;   PLAYNET_PROVIDER=deploy/providers/provider-1.scm \
+;;;   LOCALCHIMERA_PROVIDER=deploy/providers/provider-1.scm \
 ;;;     sudo -E guix system reconfigure -L deploy/guix deploy/os.scm
 
 (define %machines-this-dir
@@ -36,7 +36,7 @@
 ;; hosts.scm to change (bootstrap-state pending) to
 ;; (bootstrap-state bootstrapped), then `guix deploy` will pick it up.
 
-(use-modules (playnet fleet records)
+(use-modules (localchimera fleet records)
              (srfi srfi-1))
 
 (define %fleet-hosts

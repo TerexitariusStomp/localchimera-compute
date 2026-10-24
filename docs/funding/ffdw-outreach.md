@@ -13,12 +13,12 @@
 
 ## Email draft
 
-Subject: playnet-compute — machine-resource commons on the
+Subject: localchimera — machine-resource commons on the
 Spritely/Goblins stack (FFDW intro)
 
 Hello FFDW team —
 
-I'm building playnet-compute, an AGPL machine-resource commons:
+I'm building localchimera, an AGPL machine-resource commons:
 browser tabs act as accountable nodes contributing compute, storage,
 relay, and sensing — jobs are content-addressed envelopes, results are
 signed replayable receipts, settlement is mutual credit with optional
@@ -40,7 +40,7 @@ Where FFDW's mission and the roadmap intersect:
   explicit fallback legs, never as the gate.
 
 489 commits, ~720 green test checks, spec'd in the open
-(`spec/playnet-compute.md`), Radicle-hosted
+(`spec/localchimera.md`), Radicle-hosted
 (`rad:z2xjyuu4adoo1x88is8xtRz2tYwhu`). The next work — a public
 gateway, the demand-API launch, and mesh GA — is what a development
 partnership would fund.

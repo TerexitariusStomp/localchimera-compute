@@ -25,15 +25,15 @@
 ;;; and no runtime inputs — we just install it into the store.
 ;;;
 ;;; Storage access: httpd reads $HOME/.radicle, so HOME points at the SAME
-;;; data-dir as radicle-service.scm (default /var/lib/playnet/radicle) and it
+;;; data-dir as radicle-service.scm (default /var/lib/localchimera/radicle) and it
 ;;; runs as the same user. It only reads; it never mutates node state.
 ;;;
 ;;; Usage in machines.scm:
 ;;;   (service radicle-httpd-service-type
 ;;;            (radicle-httpd-configuration
-;;;             (data-dir "/var/lib/playnet/radicle")
+;;;             (data-dir "/var/lib/localchimera/radicle")
 ;;;             (listen "127.0.0.1:8088")
-;;;             (user "playnet")))
+;;;             (user "localchimera")))
 
 (define-module (radicle-httpd-service)
   #:use-module (gnu services)
@@ -118,15 +118,15 @@ path.")
   ;; HOME for the daemon — it reads $HOME/.radicle. MUST match the node's
   ;; data-dir (radicle-service.scm default) so it serves the same storage.
   (data-dir  radicle-httpd-configuration-data-dir
-             (default "/var/lib/playnet/radicle"))
+             (default "/var/lib/localchimera/radicle"))
   ;; Bind localhost only: nginx (clearnet/onion) and serve-static front it.
   ;; Port 8088 — NOT 8080 (serve-static owns 8080).
   (listen    radicle-httpd-configuration-listen
              (default "127.0.0.1:8088"))
   (user      radicle-httpd-configuration-user
-             (default "playnet"))
+             (default "localchimera"))
   ;; Optional (alias . "rad:…") pairs → repeated --alias flags, to shorten
-  ;; clone URLs (e.g. ("playnet" . "rad:z…") → /playnet.git).
+  ;; clone URLs (e.g. ("localchimera" . "rad:z…") → /localchimera.git).
   (aliases   radicle-httpd-configuration-aliases
              (default '())))
 
@@ -162,7 +162,7 @@ path.")
                 ;; Static musl binary; minimal env. PATH only for any
                 ;; git subprocess it may shell out to.
                 "PATH=/run/current-system/profile/bin")
-          #:log-file "/var/log/playnet/radicle-httpd.log"))
+          #:log-file "/var/log/localchimera/radicle-httpd.log"))
       (stop #~(make-kill-destructor #:grace-period 5))
       (respawn? #t)))))
 
@@ -171,7 +171,7 @@ path.")
 (define (radicle-httpd-activation config)
   #~(begin
       (use-modules (guix build utils))
-      (mkdir-p "/var/log/playnet")))
+      (mkdir-p "/var/log/localchimera")))
 
 ;;; ── Service type ────────────────────────────────────────────────────────────
 

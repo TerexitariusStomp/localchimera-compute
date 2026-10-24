@@ -24,12 +24,12 @@
 ;;; has a cited reversibility, and no limit is carried in a form its physics
 ;;; contradicts.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/knowledge/test-limit-roster.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet vf formulas stocks))
-(use-modules (playnet knowledge catalogues eco))
+(use-modules (localchimera vf formulas stocks))
+(use-modules (localchimera knowledge catalogues eco))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

@@ -1,6 +1,6 @@
 # Navigation flow — directions, preview, turn-by-turn
 
-_Scoped 2026-10-13. Source: five Google Maps screens (bicycle preview, navigating, navigating with the drawer up, navigating with the drawer holding the step list) set against the playnet map face with its pull-up sheet. Companion to [transport-modes-and-observation](../books/transport-modes-and-observation.md), which owns what a journey means to the ledger; this document owns what a journey looks like and how it moves._
+_Scoped 2026-10-13. Source: five Google Maps screens (bicycle preview, navigating, navigating with the drawer up, navigating with the drawer holding the step list) set against the localchimera map face with its pull-up sheet. Companion to [transport-modes-and-observation](../books/transport-modes-and-observation.md), which owns what a journey means to the ledger; this document owns what a journey looks like and how it moves._
 
 A journey on the map has three postures — **preview**, **navigating**, and **navigating with the drawer up** — and one surface carries all three: the pull-up sheet that already rises over the map. Each posture reshapes the sheet, the map camera and the floating chrome together. This document lists every element of that flow, says which part is built, and sets the stages that build the rest.
 
@@ -44,7 +44,7 @@ What the family stands on:
 | Sheet | `openSheetView` / `closeSheetView` / `sheetHeight` / `sheetHolds` (`ui/app/tabs/social/share.ts`) with `{ full, fit, sticky, stepped, esc }` — a view that keeps its own rests passes `stepped`, and answers its own Esc with `esc`, so it keeps no key listener; CSS-class detents (`browser/app.html`) |
 | Heading | `ui/app/compass.ts` (`deviceHeading`, `needleTap`, 2° deadband); it rotates the map on touch devices only |
 | Ledger | the `journey` door, called from `ledger.ts` |
-| Mode set in the planner | pedestrian · bicycle · auto · bus · multimodal (`module/playnet/solve/routing.scm`) — the engine speaks all five |
+| Mode set in the planner | pedestrian · bicycle · auto · bus · multimodal (`module/localchimera/solve/routing.scm`) — the engine speaks all five |
 | The REPL page | `browser/repl.js` reads Valhalla through `route/data.js`, `route/modes.js` and `route/facts.js` too; its own map drawing (`drawRoute`) is the REPL's alone |
 
 ### 1.2 What the five screens show that the map face still lacks
@@ -141,7 +141,7 @@ Each is tagged **v1** (built by R5), **later**, or **n/a**.
 | Arrival | v1 (R3) | Within about 30 m of the destination: banner `You have arrived`, side of the street if known; ETA bar offers `Done`; `journeyEnd` fires. |
 | Live ETA | v1 (R3) | Remaining time = remaining route time × (recent speed ÷ route's modelled speed), clamped; arrival clock from `clockOf`. |
 | Screen wake-lock while navigating | v1 (R3) | `navigator.wakeLock`; released on end. |
-| Day/night map | v1 | Handled by the theme layer on `playnet:theme`; the banner holds its own palette (§1.3). |
+| Day/night map | v1 | Handled by the theme layer on `localchimera:theme`; the banner holds its own palette (§1.3). |
 | Transit legs | v1 (R5) | Walk · ride · walk, with line badge, headsign, stops count, board/alight times from `transit_info`; arrival-time requests use `date_time`. |
 | Add stops / via | later | The proxy already takes `via=lat,lng;lat,lng`. |
 | Switch to an alternative mid-trip | later | Needs alternatives kept alive after Start. |

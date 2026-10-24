@@ -17,9 +17,9 @@
 ;;;
 ;;; Run:  guile -q -L module tests/solve/test-parts.scm
 
-(use-modules (playnet test harness) (srfi srfi-1) (ice-9 format)
-             (playnet vf facts parts)
-             ((playnet solve engine) #:select (key-terms key-prefix key-process key-arc column-terms)))
+(use-modules (localchimera test harness) (srfi srfi-1) (ice-9 format)
+             (localchimera vf facts parts)
+             ((localchimera solve engine) #:select (key-terms key-prefix key-process key-arc column-terms)))
 
 (define (raises? thunk) (catch #t (lambda () (thunk) #f) (lambda _ #t)))
 

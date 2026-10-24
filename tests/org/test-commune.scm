@@ -1,10 +1,10 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-commune.scm — ^commune with 4-seal facets
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas) (playnet observation states))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet boot scope) ((playnet keri acdc-store) #:select (spawn-acdc-store)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas) (localchimera observation states))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera boot scope) ((localchimera keri acdc-store) #:select (spawn-acdc-store)))
 (use-modules (goblins) (goblins utils hashmap))
 
 

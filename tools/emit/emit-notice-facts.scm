@@ -6,7 +6,7 @@
 ;;;   emit-notice-facts.scm check      exit 1 if any marked figure is stale
 ;;;   emit-notice-facts.scm write      rewrite every marked figure in place
 ;;;
-;;; module/playnet/knowledge/law/product.scm states the notices' own
+;;; module/localchimera/knowledge/law/product.scm states the notices' own
 ;;; figures (version, effective date, the age floor, how often logs rotate, the
 ;;; breach window, the speech model's size, the notice period for a change).
 ;;; The pages quote them in running prose, so each quotation is marked where it
@@ -21,7 +21,7 @@
 ;;; a page cannot pass for a figure. `make check-notice-facts-fresh` is in
 ;;; test-fast; `make notice-facts-emit` writes.
 
-(use-modules (playnet knowledge law product)
+(use-modules (localchimera knowledge law product)
              (ice-9 textual-ports) (ice-9 regex) (srfi srfi-1))
 
 (define TARGETS '("browser/terms.html" "browser/privacy.html"))

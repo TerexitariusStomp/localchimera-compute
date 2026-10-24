@@ -1,0 +1,144 @@
+{
+  "$id": "EP5TddKU86lenK_1FPzZQgPSVPA-LBNE2CD5ulPTpXOH",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LocalChimera Claim Credential",
+  "description": "Consumption mirror of the work-event credential: the holder drew earned credit (labour-hours) to receive an individually-claimable good. No balance on the token — credit is derived as gross minus claimed.",
+  "type": "object",
+  "credentialType": "LocalChimeraClaimCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Optional salt"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the witnessing scope)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the claimant)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "event-id": {
+              "type": "string",
+              "description": "The transfer EconomicEvent id"
+            },
+            "claimant": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "labor-cost": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Labour-hours of credit drawn"
+            },
+            "unit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "resource-spec": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "qty": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "timestamp": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "settles": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Settled <claim> SAID"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "event-id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "e": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Edge-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "description": "ACDC edge block: named edges to other credentials",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Edge-block SAID"
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

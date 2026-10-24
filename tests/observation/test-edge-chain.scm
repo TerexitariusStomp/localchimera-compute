@@ -10,10 +10,10 @@
 ;;;   GUIX_ENVIRONMENT=<profile-with-libblake3> guile -L module \
 ;;;     tests/observation/test-edge-chain.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet observation observer) (playnet vf schemas) (srfi srfi-1))
-(use-modules (playnet observation credentials) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera observation observer) (localchimera vf schemas) (srfi srfi-1))
+(use-modules (localchimera observation credentials) (localchimera credentials work) (localchimera keri acdc) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (srfi srfi-1))
 
 ;; recipient-side intent + a fully-satisfying work event (Validation Gate ⇒ 1.0)
@@ -38,8 +38,8 @@
     (work! obs "ada" "spec:surgeon" 20 "ev3" "in3")
     (work! obs "ada" "spec:baker"    5 "ev4" "in4")
 
-    (define work-creds  ($ acdc 'by-schema *schema-playnet-work-event*))
-    (define skill-creds ($ acdc 'by-schema *schema-playnet-skill*))
+    (define work-creds  ($ acdc 'by-schema *schema-localchimera-work-event*))
+    (define skill-creds ($ acdc 'by-schema *schema-localchimera-skill*))
     (define surgeon (find (lambda (c) (and (equal? (cred-holder c) "ada")
                                            (equal? (cred-claim c 'skill) "spec:surgeon")))
                           skill-creds))

@@ -14,9 +14,9 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-multiperiod-binding.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan) (playnet solve world)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve plan) (localchimera solve world)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define win (all-week-window "09:00" "17:00"))
 (define agents (list (person* "ada" #:name "Ada" #:window win)))

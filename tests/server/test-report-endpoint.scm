@@ -8,8 +8,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/server/test-report-endpoint.scm
 
-(use-modules (playnet test harness)
-             ((playnet utils paths) #:select (ensure-directory!))
+(use-modules (localchimera test harness)
+             ((localchimera utils paths) #:select (ensure-directory!))
              ((server serve-static)
               #:select (handle-report-post handle-report-list handle-report-delete
                         handle-feedback-post handle-feedback-list))
@@ -20,10 +20,10 @@
              (json))
 
 (define %tmp-root
-  (let ((p (string-append "/tmp/playnet-report-test-" (number->string (getpid)))))
+  (let ((p (string-append "/tmp/localchimera-report-test-" (number->string (getpid)))))
     (ensure-directory! p)
     p))
-(setenv "PLAYNET_DATA_DIR" %tmp-root)
+(setenv "LOCALCHIMERA_DATA_DIR" %tmp-root)
 
 (define (call-handler thunk) (call-with-values thunk list))
 (define (status-of pair) (response-code (car pair)))
@@ -37,7 +37,7 @@
 (define* (admin-request path #:key (token #f))
   (build-request (string->uri (string-append "http://localhost" path))
                  #:method 'GET
-                 #:headers (if token `((x-playnet-admin . ,token)) '())))
+                 #:headers (if token `((x-localchimera-admin . ,token)) '())))
 
 (define (report! payload)
   (call-handler (lambda () (handle-report-post (post-request "/report") (string->utf8 payload)))))

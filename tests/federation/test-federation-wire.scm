@@ -13,14 +13,14 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-wire.scm
 
-(use-modules ((playnet solve solver) #:select (*last-certificate*)) (playnet test harness)
-             (playnet federation wire)
-             ((playnet solve decomposed) #:select (solve-decomposed)) ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
-             ((playnet keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
+(use-modules ((localchimera solve solver) #:select (*last-certificate*)) (localchimera test harness)
+             (localchimera federation wire)
+             ((localchimera solve decomposed) #:select (solve-decomposed)) ((localchimera solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
+             ((localchimera keri citizen-sig) #:select (make-keri-identity keri-identity-aid))
              (goblins) (goblins actor-lib methods)
              (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet test planner federation-wire-fixture))
+(use-modules (localchimera test planner federation-wire-fixture))
 
 (define (last-certificate) *last-certificate*)   ; the solver's cell, read late
 

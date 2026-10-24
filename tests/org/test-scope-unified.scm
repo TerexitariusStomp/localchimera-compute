@@ -6,10 +6,10 @@
 ;;; scopes; recomposition (merge, split, rejoin) emits proper ACDCs;
 ;;; conflict detection surfaces overlapping commitments.
 
-(use-modules (playnet test harness))
-(use-modules (playnet scope root))
-(use-modules (playnet utils endorsement))
-(use-modules (playnet credentials commitments) (playnet credentials membership) (playnet credentials recomposition) (playnet keri acdc) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root))
+(use-modules (localchimera utils endorsement))
+(use-modules (localchimera credentials commitments) (localchimera credentials membership) (localchimera credentials recomposition) (localchimera keri acdc) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (fibers) (fibers conditions) (ice-9 atomic) (srfi srfi-1))
 
@@ -141,7 +141,7 @@
                 (and ($ fed 'member-commune "watershed") #t))
 
     ;; Membership ACDCs issued
-    (let ((creds ($ store 'by-schema *schema-playnet-federation-membership*)))
+    (let ((creds ($ store 'by-schema *schema-localchimera-federation-membership*)))
       (check "2 federation-membership ACDCs" (length creds) 2))))
 
 
@@ -171,7 +171,7 @@
       (check-pred "combined AID returned"
                   (string? combined-aid))
       ;; Merger ACDC issued in A's store
-      (let ((mergers ($ store-a 'by-schema *schema-playnet-scope-merger*)))
+      (let ((mergers ($ store-a 'by-schema *schema-localchimera-scope-merger*)))
         (check "1 merger ACDC in A's store" (length mergers) 1)
         (check "predecessor-a = E_a"
                (cred-claim (car mergers) 'predecessor-a) "E_a")
@@ -196,7 +196,7 @@
 
     (let ((sub-aids '("E_sub1" "E_sub2")))
       ($ a 'split sub-aids gov)
-      (let ((splits ($ store 'by-schema *schema-playnet-scope-split*)))
+      (let ((splits ($ store 'by-schema *schema-localchimera-scope-split*)))
         (check "1 split ACDC" (length splits) 1)
         (check "parent-scope-aid"
                (cred-claim (car splits) 'parent-scope-aid) "E_big")
@@ -221,7 +221,7 @@
          (gov ($ commune 'mint-gov-cap "op")))
 
     ($ commune 'rejoin-federation gov "E_old_fed" "E_new_fed")
-    (let ((rejoins ($ store 'by-schema *schema-playnet-scope-rejoin*)))
+    (let ((rejoins ($ store 'by-schema *schema-localchimera-scope-rejoin*)))
       (check "1 rejoin ACDC" (length rejoins) 1)
       (check "old-federation-aid"
              (cred-claim (car rejoins) 'old-federation-aid) "E_old_fed")

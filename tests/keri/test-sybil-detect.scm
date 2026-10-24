@@ -4,10 +4,10 @@
 ;;; Both heuristics must (a) flag synthetic Sybil topologies, and
 ;;; (b) NOT flag legitimate community graphs at small sizes.
 
-(use-modules (playnet test harness))
-(use-modules (playnet keri acdc) (playnet keri acdc-store)
-             (playnet keri first-person credentials) (playnet keri first-person predicates)
-             (playnet keri first-person sybil-detect))
+(use-modules (localchimera test harness))
+(use-modules (localchimera keri acdc) (localchimera keri acdc-store)
+             (localchimera keri first-person credentials) (localchimera keri first-person predicates)
+             (localchimera keri first-person sybil-detect))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (rnrs bytevectors) (srfi srfi-1))
 

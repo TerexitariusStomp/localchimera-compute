@@ -17,7 +17,7 @@
 ;;; question; so is deprecated/.
 ;;;
 ;;; A module that holds state other modules write states it as a context cell
-;;; (playnet protocol context, `define-context … #:cell`): the write is then a
+;;; (localchimera protocol context, `define-context … #:cell`): the write is then a
 ;;; setter call on the one instance, not an assignment of an import.
 ;;;
 ;;; A module that imports a `(hoot …)` module is the browser's alone and does

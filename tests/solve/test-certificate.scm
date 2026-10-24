@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; test-certificate.scm — a plan and its proof are one object.
 ;;;
-;;; Spec: docs/playnet.typ §7.11 ("it carries its own certificate: the duality
+;;; Spec: docs/localchimera.typ §7.11 ("it carries its own certificate: the duality
 ;;;       gap μ … is driven to zero, so the plan is provably within a known,
 ;;;       shrinking margin of the best possible"), and docs/social-category.typ
 ;;;       §5.3 + §8 Obligation 8 — optimality IS conjugacy, so a solve that emits
@@ -26,9 +26,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-certificate.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet test planner worked-example)
-             (playnet solve solver)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera test planner worked-example)
+             (localchimera solve solver)
              (srfi srfi-1)
              (ice-9 format)
              (system foreign))

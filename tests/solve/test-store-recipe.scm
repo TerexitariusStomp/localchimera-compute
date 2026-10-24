@@ -43,14 +43,14 @@
 ;;; good crosses the period because the scope OWNS A CONTAINER, which is the claim
 ;;; this test always made and could not previously demonstrate.
 ;;;
-;;; Run: guile --no-auto-compile -L module/playnet/planner \
+;;; Run: guile --no-auto-compile -L module/localchimera/planner \
 ;;;        tests/solve/test-store-recipe.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)
@@ -152,7 +152,7 @@
                       (fourth with-s))))
 
 ;; ── keep-in-place is ONE source of truth ────────────────────────────────────
-;; playnet.typ §"Transport and storage are one recipe": which arc a relocation
+;; localchimera.typ §"Transport and storage are one recipe": which arc a relocation
 ;; runs along "is not declared; it is derived from the container" — keep-in-place
 ;; picks time over space. That flag was once a "stationary" classifiedAs tag and
 ;; is now a field, and the promotion is complete: the smart constructor folds any

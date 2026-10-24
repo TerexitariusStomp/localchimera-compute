@@ -4,8 +4,8 @@
 ;;;
 ;;; Run: make test-mesh-mailbox
 
-(use-modules (playnet test harness)
-             (playnet gateway mesh-mailbox)
+(use-modules (localchimera test harness)
+             (localchimera gateway mesh-mailbox)
              (goblins)
              (ice-9 format))
 

@@ -12,11 +12,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-one-off-window.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve ingest) (playnet solve world)
-             (playnet vf schemas) (playnet vf beyond schedules)
-             ((playnet knowledge dsl shorthand) #:select (er all-week-window)))
+(use-modules (localchimera solve engine) (localchimera solve ingest) (localchimera solve world)
+             (localchimera vf schemas) (localchimera vf beyond schedules)
+             ((localchimera knowledge dsl shorthand) #:select (er all-week-window)))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

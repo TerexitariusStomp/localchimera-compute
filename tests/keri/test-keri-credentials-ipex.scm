@@ -2,7 +2,7 @@
 ;;; tests/keri/test-keri-credentials-ipex.scm — IPEX flow + multi-sig + schema
 ;;;
 ;;; Complements test-keri-credentials.scm (push flow + verification) by
-;;; covering the rest of (playnet keri credentials):
+;;; covering the rest of (localchimera keri credentials):
 ;;;
 ;;;   Pull (request) flow:
 ;;;     - acdc-apply  (holder requests credential)
@@ -27,9 +27,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keri/test-keri-credentials-ipex.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri credentials)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri credentials)
              (web server)
              (web request)
              (web response)
@@ -290,7 +290,7 @@
 
 (format #t "~%=== acdc-create-registry ===~%")
 
-(let ((rid (acdc-create-registry "gov" "playnet-credentials")))
+(let ((rid (acdc-create-registry "gov" "localchimera-credentials")))
   (check "create-registry returns the registry id"
          (equal? %registry rid))
   (check "acdc-registry-id reflects created id"

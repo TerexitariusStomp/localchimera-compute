@@ -14,11 +14,11 @@
 ;;; Run from project root:
 ;;;   tools/test/own-ccache.sh guile --no-auto-compile -q -L module tests/credentials/test-frozen-emission.scm
 
-(use-modules (playnet test harness)
-             (playnet keri acdc) (playnet credentials delegation) (playnet credentials membership)
-             (playnet credentials keys) (playnet credentials recomposition) (playnet credentials voting)
-             (playnet credentials custody) (playnet credentials audit) (playnet credentials declarations)
-             (playnet credentials commitments) (playnet credentials work) (playnet keri first-person credentials)
+(use-modules (localchimera test harness)
+             (localchimera keri acdc) (localchimera credentials delegation) (localchimera credentials membership)
+             (localchimera credentials keys) (localchimera credentials recomposition) (localchimera credentials voting)
+             (localchimera credentials custody) (localchimera credentials audit) (localchimera credentials declarations)
+             (localchimera credentials commitments) (localchimera credentials work) (localchimera keri first-person credentials)
              (srfi srfi-1))
 
 (define-syntax-rule (frozen name said form)

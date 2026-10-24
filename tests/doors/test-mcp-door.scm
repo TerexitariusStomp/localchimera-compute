@@ -18,25 +18,25 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-mcp-door.scm
 
-(use-modules (playnet test harness)
-             (playnet doors mcp)
-             (playnet doors http)
-             (playnet identity devices)
-             (playnet doors protocol) (playnet protocol shapes) (playnet protocol mcp)
-             ((playnet keri signify-portable)
+(use-modules (localchimera test harness)
+             (localchimera doors mcp)
+             (localchimera doors http)
+             (localchimera identity devices)
+             (localchimera doors protocol) (localchimera protocol shapes) (localchimera protocol mcp)
+             ((localchimera keri signify-portable)
               #:select (bran->signing-keypair bran->rotation-keypair public-key->aid-prefix
                         build-icp next-key-digest seed->ed25519-keypair))
-             ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
-             ((playnet keri cesr) #:select (cesr-bytes->qb64))
+             ((localchimera keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64))
              
-             ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
+             ((localchimera keri first-person credentials) #:select (make-device-authorization-credential))
              (web request) (web response) (web uri)
              (rnrs bytevectors)
              (json) (ice-9 textual-ports)
              (srfi srfi-1))
 
 ;; ── a person, a device, an enrollment ─────────────────────────────────────
-(define tmp (let ((d (string-append "/tmp/playnet-mcp-door-" (number->string (getpid)))))
+(define tmp (let ((d (string-append "/tmp/localchimera-mcp-door-" (number->string (getpid)))))
               (mkdir d) d))
 (device-registry-dir tmp)
 
@@ -115,7 +115,7 @@
 (check "initialize is 200" (= 200 (car init)))
 (check "…with the protocol revision" (equal? %mcp-protocol-version (aref (cdr init) "result" "protocolVersion")))
 (check-pred "…and the tools capability" (aref (cdr init) "result" "capabilities" "tools"))
-(check "…and the server's name" (equal? "playnet gateway" (aref (cdr init) "result" "serverInfo" "name")))
+(check "…and the server's name" (equal? "localchimera gateway" (aref (cdr init) "result" "serverInfo" "name")))
 (define inited (mcp "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}" '()))
 (check "notifications/initialized is 202 with no body" (and (= 202 (car inited)) (not (cdr inited))))
 (check "ping answers an empty result" (equal? '() (aref (cdr (mcp (rpc "ping") '())) "result")))
@@ -130,7 +130,7 @@
                (map (lambda (t) (aref t "name")) (vector->list tools))))
 (define who-tool (find (lambda (t) (equal? "lobby.who" (aref t "name"))) (vector->list tools)))
 (check-pred "a tool carries an input schema" (aref who-tool "inputSchema" "type"))
-(check-pred "…and its topic" (aref who-tool "x-playnet-topic"))
+(check-pred "…and its topic" (aref who-tool "x-localchimera-topic"))
 (check "the live list and the committed manifest agree"
        (equal? (json-string->scm (scm->json-string (mcp-tools)))
                (aref (json-string->scm (call-with-input-file "browser/api/mcp-tools.json"

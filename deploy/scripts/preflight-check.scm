@@ -3,7 +3,7 @@
 !#
 ;;; deploy/scripts/preflight-check.scm — pre-deploy validation
 ;;;
-;;; Validates the entire playnet configuration before running guix deploy.
+;;; Validates the entire localchimera configuration before running guix deploy.
 ;;; Checks every secret, config file, service reachability, and dependency.
 ;;; Reports a clear pass/fail for each item so the operator knows exactly
 ;;; what's missing.
@@ -125,7 +125,7 @@
 
 ;;; ── Checks ───────────────────────────────────────────────────────────
 
-(format #t "~%═══ playnet preflight check ═══~%~%")
+(format #t "~%═══ localchimera preflight check ═══~%~%")
 
 ;; ── Core deploy files ─────────────────────────────────────────────
 (format #t "── Deploy files ──~%")
@@ -155,7 +155,7 @@
      ("Monero RPC password"     . "MONERO_RPC_PASSWORD")
      ("Monero wallet seed"      . "MONERO_WALLET_SEED")
      ("SporeStack token"        . "SPORESTACK_TOKEN")
-     ("LUKS passphrase"         . "PLAYNET_LUKS_PASSPHRASE")
+     ("LUKS passphrase"         . "LOCALCHIMERA_LUKS_PASSPHRASE")
      ("Mosquitto password"      . "MOSQUITTO_PASSWORD")
      ("KERIA passcode"          . "KERIA_PASSCODE")
      ("API keys"                . "API_KEYS"))))
@@ -202,8 +202,8 @@
         ;; comes from the provider config's `witnesses` field if set,
         ;; else the canonical 6. Below the toad-table floor of 4 the
         ;; quorum is meaningless, so we warn rather than just count.
-        (let* ((ks-dir "/var/lib/playnet/keria/ks")
-               (provider-file (getenv "PLAYNET_PROVIDER"))
+        (let* ((ks-dir "/var/lib/localchimera/keria/ks")
+               (provider-file (getenv "LOCALCHIMERA_PROVIDER"))
                (expected-count
                 (or (and provider-file (file-exists? provider-file)
                          (let ((cfg (primitive-load provider-file)))
@@ -217,7 +217,7 @@
               (cond
                ((not entries)
                 (warn "witness keystores"
-                      "couldn't read /var/lib/playnet/keria/ks"))
+                      "couldn't read /var/lib/localchimera/keria/ks"))
                ((>= (length entries) expected-count)
                 (ok (format #f "witness keystores present (~a found, ~a expected)"
                             (length entries) expected-count))
@@ -292,10 +292,10 @@
          #f)))  ; skip if file doesn't exist
  '(("secrets.scm"        . "deploy/secrets.scm")
    ("age key"             . "deploy/.age-key.txt")
-   ("wallet password"     . "/var/lib/playnet/monero/wallet-password.txt")
-   ("RPC login"           . "/var/lib/playnet/monero/rpc-login.txt")
-   ("SporeStack token"    . "/var/lib/playnet/sporestack-token.txt")
-   ("MQTT password"       . "/var/lib/playnet/mosquitto/mqtt-password.txt")))
+   ("wallet password"     . "/var/lib/localchimera/monero/wallet-password.txt")
+   ("RPC login"           . "/var/lib/localchimera/monero/rpc-login.txt")
+   ("SporeStack token"    . "/var/lib/localchimera/sporestack-token.txt")
+   ("MQTT password"       . "/var/lib/localchimera/mosquitto/mqtt-password.txt")))
 
 ;; ── Git status ────────────────────────────────────────────────────
 (format #t "~%── Git ──~%")

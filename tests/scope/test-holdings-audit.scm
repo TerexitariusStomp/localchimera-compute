@@ -26,11 +26,11 @@
 ;;; Run from repo root:
 ;;;   guile --no-auto-compile -q -L module tests/scope/test-holdings-audit.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet knowledge recipes berlin-commune-seed) (playnet knowledge recipes berlin-food-seed) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules (localchimera test harness))
+(use-modules (localchimera knowledge recipes berlin-commune-seed) (localchimera knowledge recipes berlin-food-seed) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
 (use-modules (goblins) (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
-(use-modules ((playnet utils units) #:select ((time-unit? . bare-time-unit?))))   ; the one reader of "is this a time?"
+(use-modules ((localchimera utils units) #:select ((time-unit? . bare-time-unit?))))   ; the one reader of "is this a time?"
 
 ;;; A CAPACITY is a rate, and a rate is one unit written as a quotient —
 ;;; `hours/day`, `hours/week` (utils/units.scm §division units). So the two things

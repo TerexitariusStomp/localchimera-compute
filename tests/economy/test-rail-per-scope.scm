@@ -17,14 +17,14 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/economy/test-rail-per-scope.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules ((playnet vf facts rail) #:select (spec-claimable? spec-rail))
-             ((playnet observation account) #:select (resource-individually-claimable?)))
-(use-modules (playnet test harness)
-             (playnet vf facts rail) (playnet vf schemas)
-             (playnet scope live)
-             (playnet economy socialization) (playnet keri acdc-store)
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules ((localchimera vf facts rail) #:select (spec-claimable? spec-rail))
+             ((localchimera observation account) #:select (resource-individually-claimable?)))
+(use-modules (localchimera test harness)
+             (localchimera vf facts rail) (localchimera vf schemas)
+             (localchimera scope live)
+             (localchimera economy socialization) (localchimera keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 

@@ -3,7 +3,7 @@
 ;;;
 ;;; Runs monero-wallet-rpc as a native Shepherd service, pointed at a
 ;;; *remote* Monero daemon. We deliberately do NOT run monerod on the
-;;; playnet server: zero blockchain storage, zero chain-sync load.
+;;; localchimera server: zero blockchain storage, zero chain-sync load.
 ;;;
 ;;; Trust tradeoff: the remote daemon sees our view-key scan traffic
 ;;; (addresses we're watching, rough traffic patterns). The daemon
@@ -20,14 +20,14 @@
 ;;;
 ;;;   At deploy time, machines.scm loads secrets.scm via primitive-load,
 ;;;   we capture the env vars with getenv, write them into 0600
-;;;   password files inside /var/lib/playnet/monero/ during activation,
+;;;   password files inside /var/lib/localchimera/monero/ during activation,
 ;;;   and pass --password-file / --rpc-login to keep the values off the
 ;;;   command line (ps-visible) and out of the Guix store.
 ;;;
 ;;; One-time bootstrap (cannot be scripted — needs entropy + seed):
 ;;;
-;;;   sudo -u playnet monero-wallet-cli \
-;;;        --generate-new-wallet /var/lib/playnet/monero/playnet.wallet \
+;;;   sudo -u localchimera monero-wallet-cli \
+;;;        --generate-new-wallet /var/lib/localchimera/monero/localchimera.wallet \
 ;;;        --daemon-address plowsof3t5hogddwabaeiyrno25efmzfxyro2vligremt7sxpsclfaid.onion:18089 \
 ;;;        --mnemonic-language English
 ;;;
@@ -41,14 +41,14 @@
 ;;;   (use-modules (monero-service))
 ;;;   (service monero-service-type
 ;;;            (monero-configuration
-;;;             (data-dir "/var/lib/playnet/monero")
-;;;             (user "playnet")))
+;;;             (data-dir "/var/lib/localchimera/monero")
+;;;             (user "localchimera")))
 ;;;
 ;;; Check after deploy:   herd status monero-wallet-rpc
 ;;;                       herd log    monero-wallet-rpc
 ;;;
 ;;; Capability-secured access: a ^monero-wallet Goblins actor
-;;; (module/playnet/monero/wallet.scm) wraps this RPC endpoint; external
+;;; (module/localchimera/monero/wallet.scm) wraps this RPC endpoint; external
 ;;; callers go through a wrapping service actor that only exposes
 ;;; read/create-address methods. Spend methods (transfer, sweep_all)
 ;;; are reachable only from the operator REPL.
@@ -80,10 +80,10 @@
   ;; Persistent wallet state dir. Holds the wallet file (created once
   ;; out-of-band), wallet cache, password files, and the poller state.
   (data-dir         monero-configuration-data-dir
-                    (default "/var/lib/playnet/monero"))
+                    (default "/var/lib/localchimera/monero"))
   ;; Wallet file path — created once via monero-wallet-cli; see header.
   (wallet-file      monero-configuration-wallet-file
-                    (default "/var/lib/playnet/monero/playnet.wallet"))
+                    (default "/var/lib/localchimera/monero/localchimera.wallet"))
   ;; Chain height the seed-restore scans from: the wallet's birth height,
   ;; with a margin below it. 0 scans the whole chain since 2014 — days
   ;; over Tor, with the wallet's RPC port closed until it ends — so a
@@ -96,7 +96,7 @@
                     (default 18082))
   ;; RPC user name paired with MONERO_RPC_PASSWORD in --rpc-login.
   (rpc-user         monero-configuration-rpc-user
-                    (default "playnet"))
+                    (default "localchimera"))
   ;; Group granted read access to rpc-login.txt (mode 0640), for a
   ;; wallet client that runs as a different user than this service.
   ;; #f keeps the file 0600 and owner-only.
@@ -116,7 +116,7 @@
                     (default #f))
   ;; User to run as. Must already exist in machines.scm user list.
   (user             monero-configuration-user
-                    (default "playnet")))
+                    (default "localchimera")))
 
 ;;; ── Shepherd service ────────────────────────────────────────────────────
 
@@ -194,23 +194,23 @@
               #:directory #$data-dir
               #:environment-variables
               (list (string-append "HOME=" #$data-dir))
-              #:log-file "/var/log/playnet/monero-wallet-rpc.log")
+              #:log-file "/var/log/localchimera/monero-wallet-rpc.log")
              args))))
       (stop #~(make-kill-destructor))
       (respawn? #t)))))
 
 ;;; ── Activation ──────────────────────────────────────────────────────────
 ;;;
-;;; - mkdir-p data-dir + chown playnet
-;;; - write wallet-password.txt (0600, playnet-owned) from
+;;; - mkdir-p data-dir + chown localchimera
+;;; - write wallet-password.txt (0600, localchimera-owned) from
 ;;;   MONERO_WALLET_PASSWORD captured at deploy time
-;;; - write rpc-login.txt    (0600, playnet-owned) from MONERO_RPC_PASSWORD
+;;; - write rpc-login.txt    (0600, localchimera-owned) from MONERO_RPC_PASSWORD
 ;;; - if MONERO_WALLET_SEED is set AND the wallet file does not exist,
 ;;;   materialize it from the seed via `monero-wallet-cli --generate-from-json`
 ;;;   in --offline mode. This closes the cold-start loop: wipe the server,
 ;;;   `guix deploy`, and the same wallet (same addresses, same balance
 ;;;   after chain rescan) comes back from a single root secret in secrets.scm.
-;;; - ensure /var/log/playnet exists
+;;; - ensure /var/log/localchimera exists
 ;;;
 ;;; MONERO_WALLET_PASSWORD / MONERO_RPC_PASSWORD exported at reconfigure time
 ;;; are written; unset, the files keep their content (os.scm's
@@ -259,7 +259,7 @@
 
           (mkdir-p #$data-dir)
           (chown #$data-dir uid gid)
-          (mkdir-p "/var/log/playnet")
+          (mkdir-p "/var/log/localchimera")
 
           ;; A password exported at reconfigure time is written; an unset
           ;; one leaves the file as it stands (the box's encrypted secrets
@@ -315,26 +315,26 @@
             (chown genjson uid gid)
 
             ;; monero-wallet-cli needs a HOME for its history/cache — point
-            ;; it at data-dir so stray files land under playnet's control.
+            ;; it at data-dir so stray files land under localchimera's control.
             (setenv "HOME" #$data-dir)
 
             (let ((status
                    (system* #$wallet-cli
                             "--generate-from-json" genjson
                             "--offline"
-                            "--log-file" "/var/log/playnet/monero-wallet-cli.log"
+                            "--log-file" "/var/log/localchimera/monero-wallet-cli.log"
                             "--log-level" "1"
                             "--command" "exit")))
               (if (zero? status)
                   (format #t "monero: wallet materialized successfully~%")
                   (format (current-error-port)
-                          "monero: monero-wallet-cli exited with status ~a — see /var/log/playnet/monero-wallet-cli.log~%"
+                          "monero: monero-wallet-cli exited with status ~a — see /var/log/localchimera/monero-wallet-cli.log~%"
                           status)))
 
             ;; Scrub the seed JSON regardless of exit status.
             (when (file-exists? genjson) (delete-file genjson))
 
-            ;; Chown the resulting wallet files to playnet. monero-wallet-cli
+            ;; Chown the resulting wallet files to localchimera. monero-wallet-cli
             ;; creates up to three artifacts: <file>, <file>.keys, and
             ;; <file>.address.txt. Only the .keys file is sensitive (it holds
             ;; the encrypted private keys), but we lock all three down.

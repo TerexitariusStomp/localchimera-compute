@@ -7,7 +7,7 @@
 ;;; Effects" / "Resource Effects" / "Implied Transfers"; concepts/transfers.md;
 ;;; concepts/accounting.md, "Making Corrections"; the per-action values in
 ;;; docs/valueflows/assets/all_vf.TTL). The observer
-;;; (module/playnet/observation/observer.scm) is the stockbook that folds
+;;; (module/localchimera/observation/observer.scm) is the stockbook that folds
 ;;; events into resources. Here an INDEPENDENT REFERENCE INTERPRETER of the spec's
 ;;; prose, driven by the action table PARSED FROM THE TTL AT RUN TIME (not by the
 ;;; repo's own *action-definitions*), predicts the resources after each event, and
@@ -15,7 +15,7 @@
 ;;; ^observer actor call) is compared with it field by field:
 ;;;
 ;;;     onhand · accounting · currentLocation · containedIn · primaryAccountable ·
-;;;     stage · state · existence       (+ custodian-scope, a playnet field, §custody)
+;;;     stage · state · existence       (+ custodian-scope, a localchimera field, §custody)
 ;;;
 ;;; "Number up here, number down there": the quantities are compared exactly.
 ;;;
@@ -57,7 +57,7 @@
 ;;;      reference takes the specification function as a parameter and the main suites
 ;;;      bind it to the identity, registering each process with its own name.
 ;;;   A4 custody has no resource field in VF (it is the onhandQuantity of the
-;;;      custodian's resource). The observer's `custodian-scope` is a playnet field; the
+;;;      custodian's resource). The observer's `custodian-scope` is a localchimera field; the
 ;;;      reference models the implied custody transfer as setting it, reported as its
 ;;;      own field.
 ;;;
@@ -66,7 +66,7 @@
 ;;; (§CLASSIFY), each of which names it and says whether it is
 ;;;    bug   — observer departs from the spec and nothing in the source says why:
 ;;;            the check FAILS while it reproduces;
-;;;    ext   — a deliberate playnet extension, documented in schemas.scm/observer.scm:
+;;;    ext   — a deliberate localchimera extension, documented in schemas.scm/observer.scm:
 ;;;            the check is an `xfail`: it passes while the observer shows exactly the
 ;;;            documented departure, listed in the "extensions" section;
 ;;;    spec  — the reference misreads the spec (fixed in the reference, kept as a note).
@@ -76,15 +76,15 @@
 ;;;   cd <repo> && guix shell --pure -L deploy/guix -m deploy/manifests/dev-test-manifest.scm -- \
 ;;;     guile --no-auto-compile -q -L module tests/observation/vf-conformance-effects-test.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet observation observer)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera observation observer)
              (goblins) (goblins vat)
              (goblins utils hashmap)
              (srfi srfi-1) (srfi srfi-13)
              (ice-9 format))
 
-(use-modules (playnet test vf-ttl))
+(use-modules (localchimera test vf-ttl))
 
 (define root (vf-repo-root))
 (define table (ttl-action-table root))          ; the vocabulary, from the TTL
@@ -1141,7 +1141,7 @@
          (rget (obs-res st "R1") 'loc) "L0"))
 
 ;;; ═════════════════════════════════════════════════════════════════════════════
-;;; §EXT — deliberate playnet extensions, pinned as xfails
+;;; §EXT — deliberate localchimera extensions, pinned as xfails
 ;;; ═════════════════════════════════════════════════════════════════════════════
 ;;; Each check passes while the observer shows EXACTLY the departure named, and
 ;;; states the spec's value beside it, so a change in either direction is noticed.
@@ -1212,7 +1212,7 @@
 ;; E-custodian — custody has no resource field in VF; the observer carries custodian-scope
 (let* ((e (mk "k" 'pickup #:R "R1" #:provider "a0" #:receiver "a2" #:q 1 #:in "p1"))
        (st (fold-observer (list R1) (list e))))
-  (xfail "E-custodian" "an implied custody transfer sets custodian-scope (a playnet field) on the resource that holds the goods — the inventoried one here, the carrier's when custody splits through one; VF has custody only as the onhandQuantity of the custodian's resource"
+  (xfail "E-custodian" "an implied custody transfer sets custodian-scope (a localchimera field) on the resource that holds the goods — the inventoried one here, the carrier's when custody splits through one; VF has custody only as the onhandQuantity of the custodian's resource"
          (equal? (rget (obs-res st "R1") 'custodian) "a2")))
 
 ;; E-unit — a resource keeps its own unit; a quantity in another unit of the same

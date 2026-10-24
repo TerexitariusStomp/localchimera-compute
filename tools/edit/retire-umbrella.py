@@ -4,7 +4,7 @@
     tools/edit/retire-umbrella.py 'boot prelude' [--dry-run] FILE…
     tools/edit/retire-umbrella.py 'doors protocol' [--dry-run] FILE…   (any module that re-exports)
 
-An umbrella such as (playnet boot prelude), the operator REPL's prelude,
+An umbrella such as (localchimera boot prelude), the operator REPL's prelude,
 re-exports hundreds of names from dozens of modules, so a file that imports it
 states nothing about what it reads. This rewrites each import of the umbrella into imports of the
 modules that DEFINE the names the file mentions:
@@ -15,9 +15,9 @@ modules that DEFINE the names the file mentions:
      quoted data does) meet the exported names. A name the file defines itself
      at top level is its own.
   3. Each import form naming the umbrella becomes one import per defining module:
-     `(use-modules (playnet planner))` → `(use-modules (A) (B))`,
-     `#:use-module (playnet planner)` → one `#:use-module` per module,
-     `((playnet planner) #:select (x y))` → a `#:select` per module.
+     `(use-modules (localchimera planner))` → `(use-modules (A) (B))`,
+     `#:use-module (localchimera planner)` → one `#:use-module` per module,
+     `((localchimera planner) #:select (x y))` → a `#:select` per module.
 
 The match over-approximates (a symbol in quoted data counts), which is the safe
 direction: a module imported and unused costs nothing, and a name used and not
@@ -34,7 +34,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 
 def umbrella_map(name):
-    out = subprocess.run(['guile', '--no-auto-compile', '-L', 'module', 'tools/edit/umbrella-map.scm', 'playnet', *name.split()],
+    out = subprocess.run(['guile', '--no-auto-compile', '-L', 'module', 'tools/edit/umbrella-map.scm', 'localchimera', *name.split()],
                          cwd=ROOT, capture_output=True, text=True,
                          env={**os.environ, 'LC_ALL': 'C.UTF-8'}).stdout
     m = {}
@@ -106,7 +106,7 @@ def sub_code(rx, repl, text):
     code = mask(text)
     pieces, last = [], 0
     for m in rx.finditer(code):
-        # the quasi-quoted portrait keys `(((playnet … ) ^actor) …) are data on disk
+        # the quasi-quoted portrait keys `(((localchimera … ) ^actor) …) are data on disk
         if '`' in code[max(0, m.start() - 4):m.start()]:
             continue
         pieces.append(text[last:m.start()])
@@ -132,7 +132,7 @@ def rewrite(text, umb, exports):
     """→ (new text, imported modules, unresolved names) or (None, …) when nothing to do."""
     code = strip(text)
     umb = r'\s+'.join(umb.split())
-    spec = r'\(playnet\s+' + umb + r'\)'
+    spec = r'\(localchimera\s+' + umb + r'\)'
     if not re.search(spec, code):
         return None, [], []
     used = (symbols(code) & set(exports)) - own_definitions(code)
@@ -163,21 +163,21 @@ def rewrite(text, umb, exports):
             return ('\n' + kw.group(1) + '#:use-module ').join(parts)
         return ' '.join(parts)
 
-    # ((playnet planner) #:select (a b)) — one select per defining module
-    text = sub_code(re.compile(r'\(\(playnet\s+' + umb + r'\)\s+#:select\s+\(([^)]*)\)\)'), sub_select, text)
+    # ((localchimera planner) #:select (a b)) — one select per defining module
+    text = sub_code(re.compile(r'\(\(localchimera\s+' + umb + r'\)\s+#:select\s+\(([^)]*)\)\)'), sub_select, text)
 
     def use_module(m):
         indent = m.group(1)
         ms = mods
         return ('\n').join(indent + '#:use-module (' + mod + ')' for mod in ms)
 
-    text = sub_code(re.compile(r'^([ \t]*)#:use-module\s+\(playnet\s+' + umb + r'\)[ \t]*(?=\n|;)', re.M), use_module, text)
+    text = sub_code(re.compile(r'^([ \t]*)#:use-module\s+\(localchimera\s+' + umb + r'\)[ \t]*(?=\n|;)', re.M), use_module, text)
 
     def use_modules(m):
         return ' '.join('(' + mod + ')' for mod in mods)
 
     # a bare spec inside (use-modules …) or a spec list
-    text = sub_code(re.compile(r'(?<=[\s(])\(playnet\s+' + umb + r'\)(?!\s*#:select)'), use_modules, text)
+    text = sub_code(re.compile(r'(?<=[\s(])\(localchimera\s+' + umb + r'\)(?!\s*#:select)'), use_modules, text)
     return text, mods, []
 
 
@@ -189,7 +189,7 @@ def main(argv):
     umb, files = args[0], args[1:]
     exports = umbrella_map(umb)
     if not exports:
-        sys.exit('retire-umbrella: Guile gave no export map for (playnet %s)' % umb)
+        sys.exit('retire-umbrella: Guile gave no export map for (localchimera %s)' % umb)
     if '/' in umb:
         sys.exit('retire-umbrella: name the umbrella as words: governance credentials')
     n = 0
@@ -203,7 +203,7 @@ def main(argv):
         if new is None:
             continue
         n += 1
-        print(f'{f}: {len(mods)} module(s): ' + ', '.join(m.replace('playnet planner ', '') for m in mods))
+        print(f'{f}: {len(mods)} module(s): ' + ', '.join(m.replace('localchimera planner ', '') for m in mods))
         if not dry:
             open(p, 'w', encoding='utf-8').write(new)
     print(f'retire-umbrella: {n} file(s) {"would change" if dry else "rewritten"}')

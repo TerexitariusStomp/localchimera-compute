@@ -2,8 +2,8 @@
 ;;; tests/federation/test-scope-graph.scm
 ;;; ^scope-graph reactive topology view: orphans, parent links, decompose.
 
-(use-modules (playnet test harness)
-             (playnet federation scope-graph)
+(use-modules (localchimera test harness)
+             (localchimera federation scope-graph)
              (goblins) (goblins utils hashmap))
 
 (define vat (spawn-vat))

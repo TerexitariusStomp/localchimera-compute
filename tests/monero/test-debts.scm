@@ -7,10 +7,10 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/monero/test-debts.scm
 
-(use-modules (playnet test harness)
-             (playnet credentials commitments) (playnet keri acdc) (playnet economy debts) (playnet keri acdc) (playnet keri acdc-store)
-             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             ((playnet monero specs) #:select (bootstrap-monero-resource! bootstrap-external-asset!))
+(use-modules (localchimera test harness)
+             (localchimera credentials commitments) (localchimera keri acdc) (localchimera economy debts) (localchimera keri acdc) (localchimera keri acdc-store)
+             (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             ((localchimera monero specs) #:select (bootstrap-monero-resource! bootstrap-external-asset!))
              (srfi srfi-1)
              (goblins) (goblins vat))
 
@@ -33,7 +33,7 @@
     (display "\n── minting: the shape every debt takes ──\n")
     (let ((d (debt-commitment COMMUNE ALICE "debt:a:1" "spec-eur" 100 "EUR" FUTURE)))
       (check-pred "a commitment-credential, commune issues, member holds"
-                  (and (equal? *schema-playnet-commitment* (cred-schema d))
+                  (and (equal? *schema-localchimera-commitment* (cred-schema d))
                        (equal? COMMUNE (cred-issuer d)) (equal? ALICE (cred-holder d))))
       (check-pred "action transfer — equivalent value, no object to hand back"
                   (eq? 'transfer (cred-claim d 'action)))

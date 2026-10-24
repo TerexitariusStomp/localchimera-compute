@@ -4,7 +4,7 @@
 ;;; KERI's SAIDs (Self-Addressing Identifiers, CESR code "E") are
 ;;; Blake3-256 digests. guile-gcrypt doesn't ship Blake3, so we package
 ;;; the upstream BLAKE3-team C library here and wrap it via Guile FFI
-;;; in module/playnet/keri/blake3.scm.
+;;; in module/localchimera/keri/blake3.scm.
 ;;;
 ;;; Upstream: https://github.com/BLAKE3-team/BLAKE3
 ;;; Layout:   c/ subdirectory contains the CMake build for the C library.
@@ -55,5 +55,5 @@
 SHA-1, SHA-2, SHA-3, and BLAKE2.  This package builds the upstream
 C reference implementation as a shared library (libblake3.so) plus
 headers, suitable for FFI binding from other languages.  Used by
-playnet's KERI bridge to compute Self-Addressing Identifier digests.")
+localchimera's KERI bridge to compute Self-Addressing Identifier digests.")
     (license license:cc0)))

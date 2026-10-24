@@ -9,7 +9,7 @@
 ;;;   - git               : used by the in-container updater to fetch
 ;;;
 ;;; A container started from this image becomes a Radicle peer that
-;;; follows the playnet project, atomically switches generations on
+;;; follows the localchimera project, atomically switches generations on
 ;;; signed pushes from a pinned delegate set, and rolls back on
 ;;; crash-loops. See deploy/peer/README.md for the runtime contract.
 
@@ -22,11 +22,11 @@
              (gnu packages rust-apps)    ;; radicle
              (rns-bridge))
 
-(define %playnet
+(define %localchimera
   (load (string-append (dirname (current-filename)) "/../guix.scm")))
 
 (packages->manifest
-  (list %playnet
+  (list %localchimera
         rns-bridge
         bash
         coreutils

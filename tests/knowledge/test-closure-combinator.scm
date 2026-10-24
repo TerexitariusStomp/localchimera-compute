@@ -15,7 +15,7 @@
 (use-modules (srfi srfi-1) (ice-9 format))
 (let ((self (find file-exists? (filter string? (cons (false-if-exception (current-filename)) (command-line))))))
   (when self (add-to-load-path (string-append (dirname self) "/../../module"))))
-(use-modules (playnet vf schemas) (srfi srfi-1) (playnet knowledge catalogues substances))
+(use-modules (localchimera vf schemas) (srfi srfi-1) (localchimera knowledge catalogues substances))
 
 (define checks '())
 (define (check label ok) (set! checks (cons (cons label ok) checks))

@@ -4,17 +4,17 @@
 ;;; answer. Each adapter is thin by design — the test's job is that the
 ;;; thin it ships is the wire the service actually reads.
 
-(use-modules (playnet test harness)
-             (playnet machine specs)
-             (playnet machine receipt)
-             (playnet machine registry)
-             (playnet machine settlement)
-             (playnet machine envelope)
-             (playnet machine executors)
-             (playnet machine adapters)
-             (playnet machine hrea)
-             (playnet machine credit-commons)
-             (playnet machine safe)
+(use-modules (localchimera test harness)
+             (localchimera machine specs)
+             (localchimera machine receipt)
+             (localchimera machine registry)
+             (localchimera machine settlement)
+             (localchimera machine envelope)
+             (localchimera machine executors)
+             (localchimera machine adapters)
+             (localchimera machine hrea)
+             (localchimera machine credit-commons)
+             (localchimera machine safe)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

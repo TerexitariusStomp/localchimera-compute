@@ -13,11 +13,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-pin-seam.scm
 
-(use-modules (playnet test harness)
-             ((playnet test planner prelude) #:select ())   ; load-time setup only — the harness's `check` counts
-             (playnet solve engine) (playnet solve robust) (playnet solve plan)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge dsl shorthand)
+(use-modules (localchimera test harness)
+             ((localchimera test planner prelude) #:select ())   ; load-time setup only — the harness's `check` counts
+             (localchimera solve engine) (localchimera solve robust) (localchimera solve plan)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 

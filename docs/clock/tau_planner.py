@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-The playnet harmony planner, built from the golden-angle.typ primitives.
+The localchimera harmony planner, built from the golden-angle.typ primitives.
 
-Nothing new here — this is the planner of playnet.typ (§ The program, exactly)
+Nothing new here — this is the planner of localchimera.typ (§ The program, exactly)
 assembled from bricks the companion already set up:
 
   primitive (golden-angle.typ)          brick used here
@@ -17,7 +17,7 @@ assembled from bricks the companion already set up:
   duality-gap certificate               gap = m * t
   warm / online metabolism (Part VIII)  re-solve from the standing plan x*
 
-Toy economy (the mill->flour->bake->bread chain of playnet.typ Fig 3):
+Toy economy (the mill->flour->bake->bread chain of localchimera.typ Fig 3):
   x1 = mill level (grain -> flour),  x2 = bake level (flour -> bread).
   desire : want q* bread                       -> w_d (q* - x2)^2
   balance: flour made = flour used (soft)       -> w_b (x1 - x2)^2   (couples x1,x2)

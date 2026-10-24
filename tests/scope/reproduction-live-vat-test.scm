@@ -10,14 +10,14 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -l tests/scope/reproduction-live-vat-test.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
              (goblins)
              (goblins persistence-store memory)
              (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge catalogues subsistence))
+(use-modules (localchimera knowledge catalogues subsistence))
 
 (define mem (make-memory-store))
 (define-values (vat scope)

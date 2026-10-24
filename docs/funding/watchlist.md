@@ -8,7 +8,7 @@ Verify status before acting — this snapshot is Oct 24 2026.
 | Program | Next window | Size | Trigger |
 |---|---|---|---|
 | **ARIN Community Grant** | Opens ~spring 2027 (2026 closed Sep 22) | $1–20k | Needs an **organization** (nonprofit/open-source group) not an individual — only if a fiscal host exists by then. ARIN region fit is real (internet technical improvements). |
-| **Gitcoin d/acc Funding Initiative** | Monthly curated campaigns through 2026+ | varies | Legacy Gitcoin Grants sunset; watch for a d/acc subdomain matching distributed-compute/public-goods — playnet is literally d/acc-shaped. <https://gov.gitcoin.co> |
+| **Gitcoin d/acc Funding Initiative** | Monthly curated campaigns through 2026+ | varies | Legacy Gitcoin Grants sunset; watch for a d/acc subdomain matching distributed-compute/public-goods — localchimera is literally d/acc-shaped. <https://gov.gitcoin.co> |
 | **Filecoin ProPGF Batch 4** | Watch <https://filpgf.io> | $2M-class rounds | Batch 3 allocated through Dec 2026; a verifiable-compute or retrieval RFP could fit the store/receipt legs. |
 
 ## Conditional
@@ -25,7 +25,7 @@ Verify status before acting — this snapshot is Oct 24 2026.
 | Rail | Effort | Note |
 |---|---|---|
 | **Radicle Drips** | low | Repo is already on Radicle — register the project for dependency-based donations. |
-| **Giveth** | low | List playnet-compute as a project; crypto donations. |
+| **Giveth** | low | List localchimera as a project; crypto donations. |
 | **GitHub Sponsors** | low | Requires a GitHub mirror of the repo (user decision — it's a push). |
 | **OpenCollective / fiscal host** | medium | Only if grants require an org (see ARIN). Open Source Collective or Hack Club are the usual hosts. |
 

@@ -32,7 +32,7 @@ stdout.
 import os, re, subprocess, sys
 
 repo, tip, key = sys.argv[1:4]
-OPS_N, OPS_E = b'playnet-ops', b'ops@playnet.earth'
+OPS_N, OPS_E = b'localchimera-ops', b'ops@localchimera.earth'
 
 # The signing key's own creation time: a commit dated before this cannot
 # get a frozen-clock signature that later verifies (see module docstring).

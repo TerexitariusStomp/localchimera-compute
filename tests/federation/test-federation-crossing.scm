@@ -25,12 +25,12 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/federation/test-federation-crossing.scm
 
-(use-modules (playnet solve federation-solve))
-(use-modules (playnet test harness)
-             (playnet federation async)
-             (playnet solve admm-link)
-             ((playnet solve decomposed) #:select (solve-decomposed)) ((playnet solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
-             (playnet solve solver)
+(use-modules (localchimera solve federation-solve))
+(use-modules (localchimera test harness)
+             (localchimera federation async)
+             (localchimera solve admm-link)
+             ((localchimera solve decomposed) #:select (solve-decomposed)) ((localchimera solve federation-oracle) #:select (make-boundary-oracle solve-consensus))
+             (localchimera solve solver)
              (srfi srfi-1) (ice-9 format))
 
 (load (string-append (dirname (current-filename)) "/federation-crossing-fixture.scm"))

@@ -8,10 +8,10 @@
 ;;; unaffected by the fixed-weight frag term); (c) confirm the recovered point is strictly feasible
 ;;; (every bar slack and the frag slack > 0 — the limit is never crossed).
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-certificate.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-certificate.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve solver))
+(use-modules (localchimera solve solver))
 
 (define s-tip 10.0)
 ;; desire wants x0 → 20 (past the tip); a frag cap (tip 10, fixed w 50) holds it; x ≥ 0.

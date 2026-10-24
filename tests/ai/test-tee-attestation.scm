@@ -9,8 +9,8 @@
 ;;;
 ;;; Run: guile -L module tests/ai/test-tee-attestation.scm
 
-(use-modules (playnet test harness)
-             (playnet ai tee-attestation)
+(use-modules (localchimera test harness)
+             (localchimera ai tee-attestation)
              (srfi srfi-1) (ice-9 format))
 
 ;;; a fake Intel attestation JSON (string-keyed, as json-string->scm yields).

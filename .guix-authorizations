@@ -12,7 +12,7 @@
 ;;
 ;; Bootstrap procedure (one-time, run by the first operator):
 ;;
-;;   1. gpg --quick-gen-key 'Playnet Operator <ops@example.com>' \
+;;   1. gpg --quick-gen-key 'LocalChimera Operator <ops@example.com>' \
 ;;          ed25519 cert,sign 0
 ;;   2. gpg --export --armor <KEY-ID> > deploy/keys/<KEY-ID>.asc
 ;;   3. Replace the placeholder fingerprint below with the real one
@@ -27,9 +27,9 @@
 (authorizations
  (version 0)
  (("CAFF 2F2B B5CF DFE2 2FBF  B938 6A54 8079 D617 7B2F"
-   ;; ed25519 — Playnet Operator <ops@playnet.local>, bootstrap key.
+   ;; ed25519 — LocalChimera Operator <ops@localchimera.local>, bootstrap key.
    ;; Pubkey: deploy/keys/CAFF2F2BB5CFDFE22FBFB9386A548079D6177B2F.asc
-   ;; Secret material lives on the operator's PLAYNET USB stick at
-   ;;   /media/anon00/PLAYNET/secrets/playnet-ops-gpg/
+   ;; Secret material lives on the operator's LOCALCHIMERA USB stick at
+   ;;   /media/anon00/LOCALCHIMERA/secrets/localchimera-ops-gpg/
    ;; (never committed). Revocation certificate stored alongside.
-   (name "playnet-operator-bootstrap"))))
+   (name "localchimera-operator-bootstrap"))))

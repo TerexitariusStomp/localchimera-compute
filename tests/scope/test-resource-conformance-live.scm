@@ -23,11 +23,11 @@
 ;;; Pure solver (no ACDCs) ⇒ no blake3.
 ;;; Run: guile -L module tests/scope/test-resource-conformance-live.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet scope live)
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera scope live)
              (goblins) (goblins vat) (srfi srfi-1))
 
 ;; the convection-oven the commune actually holds (custody at "town").

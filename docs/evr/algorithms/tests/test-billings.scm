@@ -5,7 +5,7 @@
 ;;; Run: guile --no-auto-compile -q -L module -L . \
 ;;;        -l docs/evr/algorithms/tests/test-billings.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (docs evr algorithms billings))
 
 (define (~= a b) (< (abs (- a b)) 1e-9))

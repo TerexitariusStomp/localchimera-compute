@@ -6,7 +6,7 @@
 ;;; Retrieval produces citations, not facts. An empty shelf is a finding.
 ;;;
 ;;; WHY THIS DOMAIN MATTERS TWICE OVER. It is a Phase 1 domain in its own right —
-;;; the watershed limit playnet.typ promises — and it is also the missing half of
+;;; the watershed limit localchimera.typ promises — and it is also the missing half of
 ;;; every food recipe already in the repo. `grow.scm` consumes soil-N/P/K and
 ;;; states the metabolic-rift question properly for nutrients; water is the same
 ;;; question and is currently a band rather than a function. FAO 56 is what turns
@@ -98,7 +98,7 @@ marked JUDGMENT.")
     (name "catchment-envelope")
     (construct "pooled-budget (solve/ingest.scm) over a shed")
     (description "What the catchment yields and what may be drawn without \
-lowering it — the watershed specification playnet.typ promises. Aquifer level is \
+lowering it — the watershed specification localchimera.typ promises. Aquifer level is \
 the motivating example in pooled-budget's own docstring, so this is the target \
 that turns that comment into a citation.")
     (fields (parameter value unit basis timescale reversibility))

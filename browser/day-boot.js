@@ -1106,7 +1106,7 @@ function boot() {
     // other boolean on this FFI edge (arg-num/arg-str's own doc, above).
     // who you are: the profile tags the reproduction floors and the diet read,
     // written onto your own agent record (a JSON array of "key:value" strings)
-    // membersJson: the household's own consumer voice (playnet.typ §The
+    // membersJson: the household's own consumer voice (localchimera.typ §The
     // credit identity) — {person,capacity,hours} rows; "[]" (the face's
     // default) reads every owner as an equal citizen.
     // the same week asked backwards: the three bills (euros and hours beyond

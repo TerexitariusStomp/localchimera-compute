@@ -26,13 +26,13 @@
 (chdir %project-root)
 (add-to-load-path "module")
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules ((playnet wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet boot scope) (playnet boot governance) (playnet keri acdc-store) (playnet keri citizen-sig) (playnet keri said-portable)
-             ((playnet observation evidence) #:select (evidence-tag))
-             ((playnet keri citizen-sig)
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules ((localchimera wire rows) #:select (plain-reply)))   ; a door's rows, read back as alists
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera boot scope) (localchimera boot governance) (localchimera keri acdc-store) (localchimera keri citizen-sig) (localchimera keri said-portable)
+             ((localchimera observation evidence) #:select (evidence-tag))
+             ((localchimera keri citizen-sig)
               #:select (make-keri-identity keri-identity-keypair keri-identity-aid sign-said))
              (goblins) (goblins utils hashmap) (srfi srfi-1))
 

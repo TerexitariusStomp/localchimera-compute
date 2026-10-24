@@ -1,5 +1,5 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; deploy/manifests/docs-manifest.scm — docs/playnet.typ → PDF + EPUB
+;;; deploy/manifests/docs-manifest.scm — docs/localchimera.typ → PDF + EPUB
 ;;;
 ;;; typst + pandoc for deploy/scripts/build-docs-epub.sh. Not built from an
 ;;; equation-dropping HTML export: the script's show rule renders every

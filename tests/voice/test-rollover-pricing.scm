@@ -14,9 +14,9 @@
 ;;;   guile --no-auto-compile -q -L module \
 ;;;     tests/voice/test-rollover-pricing.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet algorithms correlation) (playnet ddmrp buffers) (playnet algorithms option-premium) (playnet algorithms rollover-scheduler) (playnet vf schemas) (playnet ddmrp records)
-             (playnet credentials work) (playnet keri acdc) (playnet voice index-oracle) (playnet keri acdc) (playnet keri acdc-store)
+(use-modules (localchimera test harness))
+(use-modules (localchimera algorithms correlation) (localchimera ddmrp buffers) (localchimera algorithms option-premium) (localchimera algorithms rollover-scheduler) (localchimera vf schemas) (localchimera ddmrp records)
+             (localchimera credentials work) (localchimera keri acdc) (localchimera voice index-oracle) (localchimera keri acdc) (localchimera keri acdc-store)
              (goblins)
              (srfi srfi-1))
 
@@ -109,12 +109,12 @@
 (check "series-for-schema returns 20 observations total"
        (= 20 (length (with-vat vat
                        ($ acdc-store 'series-for-schema
-                          *schema-playnet-external-index-observation*)))))
+                          *schema-localchimera-external-index-observation*)))))
 
 (check "by-claim-in-range filters by index-uri AND timestamp"
        (= 5 (length (with-vat vat
                       ($ acdc-store 'by-claim-in-range
-                         *schema-playnet-external-index-observation*
+                         *schema-localchimera-external-index-observation*
                          'index-uri "market:slabs-abx"
                          (+ t0 (* 5 seconds-per-day))
                          (+ t0 (* 9 seconds-per-day)))))))

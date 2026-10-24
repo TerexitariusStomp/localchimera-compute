@@ -6,8 +6,8 @@
 ;;; Run: cd planner && guile --no-auto-compile -q -L ../module \
 ;;;        -l load-all.scm -l tests/test-federation-membership.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet indexes membership) (playnet scope root) (playnet vf schemas))
+(use-modules (localchimera test harness))
+(use-modules (localchimera indexes membership) (localchimera scope root) (localchimera vf schemas))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# radicle-ci-hook.sh — Radicle-native CI/CD for playnet
+# radicle-ci-hook.sh — Radicle-native CI/CD for localchimera
 #
 # Follows the Guix Cookbook §7.5 pattern: watches Radicle node events,
 # triggers guix pull + system reconfigure for infra changes, or
@@ -10,21 +10,21 @@
 # This is the primary CI/CD path — GitHub Actions is transitional.
 #
 # Usage:
-#   RAD_HOME=/var/lib/playnet/radicle \
-#   PLAYNET_RID=rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ \
+#   RAD_HOME=/var/lib/localchimera/radicle \
+#   LOCALCHIMERA_RID=rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ \
 #     radicle-ci-hook.sh
 
 set -euo pipefail
 
-: "${RAD_HOME:=/var/lib/playnet/radicle/.radicle}"
-: "${PLAYNET_RID:?Set PLAYNET_RID to the Radicle project ID (rad:z...)}"
-: "${REPO_DIR:=/var/lib/playnet/radicle/checkout}"
-: "${DEPLOY_DIR:=/home/playnet/playnet-repo}"
+: "${RAD_HOME:=/var/lib/localchimera/radicle/.radicle}"
+: "${LOCALCHIMERA_RID:?Set LOCALCHIMERA_RID to the Radicle project ID (rad:z...)}"
+: "${REPO_DIR:=/var/lib/localchimera/radicle/checkout}"
+: "${DEPLOY_DIR:=/home/localchimera/localchimera-repo}"
 : "${LOG_PREFIX:=[radicle-ci]}"
-: "${ARTIFACTS_DIR:=/var/lib/playnet/artifacts}"
+: "${ARTIFACTS_DIR:=/var/lib/localchimera/artifacts}"
 : "${ARTIFACTS_KEEP:=5}"
 # Store hygiene at deploy time. Every deploy builds two docker packs — the
-# playnet package, 18 grafted dependencies, two 260 MB tarballs — into
+# localchimera package, 18 grafted dependencies, two 260 MB tarballs — into
 # /gnu/store, and every one of them is garbage the moment the tarball is
 # copied out. The box's weekly `guix gc` is a scheduled job; 2026-09-23 the
 # scheduler itself was crashing (mcron 1.2.2 with two jobs in one minute) and
@@ -38,7 +38,7 @@ set -euo pipefail
 : "${STORE_FREE_TARGET_GB:=20}"
 : "${STORE_FREE_MIN_GB:=12}"
 
-export HOME="/var/lib/playnet/radicle"
+export HOME="/var/lib/localchimera/radicle"
 export RAD_HOME="$RAD_HOME"
 
 # Guix keeps the SETUID sudo under /run/privileged/bin (formerly
@@ -89,8 +89,8 @@ sync_application_code() {
     # content-stamped internally, a fast no-op on every deploy
 
     log "Syncing application code to $DEPLOY_DIR"
-    # We already run as the `playnet` user (per shepherd-radicle-ci.scm
-    # #:user "playnet") and DEPLOY_DIR is owned by playnet, so no sudo
+    # We already run as the `localchimera` user (per shepherd-radicle-ci.scm
+    # #:user "localchimera") and DEPLOY_DIR is owned by localchimera, so no sudo
     # needed for the rsync or chown. sudo on Guix isn't setuid by
     # default and was failing the whole sync.
     #
@@ -161,7 +161,7 @@ sync_application_code() {
     # fetches the same pin from the node's storage at reconfigure). Each
     # tree comes from the box's own Radicle
     # storage (the node seeds every satellite RID; os.scm derives the seed
-    # list from %playnet-satellite-rids-bare), exported at the pinned
+    # list from %localchimera-satellite-rids-bare), exported at the pinned
     # commit and hash-verified before it replaces the old copy. A
     # rsync P-filter above keeps --delete off browser/radicle, so a deploy
     # whose seed is not synced yet leaves the last placed tree serving.
@@ -247,7 +247,7 @@ build_browser_wasm() {
 
 build_planner_kernel() {
     # Rebuild the planner's compiled hot-loop kernel (native-c backend) from
-    # module/playnet/solve/kernel/kernel.c. The .so is gitignored and built
+    # module/localchimera/solve/kernel/kernel.c. The .so is gitignored and built
     # locally — a push that changes kernel.c changes nothing on the box until
     # something rebuilds it, which is exactly the gap that let the held-
     # feasibility fix (kernel.c: pk_frac_to_boundary) sit unbuilt after landing
@@ -259,9 +259,9 @@ build_planner_kernel() {
         log "planner kernel: no C compiler on this host (deploy/os.scm needs gcc-toolchain + a reconfigure) — skipping, native-c backend stays unavailable"
         return 0
     fi
-    log "Rebuilding libplanner_kernel.so (module/playnet/solve/kernel)"
+    log "Rebuilding libplanner_kernel.so (module/localchimera/solve/kernel)"
     (
-        cd "$REPO_DIR/module/playnet/solve/kernel"
+        cd "$REPO_DIR/module/localchimera/solve/kernel"
         # Explicit CC: verified live that an inherited `CC=cc` (present in this
         # host's ambient root/sudo environment, cause unconfirmed) resolves to a
         # `cc` the invoking user cannot execute — "Permission denied", not
@@ -284,7 +284,7 @@ purge_cdn_cache() {
     # days).
     #
     # Which CDN, which zone and which key are this box's own facts
-    # (/etc/playnet/cdn.conf, written at reconfigure from the provider
+    # (/etc/localchimera/cdn.conf, written at reconfigure from the provider
     # config); deploy/scripts/cdn.scm reads them. A box with no CDN, or no
     # key, has nothing to purge and the tool says so. Non-fatal either way.
     local TOR=""
@@ -305,25 +305,25 @@ purge_cdn_cache() {
 }
 
 restart_services() {
-    # The sudoers rule (os.scm) grants the playnet user NOPASSWD on exactly
+    # The sudoers rule (os.scm) grants the localchimera user NOPASSWD on exactly
     # `herd restart <these services>` at this absolute path — use it verbatim
     # so sudo's command match can't miss on secure_path resolution.
     log "Restarting services"
     local HERD=/run/current-system/profile/bin/herd
 
-    # playnet-gateway is the production service — its restart MUST land. If it
+    # localchimera-gateway is the production service — its restart MUST land. If it
     # can't, DON'T fail silently (a stale gateway keeps serving old code, which
     # is invisible): capture the error, warn loudly, and drop a marker an
     # operator/monitor can grep. Mirrors the pending-reconfigure pattern.
-    if err=$(sudo -n "$HERD" restart playnet-gateway 2>&1); then
-        log "  restarted playnet-gateway"
+    if err=$(sudo -n "$HERD" restart localchimera-gateway 2>&1); then
+        log "  restarted localchimera-gateway"
     else
-        log "  WARNING: playnet-gateway restart FAILED — it is running STALE code: $err"
-        mkdir -p /var/lib/playnet/pending-restart
-        echo "$(date -Iseconds) playnet-gateway" >> /var/lib/playnet/pending-restart/queue
+        log "  WARNING: localchimera-gateway restart FAILED — it is running STALE code: $err"
+        mkdir -p /var/lib/localchimera/pending-restart
+        echo "$(date -Iseconds) localchimera-gateway" >> /var/lib/localchimera/pending-restart/queue
     fi
 
-    # playnet-static serves the browser tree and owns HTTP routing
+    # localchimera-static serves the browser tree and owns HTTP routing
     # (server/serve-static.scm: MIME types, SPA fallback, the /tiles and
     # /route proxies). It reads that module once at exec, so the rsync
     # above changes the file on disk and nothing else — the live server
@@ -331,12 +331,12 @@ restart_services() {
     # added since falls through to the SPA fallback. Same must-land
     # treatment as the gateway: a stale static server is just as
     # invisible, and shows up as HTML where an asset should be.
-    if err=$(sudo -n "$HERD" restart playnet-static 2>&1); then
-        log "  restarted playnet-static"
+    if err=$(sudo -n "$HERD" restart localchimera-static 2>&1); then
+        log "  restarted localchimera-static"
     else
-        log "  WARNING: playnet-static restart FAILED — it is running STALE code: $err"
-        mkdir -p /var/lib/playnet/pending-restart
-        echo "$(date -Iseconds) playnet-static" >> /var/lib/playnet/pending-restart/queue
+        log "  WARNING: localchimera-static restart FAILED — it is running STALE code: $err"
+        mkdir -p /var/lib/localchimera/pending-restart
+        echo "$(date -Iseconds) localchimera-static" >> /var/lib/localchimera/pending-restart/queue
     fi
 
     # dev-bridge is dev-only and may be absent on prod — best-effort, quiet.
@@ -345,18 +345,18 @@ restart_services() {
 }
 
 reload_repl() {
-    if [ -S /var/run/playnet/repl.sock ]; then
+    if [ -S /var/run/localchimera/repl.sock ]; then
         log "Reloading REPL modules"
-        # We already run as playnet — call the binary directly.
-        /home/playnet/bin/repl-eval \
-            '(for-each (lambda (m) (reload-module (resolve-module m))) (list (quote (playnet core)) (quote (playnet lang knowledge))))' \
+        # We already run as localchimera — call the binary directly.
+        /home/localchimera/bin/repl-eval \
+            '(for-each (lambda (m) (reload-module (resolve-module m))) (list (quote (localchimera core)) (quote (localchimera lang knowledge))))' \
             2>/dev/null || log "REPL reload skipped (not running)"
     fi
 }
 
 run_preflight() {
     log "Running preflight-check.scm"
-    # Already running as playnet user; no sudo needed.
+    # Already running as localchimera user; no sudo needed.
     # preflight-check.scm uses (json) which lives in the system profile at
     # /run/current-system/profile/share/guile/site/3.0 — bare `guile`
     # doesn't include that on its load path by default (only via
@@ -402,7 +402,7 @@ reclaim_store() {
 _pack_one() {
     # Internal: build one docker pack, copy to $ARTIFACTS_DIR/$2,
     # update the matching symlink. Args: $1=manifest path, $2=basename
-    # (e.g. playnet-<sha>.tar.gz), $3=symlink name (e.g. latest.tar.gz).
+    # (e.g. localchimera-<sha>.tar.gz), $3=symlink name (e.g. latest.tar.gz).
     local manifest="$1" basename="$2" link="$3" out="$ARTIFACTS_DIR/$2"
     local TOR=""
     command -v torsocks >/dev/null 2>&1 && TOR="torsocks"
@@ -411,7 +411,7 @@ _pack_one() {
     case "$basename" in
         *peer*)
             # Peer image needs init.sh as the docker entrypoint.
-            extra_args="--entry-point=/share/playnet/deploy/peer/init.sh"
+            extra_args="--entry-point=/share/localchimera/deploy/peer/init.sh"
             ;;
     esac
 
@@ -445,19 +445,19 @@ _pack_one() {
 
 build_docker_image() {
     # Build two flavors per push:
-    #   - sealed:  playnet + bash + coreutils + rns-bridge. Immutable
+    #   - sealed:  localchimera + bash + coreutils + rns-bridge. Immutable
     #              snapshot; right for distribution to anyone.
     #   - peer:    sealed + radicle + tor + shepherd + git + init.sh.
     #              Self-updating: follows main, atomic generation
     #              switching, crash-loop rollback. Right for
-    #              co-maintainers running a playnet node.
+    #              co-maintainers running a localchimera node.
     # The two share most of their closure so the marginal cost of the
     # second pack is mostly just the radicle/tor/shepherd binaries.
 
     local short_sha
     short_sha=$(cd "$REPO_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
-    # /var/lib/playnet is owned by the playnet user (this hook's uid), so we
+    # /var/lib/localchimera is owned by the localchimera user (this hook's uid), so we
     # create the artifacts subdir WITHOUT sudo. The previous `sudo mkdir`
     # silently failed — the sudoers rule grants only `herd restart …`, not
     # mkdir — so `cp` below hit a missing dir and, under `set -euo pipefail`,
@@ -480,12 +480,12 @@ build_docker_image() {
 
     log "Building docker images for ${short_sha} via guix pack"
     _pack_one "$REPO_DIR/.guix/docker-manifest.scm" \
-              "playnet-${short_sha}.tar.gz" "latest.tar.gz"
+              "localchimera-${short_sha}.tar.gz" "latest.tar.gz"
     _pack_one "$REPO_DIR/.guix/docker-manifest-peer.scm" \
-              "playnet-peer-${short_sha}.tar.gz" "latest-peer.tar.gz"
+              "localchimera-peer-${short_sha}.tar.gz" "latest-peer.tar.gz"
 
     # Prune: keep $ARTIFACTS_KEEP most recent of each kind.
-    for prefix in playnet- playnet-peer-; do
+    for prefix in localchimera- localchimera-peer-; do
         ls -1t "$ARTIFACTS_DIR/${prefix}"*.tar.gz 2>/dev/null \
             | tail -n +"$((ARTIFACTS_KEEP + 1))" \
             | xargs -r rm -f
@@ -543,7 +543,7 @@ handle_update() {
 
     # Infrastructure changed → sync code + drop a marker, but do NOT
     # auto-reconfigure. full_reconfigure needs `sudo guix system
-    # reconfigure`; we run as the playnet user and Guix's sudo isn't
+    # reconfigure`; we run as the localchimera user and Guix's sudo isn't
     # setuid (security-by-design — adding setuid would defeat the
     # immutable-system property). Previous behavior: sudo fails →
     # set -e fires → the entire watch loop exits 1 → no further pushes
@@ -567,9 +567,9 @@ handle_update() {
         sync_application_code
         log "INFRA CHANGE detected — requires manual 'guix system reconfigure' (sudo unavailable in shepherd context)"
         log "  changed files: $changed_files"
-        mkdir -p /var/lib/playnet/pending-reconfigure
+        mkdir -p /var/lib/localchimera/pending-reconfigure
         echo "$(date -Iseconds) $changed_files" \
-            >> /var/lib/playnet/pending-reconfigure/queue
+            >> /var/lib/localchimera/pending-reconfigure/queue
         # One commit can carry both infra and application code — this branch
         # matches on the infra paths and returns, so without these the
         # application half syncs to disk and stops there. The gateway and the
@@ -642,12 +642,12 @@ if [ ! -d "$REPO_DIR/.git" ]; then
     log "Creating initial checkout from Radicle"
     # Clone from the local Radicle storage
     # Strip rad: prefix for filesystem path
-    rid_bare="${PLAYNET_RID#rad:}"
+    rid_bare="${LOCALCHIMERA_RID#rad:}"
     # rad 1.7+ syntax: `rad clone <RID> [PATH]` (positional, --path removed).
-    rad_clone_err=$(rad clone "$PLAYNET_RID" "$REPO_DIR" 2>&1) || {
+    rad_clone_err=$(rad clone "$LOCALCHIMERA_RID" "$REPO_DIR" 2>&1) || {
         log "rad clone failed: $rad_clone_err"
         log "Falling back to git clone from local storage"
-        # RAD_HOME is the rad data dir itself (e.g. /var/lib/playnet/radicle/.radicle).
+        # RAD_HOME is the rad data dir itself (e.g. /var/lib/localchimera/radicle/.radicle).
         # Storage lives at $RAD_HOME/storage/<rid>, NOT $RAD_HOME/.radicle/storage/<rid>.
         git clone "$RAD_HOME/storage/$rid_bare" "$REPO_DIR"
     }
@@ -672,7 +672,7 @@ PERIODIC_FETCH_SEC="${PERIODIC_FETCH_SEC:-300}"
 # minutes still holding .deploy.lock. The watchdog kills the deploy tree
 # past this bound so the next trigger proceeds.
 DEPLOY_TIMEOUT_SEC="${DEPLOY_TIMEOUT_SEC:-3600}"
-LOCK_FILE="/var/lib/playnet/radicle/.deploy.lock"
+LOCK_FILE="/var/lib/localchimera/radicle/.deploy.lock"
 
 # --- Pre-merge patch CI (opt-in) --------------------------------------------
 # Builds contributor PATCHES before a delegate merges them, and posts the
@@ -690,14 +690,14 @@ PATCH_CI_ENABLE="${PATCH_CI_ENABLE:-0}"
 PATCH_CI_POLL_SEC="${PATCH_CI_POLL_SEC:-300}"
 PATCH_CI_TIMEOUT_SEC="${PATCH_CI_TIMEOUT_SEC:-1800}"
 PATCH_CI_CMD="${PATCH_CI_CMD:-make test}"
-PATCH_CI_DIR="${PATCH_CI_DIR:-/var/lib/playnet/radicle/patch-ci-checkout}"
-PATCH_CI_STATE="${PATCH_CI_STATE:-/var/lib/playnet/radicle/patch-ci-state}"
-PATCH_CI_LOCK="/var/lib/playnet/radicle/.patch-ci.lock"
+PATCH_CI_DIR="${PATCH_CI_DIR:-/var/lib/localchimera/radicle/patch-ci-checkout}"
+PATCH_CI_STATE="${PATCH_CI_STATE:-/var/lib/localchimera/radicle/patch-ci-state}"
+PATCH_CI_LOCK="/var/lib/localchimera/radicle/.patch-ci.lock"
 # Enable flag file — lets an operator turn patch CI on/off with a `touch`
 # WITHOUT a `guix system reconfigure` (sudo is unavailable in the shepherd
 # context; a full reconfigure to flip one env var would be absurd). Enabled if
 # PATCH_CI_ENABLE=1 OR this file exists.
-PATCH_CI_FLAG="${PATCH_CI_FLAG:-/var/lib/playnet/patch-ci-enabled}"
+PATCH_CI_FLAG="${PATCH_CI_FLAG:-/var/lib/localchimera/patch-ci-enabled}"
 patch_ci_enabled() { [ "$PATCH_CI_ENABLE" = "1" ] || [ -f "$PATCH_CI_FLAG" ]; }
 
 # Kill a pid and its ENTIRE descendant tree, children first. pgrep walks
@@ -796,7 +796,7 @@ $script"; rc=$?
 
 patch_ci_build_one() {
     local head="$1" rid_bare STORE logf rc
-    rid_bare="${PLAYNET_RID#rad:}"
+    rid_bare="${LOCALCHIMERA_RID#rad:}"
     STORE="$RAD_HOME/storage/$rid_bare"
     # Lazy-create the isolated checkout (a plain clone of local storage — it
     # NEVER touches $REPO_DIR / the deploy path).
@@ -834,7 +834,7 @@ patch_ci_once() {
     patch_ci_enabled || return 0
     command -v rad >/dev/null 2>&1 || return 0
     local rid_bare STORE pids pid show status head marker prev msg rc
-    rid_bare="${PLAYNET_RID#rad:}"
+    rid_bare="${LOCALCHIMERA_RID#rad:}"
     STORE="$RAD_HOME/storage/$rid_bare"
     [ -d "$STORE" ] || return 0
     mkdir -p "$PATCH_CI_STATE"
@@ -847,7 +847,7 @@ patch_ci_once() {
     [ -n "$pids" ] || return 0
 
     for pid in $pids; do
-        show=$(cd "$REPO_DIR" && timeout 60 rad patch show "$pid" --repo "$PLAYNET_RID" 2>/dev/null) || continue
+        show=$(cd "$REPO_DIR" && timeout 60 rad patch show "$pid" --repo "$LOCALCHIMERA_RID" 2>/dev/null) || continue
         status=$(echo "$show" | grep -i status | head -1 | grep -oiE 'open|merged|archived|draft' | head -1)
         [ "$status" = "open" ] || continue
         head=$(echo "$show" | grep -i head | grep -oiE '[0-9a-f]{40}' | head -1)
@@ -866,7 +866,7 @@ patch_ci_once() {
             msg=$(printf '❌ CI failed (rc=%s) — `%s` at `%s`.\n\nLast lines:\n```\n%s\n```' \
                     "$rc" "$PATCH_CI_RAN" "$head" "$PATCH_CI_LAST_TAIL")
         fi
-        (cd "$REPO_DIR" && timeout 60 rad patch comment "$pid" --repo "$PLAYNET_RID" -m "$msg" >/dev/null 2>&1) \
+        (cd "$REPO_DIR" && timeout 60 rad patch comment "$pid" --repo "$LOCALCHIMERA_RID" -m "$msg" >/dev/null 2>&1) \
             || log "patch-ci: could not post comment on $pid (build rc=$rc)"
 
         # Native patch LABEL as the machine-readable CI signal — this is what
@@ -874,9 +874,9 @@ patch_ci_once() {
         # so the delegate (and the board) see ci-pass/ci-fail at a glance.
         local good bad
         if [ "$rc" = 0 ]; then good="ci-pass"; bad="ci-fail"; else good="ci-fail"; bad="ci-pass"; fi
-        (cd "$REPO_DIR" && timeout 30 rad patch label "$pid" "$good" --repo "$PLAYNET_RID" >/dev/null 2>&1) \
+        (cd "$REPO_DIR" && timeout 30 rad patch label "$pid" "$good" --repo "$LOCALCHIMERA_RID" >/dev/null 2>&1) \
             || log "patch-ci: could not set label $good on $pid"
-        (cd "$REPO_DIR" && timeout 30 rad patch label "$pid" --delete "$bad" --repo "$PLAYNET_RID" >/dev/null 2>&1) || true
+        (cd "$REPO_DIR" && timeout 30 rad patch label "$pid" --delete "$bad" --repo "$LOCALCHIMERA_RID" >/dev/null 2>&1) || true
 
         echo "$head" > "$marker"   # record even on failure so we don't re-spam
         log "patch-ci: patch $pid @ $head done (rc=$rc, label=$good)"
@@ -924,7 +924,7 @@ OPERATOR_DELEGATE="${OPERATOR_DELEGATE:-z6MkhFnFe4dPHjHfZb4YAoYGf48AiaLAZHDj53yZ
 canonical_cosign() {
     [ "$CANONICAL_COSIGN" = "1" ] || return 0
     local rid_bare STORE omar canon
-    rid_bare="${PLAYNET_RID#rad:}"
+    rid_bare="${LOCALCHIMERA_RID#rad:}"
     STORE="$RAD_HOME/storage/$rid_bare"
     [ -d "$STORE" ] || return 0
     omar=$(git -C "$STORE" rev-parse --verify "refs/namespaces/$OPERATOR_DELEGATE/refs/heads/main" 2>/dev/null) || return 0
@@ -1000,7 +1000,7 @@ backstop_loop() {
         # discipline as canonical_cosign — a diverged canonical needs a human, a
         # behind one just needs this. Runs every tick either way; cheap when clean.
         local _rid_bare _store _canon _chead
-        _rid_bare="${PLAYNET_RID#rad:}"
+        _rid_bare="${LOCALCHIMERA_RID#rad:}"
         _store="$RAD_HOME/storage/$_rid_bare"
         _canon=$(git -C "$_store" rev-parse --verify refs/heads/main 2>/dev/null) || _canon=""
         _chead=$(cd "$REPO_DIR" && git rev-parse --verify HEAD 2>/dev/null) || _chead=""
@@ -1042,7 +1042,7 @@ event_watch_loop() {
     # Retry with backoff, capped at 60 seconds.
     local BACKOFF=1
     while true; do
-        log "Watching for ref updates on $PLAYNET_RID"
+        log "Watching for ref updates on $LOCALCHIMERA_RID"
 
         rad node events 2>/dev/null | while IFS= read -r event; do
             BACKOFF=1  # reset backoff on successful read
@@ -1051,7 +1051,7 @@ event_watch_loop() {
             # event names are camelCase JSON ("canonicalRefUpdated",
             # "refsFetched", "peerConnected"); older docs / earlier rad
             # versions used "refs-changed" which never appears in the stream.
-            if echo "$event" | grep -q "$PLAYNET_RID" && echo "$event" | grep -q '"type":"canonicalRefUpdated"'; then
+            if echo "$event" | grep -q "$LOCALCHIMERA_RID" && echo "$event" | grep -q '"type":"canonicalRefUpdated"'; then
                 log "Ref update detected: $event"
 
                 cd "$REPO_DIR"

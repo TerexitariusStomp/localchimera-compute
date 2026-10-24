@@ -15,13 +15,13 @@
 ;;;      collects the receipt, and the witness.* operation COMPLETES —
 ;;;      previously it spun forever on "no http endpoint".
 
-(use-modules (playnet test harness)
-             (playnet test keri-integration)
-             (playnet keri bridge)
-             (playnet keri inception)
-             ((playnet keri receiptor) #:select (receipt-event!
+(use-modules (localchimera test harness)
+             (localchimera test keri-integration)
+             (localchimera keri bridge)
+             (localchimera keri inception)
+             ((localchimera keri receiptor) #:select (receipt-event!
                                                  witness-base-url))
-             ((playnet keri signify-portable)
+             ((localchimera keri signify-portable)
               #:select (scm->json-canonical cesr-stream-event))
              (ice-9 format)
              (ice-9 popen)

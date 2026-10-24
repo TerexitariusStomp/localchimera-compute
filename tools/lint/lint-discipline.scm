@@ -49,8 +49,8 @@
 ;; ── Voice/CCF discipline ────────────────────────────────────────────────────
 
 (define *voice-paths*
-  '("module/playnet/federation/vows.scm"
-    "module/playnet/voice/snapshot.scm"))
+  '("module/localchimera/federation/vows.scm"
+    "module/localchimera/voice/snapshot.scm"))
 
 ;; Forbidden in voice paths. set-ccf is the canonical violation;
 ;; the others would emerge from a "voice-weighted-by-ccf" refactor.
@@ -79,7 +79,7 @@
 ;; ── Recomputability discipline ──────────────────────────────────────────────
 
 (define *federation-paths*
-  '("module/playnet/scope/actor.scm"))
+  '("module/localchimera/scope/actor.scm"))
 
 ;; Pattern: a stored-aggregate field name. We're conservative and
 ;; only flag specific shapes; whitelist any legitimate uses.
@@ -120,11 +120,11 @@
 ;;    containment relations; a climb appearing here is a category error about
 ;;    to become an ownership proxy.
 (define %membership-files
-  '("module/playnet/vf/aggregation/scope-tree.scm"
-    "module/playnet/federation/scope-graph.scm"
-    "module/playnet/scope/actor.scm"
-    "module/playnet/keys/scope-witness.scm"
-    "module/playnet/scope/recovery.scm"))
+  '("module/localchimera/vf/aggregation/scope-tree.scm"
+    "module/localchimera/federation/scope-graph.scm"
+    "module/localchimera/scope/actor.scm"
+    "module/localchimera/keys/scope-witness.scm"
+    "module/localchimera/scope/recovery.scm"))
 (define %containment-idents
   (make-regexp "(spatial-thing-contained-in|economic-resource-contained-in|containment-chain|containment-first)"))
 (define (lint-membership-containment)

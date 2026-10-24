@@ -15,9 +15,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module -L tests tests/scope/test-boundary-conservation-law.scm
 
-(use-modules (playnet solve federation-solve))
-(use-modules (playnet test harness) (playnet knowledge recipes federation-demo) (playnet scope root) (srfi srfi-1) (playnet scope live)
-             (playnet knowledge recipes federation-demo)
+(use-modules (localchimera solve federation-solve))
+(use-modules (localchimera test harness) (localchimera knowledge recipes federation-demo) (localchimera scope root) (srfi srfi-1) (localchimera scope live)
+             (localchimera knowledge recipes federation-demo)
              (goblins) (srfi srfi-1))
 
 (define (record root sid demand)

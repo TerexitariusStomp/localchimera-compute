@@ -13,12 +13,12 @@
 ;;; timber vs the uncoupled solve (soil's stress eats forest's headroom); (c) uncoupled, forest is
 ;;; limited by its own draw only and soil draws freely.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-cascade.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-cascade.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 (define s-tip 10.0)   ; forest tip = quantile_0.5 of [8,12]
 (define cpl   0.5)    ; drawing soil stresses forest by 0.5

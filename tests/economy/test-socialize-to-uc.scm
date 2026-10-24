@@ -6,7 +6,7 @@
 ;;; commons (UC)" default. Two claims, honestly:
 ;;;
 ;;;  (A) POSITIVE — grant to UC, solve the commons as ONE problem (the single
-;;;      global solve the docs favour, playnet.typ §5011), and the means is
+;;;      global solve the docs favour, localchimera.typ §5011), and the means is
 ;;;      usable by any demand in the commons, bounded by the grant qty. This is
 ;;;      the same live path as test-socialization-live, with holder = UC.
 ;;;
@@ -24,12 +24,12 @@
 ;;;
 ;;; Run:  guile -L module -L tests tests/economy/test-socialize-to-uc.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet vf schemas)
-             (playnet scope live)
-             (playnet economy socialization) (playnet keri acdc-store)
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera vf schemas)
+             (localchimera scope live)
+             (localchimera economy socialization) (localchimera keri acdc-store)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

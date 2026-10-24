@@ -5,7 +5,7 @@
   "metadata": {
     "component": {
       "type": "application",
-      "name": "playnet-compute",
+      "name": "localchimera",
       "licenses": [{ "expression": "AGPL-3.0-or-later" }]
     }
   },

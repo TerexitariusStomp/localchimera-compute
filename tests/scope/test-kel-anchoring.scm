@@ -18,9 +18,9 @@
 ;;; we exercise the synthetic path + verify the methods behave as
 ;;; specified.
 
-(use-modules (playnet test harness)
-             (playnet scope root)
-             (playnet credentials membership) (playnet keri acdc) (playnet boot scope) (playnet keri acdc) (playnet keri acdc-store)
+(use-modules (localchimera test harness)
+             (localchimera scope root)
+             (localchimera credentials membership) (localchimera keri acdc) (localchimera boot scope) (localchimera keri acdc) (localchimera keri acdc-store)
              (goblins))
 
 (define vat (spawn-vat))
@@ -67,7 +67,7 @@
 
     ;; Verify the membership credential landed in the store
     (let ((memberships ($ store 'by-schema
-                          *schema-playnet-federation-membership*)))
+                          *schema-localchimera-federation-membership*)))
       (check "membership ACDC issued"
              (= 1 (length memberships)))
       (check "membership ACDC names fed as issuer"

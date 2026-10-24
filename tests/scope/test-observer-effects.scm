@@ -13,9 +13,9 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-observer-effects.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet algorithms track-trace) (playnet scope root) (playnet vf schemas) (playnet observation states) (srfi srfi-1))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera algorithms track-trace) (localchimera scope root) (localchimera vf schemas) (localchimera observation states) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

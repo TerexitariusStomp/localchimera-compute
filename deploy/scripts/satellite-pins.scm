@@ -20,8 +20,8 @@
 ;;;                                       then link: every checkout the same shape
 ;;;   satellite-pins.scm list             one TSV line per pin
 ;;;
-;;; The local clone of satellite NAME is $PLAYNET_SATELLITES_DIR/playnet-NAME,
-;;; default ../playnet-NAME beside this repo; when that is absent and RAD_HOME
+;;; The local clone of satellite NAME is $LOCALCHIMERA_SATELLITES_DIR/localchimera-NAME,
+;;; default ../localchimera-NAME beside this repo; when that is absent and RAD_HOME
 ;;; is set, the node's own bare storage $RAD_HOME/storage/<rid-bare> is used
 ;;; (the box seeds every satellite, so `place` needs no clone there). The hash is what Guix computes
 ;;; for a git-fetch origin: the nar of the tree with no .git inside. We export
@@ -49,8 +49,8 @@
 
 (define (clone-dir name . rid)
   "The sibling clone, else the node's bare storage for RID when RAD_HOME is set."
-  (let ((sibling (string-append (or (getenv "PLAYNET_SATELLITES_DIR") (dirname here))
-                                "/playnet-" name))
+  (let ((sibling (string-append (or (getenv "LOCALCHIMERA_SATELLITES_DIR") (dirname here))
+                                "/localchimera-" name))
         (rid (and (pair? rid) (car rid))))
     (cond
      ((file-exists? sibling) sibling)
@@ -85,7 +85,7 @@
          (commit (aref pin 'commit)) (want (aref pin 'sha256)))
     (cond
      ((not (file-exists? dir))
-      (format #t "~a: no clone at ~a (PLAYNET_SATELLITES_DIR)~%" name dir) #f)
+      (format #t "~a: no clone at ~a (LOCALCHIMERA_SATELLITES_DIR)~%" name dir) #f)
      ((not (zero? (car (git dir "cat-file" "-e" (string-append commit "^{commit}")))))
       (format #t "~a: pinned commit ~a is not in ~a~%" name commit dir) #f)
      (else
@@ -227,7 +227,7 @@ A stamp file <lands>/.satellite-pin holding the commit makes a repeat a no-op."
 ;; ── link: a development checkout runs the clones themselves ─────────────────
 ;; `place` copies the pinned tree in, which is what the box serves. On a
 ;; machine that holds the clones, `link` makes ROOT/<lands> a symlink to
-;; ../playnet-<name> instead: one copy of every file, an edit under <lands> is
+;; ../localchimera-<name> instead: one copy of every file, an edit under <lands> is
 ;; an edit in the satellite's own repo (its `git status` shows it), and build
 ;; products land in the clone. The pin still decides what ships — `check`
 ;; says how far each clone stands past its pin — and `place` puts the pinned
@@ -240,7 +240,7 @@ A stamp file <lands>/.satellite-pin holding the commit makes a repeat a no-op."
 (define (link-target root lands dir)
   "DIR as the symlink at ROOT/LANDS names it: relative while the clone is the
 sibling of ROOT, so the pair moves together; absolute otherwise."
-  (if (and (not (getenv "PLAYNET_SATELLITES_DIR"))
+  (if (and (not (getenv "LOCALCHIMERA_SATELLITES_DIR"))
            (string=? (canonicalize-path root) here))
       (string-append (string-join (map (const "..") (string-split lands #\/)) "/")
                      "/" (basename dir))
@@ -318,7 +318,7 @@ from the clone's working copy — edits that exist nowhere else — or #f."
 ;; there yet — from the mirror the box serves, https://<host>/<rid>.git, over
 ;; torsocks when the host has no direct route — and linked in.
 
-(define (mirror-base) (or (getenv "PLAYNET_MIRROR") "https://playnet.earth"))
+(define (mirror-base) (or (getenv "LOCALCHIMERA_MIRROR") "https://localchimera.earth"))
 
 (define (mirror-url pin)
   (let ((rid (aref pin 'rid)))
@@ -326,10 +326,10 @@ from the clone's working copy — edits that exist nowhere else — or #f."
                             (if (string-prefix? "rad:" rid) (substring rid 4) rid) ".git"))))
 
 (define (net-prefix url)
-  "The command words a network git call runs under: PLAYNET_GIT_PREFIX when
+  "The command words a network git call runs under: LOCALCHIMERA_GIT_PREFIX when
 set, torsocks when the host of an http(s) URL does not resolve, else none."
   (cond
-   ((getenv "PLAYNET_GIT_PREFIX")
+   ((getenv "LOCALCHIMERA_GIT_PREFIX")
     => (lambda (p) (remove string-null? (string-split p #\space))))
    ((let ((m (string-match "^https?://([^/:]+)" url)))
       (and m (not (zero? (status:exit-val

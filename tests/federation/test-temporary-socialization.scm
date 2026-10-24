@@ -3,10 +3,10 @@
 ;;; resource into a commune's use-pool: custody moves, rights stay, the grant is
 ;;; window-bounded, and it reverts on lapse or owner recall. NOT a sale.
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet vf facts validity) (playnet scope root) (playnet vf schemas) (srfi srfi-1))       ; custody-cred-live?, spawn-scope-root
-(use-modules (playnet observation credentials) (playnet federation auditor) (playnet credentials commitments) (playnet credentials custody) (playnet keri acdc) (playnet boot scope) (playnet economy socialization) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera vf facts validity) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))       ; custody-cred-live?, spawn-scope-root
+(use-modules (localchimera observation credentials) (localchimera federation auditor) (localchimera credentials commitments) (localchimera credentials custody) (localchimera keri acdc) (localchimera boot scope) (localchimera economy socialization) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins))
 (use-modules (srfi srfi-1))
 
@@ -29,7 +29,7 @@
   ;; A CUSTODY attestation — never a transfer-all-rights — so ownership
   ;; (accountingQuantity / primaryAccountable) is untouched by construction.
   (check-pred "custody schema (rights untouched)"
-              (equal? *schema-playnet-custody-attestation* (cred-schema att)))
+              (equal? *schema-localchimera-custody-attestation* (cred-schema att)))
   (check-pred "quantity socialized" (= 1 (cred-claim att 'qty)))
   (check-pred "resource-spec" (equal? SPEC (cred-claim att 'resource-spec)))
   (check-pred "return-by window set" (equal? FUTURE (cred-claim att 'valid-until)))
@@ -70,7 +70,7 @@
     (check-pred "grant live in store before recall"
                 (any (lambda (c) (equal? said (cred-said c)))
                      (non-revoked-by-schema store
-                                            *schema-playnet-custody-attestation*)))
+                                            *schema-localchimera-custody-attestation*)))
     ;; A stranger cannot recall the owner's grant.
     (check-pred "non-owner recall is refused"
                 (catch #t
@@ -81,7 +81,7 @@
     (check-pred "grant revoked after owner recall"
                 (not (any (lambda (c) (equal? said (cred-said c)))
                           (non-revoked-by-schema
-                           store *schema-playnet-custody-attestation*))))))
+                           store *schema-localchimera-custody-attestation*))))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -110,7 +110,7 @@
          (results ($ watcher 'tick!)))
     (check-pred "one lapsed grant processed" (= 1 (length results)))
     (let* ((rev-said (cdr (car results)))
-           (revs ($ store 'by-schema *schema-playnet-reversion-attestation*))
+           (revs ($ store 'by-schema *schema-localchimera-reversion-attestation*))
            (rev  (find (lambda (c) (equal? rev-said (cred-said c))) revs)))
       (check-pred "reversion issued" (not (not rev)))
       (check-pred "custody reverted to the OWNER" (equal? OWNER (cred-holder rev)))
@@ -120,7 +120,7 @@
                   (cred-revoked?
                    (find (lambda (c) (equal? said (cred-said c)))
                          ($ store 'by-schema
-                            *schema-playnet-custody-attestation*)))))))
+                            *schema-localchimera-custody-attestation*)))))))
 
 
 ;;; ════════════════════════════════════════════════════════════════════════════
@@ -364,15 +364,15 @@
          (agr     (by agr-said))
          (retc    (by (car (cred-claim agr 'reciprocal-commitment-ids)))))
     (check-pred "the grant is the OWNER's custody attestation, owner→commune"
-                (and (equal? *schema-playnet-custody-attestation* (cred-schema grant))
+                (and (equal? *schema-localchimera-custody-attestation* (cred-schema grant))
                      (equal? OWNER (cred-issuer grant)) (equal? COMMUNE (cred-holder grant))))
     (check-pred "the COMMUNE (not the owner) issued the acceptance agreement"
-                (and (equal? *schema-playnet-agreement* (cred-schema agr))
+                (and (equal? *schema-localchimera-agreement* (cred-schema agr))
                      (equal? COMMUNE (cred-issuer agr)) (equal? OWNER (cred-holder agr))))
     (check-pred "PRIMARY = the owner's grant"
                 (member (cred-said grant) (cred-claim agr 'primary-commitment-ids)))
     (check-pred "RECIPROCAL = the commune's return commitment (transfer-custody back)"
-                (and (equal? *schema-playnet-commitment* (cred-schema retc))
+                (and (equal? *schema-localchimera-commitment* (cred-schema retc))
                      (equal? COMMUNE (cred-issuer retc)) (equal? OWNER (cred-holder retc))
                      (eq? 'transfer-custody (cred-claim retc 'action))))
     (check-pred "the care terms remain on the owner's grant"
@@ -395,7 +395,7 @@
                    (primary-commitment-ids . ("c-own")) (reciprocal-commitment-ids . ("c-care"))
                    (accepting-agent-id . "ECommune") (counterparty . "EAlice"))))
     (on-agr #f #f result)
-    (let ((agrs ($ store 'by-schema *schema-playnet-agreement*)))
+    (let ((agrs ($ store 'by-schema *schema-localchimera-agreement*)))
       (check-pred "the on-agreement hook minted an agreement credential"
                   (and (pair? agrs)
                        (find (lambda (c) (equal? "agr-x" (cred-claim c 'agreement-id))) agrs)))

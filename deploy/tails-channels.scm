@@ -8,9 +8,9 @@
 ;;;
 ;;; This file extends channels.scm with the `nonguix` channel, which
 ;;; provides linux + linux-firmware + microcode-initrd needed for most
-;;; laptop WiFi/Bluetooth chips. The base Guix and playnet pins are
+;;; laptop WiFi/Bluetooth chips. The base Guix and localchimera pins are
 ;;; inherited from channels.scm so there is a single source of truth for
-;;; the Guix commit and the playnet introduction.
+;;; the Guix commit and the localchimera introduction.
 ;;;
 ;;; The clearnet GitLab URL below is acceptable here because the build
 ;;; runs on a Tails system whose entire network stack is Tor-only.

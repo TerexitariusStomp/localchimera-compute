@@ -14,7 +14,7 @@
 ;; HTTPS gateway (simplest, third-party trust):
 ;;
 ;;   (channel
-;;     (name 'playnet)
+;;     (name 'localchimera)
 ;;     (url "https://iris.radicle.xyz/z27dFkN28LQAsSsG3DVHcfBqYAArQ.git")
 ;;     (branch "main"))
 ;;
@@ -22,7 +22,7 @@
 ;;
 ;;   rad clone rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ
 ;;   (channel
-;;     (name 'playnet)
+;;     (name 'localchimera)
 ;;     (url ,(string-append (getenv "HOME")
 ;;             "/.radicle/storage/z27dFkN28LQAsSsG3DVHcfBqYAArQ"))
 ;;     (branch "main"))

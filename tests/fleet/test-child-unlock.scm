@@ -10,13 +10,13 @@
 ;;;   - each way an unlock can go has its own verdict
 ;;;
 ;;; The verdicts are checked against a real sshd when one is at hand
-;;; (PLAYNET_TEST_SSHD, or an openssh in the Guix store), which plays the
+;;; (LOCALCHIMERA_TEST_SSHD, or an openssh in the Guix store), which plays the
 ;;; initrd: one authorized key, a forced command that reads one line.
 ;;;
 ;;; Run:  guile -L module tests/fleet/test-child-unlock.scm
 
-(use-modules (playnet test harness)
-             (playnet fleet child)
+(use-modules (localchimera test harness)
+             (localchimera fleet child)
              (ice-9 format)
              (ice-9 ftw)
              (ice-9 popen)
@@ -25,7 +25,7 @@
              (srfi srfi-1)
              (srfi srfi-13))
 
-(define %dir (format #f "/tmp/playnet-test-child-~a" (getpid)))
+(define %dir (format #f "/tmp/localchimera-test-child-~a" (getpid)))
 (system* "rm" "-rf" %dir)
 (mkdir %dir #o700)
 
@@ -103,7 +103,7 @@
 ;;; ── Against a real sshd playing the initrd ────────────────────────────────
 
 (define %sshd
-  (or (getenv "PLAYNET_TEST_SSHD")
+  (or (getenv "LOCALCHIMERA_TEST_SSHD")
       (let* ((port (open-input-pipe
                     "ls -d /gnu/store/*-openssh*/sbin/sshd 2>/dev/null | head -1"))
              (line (read-line port)))

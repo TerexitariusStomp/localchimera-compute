@@ -5,16 +5,16 @@
 ;;; linkage fields, not separate ACDC schemas.
 ;;;
 ;;; Pattern:
-;;;   1. Plan-store (Watershed) emits playnet-commitment ACDC for C-1
+;;;   1. Plan-store (Watershed) emits localchimera-commitment ACDC for C-1
 ;;;   2. Account-store records work event W with fulfills=C-1
 ;;;   3. on-work callback looks up C-1's SAID via acdc-store by-claim-1
-;;;   4. Emits playnet-work-event ACDC with fulfills=SAID(C-1)
+;;;   4. Emits localchimera-work-event ACDC with fulfills=SAID(C-1)
 ;;;   5. Verification: walk SAID reference to verify the chain
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet scope root) (playnet vf schemas))
-(use-modules (playnet credentials commitments) (playnet credentials work) (playnet keri acdc) (playnet keri acdc) (playnet keri acdc-store))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera scope root) (localchimera vf schemas))
+(use-modules (localchimera credentials commitments) (localchimera credentials work) (localchimera keri acdc) (localchimera keri acdc) (localchimera keri acdc-store))
 (use-modules (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 
@@ -58,7 +58,7 @@
                 (cmt-id (economic-event-fulfills event))
                 (cmt-cred (and cmt-id
                                ($ acdc-store 'by-claim-1
-                                  *schema-playnet-commitment*
+                                  *schema-localchimera-commitment*
                                   'commitment-id cmt-id)))
                 (fulfills-said (and cmt-cred (cred-said cmt-cred))))
            ($ acdc-store 'issue-idempotent
@@ -82,12 +82,12 @@
 
     ;; Verify commitment ACDC issued
     (let ((cmt-cred ($ acdc-store 'by-claim-1
-                       *schema-playnet-commitment*
+                       *schema-localchimera-commitment*
                        'commitment-id "C-1")))
       (check-pred "commitment C-1 ACDC issued"
                   (and cmt-cred #t))
       (check "commitment ACDC schema"
-             (cred-schema cmt-cred) *schema-playnet-commitment*))
+             (cred-schema cmt-cred) *schema-localchimera-commitment*))
 
     ;; Step 2: Alice performs work event W-1 fulfilling C-1
     (let* ((event (make-economic-event
@@ -100,11 +100,11 @@
 
     ;; Verify work-event ACDC issued with fulfills = SAID(C-1)
     (let* ((cmt-cred ($ acdc-store 'by-claim-1
-                        *schema-playnet-commitment*
+                        *schema-localchimera-commitment*
                         'commitment-id "C-1"))
            (cmt-said (cred-said cmt-cred))
            (work-cred ($ acdc-store 'by-claim-1
-                         *schema-playnet-work-event*
+                         *schema-localchimera-work-event*
                          'event-id "W-1")))
       (check-pred "work-event W-1 ACDC issued"
                   (and work-cred #t))
@@ -117,7 +117,7 @@
 
     ;; Step 3: Walk the SAID chain to verify fulfillment
     (let* ((work-cred ($ acdc-store 'by-claim-1
-                         *schema-playnet-work-event*
+                         *schema-localchimera-work-event*
                          'event-id "W-1"))
            (cmt-said (cred-claim work-cred 'fulfills))
            (cmt-cred ($ acdc-store 'get cmt-said)))
@@ -149,7 +149,7 @@
                 (cmt-id (economic-event-fulfills event))
                 (cmt-cred (and cmt-id
                                ($ acdc-store 'by-claim-1
-                                  *schema-playnet-commitment*
+                                  *schema-localchimera-commitment*
                                   'commitment-id cmt-id))))
            ($ acdc-store 'issue-idempotent
               (make-work-event-credential
@@ -169,7 +169,7 @@
       ($ account-store 'credit-from-event event))
 
     (let ((work-cred ($ acdc-store 'by-claim-1
-                        *schema-playnet-work-event*
+                        *schema-localchimera-work-event*
                         'event-id "W-2")))
       (check-pred "work-event still issued"
                   (and work-cred #t))
@@ -214,7 +214,7 @@
       ($ account-store 'credit-from-event event))
 
     ;; Should still be one ACDC
-    (let ((all-work ($ acdc-store 'by-schema *schema-playnet-work-event*)))
+    (let ((all-work ($ acdc-store 'by-schema *schema-localchimera-work-event*)))
       (check "still one ACDC after replay (idempotent)"
              (length all-work) 1))))
 

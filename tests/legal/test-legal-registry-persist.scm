@@ -8,10 +8,10 @@
 ;;;
 ;;; Run: guile -L module tests/legal/test-legal-registry-persist.scm
 
-(use-modules (playnet test harness) (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
+(use-modules (localchimera test harness) (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet legal registry))            ; the fold + the guard DSL + serialization
-(use-modules (playnet legal registry-actor))      ; ^legal-registry + restore-legal-registry
+(use-modules (localchimera legal registry))            ; the fold + the guard DSL + serialization
+(use-modules (localchimera legal registry-actor))      ; ^legal-registry + restore-legal-registry
 
 (define tmpfile "/tmp/legal-registry-portrait.scm")
 

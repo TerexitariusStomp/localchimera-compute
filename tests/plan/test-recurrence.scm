@@ -10,8 +10,8 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-recurrence.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet plan recurrence) (playnet vf schemas) (playnet vf beyond schedules))
+(use-modules (localchimera test harness))
+(use-modules (localchimera plan recurrence) (localchimera vf schemas) (localchimera vf beyond schedules))
 (use-modules (srfi srfi-1))
 ;;; ── Harness ───────────────────────────────────────────────────────────────────
 

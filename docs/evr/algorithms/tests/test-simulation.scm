@@ -18,7 +18,7 @@
 ;;; Run: guile --no-auto-compile -q -L module -L . \
 ;;;        -l docs/evr/algorithms/tests/test-simulation.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (docs evr algorithms culcus)
              (docs evr algorithms nac)
              (srfi srfi-1))

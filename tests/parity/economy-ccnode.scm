@@ -4,11 +4,11 @@
 ;;; bridgeJobId:receiptDigest as the reference — is the ledger line.
 ;;; Invariant leg pins settlement->ledger-rows; live leg posts.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
-             (playnet machine settlement)
-             (playnet machine credit-commons)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
+             (localchimera machine settlement)
+             (localchimera machine credit-commons)
              (srfi srfi-1))
 
 (define fixture-statement
@@ -28,7 +28,7 @@
               (string=? (cdr (assoc "description" (car rows))) "bj-1:d-1")
               #t) #t))
 
-(parity-live "PLAYNET_CCNODE_URL"
+(parity-live "LOCALCHIMERA_CCNODE_URL"
   "cc-node accepts the settlement's ledger rows"
   (lambda (endpoint)
     (catch #t

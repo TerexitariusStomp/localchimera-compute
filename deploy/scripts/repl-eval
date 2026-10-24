@@ -1,14 +1,14 @@
 #!/run/current-system/profile/bin/guile
 !#
-;;; repl-eval — evaluate Scheme in the live playnet REPL
+;;; repl-eval — evaluate Scheme in the live localchimera REPL
 ;;; Usage: repl-eval '(+ 1 2)'
 ;;;        echo '(define x 42)' | repl-eval
 ;;;
-;;; Deployed to /home/playnet/bin/repl-eval by guix deploy activation.
+;;; Deployed to /home/localchimera/bin/repl-eval by guix deploy activation.
 
 (use-modules (ice-9 rdelim) (ice-9 textual-ports))
 
-(define socket-path "/var/run/playnet/repl.sock")
+(define socket-path "/var/run/localchimera/repl.sock")
 
 (define (eval-in-repl expr)
   (let ((sock (socket PF_UNIX SOCK_STREAM 0)))

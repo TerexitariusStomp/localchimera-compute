@@ -27,13 +27,13 @@
 ;;; defends all three together. (The plan has foresight, so a missing reproduction
 ;;; under-feeds the whole horizon evenly rather than collapsing only at the end.)
 ;;;
-;;; Run:  guile -L module/playnet/planner tests/solve/test-one-field.scm
+;;; Run:  guile -L module/localchimera/planner tests/solve/test-one-field.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve plan)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand)
-             (playnet vf formulas stocks))
+(use-modules (localchimera solve engine) (localchimera solve plan)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand)
+             (localchimera vf formulas stocks))
 
 (define SEASONS '(0 1 2 3))
 (define place    "farm")

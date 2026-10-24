@@ -17,8 +17,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/server/test-observability-endpoints.scm
 
-(use-modules (playnet test harness)
-             (playnet utils paths)
+(use-modules (localchimera test harness)
+             (localchimera utils paths)
              (web request)
              (web response)
              (rnrs bytevectors)
@@ -32,14 +32,14 @@
 
 ;; Sandbox the state dir.
 (define %tmp-root
-  (let ((p (string-append "/tmp/playnet-obs-test-"
+  (let ((p (string-append "/tmp/localchimera-obs-test-"
                           (number->string (getpid)))))
     (ensure-directory! p)
     p))
-(current-playnet-state-dir-override %tmp-root)   ; /audit's scopes/ scan
-;; the status + queue probes follow PLAYNET_DATA_DIR (where the gateway
+(current-localchimera-state-dir-override %tmp-root)   ; /audit's scopes/ scan
+;; the status + queue probes follow LOCALCHIMERA_DATA_DIR (where the gateway
 ;; writes them) — point both conventions at the same sandbox root
-(setenv "PLAYNET_DATA_DIR" %tmp-root)
+(setenv "LOCALCHIMERA_DATA_DIR" %tmp-root)
 
 (define (rm-rf path)
   (when (file-exists? path)
@@ -137,7 +137,7 @@
            port)
     (newline port)
     (write '(umbrella-grant
-             (issuer-aid-name . "playnet-governance")
+             (issuer-aid-name . "localchimera-governance")
              (said            . "E_cred_2")
              (holder          . "E_holder_2"))
            port)
@@ -171,7 +171,7 @@
 (call-with-output-file (string-append %acdc-bucket "/cred-pass-001.scm")
   (lambda (port)
     (write '((said      . "E_audit_pass_001")
-             (schema    . "playnet-audit-pass/v1")
+             (schema    . "localchimera-audit-pass/v1")
              (issuer    . "E_auditor_aid")
              (holder    . "E_test_federation_AID")
              (claims    . ((cycle . 1)))
@@ -185,7 +185,7 @@
        (j (json-of r)))
   (check "audit (have pass): 200" (status-of r) 200)
   (check "audit: schema = audit-pass"
-         (assoc-ref j "schema") "playnet-audit-pass/v1")
+         (assoc-ref j "schema") "localchimera-audit-pass/v1")
   (check "audit: said populated"
          (assoc-ref j "said") "E_audit_pass_001")
   (check "audit: not revoked"
@@ -196,7 +196,7 @@
 (call-with-output-file (string-append %acdc-bucket "/cred-alert-002.scm")
   (lambda (port)
     (write '((said      . "E_audit_alert_002")
-             (schema    . "playnet-incoherence-alert/v1")
+             (schema    . "localchimera-incoherence-alert/v1")
              (issuer    . "E_auditor_aid")
              (holder    . "E_test_federation_AID")
              (claims    . ((violations . ((double-counted-members . ((aid1)))))))
@@ -211,7 +211,7 @@
   (check "audit (mixed): newest wins"
          (assoc-ref j "said") "E_audit_alert_002")
   (check "audit (mixed): schema reflects alert"
-         (assoc-ref j "schema") "playnet-incoherence-alert/v1"))
+         (assoc-ref j "schema") "localchimera-incoherence-alert/v1"))
 
 ;; Cleanup
 (rm-rf %tmp-root)

@@ -16,16 +16,16 @@
 ;;; under workers and the solve circulated tens of thousands of units the books refused.
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/scope/test-property-enact.scm
-(use-modules (playnet solve report))
-(use-modules ((playnet vf formulas flows) #:select (row-figure))
-             (playnet test harness) (playnet test books)
-             (playnet vf schemas) (srfi srfi-1) (srfi srfi-11)
-             (playnet scope live)
-             (playnet solve engine) (playnet solve world) (playnet solve compile) (playnet solve solver)
+(use-modules (localchimera solve report))
+(use-modules ((localchimera vf formulas flows) #:select (row-figure))
+             (localchimera test harness) (localchimera test books)
+             (localchimera vf schemas) (srfi srfi-1) (srfi srfi-11)
+             (localchimera scope live)
+             (localchimera solve engine) (localchimera solve world) (localchimera solve compile) (localchimera solve solver)
              (goblins) (goblins vat) (goblins persistence-store memory) (goblins utils hashmap)
              (ice-9 format))
 (setvbuf (current-output-port) 'none)
-(define E (resolve-module '(playnet solve engine)))
+(define E (resolve-module '(localchimera solve engine)))
 (define N 10)
 (define SEED0 1)
 
@@ -65,7 +65,7 @@
               (lambda (forms labform ncol cols goods raws idx)
                 (let* ((x0 ((module-ref E 'located-warm) cols ncol idx))
                        (x (call-with-values (lambda () (solve-native forms labform x0)) (lambda (x . _) x))))
-                  ((@ (playnet solve report) plan->material) x cols idx)))))
+                  ((@ (localchimera solve report) plan->material) x cols idx)))))
            (rows (map (lambda (m)
                         `((id . ,(commitment-id m)) (action . ,(commitment-action m))
                           (conforms-to . ,(commitment-resource-conforms-to m))

@@ -17,14 +17,14 @@
 ;;; History: current-pending-grants WAS a make-parameter; vats inherit
 ;;; the dynamic state of their spawn moment, so any vat spawned before
 ;;; the boot-time set read #f forever. It is now a boot cell
-;;; ((playnet utils boot-cell)) — one shared location, spawn-order
+;;; ((localchimera utils boot-cell)) — one shared location, spawn-order
 ;;; immune. This suite pins that.
 ;;;
 ;;; Run: guile -L module -L tests tests/keys/test-pending-grants-fiber-inheritance.scm
 
-(use-modules (playnet test harness)
-             (playnet keys pending-grants)
-             ((playnet keys exchange) #:select (current-pending-grants))
+(use-modules (localchimera test harness)
+             (localchimera keys pending-grants)
+             ((localchimera keys exchange) #:select (current-pending-grants))
              (goblins)
              (ice-9 threads)
              (fibers))

@@ -9,12 +9,12 @@
 ;;; then decides which demands auto-materialize as <proposal> +
 ;;; <intent> records in the scope's plan-store via promote-demands.
 
-(use-modules (playnet test harness)
-             (playnet pools credit-fold) (playnet scope root) (playnet vf schemas) (srfi srfi-1)
-             (playnet utils endorsement)
-             (playnet voice delegation-map) (playnet voice expression) (playnet voice voice-signer)
-             (playnet scope demand-registry)
-             (playnet voice demand-bridge)
+(use-modules (localchimera test harness)
+             (localchimera pools credit-fold) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1)
+             (localchimera utils endorsement)
+             (localchimera voice delegation-map) (localchimera voice expression) (localchimera voice voice-signer)
+             (localchimera scope demand-registry)
+             (localchimera voice demand-bridge)
              (goblins)
              (goblins utils hashmap)
              (srfi srfi-1))

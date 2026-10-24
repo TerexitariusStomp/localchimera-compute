@@ -16,9 +16,9 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-coherence.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve report) (playnet test planner worked-example) (playnet solve world)
-             (playnet solve solver)
-             (playnet vf schemas))
+(use-modules (localchimera solve engine) (localchimera solve report) (localchimera test planner worked-example) (localchimera solve world)
+             (localchimera solve solver)
+             (localchimera vf schemas))
 
 (declare-world! #:places '(("town" 0.0 0.0)) #:templates *base-templates*   ; grow (soil→grain), mill (grain→flour), bake (flour→bread)
                 #:workers (list (list "Ada" '("general") "town@0" 1000.0)))   ; a worker, so the LABOUR side emits VF intents/commitments

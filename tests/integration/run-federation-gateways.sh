@@ -5,9 +5,9 @@
 # Two gateways federated on the wire, end to end through federation/federate.scm:
 #
 #   1. Gateway A boots as the federation's Granary, gateway B as its Table
-#      (PLAYNET_SEED_FED), with durable scopes in its own state directory so
+#      (LOCALCHIMERA_SEED_FED), with durable scopes in its own state directory so
 #      the founding commune stands the same across the boots. Each founding
-#      commune is minted with a key of its own (PLAYNET_VAULT_KEY keeps its
+#      commune is minted with a key of its own (LOCALCHIMERA_VAULT_KEY keeps its
 #      bran) and signs on the wire through its scope. Each publishes its
 #      berth at boot: its peer's sturdyref and the AID it speaks under.
 #   2. The driver (federation-gateways-driver.scm) admits both into a signed
@@ -23,7 +23,7 @@
 #
 # FED_KEYS=dev runs the same story with scopes that hold no key (the
 # synthetic backend), each gateway signing under a dev identity
-# (PLAYNET_FED_SEED).
+# (LOCALCHIMERA_FED_SEED).
 #
 # Exit 0 = the driver read a final certificate before and after the restart.
 
@@ -37,12 +37,12 @@ FED_KEYS="${FED_KEYS:-scope}"
 member() {   # NAME TMPDIR PORT SEED-FED BYTE: a gateway as one member of the federation
     local keys
     if [ "$FED_KEYS" = dev ]; then
-        keys="PLAYNET_FED_SEED=$5"
+        keys="LOCALCHIMERA_FED_SEED=$5"
     else
-        keys="PLAYNET_VAULT_KEY=$(printf "%02x" "$5" | awk '{ for (i = 0; i < 32; i++) printf "%s", $0 }')"
+        keys="LOCALCHIMERA_VAULT_KEY=$(printf "%02x" "$5" | awk '{ for (i = 0; i < 32; i++) printf "%s", $0 }')"
     fi
-    gw_spawn "$1" "$2" "$3" PLAYNET_STATE_DIR="$2/state" PLAYNET_SCOPES_DURABLE=1 \
-             PLAYNET_SEED_FED="$4" "$keys"
+    gw_spawn "$1" "$2" "$3" LOCALCHIMERA_STATE_DIR="$2/state" LOCALCHIMERA_SCOPES_DURABLE=1 \
+             LOCALCHIMERA_SEED_FED="$4" "$keys"
 }
 started() { grep -c "federation peer started" "$1" 2>/dev/null || true; }
 wait_started() {   # NAME LOG COUNT SECONDS: until LOG says the peer started COUNT times
@@ -69,7 +69,7 @@ member "B" "$TMPB" "$PORT_B" table 2
 gw_wait_for "A" "$TMPA/federation-sref.txt" 120
 gw_wait_for "B" "$TMPB/federation-sref.txt" 120
 gw_stop_all
-grep -h "founding commune Playnet\|federation berth" "$LOG_A" "$LOG_B" | sed 's/^ *\[gateway\]/  /'
+grep -h "founding commune LocalChimera\|federation berth" "$LOG_A" "$LOG_B" | sed 's/^ *\[gateway\]/  /'
 
 # 2. the federation's word, its desk and its fold — the driver stays up to hear
 echo "=== the federation admits both ==="

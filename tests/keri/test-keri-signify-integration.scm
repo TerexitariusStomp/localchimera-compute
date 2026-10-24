@@ -18,10 +18,10 @@
 ;;; Run via the dev-test guix shell so libsodium/libblake3 are on path:
 ;;;   make test-keri-signify-integration
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet keri cesr)
-             (playnet keri signify)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera keri cesr)
+             (localchimera keri signify)
              (web server)
              (web request)
              (web response)
@@ -210,7 +210,7 @@
            (after-eq  (+ start-idx 9))
            (end-quote (string-contains sval "\"" after-eq))
            (q64       (substring sval after-eq end-quote))
-           (sig-bv    ((@ (playnet keri cesr) cesr-qb64->bytes) q64)))
+           (sig-bv    ((@ (localchimera keri cesr) cesr-qb64->bytes) q64)))
       (check "decoded Signature is 64 bytes"
              (= 64 (bytevector-length sig-bv)))
 

@@ -1,0 +1,150 @@
+{
+  "$id": "EE-B8YPfaRNSwBwgApyxpa4-7eJtFkR1r1MUqm39Ss3g",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LocalChimera Body Role Credential",
+  "description": "A body says who holds a role in it: the body's k-of-n group AID (issuer) says the holder holds one of steward, member or officer. Signed by a multisig block of the body's stewards. The body edge (I2I) chains the role to the body's own credential — the Engagement Context Role's le edge — so a revoked body credential fails every role below it.",
+  "type": "object",
+  "credentialType": "LocalChimeraBodyRoleCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Blinding nonce, minted on every role credential"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the body's group AID)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the person holding the role)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "u": {
+              "type": "string",
+              "description": "Blinding nonce"
+            },
+            "role": {
+              "enum": [
+                "steward",
+                "member",
+                "officer"
+              ],
+              "description": "The role held; officer is the official role the law names"
+            },
+            "since": {
+              "type": [
+                "number",
+                "string"
+              ],
+              "description": "When the role began (epoch seconds or ISO-8601)"
+            },
+            "until": {
+              "type": [
+                "number",
+                "string"
+              ],
+              "description": "When the role ends, when bounded"
+            },
+            "quorum": {
+              "type": "number",
+              "description": "The body's signing threshold k, as its KEL states"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "u",
+            "role",
+            "since"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "e": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Edge-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "description": "ACDC edge block: the chain to the body's own credential",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Edge-block SAID"
+            },
+            "body": {
+              "type": "object",
+              "description": "I2I edge: this role's issuer must be the holder of the referenced body credential",
+              "properties": {
+                "n": {
+                  "type": "string",
+                  "description": "SAID of the body credential"
+                },
+                "s": {
+                  "type": "string",
+                  "description": "SAID of the body schema"
+                },
+                "o": {
+                  "const": "I2I",
+                  "description": "Issuer-to-issuee chaining operator"
+                }
+              },
+              "required": [
+                "n"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

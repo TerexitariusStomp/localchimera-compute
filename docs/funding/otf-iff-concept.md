@@ -15,7 +15,7 @@
 
 ## Concept note text
 
-**Project title:** playnet-compute — machine-resource commons for
+**Project title:** localchimera — machine-resource commons for
 intermittent and constrained connectivity
 
 **What problem does it solve, and for whom?**
@@ -31,7 +31,7 @@ trust or banks they cannot use.
 
 **What do you propose?**
 
-playnet-compute (AGPL-3.0, in active development, publicly versioned
+localchimera (AGPL-3.0, in active development, publicly versioned
 at `rad:z2xjyuu4adoo1x88is8xtRz2tYwhu`) is an open machine-resource
 commons designed around exactly this constraint:
 

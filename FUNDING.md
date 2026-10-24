@@ -1,6 +1,6 @@
-# Funding playnet-compute
+# Funding localchimera
 
-playnet-compute is free software (AGPL-3.0-or-later). Its development is
+localchimera is free software (AGPL-3.0-or-later). Its development is
 sustained by its maintainers and, where successful, by grants and
 donations from programs that fund open internet infrastructure.
 

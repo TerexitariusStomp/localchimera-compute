@@ -9,13 +9,13 @@
 # before `docker compose up` — the services refuse empty passwords.
 #
 # Bring-up order is declared via depends_on + healthchecks: postgres and
-# mosquitto are infra; the adapters' PLAYNET_*_URL endpoints point at the
-# service names on `playnet-net` (e.g. http://opa:8181, http://ntfy:80).
+# mosquitto are infra; the adapters' LOCALCHIMERA_*_URL endpoints point at the
+# service names on `localchimera-net` (e.g. http://opa:8181, http://ntfy:80).
 
-name: playnet-adopted
+name: localchimera-adopted
 
 networks:
-  playnet-net:
+  localchimera-net:
     driver: bridge
 
 services:
@@ -24,7 +24,7 @@ services:
   postgres:
     image: docker.io/postgres:16
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?set in env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in env}
@@ -41,7 +41,7 @@ services:
   mosquitto:
     image: docker.io/eclipse-mosquitto:2.0
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     ports: ["1883:1883"]
     volumes:
       - mosquitto-data:/mosquitto/data
@@ -56,24 +56,24 @@ services:
   wasmcloud:
     image: ghcr.io/wasmcloud/wasmcloud:1.8.0
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     ports: ["8080:8080"]
     environment:
-      WASMCLOUD_LATTICE: playnet
+      WASMCLOUD_LATTICE: localchimera
       WASMCLOUD_JS_DOMAIN: wasmcloud.local
     volumes: [wasmcloud-data:/var/lib/wasmcloud]
 
   wasimoff:
     image: ghcr.io/wasimoff/broker:latest  # pin a release tag on deploy
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     ports: ["4080:4080"]
     volumes: [wasimoff-db:/app/db]
 
   cpsat:
     image: docker.io/python:3.12-slim
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     working_dir: /sidecar
     command:
       - sh
@@ -92,14 +92,14 @@ services:
   hrea:
     image: docker.io/hrea/hrea:latest      # pin digest on deploy
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     ports: ["8888:8888"]
     volumes: [hrea-data:/data]
 
   cc-node:
     image: gitlab.com/credit-commons/cc-node:latest
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     ports: ["2020:2020"]
     environment:
       CC_NODE_DB: ${CC_NODE_DB:?set in env}
@@ -109,7 +109,7 @@ services:
   opa:
     image: docker.io/openpolicyagent/opa:1.4.2
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     command: ["run", "--server", "--addr=0.0.0.0:8181", "/policies"]
     ports: ["8181:8181"]
     volumes: [./policies:/policies:ro]
@@ -122,7 +122,7 @@ services:
   decidim:
     image: docker.io/decidim/decidim:latest
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,7 +139,7 @@ services:
   temporalite:
     image: docker.io/temporalio/temporalite:latest
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     command: ["start", "--ephemeral", "--ip", "0.0.0.0", "--ui-port", "8233"]
     ports: ["7233:7233", "8233:8233"]
 
@@ -147,7 +147,7 @@ services:
   fuseki:
     image: docker.io/stain/jena-fuseki:5.2.0
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     ports: ["3030:3030"]
     environment:
       ADMIN_PASSWORD: ${FUSEKI_ADMIN_PASSWORD:?set in env}
@@ -162,7 +162,7 @@ services:
   ntfy:
     image: docker.io/binwiederhier/ntfy:v2.11.0
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     command: ["serve"]
     ports: ["2586:80"]
     volumes: [ntfy-data:/var/cache/ntfy]
@@ -175,7 +175,7 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-stable
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     command: ["--config", "/app/config/config.yaml", "--port", "4000"]
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?set in env}
@@ -188,7 +188,7 @@ services:
   odoo:
     image: docker.io/odoo:17.0
     restart: unless-stopped
-    networks: [playnet-net]
+    networks: [localchimera-net]
     depends_on:
       postgres:
         condition: service_healthy

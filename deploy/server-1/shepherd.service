@@ -1,5 +1,5 @@
 [Unit]
-Description=GNU Shepherd (user) — playnet service supervisor on server-1
+Description=GNU Shepherd (user) — localchimera service supervisor on server-1
 Documentation=man:shepherd(1)
 # We pre-build Guix profiles in ExecStartPre so shepherd-init.scm can rely
 # on bin paths existing. install.sh seeds the profiles once; this keeps
@@ -12,12 +12,12 @@ Type=simple
 Environment=HOME=%h
 Environment=XDG_RUNTIME_DIR=/run/user/%U
 Environment=PATH=%h/.config/guix/current/bin:%h/.guix-profile/bin:/usr/bin:/bin
-ExecStartPre=%h/playnet/deploy/server-1/install.sh --pre-start
+ExecStartPre=%h/localchimera/deploy/server-1/install.sh --pre-start
 ExecStart=%h/.guix-profile/bin/shepherd \
-  --config=%h/playnet/deploy/server-1/shepherd-init.scm \
+  --config=%h/localchimera/deploy/server-1/shepherd-init.scm \
   --socket=%t/shepherd/socket \
   --pid=%t/shepherd/pid \
-  --logfile=%h/.local/state/playnet/log/shepherd.log
+  --logfile=%h/.local/state/localchimera/log/shepherd.log
 Restart=on-failure
 RestartSec=5
 # shepherd already supervises its children; don't let systemd kill the

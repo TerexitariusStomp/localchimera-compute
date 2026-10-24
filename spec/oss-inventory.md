@@ -1,6 +1,6 @@
-# OSS Inventory — playnet machine node
+# OSS Inventory — localchimera machine node
 
-Per Appendix C of `playnet-compute.md`: before any module is written, name the
+Per Appendix C of `localchimera.md`: before any module is written, name the
 OSS that covers it or record why none does. This file is that record, plus the
 custom-code budget and how it's measured.
 
@@ -122,7 +122,7 @@ Nothing paid, nothing source-available (no BUSL, SSPL, Elastic).
 | tor | BSD-3 | onion transport |
 | Radicle heartwood | MIT/Apache-2.0 | repo + CI |
 | Guix System + Shepherd | GPL-3.0 | deploy |
-| OPA | Apache-2.0 | door policy gates (`deploy/policies/playnet/`) |
+| OPA | Apache-2.0 | door policy gates (`deploy/policies/localchimera/`) |
 
 ## Honest residue ledger (post-strip, measured)
 

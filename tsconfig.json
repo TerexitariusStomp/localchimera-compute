@@ -2,7 +2,7 @@
   // ui/ → browser/ : TypeScript sources OUTSIDE the document root, emitting
   // JavaScript INTO it. The tree mirrors: ui/app/seam.ts → browser/app/seam.js.
   //
-  // (Not to be confused with module/playnet/ui/*.scm — that is the SXML the
+  // (Not to be confused with module/localchimera/ui/*.scm — that is the SXML the
   //  repl app renders server-side in Scheme. This ui/ is the dial's own source,
   //  the thing a browser runs.)
   //

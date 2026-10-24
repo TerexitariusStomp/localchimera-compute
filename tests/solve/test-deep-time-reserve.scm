@@ -15,18 +15,18 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-deep-time-reserve.scm
 
-(use-modules (playnet solve plan) (srfi srfi-1) (ice-9 format))
+(use-modules (localchimera solve plan) (srfi srfi-1) (ice-9 format))
 (define (sibling f) (or (find file-exists? (filter-map (lambda (p) (and (string? p) (string-append (dirname p) "/" f)))
                                                        (cons (current-filename) (command-line))))
                         f))
-(use-modules (playnet solve engine)
-             (playnet vf schemas)
-             (playnet knowledge worlds bioregions))
-;; solve/robust.scm arrives with the engine — (playnet solve engine) loads it into
+(use-modules (localchimera solve engine)
+             (localchimera vf schemas)
+             (localchimera knowledge worlds bioregions))
+;; solve/robust.scm arrives with the engine — (localchimera solve engine) loads it into
 ;; itself and exports its names, so the load that stood here was a second copy
 ;; of the same text into this module (retired with the engine-as-module arc).
-(use-modules (playnet knowledge worlds doon-valley))
-(primitive-load (sibling "../../module/playnet/knowledge/recipes/navdanya-farm.scm"))
+(use-modules (localchimera knowledge worlds doon-valley))
+(primitive-load (sibling "../../module/localchimera/knowledge/recipes/navdanya-farm.scm"))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

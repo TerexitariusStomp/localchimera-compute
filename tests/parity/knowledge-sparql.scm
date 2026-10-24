@@ -4,13 +4,13 @@
 ;;; leg pins the SPARQL request the delegate emits for a fixture query;
 ;;; live leg answers real bindings.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
              (srfi srfi-1))
 
 (define fixture-query
-  "SELECT ?s ?p WHERE { ?s a <http://playnet/Skill> ; <http://playnet/name> ?p }")
+  "SELECT ?s ?p WHERE { ?s a <http://localchimera/Skill> ; <http://localchimera/name> ?p }")
 
 (let ((w (sparql-request fixture-query)))
   (check "sparql request is POST with the query as body, SPARQL-JSON accept"
@@ -18,7 +18,7 @@
               (equal? (cdr (assoc "accept" w)) "application/sparql-results+json")
               (equal? (cdr (assoc "body" w)) fixture-query)) #t))
 
-(parity-live "PLAYNET_JENA_URL"
+(parity-live "LOCALCHIMERA_JENA_URL"
   "fuseki answers the fixture query"
   (lambda (endpoint)
     (let ((d (make-sparql-delegate

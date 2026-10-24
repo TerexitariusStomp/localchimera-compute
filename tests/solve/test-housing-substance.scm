@@ -15,13 +15,13 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-housing-substance.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve discrete) (playnet solve ingest) (playnet solve world) (playnet solve compile) (playnet solve solver) (playnet vf schemas))
-(use-modules ((playnet knowledge catalogues subsistence) #:select (region-for-lat %hot-latitude %cold-latitude %high-latitude)))
-(use-modules (playnet knowledge catalogues housing) (playnet knowledge catalogues housing-substance)
-             ((playnet knowledge catalogues substances) #:select (%delivered-heat))
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve engine) (localchimera solve discrete) (localchimera solve ingest) (localchimera solve world) (localchimera solve compile) (localchimera solve solver) (localchimera vf schemas))
+(use-modules ((localchimera knowledge catalogues subsistence) #:select (region-for-lat %hot-latitude %cold-latitude %high-latitude)))
+(use-modules (localchimera knowledge catalogues housing) (localchimera knowledge catalogues housing-substance)
+             ((localchimera knowledge catalogues substances) #:select (%delivered-heat))
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

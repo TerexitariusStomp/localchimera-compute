@@ -10,9 +10,9 @@
 ;;;   6. Buffer (add zones, record snapshots)
 ;;;   7. Persist (save entire vat, restore, verify all state)
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (ice-9 match) (playnet federation remote-transport) (playnet scope root) (playnet vf schemas) (playnet ddmrp records))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (ice-9 match) (localchimera federation remote-transport) (localchimera scope root) (localchimera vf schemas) (localchimera ddmrp records))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)
@@ -23,8 +23,8 @@
 ;; =========================================================================
 
 
-(use-modules ((playnet test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
-(use-modules ((playnet observation account) #:select (declare-claimable!)))
+(use-modules ((localchimera test scope) #:select (plan-claim!)))   ; the plan's row, stood by the fixture
+(use-modules ((localchimera observation account) #:select (declare-claimable!)))
 ;; the rail is read off the recipes: this fixture stands in for the plan and
 ;; declares that a claim recipe stands for spec-bread (account.scm spec-claimable?)
 (declare-claimable! "spec-bread")

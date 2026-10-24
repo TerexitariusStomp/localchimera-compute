@@ -10,10 +10,10 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/solve/test-window-union.scm
 
-(use-modules (playnet test harness)
-             (playnet vf schemas) (playnet vf beyond schedules)
-             ((playnet solve engine) #:select (set-period-span!)) ((playnet solve ingest) #:select (window-hours agent-window-hours))
-             ((playnet vf facts availability)
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (localchimera vf beyond schedules)
+             ((localchimera solve engine) #:select (set-period-span!)) ((localchimera solve ingest) #:select (window-hours agent-window-hours))
+             ((localchimera vf facts availability)
               #:select (window-weekly-hours window-hours-on-dates make-dated-week))
              (srfi srfi-1))
 

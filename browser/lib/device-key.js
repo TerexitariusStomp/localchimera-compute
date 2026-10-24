@@ -7,7 +7,7 @@
 // browser offers:
 //
 //   hardware — a WebAuthn passkey with the `prf` extension. The seed is
-//              HMAC(prf-output, "playnet:device:v1"), derived after a touch
+//              HMAC(prf-output, "localchimera:device:v1"), derived after a touch
 //              on every load and held in memory only. On disk: the credential
 //              id and the salt — neither is a key.
 //   software — a non-extractable WebCrypto Ed25519 key in IndexedDB
@@ -26,12 +26,12 @@ import { K } from "../app/keys.js";
 
 const RECORD = K.deviceKey;
 const KEY_NAME = "device";
-const PRF_INFO = new TextEncoder().encode("playnet:device:v1");
+const PRF_INFO = new TextEncoder().encode("localchimera:device:v1");
 // a second key off the same root, for sealing small secrets the persona
 // needs on this device (the mesh identity seed): hardware — derived from
 // the PRF output next to the signing seed; software — a non-extractable
 // AES-GCM key in the keystore beside the signing key
-const SEAL_INFO = new TextEncoder().encode("playnet:device:seal:v1");
+const SEAL_INFO = new TextEncoder().encode("localchimera:device:seal:v1");
 const SEAL_NAME = "device-seal";
 
 const record = () => readJSON(RECORD, null);
@@ -97,11 +97,11 @@ async function createHardware() {
   const cred = await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rp: { name: "playnet", id: location.hostname },
+      rp: { name: "localchimera", id: location.hostname },
       user: {
         id: crypto.getRandomValues(new Uint8Array(16)),
-        name: "playnet device key",
-        displayName: "playnet device key",
+        name: "localchimera device key",
+        displayName: "localchimera device key",
       },
       pubKeyCredParams: [
         { type: "public-key", alg: -8 }, { type: "public-key", alg: -7 },

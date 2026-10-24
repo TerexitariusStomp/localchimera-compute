@@ -11,17 +11,17 @@
 ;;;   • the usage and issuance disclaimers ride on every body credential.
 ;;;
 ;;; Run: guile -L module tests/keri/test-body-credential.scm
-(use-modules (playnet test harness)
-             (playnet keri signify)
-             ((playnet keri crypto-primitives) #:select (ed25519-keypair-public))
-             ((playnet keri signify-portable) #:select (bran->signing-keypair public-key->aid-prefix))
-             ((playnet keri citizen-sig) #:select (sign-said-multisig make-keri-identity keri-identity-aid keri-identity-keypair))
-             (playnet keri acdc)
-             ((playnet keri acdc-store) #:select (spawn-acdc-store))
-             ((playnet keri schemas) #:select (read-schema-alist))
-             ((playnet keri credentials) #:select (%schema-body %schema-body-role governance-schema->keria-said))
-             (playnet keri first-person credentials)
-             (playnet keri first-person predicates)
+(use-modules (localchimera test harness)
+             (localchimera keri signify)
+             ((localchimera keri crypto-primitives) #:select (ed25519-keypair-public))
+             ((localchimera keri signify-portable) #:select (bran->signing-keypair public-key->aid-prefix))
+             ((localchimera keri citizen-sig) #:select (sign-said-multisig make-keri-identity keri-identity-aid keri-identity-keypair))
+             (localchimera keri acdc)
+             ((localchimera keri acdc-store) #:select (spawn-acdc-store))
+             ((localchimera keri schemas) #:select (read-schema-alist))
+             ((localchimera keri credentials) #:select (%schema-body %schema-body-role governance-schema->keria-said))
+             (localchimera keri first-person credentials)
+             (localchimera keri first-person predicates)
              (goblins) (goblins vat) (rnrs bytevectors)
              (srfi srfi-1))
 
@@ -56,7 +56,7 @@
     ($ store 'issue body)
 
     (display "\n── the body credential ──\n")
-    (check "schema" *schema-playnet-body* (cred-schema body))
+    (check "schema" *schema-localchimera-body* (cred-schema body))
     (check "issuer is the admitting scope" SCOPE (cred-issuer body))
     (check "holder is the body" BODY (cred-holder body))
     (check "kind" 'cooperative (cred-claim body 'kind))
@@ -74,11 +74,11 @@
                 (string-contains %issuance-disclaimer "accurate")))
     (check "the issuer-authz edge names the AIC" (cred-said aic) (edge-target (cred-edge body 'issuer-authz)))
     (check "the edge is I2I" 'I2I (edge-operator (cred-edge body 'issuer-authz)))
-    (check "the edge's schema is the AIC's" *schema-playnet-authorized-issuer* (edge-schema (cred-edge body 'issuer-authz)))
+    (check "the edge's schema is the AIC's" *schema-localchimera-authorized-issuer* (edge-schema (cred-edge body 'issuer-authz)))
     (check "the SAID commits to the content" (cred-said-consistent? body))
     (check "the scope's signature verifies" (cred-signature-valid? body))
-    (check "the schema label maps to the stamped SAID" %schema-body (governance-schema->keria-said *schema-playnet-body*))
-    (check "the role label maps to the stamped SAID" %schema-body-role (governance-schema->keria-said *schema-playnet-body-role*))
+    (check "the schema label maps to the stamped SAID" %schema-body (governance-schema->keria-said *schema-localchimera-body*))
+    (check "the role label maps to the stamped SAID" %schema-body-role (governance-schema->keria-said *schema-localchimera-body-role*))
 
     (display "\n── it chains to the root ──\n")
     (check "valid under the root, the chain read from the store"
@@ -165,7 +165,7 @@
                                               #:body-cred-said (cred-said other))))
       ($ store 'issue other)
       (check "the role's edge is I2I at the body schema"
-             (list 'I2I *schema-playnet-body*)
+             (list 'I2I *schema-localchimera-body*)
              (list (edge-operator (cred-edge role 'body)) (edge-schema (cred-edge role 'body))))
       (check "k of n and the chain verify" #t (body-role-credential-valid? signed stewards 2 #:roots ROOT #:store store))
       (check "k of n with the body credential in hand" #t (body-role-credential-valid? signed stewards 2 #:body-cred body #:roots ROOT #:store store))

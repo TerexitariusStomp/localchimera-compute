@@ -21,13 +21,13 @@
 ;;; This .example file is committed as documentation. The real
 ;;; hosts.scm is in .gitignore.
 
-(use-modules (playnet fleet records))
+(use-modules (localchimera fleet records))
 
 (list
  ;; Example entry (this is what the reconciler would write after
- ;; provisioning playnet-dev-1 from the desired-fleet.scm example):
+ ;; provisioning localchimera-dev-1 from the desired-fleet.scm example):
  (materialized-host
-  #:name "playnet-dev-1"
+  #:name "localchimera-dev-1"
   #:machine-id "ss_m_example_replace_with_real_id"
   #:ipv4 "198.51.100.23"
   #:ipv6 "2001:db8::1"

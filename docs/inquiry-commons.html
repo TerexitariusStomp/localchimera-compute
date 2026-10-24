@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recipe intake — what we actually need</title>
-<meta name="description" content="A recipe-intake form: only the data module/playnet/vf/schemas.scm actually consumes, with each input shaped like the schema field it feeds, exported live as a draft recipe.">
+<meta name="description" content="A recipe-intake form: only the data module/localchimera/vf/schemas.scm actually consumes, with each input shaped like the schema field it feeds, exported live as a draft recipe.">
 <style>
   :root{
     color-scheme: light;
@@ -374,7 +374,7 @@
       {id:"H.3", label:"Movement time between here and there, if relevant.", kind:"short", feeds:"a transport recipe's input"}
     ]},
 
-    {idx:"I", title:"Voice — lived correction", note:"The one place the open, subjective questions map onto something playnet built for: the voice field's “contrary observation” mechanism, which lets lived experience correct a recipe's stated hours or yield.", children:[
+    {idx:"I", title:"Voice — lived correction", note:"The one place the open, subjective questions map onto something localchimera built for: the voice field's “contrary observation” mechanism, which lets lived experience correct a recipe's stated hours or yield.", children:[
       {id:"I.1", label:"Does everything above match your actual experience, or does the plan undercount something?", kind:"text"},
       {id:"I.2", label:"Physical or health effects of this work worth recording.", kind:"text"},
       {id:"I.3", label:"Anything else the plan should know.", kind:"text"}
@@ -954,7 +954,7 @@
     const voice = [ans("I.1"), ans("I.2"), ans("I.3")].filter(Boolean);
     if (voice.length){
       lines.push("");
-      lines.push(";; ─── voice-field input (playnet.typ:2149's contrary observation) ───");
+      lines.push(";; ─── voice-field input (localchimera.typ:2149's contrary observation) ───");
       voice.forEach(v => v.split("\n").forEach(l => lines.push(";; " + l)));
     }
     return lines.join("\n");

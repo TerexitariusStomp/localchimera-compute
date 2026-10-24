@@ -6,11 +6,11 @@
 ;;; drifts (the standing plan stands) and re-solves big ones — cheaper than a cold
 ;;; solve because it re-centres from the standing optimum.
 
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet algorithms elastic) (playnet vf schemas)
-             (playnet scope live)
-             (playnet test planner bread)
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera algorithms elastic) (localchimera vf schemas)
+             (localchimera scope live)
+             (localchimera test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

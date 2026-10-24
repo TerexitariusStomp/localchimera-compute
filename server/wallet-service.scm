@@ -32,9 +32,9 @@
 ;;;   guile --no-auto-compile -L module server/wallet-service.scm [--port PORT]
 ;;;
 ;;; Environment:
-;;;   PLAYNET_DATA_DIR       — persistent state dir (default /var/lib/playnet)
-;;;   PLAYNET_WALLET_RUN_DIR — sturdyref + REPL socket dir
-;;;                            (default /var/run/playnet-wallet)
+;;;   LOCALCHIMERA_DATA_DIR       — persistent state dir (default /var/lib/localchimera)
+;;;   LOCALCHIMERA_WALLET_RUN_DIR — sturdyref + REPL socket dir
+;;;                            (default /var/run/localchimera-wallet)
 
 (use-modules (fibers)
              (fibers conditions)
@@ -51,22 +51,22 @@
              (ice-9 textual-ports)
              (ice-9 threads)
              (system repl server)
-             (playnet monero wallet)
-             (playnet monero policy)
-             (playnet monero policy-wire)
-             (playnet utils secure-memory)
-             (playnet utils time))
+             (localchimera monero wallet)
+             (localchimera monero policy)
+             (localchimera monero policy-wire)
+             (localchimera utils secure-memory)
+             (localchimera utils time))
 
 ;;; ── Configuration ──────────────────────────────────────────────────────
 
 (define %data-dir
-  (or (getenv "PLAYNET_DATA_DIR") "/var/lib/playnet"))
+  (or (getenv "LOCALCHIMERA_DATA_DIR") "/var/lib/localchimera"))
 
 ;; The wallet's own run directory: the sturdyref handoff and the REPL
 ;; socket. The deploy keeps <data-dir>/wallet-sref.txt as a symlink into
 ;; it, which is the path the gateway reads.
 (define %run-dir
-  (or (getenv "PLAYNET_WALLET_RUN_DIR") "/var/run/playnet-wallet"))
+  (or (getenv "LOCALCHIMERA_WALLET_RUN_DIR") "/var/run/localchimera-wallet"))
 
 (define (run-path filename)
   (string-append %run-dir "/" filename))
@@ -124,7 +124,7 @@
       (format #t "Runs ^monero-wallet + ^wallet-policy on a localhost WebSocket.~%")
       (exit 0))
 
-    (log! "~%  === playnet wallet-service ===~%")
+    (log! "~%  === localchimera wallet-service ===~%")
     (log! "  data-dir: ~a~%" %data-dir)
     (log! "  ws-port:  ~a~%" ws-port)
 
@@ -155,7 +155,7 @@
              (spawn ^monero-wallet
                     (make-wallet-provider
                      #:base-url "http://127.0.0.1:18082"
-                     #:rpc-user "playnet"
+                     #:rpc-user "localchimera"
                      #:rpc-password-file pw-file))))
 
          (define the-policy

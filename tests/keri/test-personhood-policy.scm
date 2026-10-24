@@ -6,8 +6,8 @@
 ;;; setting the row on a commune's plan-store — is
 ;;; tests/doors/test-personhood-policy.scm.
 
-(use-modules (playnet test harness)
-             (playnet keri first-person personhood-policy))
+(use-modules (localchimera test harness)
+             (localchimera keri first-person personhood-policy))
 
 (display "\n── defaults, then an explicit value ──\n")
 (check "k defaults to 2"        (personhood-policy #f 'enrollment-k) 2)

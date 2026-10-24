@@ -9,10 +9,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/scope/test-diet.scm
 
-(use-modules (playnet test harness) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
-             (playnet vf schemas)
-             (playnet knowledge catalogues diets)
-             (playnet knowledge catalogues subsistence)
+(use-modules (localchimera test harness) (localchimera vf schemas) (srfi srfi-1) (localchimera scope live)
+             (localchimera vf schemas)
+             (localchimera knowledge catalogues diets)
+             (localchimera knowledge catalogues subsistence)
              (srfi srfi-1) (ice-9 format))
 
 ;;; ─── the rule ───────────────────────────────────────────────────────────

@@ -13,11 +13,11 @@
 ;;;   • the certificate binds across cells: 2 h split over two places is 2 h
 ;;;
 ;;; Run:  guile -L module tests/scope/test-certificate-wall.scm
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
-             (playnet vf schemas) (srfi srfi-1)
-             (playnet scope live)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
+             (localchimera vf schemas) (srfi srfi-1)
+             (localchimera scope live)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (ice-9 format))
 

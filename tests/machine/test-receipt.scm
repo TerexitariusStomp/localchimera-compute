@@ -3,15 +3,15 @@
 ;;;
 ;;; The vectors below are produced by poi-compute's receipt-translate.ts —
 ;;; canonical string and sha256 both, verbatim. They are the whole test of
-;;; the port's claim: a hive's receipt and a playnet receipt over the same
+;;; the port's claim: a hive's receipt and a localchimera receipt over the same
 ;;; body hash the same commitment, or the two commons cannot settle against
 ;;; each other. If either side changes canonicalization this suite turns
 ;;; red here and red over there, in the same direction.
 
-(use-modules (playnet test harness)
-             (playnet machine specs)
-             (playnet machine receipt)
-             (playnet vf schemas)
+(use-modules (localchimera test harness)
+             (localchimera machine specs)
+             (localchimera machine receipt)
+             (localchimera vf schemas)
              (srfi srfi-1))
 
 

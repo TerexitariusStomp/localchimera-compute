@@ -17,7 +17,7 @@
 ;;;
 ;;; WHY THIS FILE EXISTS SEPARATELY FROM tests/scope/test-use-unit-lint.scm.
 ;;;
-;;; It used to be a necessity: the (playnet boot prelude) umbrella did not carry
+;;; It used to be a necessity: the (localchimera boot prelude) umbrella did not carry
 ;;; `compile-process` or `compile-recipe` at all — they lived only in
 ;;; planner/planner.scm, reached by primitive-load — so the file holding the
 ;;; use-unit invariant sat on the one path that could not run the compile step
@@ -26,7 +26,7 @@
 ;;; That is no longer true. compile.scm is included by BOTH loaders now (see the
 ;;; note above the include in planner.scm: "Same text, both loaders"), and
 ;;; svc-good moved into it so the umbrella path can actually compile a `use`
-;;; flow. `(use-modules (playnet boot prelude))` carries both procedures today.
+;;; flow. `(use-modules (localchimera boot prelude))` carries both procedures today.
 ;;;
 ;;; So the split is now a CHOICE, not a necessity, and the two halves still
 ;;; exercise genuinely different things:
@@ -40,11 +40,11 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-use-unit-register.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve compile)
-             (playnet vf schemas)
-             (playnet knowledge dsl shorthand))
+(use-modules (localchimera solve compile)
+             (localchimera vf schemas)
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)

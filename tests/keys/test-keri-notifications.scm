@@ -1,7 +1,7 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/keys/test-keri-notifications.scm — notification dispatch + handler tests
 ;;;
-;;; Exercises (playnet federation keria-notifications):
+;;; Exercises (localchimera federation keria-notifications):
 ;;;   - Route constants (just strings, cheap sanity check)
 ;;;   - register-notification-handler!  (single + multiple handlers per route)
 ;;;   - Private dispatch-notification / process-notification via @@ access
@@ -14,9 +14,9 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keys/test-keri-notifications.scm
 
-(use-modules (playnet test harness)
-             (playnet keri bridge)
-             (playnet federation keria-notifications)
+(use-modules (localchimera test harness)
+             (localchimera keri bridge)
+             (localchimera federation keria-notifications)
              (web server)
              (web request)
              (web response)
@@ -30,18 +30,18 @@
 
 ;; Reach into the module for the private dispatch + process procedures.
 (define dispatch-notification
-  (@@ (playnet federation keria-notifications) dispatch-notification))
+  (@@ (localchimera federation keria-notifications) dispatch-notification))
 (define process-notification
-  (@@ (playnet federation keria-notifications) process-notification))
+  (@@ (localchimera federation keria-notifications) process-notification))
 (define reset-handlers!
   (lambda ()
-    (module-define! (resolve-module '(playnet federation keria-notifications))
+    (module-define! (resolve-module '(localchimera federation keria-notifications))
                     '*handlers* '())))
 
 ;; Read *local-aid-prefixes* so we can reset between tests.
 (define reset-local-aids!
   (lambda ()
-    (module-define! (resolve-module '(playnet federation keria-notifications))
+    (module-define! (resolve-module '(localchimera federation keria-notifications))
                     '*local-aid-prefixes* #f)))
 
 ;;; ── Mock state ────────────────────────────────────────────────────────
@@ -233,7 +233,7 @@
 
 ;; Peek at the handler registry
 (define %handlers-after-install
-  (@@ (playnet federation keria-notifications) *handlers*))
+  (@@ (localchimera federation keria-notifications) *handlers*))
 
 (check "multisig-rpy has a handler registered"
        (let ((h (assoc notification-route/multisig-rpy %handlers-after-install)))

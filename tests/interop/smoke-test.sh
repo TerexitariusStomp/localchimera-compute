@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # tests/interop/smoke-test.sh — deploy-time IPEX peer smoke test
 #
-# Verifies that a running playnet gateway exposes the expected IPEX
+# Verifies that a running localchimera gateway exposes the expected IPEX
 # peer surface to external clients. Driven by curl, no Node deps.
 #
 # What this checks:
@@ -35,7 +35,7 @@ say()  { printf '  %s\n' "$*"; }
 ok()   { say "✓ $*"; PASS=$((PASS+1)); }
 fail() { say "✗ $*"; FAIL=$((FAIL+1)); }
 
-printf 'Smoke-testing playnet IPEX peer at %s\n\n' "$GATEWAY"
+printf 'Smoke-testing localchimera IPEX peer at %s\n\n' "$GATEWAY"
 
 # ── /federation-status.json ───────────────────────────────────────────
 

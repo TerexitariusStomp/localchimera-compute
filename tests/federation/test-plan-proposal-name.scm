@@ -7,8 +7,8 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module -L . -L tests tests/federation/test-plan-proposal-name.scm
 
-(use-modules (playnet test harness)
-             ((playnet federation plan-bundle) #:select (plan-proposal-name plan-proposal-plan-id)))
+(use-modules (localchimera test harness)
+             ((localchimera federation plan-bundle) #:select (plan-proposal-name plan-proposal-plan-id)))
 
 (check "a rising plan's proposal carries its plan id in its name" (plan-proposal-name "plan-7") "plan:plan-7")
 (check "…and the plan id reads back off the name" (plan-proposal-plan-id (plan-proposal-name "plan-7")) "plan-7")

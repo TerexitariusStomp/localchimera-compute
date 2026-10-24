@@ -30,9 +30,9 @@
 ;;;
 ;;; Run:  guile --no-auto-compile -q -L module tests/scope/test-joint-production.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness))
-(use-modules (playnet algorithms rollup) (playnet algorithms rollup common) (playnet algorithms rollup relative-snlt) (playnet scope root) (playnet vf schemas) (srfi srfi-1))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness))
+(use-modules (localchimera algorithms rollup) (localchimera algorithms rollup common) (localchimera algorithms rollup relative-snlt) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

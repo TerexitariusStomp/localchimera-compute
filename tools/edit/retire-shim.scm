@@ -36,18 +36,18 @@
 
 ;;; ── the shim's layers, in the order the use-modules will state them ────────
 (define layers
-  '((playnet solve engine)
-    (playnet solve compile)
-    (playnet solve solver)
-    (playnet vf schemas)
-    (playnet solve recipe-response)
-    (playnet vf formulas capacity)
-    (playnet vf formulas stocks)
-    (playnet knowledge worlds bioregions)
-    (playnet vf formulas tension-kinds)))
+  '((localchimera solve engine)
+    (localchimera solve compile)
+    (localchimera solve solver)
+    (localchimera vf schemas)
+    (localchimera solve recipe-response)
+    (localchimera vf formulas capacity)
+    (localchimera vf formulas stocks)
+    (localchimera knowledge worlds bioregions)
+    (localchimera vf formulas tension-kinds)))
 (define selects
-  '(((playnet utils units) convert-unit/strict unit-known? unit->substance convert-unit unit-rate? unit-rate-parts)
-    ((playnet utils clock) hhmm->minutes clock-length-minutes clock-overlap-minutes civil->instant instant->civil
+  '(((localchimera utils units) convert-unit/strict unit-known? unit->substance convert-unit unit-rate? unit-rate-parts)
+    ((localchimera utils clock) hhmm->minutes clock-length-minutes clock-overlap-minutes civil->instant instant->civil
                            instant->weekday now timescale instant->unix unix->instant)))
 (define general
   '((srfi srfi-1) (ice-9 format) (system foreign) (rnrs bytevectors)))
@@ -121,7 +121,7 @@
        (or (string-contains text "planner.scm\"")
            (string-contains text "/planner.scm")
            (string-contains text "planner-path")
-           ;; the harness went the same way: (playnet test planner prelude)
+           ;; the harness went the same way: (localchimera test planner prelude)
            (string-contains text "prelude.scm"))))
 (define (path-helper? text form)
   (and (pair? form) (eq? (car form) 'define)
@@ -131,13 +131,13 @@
 ;;; ── fragments a file goes on to load ──────────────────────────────────────
 (define (resolve-fragment lit from-dir)
   (let* ((cands (list (string-append from-dir "/" lit)
-                      (string-append "module/playnet/test/planner/" lit)
-                      (string-append "module/playnet/" lit)
-                      (string-append "module/playnet/knowledge/recipes/" lit)
-                      (string-append "module/playnet/test/planner/" (basename lit))
-                      (string-append "module/playnet/" (basename lit))
-                      (string-append "module/playnet/knowledge/recipes/" (basename lit))
-                      (string-append "module/playnet/knowledge/" (basename lit))))
+                      (string-append "module/localchimera/test/planner/" lit)
+                      (string-append "module/localchimera/" lit)
+                      (string-append "module/localchimera/knowledge/recipes/" lit)
+                      (string-append "module/localchimera/test/planner/" (basename lit))
+                      (string-append "module/localchimera/" (basename lit))
+                      (string-append "module/localchimera/knowledge/recipes/" (basename lit))
+                      (string-append "module/localchimera/knowledge/" (basename lit))))
          (hit (find file-exists? cands)))
     (and hit (canonicalize-path hit))))
 
@@ -201,7 +201,7 @@
      (else
       (let* ((mods (let ((m (needed-imports path)))
                      (if (any (lambda (t) (string-contains (cadr t) "prelude.scm")) loads)
-                         (cons '(playnet test planner prelude) m)
+                         (cons '(localchimera test planner prelude) m)
                          m)))
              ;; drop the load forms; then any path helper nobody reads any more
              (kept (lset-difference eq? tagged loads))

@@ -19,12 +19,12 @@
 ;;;
 ;;; Run: guile -L module tests/solve/test-response-solve.scm
 
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve robust)
-             (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet vf formulas shocks)
-             (playnet solve recipe-response)
-             (playnet knowledge dsl shorthand)
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve robust)
+             (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera vf formulas shocks)
+             (localchimera solve recipe-response)
+             (localchimera knowledge dsl shorthand)
              (srfi srfi-1)
              (ice-9 format))
 

@@ -11,10 +11,10 @@
 ;;;
 ;;; Run:  guile -q -L module tests/scope/test-contrary-observation.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              
-             (playnet scope live)
-             (playnet test planner bread)
+             (localchimera scope live)
+             (localchimera test planner bread)
              (goblins) (goblins vat)
              (srfi srfi-1))
 

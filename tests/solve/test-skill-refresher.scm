@@ -13,10 +13,10 @@
 ;;; doctor with no skill dynamics, so its idle-period output is outside the refresher's scope and not the
 ;;; subject here.) Same scenario, solved with refresh OFF vs ON.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-skill-refresher.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-skill-refresher.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world))
+(use-modules (localchimera solve engine) (localchimera solve world))
 (define PER '(0 1 2 3))
 
 (define (setup refresh?)

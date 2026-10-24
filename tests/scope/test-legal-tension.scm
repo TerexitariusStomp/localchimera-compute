@@ -20,10 +20,10 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-legal-tension.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope))
-(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet scope root) (playnet vf schemas) (playnet scope live)
-             (playnet legal gate)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope))
+(use-modules (localchimera test harness) (localchimera knowledge recipes store) (localchimera scope spatial-things) (localchimera scope root) (localchimera vf schemas) (localchimera scope live)
+             (localchimera legal gate)
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1) (srfi srfi-13) (ice-9 format))
 
@@ -120,8 +120,8 @@
 ;;; `make-legal-decorate` both take `#:soft-profile`, so the tolerance arrives at
 ;;; the solve by the same door the law does. Its eventual home is the tension
 ;;; catalogue a federation ratifies; this is the wire it comes in on.
-(use-modules (playnet legal registry) (playnet legal registry-actor)
-             (playnet legal crossings))
+(use-modules (localchimera legal registry) (localchimera legal registry-actor)
+             (localchimera legal crossings))
 (define (scope-tolerance-of profile)
   (let ((vat (spawn-vat)))
     (with-vat vat
@@ -161,8 +161,8 @@
 ;;; keyword wins over the commune's row, and the row wins
 ;;; over the default. Nobody edits code to move a line the commune is entitled
 ;;; to move.
-(use-modules (playnet legal policy) (playnet legal compliance)
-             (playnet legal registry-actor))
+(use-modules (localchimera legal policy) (localchimera legal compliance)
+             (localchimera legal registry-actor))
 
 (define governed
   (with-vat (spawn-vat)

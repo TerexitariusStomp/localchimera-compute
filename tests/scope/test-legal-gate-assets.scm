@@ -12,12 +12,12 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-legal-gate-assets.scm
 
-(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet knowledge recipes food-surplus) (playnet scope spatial-things) (playnet observation observer) (playnet scope agents) (playnet vf schemas)
+(use-modules (localchimera test harness) (localchimera knowledge recipes store) (localchimera knowledge recipes food-surplus) (localchimera scope spatial-things) (localchimera observation observer) (localchimera scope agents) (localchimera vf schemas)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal registry-actor))
-(use-modules (playnet legal gate))
-(use-modules (playnet observation observer))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal registry-actor))
+(use-modules (localchimera legal gate))
+(use-modules (localchimera observation observer))
 
 (define (empty-recipe-store)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

@@ -1,0 +1,93 @@
+;;; SPDX-License-Identifier: AGPL-3.0-or-later
+;;; module/localchimera/federation/conflicts.scm — the conflict methods of a scope: commitment conflicts detected and resolved.
+;;;
+;;; A fragment of the scope actor (localchimera scope actor): a procedure from the
+;;; actor's context to the doors it serves, composed into every scope by
+;;; (localchimera boot scope). `with-scope-ctx` binds the actor's fields and helpers
+;;; under their own names, so each clause reads as it did inside the actor
+;;; (docs/planning/codebase-layout.md §5).
+
+(define-module (localchimera federation conflicts)
+  #:use-module (srfi srfi-1)
+  #:use-module (localchimera credentials commitments)
+  #:use-module (localchimera credentials recomposition)
+  #:use-module (localchimera keri acdc)
+  #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-11)
+  #:use-module (goblins utils hashmap)
+  #:use-module (localchimera federation vows)
+  #:use-module (srfi srfi-11)
+  #:use-module (goblins)
+  #:use-module (localchimera scope actor)
+  #:use-module ((localchimera protocol dispatch) #:select (declared-doors))
+  #:export (scope-conflicts-doors))
+
+(define (scope-conflicts-doors ctx)
+  (with-scope-ctx ctx
+    (declared-doors scope
+
+    ;; ====================================================================
+    ;; Conflict detection (free composition's deliberation surface)
+    ;; ====================================================================
+
+    ((detect-commitment-conflicts)
+     ;; Walk member scopes' acdc-stores for overlapping commitments on the
+     ;; same resource-conforms-to. Returns a vow resolving to a list of
+     ;; conflict groups: ((resource-spec . (commitment-creds...)) ...)
+     (let-values (((p r) (spawn-promise-and-resolver)))
+       (let* ((member-list (hashmap-fold (lambda (_k v acc) (cons v acc))
+                                         '() members)))
+         (on-> (vow-fold-async
+                 member-list
+                 (lambda (mem acc)
+                   (on-> (<- mem 'acdc-store)
+                         (lambda (store)
+                           (cond
+                             ((not store) acc)
+                             (else
+                              (on-> (<- store 'by-schema
+                                         *schema-localchimera-commitment*)
+                                    (lambda (creds)
+                                      (append (filter (lambda (c)
+                                                        (not (cred-revoked? c)))
+                                                      creds)
+                                              acc))))))))
+                 '())
+               (lambda (all-commitments)
+                 ;; Group by resource-conforms-to
+                 (let ((groups (hashmap)))
+                   (for-each
+                     (lambda (cred)
+                       (let ((res (cred-claim cred 'resource-conforms-to)))
+                         (when res
+                           (let ((existing (hashmap-ref groups res '())))
+                             (set! groups (hashmap-set groups res
+                                                       (cons cred existing)))))))
+                     all-commitments)
+                   ;; Conflicts = groups with >1 commitment
+                   (let ((conflicts
+                          (hashmap-fold
+                            (lambda (res creds acc)
+                              (if (> (length creds) 1)
+                                  (cons (cons res creds) acc)
+                                  acc))
+                            '() groups)))
+                     (<-np r 'fulfill conflicts)))))
+         p)))
+
+    ((resolve-conflict gov-cap resource-id conflicting-saids
+                       prevailing-said resolution-method)
+     ;; Record a resolution decision as ACDC.
+     (unless ($ gov-sealed? gov-cap)
+       (error "resolve-conflict requires gov-authority" name))
+     (when acdc-store
+       ($ acdc-store 'issue
+          (make-conflict-resolution-credential
+            #:meta-scope-aid scope-aid
+            #:resource-id resource-id
+            #:conflicting-commitments conflicting-saids
+            #:prevailing-commitment prevailing-said
+            #:resolution-method resolution-method
+            #:resolved-at (current-time)
+            #:signing-keypair keypair)))
+     'ok))))

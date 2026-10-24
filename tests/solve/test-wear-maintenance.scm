@@ -12,9 +12,9 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-wear-maintenance.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve report) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve report) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 (define (bake-recipe wear maintain?)
   (compile-recipe

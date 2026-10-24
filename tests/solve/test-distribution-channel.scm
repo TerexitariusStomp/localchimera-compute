@@ -50,13 +50,13 @@
 ;;;
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-distribution-channel.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
+(use-modules ((localchimera utils units) #:select (%count-unit)))
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge dsl shorthand))
-(use-modules (playnet test planner prelude)
-             (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet vf schemas))
+(use-modules (localchimera knowledge dsl shorthand))
+(use-modules (localchimera test planner prelude)
+             (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera vf schemas))
 
 ;;; A barrier method sits INSIDE its feasible set, so a channel that the optimum
 ;;; would run to zero or to its ceiling is found near zero and near the ceiling.

@@ -1,16 +1,16 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
 ;;; tests/server/test-operator-endpoint.scm
 ;;;
-;;; Who runs this gateway comes from PLAYNET_OPERATOR_* in the environment and
+;;; Who runs this gateway comes from LOCALCHIMERA_OPERATOR_* in the environment and
 ;;; is answered at /operator.json and /.well-known/security.txt — nothing in a
 ;;; tracked file. A field left out is left out; with no security contact the
 ;;; unfinished template answers instead.
 ;;;
 ;;; Run: guile -L . -L module -L tests tests/server/test-operator-endpoint.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              ((server serve-static) #:select (handle-operator handle-security-txt))
-             ((playnet utils operator) #:select (%operator-fields operator-email contact-uri))
+             ((localchimera utils operator) #:select (%operator-fields operator-email contact-uri))
              (ice-9 textual-ports) (ice-9 match)
              (web response)
              (srfi srfi-13)
@@ -45,9 +45,9 @@
        '(fallback "template"))
 
 ;; set: only what is set is answered, trimmed
-(setenv "PLAYNET_OPERATOR_NAME" "  Kreuzberg Commune e.V.  ")
-(setenv "PLAYNET_OPERATOR_CONTACT" "contact@example.org")
-(setenv "PLAYNET_OPERATOR_ABUSE" "")
+(setenv "LOCALCHIMERA_OPERATOR_NAME" "  Kreuzberg Commune e.V.  ")
+(setenv "LOCALCHIMERA_OPERATOR_CONTACT" "contact@example.org")
+(setenv "LOCALCHIMERA_OPERATOR_ABUSE" "")
 (let ((j (json-of (call handle-operator))))
   (check "operator.json: name, trimmed" (assoc-ref j "name") "Kreuzberg Commune e.V.")
   (check "operator.json: contact" (assoc-ref j "contact") "contact@example.org")
@@ -63,7 +63,7 @@
   (check "security.txt: Expires present" (and (string-contains txt "\nExpires: 20") #t) #t))
 
 ;; a URL stands as written; a dedicated security contact wins
-(setenv "PLAYNET_OPERATOR_SECURITY" "https://example.org/security")
+(setenv "LOCALCHIMERA_OPERATOR_SECURITY" "https://example.org/security")
 (let ((txt (cadr (call (lambda () (handle-security-txt (lambda () (error "no"))))))))
   (check "security.txt: a URL stands as written, and wins over contact"
          (and (string-contains txt "Contact: https://example.org/security\n") #t) #t)
@@ -72,11 +72,11 @@
 
 
 ;; push and mail follow the operator, and never another deployment's address
-(unsetenv "PLAYNET_OPERATOR_CONTACT") (unsetenv "SMTP_FROM")
+(unsetenv "LOCALCHIMERA_OPERATOR_CONTACT") (unsetenv "SMTP_FROM")
 (check "no contact, no operator email" (operator-email) #f)
-(setenv "PLAYNET_OPERATOR_CONTACT" "hi@example.org")
+(setenv "LOCALCHIMERA_OPERATOR_CONTACT" "hi@example.org")
 (check "an email contact is the operator email" (operator-email) "hi@example.org")
-(setenv "PLAYNET_OPERATOR_CONTACT" "https://example.org/contact")
+(setenv "LOCALCHIMERA_OPERATOR_CONTACT" "https://example.org/contact")
 (check "a URL contact is not an email" (operator-email) #f)
 (check "a URL contact stands as the push subject" (contact-uri "https://example.org/contact") "https://example.org/contact")
 

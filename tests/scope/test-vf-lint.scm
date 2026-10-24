@@ -1,5 +1,5 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; tests/scope/test-vf-lint.scm — (playnet knowledge dsl vf-lint): one lint, two inputs
+;;; tests/scope/test-vf-lint.scm — (localchimera knowledge dsl vf-lint): one lint, two inputs
 ;;;
 ;;; What this pins:
 ;;;   RECIPE STORE  a well-formed recipe is clean; each rule fires on the shape it
@@ -16,12 +16,12 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-vf-lint.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit %effort-unit)))
-(use-modules (playnet test harness)
-             (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet vf schemas)
-             (playnet knowledge dsl vf-lint) (playnet knowledge dsl findings)
-             ((playnet knowledge catalogues substances) #:select (thermal-form base-at-ambient-row))
-             ((playnet knowledge catalogues substances) #:select (nuclide? sunlight-for water-for rated-kw))
+(use-modules ((localchimera utils units) #:select (%count-unit %effort-unit)))
+(use-modules (localchimera test harness)
+             (localchimera scope root) (localchimera vf schemas) (srfi srfi-1) (localchimera vf schemas)
+             (localchimera knowledge dsl vf-lint) (localchimera knowledge dsl findings)
+             ((localchimera knowledge catalogues substances) #:select (thermal-form base-at-ambient-row))
+             ((localchimera knowledge catalogues substances) #:select (nuclide? sunlight-for water-for rated-kw))
              (goblins) (srfi srfi-1) (srfi srfi-13))
 
 (define vat (spawn-vat #:name "vf-lint"))

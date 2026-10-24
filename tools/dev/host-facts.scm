@@ -12,7 +12,7 @@
 ;;;   guile --no-auto-compile -L module tools/dev/host-facts.scm --publish  # → MQTT
 ;;;
 ;;; --publish sends the raw facts sexp as a RETAINED message to
-;;; playnet/facts/host/<hostname> (mosquitto user "host-facts", whose ACL
+;;; localchimera/facts/host/<hostname> (mosquitto user "host-facts", whose ACL
 ;;; grants exactly that subtree — see deploy/os.scm), so any subscriber —
 ;;; a scope syncing its live-registry via sync-host-facts!, a dashboard —
 ;;; reads the freshest snapshot the moment it connects. deploy/os.scm's
@@ -21,8 +21,8 @@
 ;;; Works anywhere: a host without shepherd reports its capacity with an
 ;;; empty service list (laptops), the box reports every running service.
 
-(use-modules (playnet observation host-facts)
-             (playnet mqtt publish)
+(use-modules (localchimera observation host-facts)
+             (localchimera mqtt publish)
              (ice-9 pretty-print))
 
 (define raw? (member "--raw" (command-line)))
@@ -32,7 +32,7 @@
 
 (cond
  (publish?
-  (let* ((topic (string-append "playnet/facts/host/" (assq-ref facts 'host)))
+  (let* ((topic (string-append "localchimera/facts/host/" (assq-ref facts 'host)))
          (rc (mqtt-publish!
               #:topic topic
               #:message (object->string facts)

@@ -5,11 +5,11 @@
 ;;; and a worker may declare a preference. A multi-skilled worker (ada: bake+mill)
 ;;; competing with a single-skill one (bob: bake) for the bake pool exposes both.
 
-(use-modules (playnet test harness) (srfi srfi-1))
+(use-modules (localchimera test harness) (srfi srfi-1))
 ;; load the engine directly (it provides the VF records via its schema-load).
 ;; The engine is a library and prints nothing; its demos live in demo.scm.
-(use-modules (playnet solve engine) (playnet test planner worked-example) (playnet solve world)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera test planner worked-example) (localchimera solve world)
+             (localchimera solve solver))
 (set! *backend* 'native-c)
 
 (define* (setup #:key (emp-mode 'total))

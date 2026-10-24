@@ -17,7 +17,7 @@
              (goblins vat)
              (goblins actor-lib methods)
              (goblins utils hashmap)
-             (playnet test harness)
+             (localchimera test harness)
              (web server)
              (web request)
              (web response)
@@ -30,13 +30,13 @@
              (ice-9 format)
              (ice-9 match)
              (json)
-             (playnet monero wallet)
-             (playnet monero policy)
-             (playnet fleet sporestack)
-             (playnet fleet sporestack-provider)
-             (playnet fleet provider)
-             (playnet fleet records)
-             (playnet fleet reconciler))
+             (localchimera monero wallet)
+             (localchimera monero policy)
+             (localchimera fleet sporestack)
+             (localchimera fleet sporestack-provider)
+             (localchimera fleet provider)
+             (localchimera fleet records)
+             (localchimera fleet reconciler))
 
 ;;; ── Stub wallet ──────────────────────────────────────────────────────────
 
@@ -74,7 +74,7 @@
   ;; a BYTEVECTOR body, not a string: (web server)'s respond auto-appends a
   ;; charset param to Content-Type for a string body by destructuring it as
   ;; (type . params) — incompatible with the bare-string form Content-Type is
-  ;; declared as everywhere in this codebase (playnet utils http-auth). A
+  ;; declared as everywhere in this codebase (localchimera utils http-auth). A
   ;; bytevector body skips that whole path.
   (values
    (build-response
@@ -145,7 +145,7 @@
           ("running" . ,%state-server-running?)
           ("flavor_slug" . "vps-1vcpu-1gb")
           ("operating_system" . "debian-12")
-          ("hostname" . "playnet-test-recon")
+          ("hostname" . "localchimera-test-recon")
           ("autorenew" . #f)
           ("billing_cycle" . "daily")
           ("deleted_at" . 0)
@@ -177,7 +177,7 @@
 
 ;;; ── Temp files ───────────────────────────────────────────────────────────
 
-(define %tmpdir (string-append "/tmp/playnet-test-reconciler-"
+(define %tmpdir (string-append "/tmp/localchimera-test-reconciler-"
                                (number->string (getpid))))
 (system* "mkdir" "-p" %tmpdir)
 
@@ -188,17 +188,17 @@
 ;; Uses sporestack-host (backward-compat constructor).
 (call-with-output-file %desired-path
   (lambda (port)
-    (display "(use-modules (playnet fleet records))" port) (newline port)
+    (display "(use-modules (localchimera fleet records))" port) (newline port)
     (newline port)
     (display "(list" port) (newline port)
     (display "  (sporestack-host" port) (newline port)
-    (display "    #:name \"playnet-test-recon\"" port) (newline port)
+    (display "    #:name \"localchimera-test-recon\"" port) (newline port)
     (display "    #:flavor \"vps-1vcpu-1gb\"" port) (newline port)
     (display "    #:operating-system \"debian-12\"" port) (newline port)
     (display "    #:provider \"digitalocean\"" port) (newline port)
     (display "    #:region \"nyc1\"" port) (newline port)
     (display "    #:days 30" port) (newline port)
-    (display "    #:hostname \"playnet-test-recon\"" port) (newline port)
+    (display "    #:hostname \"localchimera-test-recon\"" port) (newline port)
     (display "    #:estimated-monthly-usd 5))" port) (newline port)))
 
 ;;; ── Build the actor stack ───────────────────────────────────────────────
@@ -253,7 +253,7 @@
          (= 1 (assq-ref status 'in-flight-count)))
   (check "tick 1: in-flight entry state is 'paying"
          (eq? 'paying
-              (cdr (assoc "playnet-test-recon"
+              (cdr (assoc "localchimera-test-recon"
                           (assq-ref status 'in-flight-states)))))
   (check "tick 1: providers list includes sporestack"
          (member "sporestack" (assq-ref status 'providers))))
@@ -288,7 +288,7 @@
            (= 1 (assq-ref status 'in-flight-count)))
     (check "tick 2: state advanced past 'paying"
            (not (eq? 'paying
-                     (cdr (assoc "playnet-test-recon"
+                     (cdr (assoc "localchimera-test-recon"
                                  (assq-ref status 'in-flight-states))))))))
 
 ;;; ── Keep ticking until provisioned ──────────────────────────────────────
@@ -326,7 +326,7 @@
     (check "hosts.scm entry is a materialized-host"
            (materialized-host? m))
     (check "hosts.scm entry name matches"
-           (equal? "playnet-test-recon" (materialized-host-name m)))
+           (equal? "localchimera-test-recon" (materialized-host-name m)))
     (check "hosts.scm entry machine-id matches"
            (equal? %machine-id (materialized-host-machine-id m)))
     (check "hosts.scm entry ipv4 matches what SporeStack returned"

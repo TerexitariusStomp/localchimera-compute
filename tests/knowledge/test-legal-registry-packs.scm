@@ -15,12 +15,12 @@
 ;;;
 ;;; Run: guile -L module tests/knowledge/test-legal-registry-packs.scm
 
-(use-modules (playnet test harness) (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
+(use-modules (localchimera test harness) (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet legal crossings))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal registry-actor))
-(use-modules ((playnet knowledge law context-pack) #:select (load-legal-registry)))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal registry-actor))
+(use-modules ((localchimera knowledge law context-pack) #:select (load-legal-registry)))
 
 ;; two jurisdictions' laws, authored as ordinary rules.
 (define rule-foodville

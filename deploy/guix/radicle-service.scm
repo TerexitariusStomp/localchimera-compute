@@ -21,8 +21,8 @@
 ;;;
 ;;;   (service radicle-service-type
 ;;;            (radicle-configuration
-;;;             (data-dir "/var/lib/playnet/radicle")
-;;;             (user "playnet")))
+;;;             (data-dir "/var/lib/localchimera/radicle")
+;;;             (user "localchimera")))
 
 (define-module (radicle-service)
   #:use-module (gnu services)
@@ -42,15 +42,15 @@
   (package   radicle-configuration-package
              (default radicle))
   (data-dir  radicle-configuration-data-dir
-             (default "/var/lib/playnet/radicle"))
+             (default "/var/lib/localchimera/radicle"))
   (listen    radicle-configuration-listen
              (default "0.0.0.0:8776"))
   (onion-hostname-file radicle-configuration-onion-hostname-file
-             (default "/var/lib/tor/hidden-services/playnet/hostname"))
+             (default "/var/lib/tor/hidden-services/localchimera/hostname"))
   (tor-socks radicle-configuration-tor-socks
              (default "127.0.0.1:9050"))
   (user      radicle-configuration-user
-             (default "playnet"))
+             (default "localchimera"))
   ;; Node alias — gossiped to every peer in the node announcement and
   ;; shown next to the DID in `rad node status` / delegate listings
   ;; network-wide. It is public metadata, so it names the project only:
@@ -58,7 +58,7 @@
   ;; by radicle-configure on every reconfigure so a hand-set alias from
   ;; `rad auth` can't linger.
   (alias     radicle-configuration-alias
-             (default "playnet-seed"))
+             (default "localchimera-seed"))
   ;; Path to a 0400-mode file containing the rad keystore passphrase.
   ;; Read at SERVICE START time, not deploy time, so:
   ;;   1. operators don't need RAD_PASSPHRASE in env on every reconfigure
@@ -143,7 +143,7 @@
                           #:group "users"
                           #:directory #$data-dir
                           #:environment-variables env
-                          #:log-file "/var/log/playnet/radicle-node.log"))))
+                          #:log-file "/var/log/localchimera/radicle-node.log"))))
                ;; radicle-httpd, radicle-http-api AND radicle-ci (the
                ;; CI/backstop loop, os.scm's `simple-service 'radicle-ci`)
                ;; all `(requirement '(radicle-node))` or equivalent, which
@@ -304,7 +304,7 @@
         (let ((pw (getpwnam #$user)))
           (mkdir-p #$data-dir)
           (chown #$data-dir (passwd:uid pw) (passwd:gid pw))
-          (mkdir-p "/var/log/playnet")))))
+          (mkdir-p "/var/log/localchimera")))))
 
 ;;; ── Service type ───────────────────────────────────────────────────────────
 

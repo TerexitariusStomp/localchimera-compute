@@ -19,16 +19,16 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-festival.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet observation observer) (playnet vf schemas) (playnet scope live)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness) (localchimera knowledge recipes store) (localchimera scope spatial-things) (localchimera observation observer) (localchimera vf schemas) (localchimera scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
 
 (define here (dirname (current-filename)))
-(use-modules (playnet legal crossings))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal registry-actor))
-(use-modules (playnet legal gate)) (use-modules (playnet legal compliance))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal registry-actor))
+(use-modules (localchimera legal gate)) (use-modules (localchimera legal compliance))
 
 (define (empty-rs)
   (spawn ^recipe-store (hashmap) (hashmap) (hashmap) (hashmap) (hashmap)

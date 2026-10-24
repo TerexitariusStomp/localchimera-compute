@@ -2,7 +2,7 @@
 ;;; deploy/channels.scm — pinned, authenticated channels
 ;;;
 ;;; Refresh the Guix pin with: guix describe --format=channels
-;;; Refresh the playnet pin with: git rev-parse HEAD (after each release).
+;;; Refresh the localchimera pin with: git rev-parse HEAD (after each release).
 ;;; The Guix manual mandates `commit` + `introduction` for every channel
 ;;; that ships code into builds (Cookbook §17.5). Without them, `guix
 ;;; pull` cannot verify the chain of signed commits and the channel URL
@@ -26,12 +26,12 @@
     "9edb3f66fd807b096b48283debdcddccfea34bad"
     (openpgp-fingerprint
      "BBB0 2DDF 2CEA F6A8 0D1D  E643 A2A0 6DF2 A33A 54FA"))))
- ;; Playnet channel — this repository itself.
+ ;; LocalChimera channel — this repository itself.
  ;; Radicle RID: rad:z27dFkN28LQAsSsG3DVHcfBqYAArQ
  ;;
  ;; The URL is the project's own clearnet domain — the box mirrors its own
  ;; repo over ordinary git-smart-HTTP (deploy/os.scm's
- ;; %playnet-git-mirror-locations: two exact-match nginx locations, nothing
+ ;; %localchimera-git-mirror-locations: two exact-match nginx locations, nothing
  ;; else under .git/ is reachable). `guix pull` shells out to git, which
  ;; does not speak rad://, and every third-party Radicle↔git gateway
  ;; checked (2026-08-04) served the same commit — one this repo's own
@@ -95,7 +95,7 @@
  ;; (RE-ROOTED 2026-10-08, one more dangling doc reference reworded).
  ;;
  ;; RE-ROOT 2026-08-23: two commits, 438b3124 and d0ce6d17 (both
- ;; 2026-08-15, author playnet-ops), landed UNSIGNED mid-chain — committed
+ ;; 2026-08-15, author localchimera-ops), landed UNSIGNED mid-chain — committed
  ;; with the operator key unavailable, the exact failure the pre-push
  ;; Guard 2 exists to catch and which slipped past it once. A signature
  ;; can't be added to an existing commit without rewriting every SHA after
@@ -130,7 +130,7 @@
  ;;
  ;; RE-ROOT 2026-09-21: a content review (docs/history/identity-scrub-
  ;; 2026-09-21.tsv) re-made the 1,994 commits from 2026-05-12 onward and
- ;; every descendant — as playnet-ops, same trees, same parents, each signed
+ ;; every descendant — as localchimera-ops, same trees, same parents, each signed
  ;; by the operator key CAFF…7B2F with the same .guix-authorizations.
  ;; dcebccc9 became c2251e91: the resign-map commit again, one slice further
  ;; along the same chain.
@@ -187,8 +187,8 @@
  ;; .guix-authorizations. This commit redoes the pin update on top of
  ;; that.
  (channel
-  (name 'playnet)
-  (url "https://playnet.earth/z27dFkN28LQAsSsG3DVHcfBqYAArQ.git")
+  (name 'localchimera)
+  (url "https://localchimera.earth/z27dFkN28LQAsSsG3DVHcfBqYAArQ.git")
   (branch "main")
   (commit "13db1c8e0d4a7f3f61ddca9d2aa4c53284fb6aa1")
   (introduction

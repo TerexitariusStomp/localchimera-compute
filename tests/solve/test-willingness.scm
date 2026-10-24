@@ -25,9 +25,9 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-willingness.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve report) (playnet solve world)
-             (playnet solve solver)
-             (playnet vf schemas))
+(use-modules (localchimera solve engine) (localchimera solve report) (localchimera solve world)
+             (localchimera solve solver)
+             (localchimera vf schemas))
 
 (define DEMAND 50.0)
 (define BUDGET 40.0)

@@ -12,12 +12,12 @@
 ;;; soil_p1) must stay under 10, which means soil's period-1 draw — at a cell where co2 is absent — is
 ;;; suppressed by co2's budget. That is the cell-aggregation subtlety, made to bite.
 ;;;
-;;; Run:  guile --no-auto-compile -L module/playnet/planner tests/solve/test-frag-budget-cascade.scm
+;;; Run:  guile --no-auto-compile -L module/localchimera/planner tests/solve/test-frag-budget-cascade.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve engine) (playnet solve world)
-             (playnet solve compile)
-             (playnet solve solver))
+(use-modules (localchimera solve engine) (localchimera solve world)
+             (localchimera solve compile)
+             (localchimera solve solver))
 
 (define s-tip 10.0) (define cpl 0.5)
 (define (recipes)

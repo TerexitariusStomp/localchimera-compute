@@ -12,17 +12,17 @@
 ;;;
 ;;; Run:  guile -L module tests/fleet/test-child-os.scm
 
-(use-modules (playnet test harness)
+(use-modules (localchimera test harness)
              (ice-9 popen)
              (srfi srfi-1)
-             (playnet fleet child)
-             (playnet fleet child-os)
+             (localchimera fleet child)
+             (localchimera fleet child-os)
              (ice-9 rdelim)
              (ice-9 regex)
              (ice-9 textual-ports)
              (srfi srfi-13))
 
-(define %dir (format #f "/tmp/playnet-test-child-os-~a" (getpid)))
+(define %dir (format #f "/tmp/localchimera-test-child-os-~a" (getpid)))
 (system* "rm" "-rf" %dir)
 (mkdir %dir #o700)
 
@@ -129,19 +129,19 @@
            (name-servers "8.8.8.8")))
   (check "the environment beats the fleet file"
          (assq-ref (net #:fleet-net fleet
-                        #:env (env '("PLAYNET_GATEWAY" . "10.9.9.1")
-                                   '("PLAYNET_NAMESERVERS" . "1.1.1.1,9.9.9.9")))
+                        #:env (env '("LOCALCHIMERA_GATEWAY" . "10.9.9.1")
+                                   '("LOCALCHIMERA_NAMESERVERS" . "1.1.1.1,9.9.9.9")))
                    'gateway)
          "10.9.9.1")
   (check "a comma-separated environment list is split"
          (assq-ref (net #:fleet-net fleet
-                        #:env (env '("PLAYNET_NAMESERVERS" . "1.1.1.1,9.9.9.9")))
+                        #:env (env '("LOCALCHIMERA_NAMESERVERS" . "1.1.1.1,9.9.9.9")))
                    'name-servers)
          '("1.1.1.1" "9.9.9.9"))
   (check "the host's provider-params beat the environment"
          (assq-ref (net #:fleet-net fleet
                         #:host-params '(("network-gateway" . "10.5.5.1"))
-                        #:env (env '("PLAYNET_GATEWAY" . "10.9.9.1")))
+                        #:env (env '("LOCALCHIMERA_GATEWAY" . "10.9.9.1")))
                    'gateway)
          "10.5.5.1")
   (check "an explicit option beats everything"
@@ -161,7 +161,7 @@
   (check "a prefix past 32 stops"
          (raises? (lambda () (net #:explicit '((prefix . 33) (gateway . "10.0.0.1"))))))
   (check "a prefix that is no number stops"
-         (raises? (lambda () (net #:env (env '("PLAYNET_PREFIX" . "big"))
+         (raises? (lambda () (net #:env (env '("LOCALCHIMERA_PREFIX" . "big"))
                                   #:explicit '((gateway . "10.0.0.1"))))))
   (check "a gateway that is no IPv4 address stops"
          (raises? (lambda () (net #:explicit '((prefix . 24) (gateway . "10.0.0.256"))))))

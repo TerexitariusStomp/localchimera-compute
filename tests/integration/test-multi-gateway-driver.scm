@@ -19,8 +19,8 @@
              (fibers)
              (fibers channels)
              (ice-9 format)
-             (playnet test harness)
-             (playnet deprecated vat-federation))
+             (localchimera test harness)
+             (localchimera deprecated vat-federation))
 
 (define (log* fmt . args)
   (apply format (current-error-port)

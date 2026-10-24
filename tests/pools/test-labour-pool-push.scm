@@ -9,16 +9,16 @@
 ;;; Run:  guile --no-auto-compile -q -L module \
 ;;;         -l tests/pools/test-labour-pool-push.scm
 
-(use-modules ((playnet utils units) #:select (%count-unit)))
-(use-modules (playnet test harness)
-             (playnet pools labour-fold)
-             ((playnet vf formulas actions) #:select (labour?))
-             ((playnet vf facts person-facts) #:select (generic-labour-spec))
-             (playnet pools availability-pool)
-             (playnet vf facts availability)
-             (playnet observation observer) (playnet vf schemas) (playnet vf beyond schedules)               ; make-agent, availability accessors
-             (playnet observation observer)
-             (playnet knowledge dsl shorthand)
+(use-modules ((localchimera utils units) #:select (%count-unit)))
+(use-modules (localchimera test harness)
+             (localchimera pools labour-fold)
+             ((localchimera vf formulas actions) #:select (labour?))
+             ((localchimera vf facts person-facts) #:select (generic-labour-spec))
+             (localchimera pools availability-pool)
+             (localchimera vf facts availability)
+             (localchimera observation observer) (localchimera vf schemas) (localchimera vf beyond schedules)               ; make-agent, availability accessors
+             (localchimera observation observer)
+             (localchimera knowledge dsl shorthand)
              (goblins)
              (srfi srfi-1))
 

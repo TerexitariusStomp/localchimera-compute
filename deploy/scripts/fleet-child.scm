@@ -12,13 +12,13 @@
 ;;;         `state NAME installed`: from then on the keeper offers the
 ;;;         passphrase to its initrd and promotes it once its system answers.
 ;;;
-;;; The data directory is PLAYNET_DATA_DIR (default /var/lib/playnet).
+;;; The data directory is LOCALCHIMERA_DATA_DIR (default /var/lib/localchimera).
 
-(use-modules (playnet fleet child)
+(use-modules (localchimera fleet child)
              (ice-9 format)
              (ice-9 match))
 
-(define %data-dir (or (getenv "PLAYNET_DATA_DIR") "/var/lib/playnet"))
+(define %data-dir (or (getenv "LOCALCHIMERA_DATA_DIR") "/var/lib/localchimera"))
 
 (define %states '(installing installed unlocked bootstrapped install-failed))
 

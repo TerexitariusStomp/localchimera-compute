@@ -14,11 +14,11 @@
 ;;;       guile --no-auto-compile -q -L module deploy/scripts/mk-founder.scm
 ;;;
 ;;; It prints a passcode (the ONLY key — there is NO recovery) and its AID,
-;;; derived with the native (playnet keri signify) — parity with the dial's
+;;; derived with the native (localchimera keri signify) — parity with the dial's
 ;;; signify-portable, so the passcode logs in to the same AID. Then activate:
 ;;;     deploy/scripts/add-founder.sh <AID>
 
-(use-modules (playnet keri signify)
+(use-modules (localchimera keri signify)
              (ice-9 binary-ports)
              (ice-9 format)
              (rnrs bytevectors))

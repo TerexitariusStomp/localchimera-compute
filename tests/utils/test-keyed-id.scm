@@ -1,10 +1,10 @@
 ;;; SPDX-License-Identifier: AGPL-3.0-or-later
-;;; test-keyed-id.scm — the id that names what a record is (module/playnet/utils/keyed-id.scm).
+;;; test-keyed-id.scm — the id that names what a record is (module/localchimera/utils/keyed-id.scm).
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/utils/test-keyed-id.scm
 
-(use-modules (playnet test harness)
-             (playnet utils keyed-id))
+(use-modules (localchimera test harness)
+             (localchimera utils keyed-id))
 
 (check "the kind and parts joined by |"
        (keyed-id "claim" "water" "alice" "A" "2026-10-02") "claim|water|alice|A|2026-10-02")

@@ -1,0 +1,168 @@
+{
+  "$id": "EJ1AtxcJPnZ8bizWRZBFbOGzTHBbU8Jh00p8MU5Olr1G",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LocalChimera Body Credential",
+  "description": "A scope's admission of a body: the admitting scope (issuer) says the holder, the body's k-of-n group AID, is a body it admitted. The Legal Entity credential's shape: the issuer-authz edge (I2I) chains the admitting scope to the trust-registry root's Authorized-Issuer blessing, and the roles the body issues chain to this credential. Registry identifiers (LEI, SIREN, …) ride in legal-ids; the usage and issuance disclaimers ride as claims.",
+  "type": "object",
+  "credentialType": "LocalChimeraBodyCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Blinding nonce, minted on every body credential"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the admitting scope)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the body's group AID)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "u": {
+              "type": "string",
+              "description": "Blinding nonce"
+            },
+            "kind": {
+              "type": "string",
+              "description": "The body's class (association, cooperative, foundation, …)"
+            },
+            "jurisdiction": {
+              "type": "string",
+              "description": "The jurisdiction the body stands under"
+            },
+            "legal-ids": {
+              "type": "object",
+              "description": "Registry identifiers by scheme: lei, siren, hrb, …",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "quorum": {
+              "type": "number",
+              "description": "The body's signing threshold k, as its KEL states"
+            },
+            "admitted-at": {
+              "type": [
+                "number",
+                "string"
+              ],
+              "description": "Admission timestamp (epoch seconds or ISO-8601)"
+            },
+            "expires-at": {
+              "type": [
+                "number",
+                "string",
+                "boolean",
+                "null"
+              ],
+              "description": "Expiry; false/null = perpetual"
+            },
+            "usage-disclaimer": {
+              "type": "string",
+              "description": "The usage disclaimer: the credential does not assert the body is trustworthy or compliant"
+            },
+            "issuance-disclaimer": {
+              "type": "string",
+              "description": "The issuance disclaimer: issued to the named holder with reasonable care, accurate at issuance"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "u",
+            "admitted-at",
+            "usage-disclaimer",
+            "issuance-disclaimer"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "e": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Edge-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "description": "ACDC edge block: the issuer-authz chain to the root's blessing",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Edge-block SAID"
+            },
+            "issuer-authz": {
+              "type": "object",
+              "description": "I2I edge: this credential's issuer must be the holder of the referenced Authorized-Issuer credential, chaining the admitting scope to the trust-registry root",
+              "properties": {
+                "n": {
+                  "type": "string",
+                  "description": "SAID of the Authorized-Issuer credential"
+                },
+                "s": {
+                  "type": "string",
+                  "description": "SAID of the Authorized-Issuer schema"
+                },
+                "o": {
+                  "const": "I2I",
+                  "description": "Issuer-to-issuee chaining operator"
+                }
+              },
+              "required": [
+                "n"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

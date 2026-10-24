@@ -32,22 +32,22 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-festival-reproduction.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet observation observer) (playnet vf schemas) (srfi srfi-1) (playnet scope live)
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness) (localchimera knowledge recipes store) (localchimera scope spatial-things) (localchimera observation observer) (localchimera vf schemas) (srfi srfi-1) (localchimera scope live)
              (goblins) (goblins vat) (goblins utils hashmap) (srfi srfi-1) (ice-9 format))
-(use-modules (playnet knowledge catalogues subsistence)
-             ((playnet knowledge catalogues substances) #:select (nutrient-content)))
+(use-modules (localchimera knowledge catalogues subsistence)
+             ((localchimera knowledge catalogues substances) #:select (nutrient-content)))
 
 ;; tests run from the repository root (each file's own Run: line); the root is
 ;; resolved by its marker rather than by current-filename, which is #f or
 ;; -L-relative depending on how the file was loaded — both wrong for paths.
-(define root (or (and (file-exists? "module/playnet/solve/engine.scm") (getcwd))
+(define root (or (and (file-exists? "module/localchimera/solve/engine.scm") (getcwd))
                  (error "run this test from the repository root")))
-(use-modules (playnet legal crossings))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal registry-actor))
-(use-modules (playnet legal gate)) (use-modules (playnet legal compliance))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal registry-actor))
+(use-modules (localchimera legal gate)) (use-modules (localchimera legal compliance))
 
 (define N 300)   ; attendees. The mono-food era declared 2000 (and was reading
                  ; a phase-I escape, never a plan). The PLAN is scale-invariant

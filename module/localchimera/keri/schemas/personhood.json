@@ -1,0 +1,177 @@
+{
+  "$id": "EPvBiLn9gooVk2xWXrUy_YFVfSlA8W8SKJRrHRhHoSjF",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LocalChimera Personhood Credential",
+  "description": "First-Person Project Personhood Credential (PHC): an ecosystem's governance group asserts that the holder is a unique real person within this ecosystem. Enrollment evidence stays off-protocol; only its digest is carried. The issuer-authz edge (I2I) chains the issuing ecosystem to the trust-registry root's Authorized-Issuer blessing.",
+  "type": "object",
+  "credentialType": "LocalChimeraPersonhoodCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "ACDC version string"
+    },
+    "d": {
+      "type": "string",
+      "description": "Credential SAID"
+    },
+    "u": {
+      "type": "string",
+      "description": "Optional salt for privacy-preserving presentations"
+    },
+    "i": {
+      "type": "string",
+      "description": "Issuer AID prefix (the ecosystem's governance group)"
+    },
+    "ri": {
+      "type": "string",
+      "description": "Registry identifier (TEL)"
+    },
+    "s": {
+      "type": "string",
+      "description": "Schema SAID"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Attributes-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Attributes-block SAID"
+            },
+            "i": {
+              "type": "string",
+              "description": "Holder AID prefix (the person)"
+            },
+            "dt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO-8601 issuance timestamp"
+            },
+            "ecosystem-aid": {
+              "type": "string",
+              "description": "AID of the enrolling ecosystem (same as issuer)"
+            },
+            "enrolled-at": {
+              "type": "number",
+              "description": "Enrollment epoch timestamp"
+            },
+            "enrollment-evidence-digest": {
+              "type": [
+                "string",
+                "boolean",
+                "null"
+              ],
+              "description": "Opaque digest of the off-protocol evidence bundle; false/null when none was recorded"
+            },
+            "active": {
+              "type": "boolean",
+              "description": "Liveness flag; re-enrollment issues a new PHC and revokes the old"
+            },
+            "sponsor-aid": {
+              "type": [
+                "string",
+                "boolean",
+                "null"
+              ],
+              "description": "AID of the existing PHC-holder who introduced this person; false/null when unsponsored"
+            },
+            "expires-at": {
+              "type": [
+                "number",
+                "boolean",
+                "null"
+              ],
+              "description": "Expiry epoch; false/null = perpetual (founder default)"
+            }
+          },
+          "required": [
+            "d",
+            "i",
+            "dt",
+            "ecosystem-aid",
+            "enrolled-at",
+            "active"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "e": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Edge-block SAID (compact form)"
+        },
+        {
+          "type": "object",
+          "description": "ACDC edge block: issuer-authz chain to the root's blessing plus k-of-n witness attestation edges",
+          "properties": {
+            "d": {
+              "type": "string",
+              "description": "Edge-block SAID"
+            },
+            "issuer-authz": {
+              "type": "object",
+              "description": "I2I edge: this PHC's issuer must be the holder of the referenced Authorized-Issuer credential, chaining the ecosystem to the trust-registry root",
+              "properties": {
+                "n": {
+                  "type": "string",
+                  "description": "SAID of the Authorized-Issuer credential"
+                },
+                "s": {
+                  "type": "string",
+                  "description": "SAID of the Authorized-Issuer schema"
+                },
+                "o": {
+                  "const": "I2I",
+                  "description": "Issuer-to-issuee chaining operator"
+                }
+              },
+              "required": [
+                "n"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": {
+            "type": "object",
+            "description": "Witness edge (NI2I to a witness's own PHC), named per witness by the enrollment ceremony",
+            "properties": {
+              "n": {
+                "type": "string",
+                "description": "SAID of the witness's credential"
+              },
+              "s": {
+                "type": "string",
+                "description": "SAID of the referenced credential's schema"
+              },
+              "o": {
+                "type": "string",
+                "description": "ACDC edge operator"
+              }
+            },
+            "required": [
+              "n"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "v",
+    "d",
+    "i",
+    "ri",
+    "s",
+    "a"
+  ],
+  "additionalProperties": false
+}

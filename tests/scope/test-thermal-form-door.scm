@@ -11,11 +11,11 @@
 ;;;
 ;;; Run:  guile -q -L module tests/scope/test-thermal-form-door.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
-(use-modules (playnet test harness) (playnet scope root) (playnet vf schemas) (srfi srfi-1) (playnet vf schemas)
-             (playnet knowledge catalogues thermal) (playnet knowledge dsl vf-lint)
-             (playnet knowledge dsl findings)
-             ((playnet knowledge catalogues substances) #:select (second-law-production *contains*))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
+(use-modules (localchimera test harness) (localchimera scope root) (localchimera vf schemas) (srfi srfi-1) (localchimera vf schemas)
+             (localchimera knowledge catalogues thermal) (localchimera knowledge dsl vf-lint)
+             (localchimera knowledge dsl findings)
+             ((localchimera knowledge catalogues substances) #:select (second-law-production *contains*))
              (goblins) (srfi srfi-1))
 
 (define (approx= a b) (< (abs (- a b)) 1e-9))

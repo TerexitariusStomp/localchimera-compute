@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "playnet gateway doors",
+    "title": "localchimera gateway doors",
     "version": "1",
-    "description": "Every door the browser may call, declared once in module/playnet/doors/protocol.scm and emitted here, grouped by topic. The HTTP door (POST /api/{object}/{name}) carries the same doors CapTP does; a call is signed with an enrolled device key (RFC 9421) unless the door is anonymous. The same doors are MCP tools: POST /api/mcp speaks JSON-RPC (initialize, tools/list, tools/call), and browser/api/mcp-tools.json is the committed tool list. Doors a client cannot reach (root tier, operator) are listed under x-playnet-doors."
+    "description": "Every door the browser may call, declared once in module/localchimera/doors/protocol.scm and emitted here, grouped by topic. The HTTP door (POST /api/{object}/{name}) carries the same doors CapTP does; a call is signed with an enrolled device key (RFC 9421) unless the door is anonymous. The same doors are MCP tools: POST /api/mcp speaks JSON-RPC (initialize, tools/list, tools/call), and browser/api/mcp-tools.json is the committed tool list. Doors a client cannot reach (root tier, operator) are listed under x-localchimera-doors."
   },
   "servers": [
     {
@@ -82,10 +82,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -97,23 +97,23 @@
                   "username": {
                     "type": "string",
                     "description": "the seat's login handle, a plain string chosen at signup",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "email": {
                     "type": "string",
                     "description": "the seat's contact email, display-only on the member record",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "aid-prefix": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "oobi-url": {
                     "type": "string",
                     "description": "the KERIA-hosted OOBI URL where this AID's key state can be resolved",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -171,7 +171,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -193,11 +193,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "signup",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "signup",
         "security": [],
         "requestBody": {
           "required": true,
@@ -209,29 +209,29 @@
                   "username": {
                     "type": "string",
                     "description": "the seat's login handle, a plain string chosen at signup",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "email": {
                     "type": "string",
                     "description": "the seat's contact email, display-only on the member record",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "aid-prefix": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "icp-alist": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "the AID's inception event as a JSON object (KERI icp fields, serialized)",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   },
                   "sigs": {
                     "type": "array",
                     "description": "a JSON array of CESR qb64 signatures over the event, one per signing key",
-                    "x-playnet-shape": "list"
+                    "x-localchimera-shape": "list"
                   }
                 },
                 "required": [
@@ -290,7 +290,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -312,10 +312,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -327,34 +327,34 @@
                   "username": {
                     "type": "string",
                     "description": "the seat's login handle, a plain string chosen at signup",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "email": {
                     "type": "string",
                     "description": "the seat's contact email, display-only on the member record",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "aid-prefix": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "icp-alist": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "the AID's inception event as a JSON object (KERI icp fields, serialized)",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   },
                   "sigs": {
                     "type": "array",
                     "description": "a JSON array of CESR qb64 signatures over the event, one per signing key",
-                    "x-playnet-shape": "list"
+                    "x-localchimera-shape": "list"
                   },
                   "rotations": {
                     "type": "array",
                     "description": "a JSON array of the AID's rotation events after inception, each a KERI rot object",
-                    "x-playnet-shape": "list"
+                    "x-localchimera-shape": "list"
                   }
                 },
                 "required": [
@@ -414,7 +414,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -436,10 +436,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -452,12 +452,12 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "rotations": {
                     "type": "array",
                     "description": "a JSON array of the AID's rotation events after inception, each a KERI rot object",
-                    "x-playnet-shape": "list"
+                    "x-localchimera-shape": "list"
                   }
                 },
                 "required": [
@@ -513,7 +513,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -535,11 +535,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "join",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "join",
         "security": [],
         "requestBody": {
           "required": true,
@@ -551,18 +551,18 @@
                   "username": {
                     "type": "string",
                     "description": "the seat's login handle, a plain string chosen at signup",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "email": {
                     "type": "string",
                     "description": "the seat's contact email, display-only on the member record",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "aid-prefix": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -619,7 +619,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -641,11 +641,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "unlockDevice",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "unlockDevice",
         "security": [],
         "requestBody": {
           "required": true,
@@ -658,7 +658,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -676,7 +676,7 @@
               "application/json": {
                 "schema": {
                   "type": "boolean",
-                  "x-playnet-reply": "boolean"
+                  "x-localchimera-reply": "boolean"
                 }
               }
             }
@@ -698,11 +698,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "join",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "join",
         "security": [],
         "requestBody": {
           "required": true,
@@ -715,12 +715,12 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "replies": {
                     "type": "array",
                     "description": "a JSON array of CESR-framed OKEA endpoint reply events (/end/role/add, /loc/scheme)",
-                    "x-playnet-shape": "list"
+                    "x-localchimera-shape": "list"
                   }
                 },
                 "required": [
@@ -776,7 +776,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -798,11 +798,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "contactCheck",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "contactCheck",
         "security": [],
         "requestBody": {
           "required": true,
@@ -815,7 +815,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -834,7 +834,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "x-playnet-reply": "alist"
+                  "x-localchimera-reply": "alist"
                 }
               }
             }
@@ -856,11 +856,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "unlock",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "unlock",
         "security": [],
         "requestBody": {
           "required": true,
@@ -872,7 +872,7 @@
                   "event-key": {
                     "type": "string",
                     "description": "a qb64 public key an identity's log carries as a signing key, in an event's k[0] — the first key a passcode derives is one",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -891,7 +891,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "x-playnet-reply": "alist"
+                  "x-localchimera-reply": "alist"
                 }
               }
             }
@@ -913,11 +913,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "unlockDevice",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "unlockDevice",
         "security": [],
         "requestBody": {
           "required": true,
@@ -930,7 +930,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -948,7 +948,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "x-playnet-reply": "string"
+                  "x-localchimera-reply": "string"
                 }
               }
             }
@@ -970,10 +970,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -986,18 +986,18 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "signature-qb64": {
                     "type": "string",
                     "description": "a CESR qb64 signature",
-                    "x-playnet-shape": "qb64"
+                    "x-localchimera-shape": "qb64"
                   },
                   "nonce": {
                     "type": "string",
                     "pattern": "^[0-9a-f]*$",
                     "description": "the 32-byte challenge from keri-challenge as lowercase hex; expires 120 s after issue",
-                    "x-playnet-shape": "hex"
+                    "x-localchimera-shape": "hex"
                   }
                 },
                 "required": [
@@ -1054,7 +1054,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -1076,11 +1076,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "unlockDevice",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "unlockDevice",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1093,24 +1093,24 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "wire-json": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   },
                   "signature-qb64": {
                     "type": "string",
                     "description": "a CESR qb64 signature",
-                    "x-playnet-shape": "qb64"
+                    "x-localchimera-shape": "qb64"
                   },
                   "nonce": {
                     "type": "string",
                     "pattern": "^[0-9a-f]*$",
                     "description": "the 32-byte challenge from keri-challenge as lowercase hex; expires 120 s after issue",
-                    "x-playnet-shape": "hex"
+                    "x-localchimera-shape": "hex"
                   }
                 },
                 "required": [
@@ -1168,7 +1168,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -1190,10 +1190,10 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1205,7 +1205,7 @@
                   "name": {
                     "type": "string",
                     "description": "on announce/leave the caller's display name; on declare-place the human name of the new place; on declare-need/declare-means the row's own display name, default SPEC (need) or \"AGENT's SPEC\" (means)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -1223,7 +1223,7 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "x-playnet-reply": "list"
+                  "x-localchimera-reply": "list"
                 }
               }
             }
@@ -1245,10 +1245,10 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1269,7 +1269,7 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "x-playnet-reply": "list"
+                  "x-localchimera-reply": "list"
                 }
               }
             }
@@ -1291,11 +1291,11 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
-        "x-playnet-seam": "cardGive",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
+        "x-localchimera-seam": "cardGive",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1307,23 +1307,23 @@
                   "target-name": {
                     "type": "string",
                     "description": "the display name of the peer the signal or introduction is addressed to",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "from-name": {
                     "type": "string",
                     "description": "the display name of the peer sending the signal",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "signal-type": {
                     "type": "string",
                     "description": "the WebRTC signal kind, one of walkie-offer, walkie-answer, walkie-ice, walkie-cam (on or off: whether the sender is sending video) or invite, room-suffixed",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "signal-data": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -1344,7 +1344,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "x-playnet-reply": "symbol"
+                  "x-localchimera-reply": "symbol"
                 }
               }
             }
@@ -1366,10 +1366,10 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1391,7 +1391,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "x-playnet-reply": "alist"
+                  "x-localchimera-reply": "alist"
                 }
               }
             }
@@ -1413,10 +1413,10 @@
         "tags": [
           "operations"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1428,7 +1428,7 @@
                   "identity-key": {
                     "type": "string",
                     "description": "a KERI AID prefix or legacy org pubkey naming the caller; the gate is removed, always errors",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -1455,7 +1455,7 @@
                     }
                   ],
                   "description": "always the removed-gate error",
-                  "x-playnet-reply": "error-stub"
+                  "x-localchimera-reply": "error-stub"
                 }
               }
             }
@@ -1477,10 +1477,10 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1501,7 +1501,7 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "x-playnet-reply": "list"
+                  "x-localchimera-reply": "list"
                 }
               }
             }
@@ -1523,10 +1523,10 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1539,12 +1539,12 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "role": {
                     "type": "string",
                     "description": "a role name; the role ceremony is removed, so has-role? always replies #f",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -1563,7 +1563,7 @@
               "application/json": {
                 "schema": {
                   "type": "boolean",
-                  "x-playnet-reply": "boolean"
+                  "x-localchimera-reply": "boolean"
                 }
               }
             }
@@ -1585,10 +1585,10 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1600,7 +1600,7 @@
                   "id": {
                     "type": "string",
                     "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -1618,7 +1618,7 @@
               "application/json": {
                 "schema": {
                   "description": "differs by branch; see the door's doc",
-                  "x-playnet-reply": "mixed"
+                  "x-localchimera-reply": "mixed"
                 }
               }
             }
@@ -1640,10 +1640,10 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "anonymous",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "lobby",
+        "x-localchimera-auth": "anonymous",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "lobby",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1665,7 +1665,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "x-playnet-reply": "alist"
+                  "x-localchimera-reply": "alist"
                 }
               }
             }
@@ -1687,10 +1687,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -1715,7 +1715,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "x-playnet-reply": "string"
+                  "x-localchimera-reply": "string"
                 }
               }
             }
@@ -1737,10 +1737,10 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -1756,7 +1756,7 @@
                   "name": {
                     "type": "string",
                     "description": "on announce/leave the caller's display name; on declare-place the human name of the new place; on declare-need/declare-means the row's own display name, default SPEC (need) or \"AGENT's SPEC\" (means)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -1774,7 +1774,7 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "x-playnet-reply": "list"
+                  "x-localchimera-reply": "list"
                 }
               }
             }
@@ -1796,11 +1796,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "reachPresent",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "reachPresent",
         "security": [
           {
             "deviceSignature": []
@@ -1817,7 +1817,7 @@
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -1872,7 +1872,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -1894,11 +1894,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "reachConfirm",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "reachConfirm",
         "security": [
           {
             "deviceSignature": []
@@ -1914,17 +1914,17 @@
                   "kind": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "ctx": {
                     "type": "string",
                     "description": "the notification channel's destination address for KIND (an email, a push endpoint, …)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "code": {
                     "type": "string",
                     "description": "a label's code: the six characters a resource is known by in its scope",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -1981,7 +1981,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -2003,11 +2003,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "reachWithdraw",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "reachWithdraw",
         "security": [
           {
             "deviceSignature": []
@@ -2023,12 +2023,12 @@
                   "kind": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "ctx": {
                     "type": "string",
                     "description": "the notification channel's destination address for KIND (an email, a push endpoint, …)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -2084,7 +2084,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -2106,11 +2106,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "reachRead",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "reachRead",
         "security": [
           {
             "deviceSignature": []
@@ -2136,7 +2136,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "x-playnet-reply": "alist"
+                  "x-localchimera-reply": "alist"
                 }
               }
             }
@@ -2158,11 +2158,11 @@
         "tags": [
           "commitments"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "log",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "log",
         "security": [
           {
             "deviceSignature": []
@@ -2179,7 +2179,7 @@
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -2234,7 +2234,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -2256,11 +2256,11 @@
         "tags": [
           "commitments"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "log",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "log",
         "security": [
           {
             "deviceSignature": []
@@ -2286,7 +2286,7 @@
                 "schema": {
                   "type": "string",
                   "contentMediaType": "application/json",
-                  "x-playnet-reply": "json"
+                  "x-localchimera-reply": "json"
                 }
               }
             }
@@ -2308,11 +2308,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "profileGet",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "profileGet",
         "security": [
           {
             "deviceSignature": []
@@ -2338,7 +2338,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "x-playnet-reply": "alist"
+                  "x-localchimera-reply": "alist"
                 }
               }
             }
@@ -2360,11 +2360,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "profileSet",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "profileSet",
         "security": [
           {
             "deviceSignature": []
@@ -2380,12 +2380,12 @@
                   "display-name": {
                     "type": "string",
                     "description": "the profile's display name shown to others",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "email": {
                     "type": "string",
                     "description": "the seat's contact email, display-only on the member record",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -2441,7 +2441,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -2463,11 +2463,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpStatus",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpStatus",
         "security": [
           {
             "deviceSignature": []
@@ -2483,7 +2483,7 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -2538,7 +2538,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -2560,11 +2560,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpVouch",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpVouch",
         "security": [
           {
             "deviceSignature": []
@@ -2580,18 +2580,18 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   },
                   "subject-aid": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "rel": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   }
                 },
                 "required": [
@@ -2648,7 +2648,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -2670,11 +2670,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpVouch",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpVouch",
         "security": [
           {
             "deviceSignature": []
@@ -2690,24 +2690,24 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   },
                   "subject-aid": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "rel": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "at": {
                     "type": "string",
                     "format": "date-time",
                     "description": "civil ISO 8601 at the boundary",
-                    "x-playnet-shape": "instant"
+                    "x-localchimera-shape": "instant"
                   }
                 },
                 "required": [
@@ -2765,7 +2765,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -2787,11 +2787,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpVouch",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpVouch",
         "security": [
           {
             "deviceSignature": []
@@ -2807,29 +2807,29 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   },
                   "subject-aid": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "rel": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "at": {
                     "type": "string",
                     "format": "date-time",
                     "description": "civil ISO 8601 at the boundary",
-                    "x-playnet-shape": "instant"
+                    "x-localchimera-shape": "instant"
                   },
                   "signature": {
                     "type": "string",
                     "description": "a CESR qb64 signature",
-                    "x-playnet-shape": "qb64"
+                    "x-localchimera-shape": "qb64"
                   }
                 },
                 "required": [
@@ -2888,7 +2888,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -2910,11 +2910,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpWithdrawVouch",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpWithdrawVouch",
         "security": [
           {
             "deviceSignature": []
@@ -2930,13 +2930,13 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   },
                   "subject-aid": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -2992,7 +2992,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3014,11 +3014,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "cardGive",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "cardGive",
         "security": [
           {
             "deviceSignature": []
@@ -3035,13 +3035,13 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "wire": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -3097,7 +3097,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3119,11 +3119,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "cardWithdraw",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "cardWithdraw",
         "security": [
           {
             "deviceSignature": []
@@ -3140,7 +3140,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -3195,7 +3195,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3217,10 +3217,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -3282,7 +3282,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3304,11 +3304,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpEnroll",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpEnroll",
         "security": [
           {
             "deviceSignature": []
@@ -3324,7 +3324,7 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -3379,7 +3379,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3401,11 +3401,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpPending",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpPending",
         "security": [
           {
             "deviceSignature": []
@@ -3421,7 +3421,7 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -3476,7 +3476,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3498,11 +3498,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpMyCeremony",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpMyCeremony",
         "security": [
           {
             "deviceSignature": []
@@ -3518,7 +3518,7 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -3573,7 +3573,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3595,11 +3595,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpGrant",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpGrant",
         "security": [
           {
             "deviceSignature": []
@@ -3615,13 +3615,13 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   },
                   "candidate-aid": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -3677,7 +3677,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3699,11 +3699,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpOpenCeremony",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpOpenCeremony",
         "security": [
           {
             "deviceSignature": []
@@ -3719,18 +3719,18 @@
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   },
                   "candidate-aid": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "k": {
                     "type": "integer",
                     "description": "a requested quorum count; ignored, the ecosystem's own personhood quorum applies",
-                    "x-playnet-shape": "integer"
+                    "x-localchimera-shape": "integer"
                   }
                 },
                 "required": [
@@ -3787,7 +3787,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3809,11 +3809,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpMyPhc",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpMyPhc",
         "security": [
           {
             "deviceSignature": []
@@ -3875,7 +3875,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3897,11 +3897,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpPresent",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpPresent",
         "security": [
           {
             "deviceSignature": []
@@ -3918,7 +3918,7 @@
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -3973,7 +3973,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -3995,11 +3995,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "fpPresentBundle",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "fpPresentBundle",
         "security": [
           {
             "deviceSignature": []
@@ -4016,7 +4016,7 @@
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -4071,7 +4071,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -4093,10 +4093,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4113,7 +4113,7 @@
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -4168,7 +4168,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -4190,10 +4190,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4218,7 +4218,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "x-playnet-reply": "string"
+                  "x-localchimera-reply": "string"
                 }
               }
             }
@@ -4240,10 +4240,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4260,17 +4260,17 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "threshold": {
                     "type": "integer",
                     "description": "the number of Shamir shares needed to reconstruct the bran",
-                    "x-playnet-shape": "integer"
+                    "x-localchimera-shape": "integer"
                   },
                   "shares": {
                     "type": "array",
                     "description": "a JSON array of the bran's Shamir shares, each addressed to a contact's AID",
-                    "x-playnet-shape": "list"
+                    "x-localchimera-shape": "list"
                   }
                 },
                 "required": [
@@ -4327,7 +4327,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -4349,10 +4349,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4378,7 +4378,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "x-playnet-reply": "alist"
+                  "x-localchimera-reply": "alist"
                 }
               }
             }
@@ -4400,10 +4400,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4428,7 +4428,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "x-playnet-reply": "symbol"
+                  "x-localchimera-reply": "symbol"
                 }
               }
             }
@@ -4450,11 +4450,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "devices",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "devices",
         "security": [
           {
             "deviceSignature": []
@@ -4483,7 +4483,7 @@
                     "type": "object",
                     "additionalProperties": true
                   },
-                  "x-playnet-reply": "alist-list"
+                  "x-localchimera-reply": "alist-list"
                 }
               }
             }
@@ -4505,11 +4505,11 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "revokeDevice",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "revokeDevice",
         "security": [
           {
             "deviceSignature": []
@@ -4526,7 +4526,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a SAID",
-                    "x-playnet-shape": "said"
+                    "x-localchimera-shape": "said"
                   }
                 },
                 "required": [
@@ -4581,7 +4581,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -4603,10 +4603,10 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4623,7 +4623,7 @@
                     "type": "string",
                     "pattern": "^[0-9a-f]*$",
                     "description": "a signed Reticulum announce or DATA packet as lowercase hex bytes",
-                    "x-playnet-shape": "hex"
+                    "x-localchimera-shape": "hex"
                   }
                 },
                 "required": [
@@ -4678,7 +4678,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -4700,10 +4700,10 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4720,7 +4720,7 @@
                     "type": "string",
                     "pattern": "^[0-9a-f]*$",
                     "description": "a signed Reticulum announce or DATA packet as lowercase hex bytes",
-                    "x-playnet-shape": "hex"
+                    "x-localchimera-shape": "hex"
                   }
                 },
                 "required": [
@@ -4775,7 +4775,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -4797,10 +4797,10 @@
         "tags": [
           "chat"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "constative",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "constative",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4826,7 +4826,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "x-playnet-reply": "alist"
+                  "x-localchimera-reply": "alist"
                 }
               }
             }
@@ -4848,10 +4848,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "self",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "self",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4880,7 +4880,7 @@
                     "type": "object",
                     "additionalProperties": true
                   },
-                  "x-playnet-reply": "alist-list"
+                  "x-localchimera-reply": "alist-list"
                 }
               }
             }
@@ -4902,10 +4902,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -4922,7 +4922,7 @@
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a browser-built, browser-signed ACDC as a JSON object; issuance gate is removed, always errors",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -4977,7 +4977,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -4999,10 +4999,10 @@
         "tags": [
           "identity"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -5019,7 +5019,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a SAID",
-                    "x-playnet-shape": "said"
+                    "x-localchimera-shape": "said"
                   }
                 },
                 "required": [
@@ -5074,7 +5074,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -5096,11 +5096,11 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "openProposal",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "openProposal",
         "security": [
           {
             "deviceSignature": []
@@ -5116,38 +5116,38 @@
                   "kind": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "domain": {
                     "type": "string",
                     "description": "on corpus-search a corpus domain name or #f for all; on open the ballot domain (policy, recomposition, …)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "id": {
                     "type": "string",
                     "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "description": {
                     "type": "string",
                     "description": "the proposal's human-readable description",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "franchise": {
                     "type": "string",
                     "description": "who votes: the symbol federation, or the list (scope SCOPE-ID)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "target-ids": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   },
                   "subject": {
                     "type": "string",
                     "description": "a \"kind:id\" string the forum resolves an open proposal against, e.g. \"recipe:bread\"",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -5206,7 +5206,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -5228,10 +5228,10 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -5248,24 +5248,24 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "commune-aid": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "sturdyref-uri": {
                     "type": "string",
                     "description": "the sturdyref the commune's peer answers at, an ocapn:// URI",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "ratification": {
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a SAID",
-                    "x-playnet-shape": "said"
+                    "x-localchimera-shape": "said"
                   }
                 },
                 "required": [
@@ -5322,7 +5322,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -5344,10 +5344,10 @@
         "tags": [
           "custody"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -5409,7 +5409,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -5431,10 +5431,10 @@
         "tags": [
           "custody"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -5496,7 +5496,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -5518,10 +5518,10 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -5538,17 +5538,17 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "fraction": {
                     "type": "number",
                     "description": "the share of the caller's voice delegated, a number in (0, 1]",
-                    "x-playnet-shape": "number"
+                    "x-localchimera-shape": "number"
                   },
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -5604,7 +5604,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -5626,10 +5626,10 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "preference",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "preference",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -5646,22 +5646,22 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "fraction": {
                     "type": "number",
                     "description": "the share of the caller's voice delegated, a number in (0, 1]",
-                    "x-playnet-shape": "number"
+                    "x-localchimera-shape": "number"
                   },
                   "signature": {
                     "type": "string",
                     "description": "a CESR qb64 signature",
-                    "x-playnet-shape": "qb64"
+                    "x-localchimera-shape": "qb64"
                   },
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -5718,7 +5718,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -5740,11 +5740,11 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "close",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "close",
         "security": [
           {
             "deviceSignature": []
@@ -5760,7 +5760,7 @@
                   "id": {
                     "type": "string",
                     "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -5815,7 +5815,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -5837,11 +5837,11 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "getResult",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "getResult",
         "security": [
           {
             "deviceSignature": []
@@ -5857,7 +5857,7 @@
                   "id": {
                     "type": "string",
                     "description": "on open/cast/close/get-result a proposal id; on retire-payout/settle-payout a payout intent id; on add-scope! a scope id",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -5875,7 +5875,7 @@
               "application/json": {
                 "schema": {
                   "description": "differs by branch; see the door's doc",
-                  "x-playnet-reply": "mixed"
+                  "x-localchimera-reply": "mixed"
                 }
               }
             }
@@ -5897,11 +5897,11 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "listDelegations",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "listDelegations",
         "security": [
           {
             "deviceSignature": []
@@ -5926,7 +5926,7 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "x-playnet-reply": "list"
+                  "x-localchimera-reply": "list"
                 }
               }
             }
@@ -5948,11 +5948,11 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "preference",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "setDelegation",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "preference",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "setDelegation",
         "security": [
           {
             "deviceSignature": []
@@ -5969,17 +5969,17 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "fraction": {
                     "type": "number",
                     "description": "the share of the caller's voice delegated, a number in (0, 1]",
-                    "x-playnet-shape": "number"
+                    "x-localchimera-shape": "number"
                   },
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -6035,7 +6035,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -6057,10 +6057,10 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -6077,23 +6077,23 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "fraction": {
                     "type": "number",
                     "description": "the share of the caller's voice delegated, a number in (0, 1]",
-                    "x-playnet-shape": "number"
+                    "x-localchimera-shape": "number"
                   },
                   "mandate-spec": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   },
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -6150,7 +6150,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -6172,10 +6172,10 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "preference",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "preference",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -6192,28 +6192,28 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "fraction": {
                     "type": "number",
                     "description": "the share of the caller's voice delegated, a number in (0, 1]",
-                    "x-playnet-shape": "number"
+                    "x-localchimera-shape": "number"
                   },
                   "mandate-spec": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   },
                   "signature": {
                     "type": "string",
                     "description": "a CESR qb64 signature",
-                    "x-playnet-shape": "qb64"
+                    "x-localchimera-shape": "qb64"
                   },
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -6271,7 +6271,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -6293,11 +6293,11 @@
         "tags": [
           "governance"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "preference",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "revokeDelegation",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "preference",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "revokeDelegation",
         "security": [
           {
             "deviceSignature": []
@@ -6314,12 +6314,12 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "scope-id": {
                     "type": "string",
                     "description": "a scope (commune) id",
-                    "x-playnet-shape": "scope-id"
+                    "x-localchimera-shape": "scope-id"
                   }
                 },
                 "required": [
@@ -6374,7 +6374,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "ok-or-error"
+                  "x-localchimera-reply": "ok-or-error"
                 }
               }
             }
@@ -6396,11 +6396,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineOffer",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineOffer",
         "security": [
           {
             "deviceSignature": []
@@ -6417,30 +6417,30 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "lane": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "classes": {
                     "type": "array",
-                    "x-playnet-shape": "list"
+                    "x-localchimera-shape": "list"
                   },
                   "headroom": {
                     "type": "number",
-                    "x-playnet-shape": "number"
+                    "x-localchimera-shape": "number"
                   },
                   "repro": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -6499,7 +6499,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -6521,11 +6521,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineRetract",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineRetract",
         "security": [
           {
             "deviceSignature": []
@@ -6542,11 +6542,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "offer-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -6602,7 +6602,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -6624,11 +6624,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineOffers",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineOffers",
         "security": [
           {
             "deviceSignature": []
@@ -6645,7 +6645,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -6700,7 +6700,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -6722,11 +6722,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineSubmit",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineSubmit",
         "security": [
           {
             "deviceSignature": []
@@ -6743,31 +6743,31 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "task-class": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "lane": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "repro": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "input-hash": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -6826,7 +6826,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -6848,11 +6848,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineWithdraw",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineWithdraw",
         "security": [
           {
             "deviceSignature": []
@@ -6869,11 +6869,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "job-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -6929,7 +6929,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -6951,11 +6951,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineJobs",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineJobs",
         "security": [
           {
             "deviceSignature": []
@@ -6972,7 +6972,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -7027,7 +7027,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7049,11 +7049,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineMatch",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineMatch",
         "security": [
           {
             "deviceSignature": []
@@ -7070,11 +7070,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "job-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -7130,7 +7130,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7152,11 +7152,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineClaim",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineClaim",
         "security": [
           {
             "deviceSignature": []
@@ -7173,21 +7173,21 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "job-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "offer-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -7244,7 +7244,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7266,11 +7266,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineAccept",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineAccept",
         "security": [
           {
             "deviceSignature": []
@@ -7287,11 +7287,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -7347,7 +7347,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7369,11 +7369,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machinePreempt",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machinePreempt",
         "security": [
           {
             "deviceSignature": []
@@ -7390,11 +7390,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -7450,7 +7450,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7472,11 +7472,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineClaims",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineClaims",
         "security": [
           {
             "deviceSignature": []
@@ -7493,7 +7493,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -7548,7 +7548,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7570,11 +7570,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineReceipt",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineReceipt",
         "security": [
           {
             "deviceSignature": []
@@ -7591,13 +7591,13 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "w": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -7653,7 +7653,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7675,11 +7675,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineVerify",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineVerify",
         "security": [
           {
             "deviceSignature": []
@@ -7696,7 +7696,7 @@
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -7751,7 +7751,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7773,11 +7773,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineSettle",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineSettle",
         "security": [
           {
             "deviceSignature": []
@@ -7794,13 +7794,13 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "w": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -7856,7 +7856,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7878,11 +7878,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineStatements",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineStatements",
         "security": [
           {
             "deviceSignature": []
@@ -7899,7 +7899,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -7954,7 +7954,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -7976,11 +7976,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineEnvelope",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineEnvelope",
         "security": [
           {
             "deviceSignature": []
@@ -7997,7 +7997,7 @@
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -8052,7 +8052,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8074,11 +8074,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineFetchEnvelope",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineFetchEnvelope",
         "security": [
           {
             "deviceSignature": []
@@ -8095,11 +8095,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -8155,7 +8155,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8177,11 +8177,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineReplay",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineReplay",
         "security": [
           {
             "deviceSignature": []
@@ -8198,11 +8198,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -8258,7 +8258,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8280,11 +8280,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineDispute",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineDispute",
         "security": [
           {
             "deviceSignature": []
@@ -8301,16 +8301,16 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "kind": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   }
                 },
                 "required": [
@@ -8367,7 +8367,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8389,11 +8389,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineDisputeVerdict",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineDisputeVerdict",
         "security": [
           {
             "deviceSignature": []
@@ -8410,16 +8410,16 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "dispute-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "verdict": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   }
                 },
                 "required": [
@@ -8476,7 +8476,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8498,11 +8498,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineDisputes",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineDisputes",
         "security": [
           {
             "deviceSignature": []
@@ -8519,7 +8519,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -8574,7 +8574,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8596,11 +8596,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineDisputeClose",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineDisputeClose",
         "security": [
           {
             "deviceSignature": []
@@ -8617,11 +8617,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "dispute-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -8677,7 +8677,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8699,11 +8699,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineChallenge",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineChallenge",
         "security": [
           {
             "deviceSignature": []
@@ -8720,11 +8720,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -8780,7 +8780,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8802,11 +8802,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineChallengeAnswer",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineChallengeAnswer",
         "security": [
           {
             "deviceSignature": []
@@ -8823,15 +8823,15 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "challenge-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "answer": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -8888,7 +8888,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -8910,11 +8910,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineChallengeVerify",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineChallengeVerify",
         "security": [
           {
             "deviceSignature": []
@@ -8931,19 +8931,19 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "challenge-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "expected": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "content-hash": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -9001,7 +9001,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9023,11 +9023,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineChallenges",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineChallenges",
         "security": [
           {
             "deviceSignature": []
@@ -9044,11 +9044,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -9104,7 +9104,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9126,11 +9126,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineSignal",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineSignal",
         "security": [
           {
             "deviceSignature": []
@@ -9147,17 +9147,17 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "body": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -9214,7 +9214,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9236,11 +9236,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineSignals",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineSignals",
         "security": [
           {
             "deviceSignature": []
@@ -9257,17 +9257,17 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "claim-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -9323,7 +9323,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9345,10 +9345,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -9365,17 +9365,17 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "swarm-id": {
                     "type": "string",
                     "description": "the swarm coordination record's id",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "job-ids": {
                     "type": "array",
                     "description": "the member job-ids a swarm opens over, a JSON array of strings",
-                    "x-playnet-shape": "list"
+                    "x-localchimera-shape": "list"
                   }
                 },
                 "required": [
@@ -9432,7 +9432,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9454,10 +9454,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -9474,12 +9474,12 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "swarm-id": {
                     "type": "string",
                     "description": "the swarm coordination record's id",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -9535,7 +9535,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9557,10 +9557,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -9577,18 +9577,18 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "swarm-id": {
                     "type": "string",
                     "description": "the swarm coordination record's id",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "body": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -9645,7 +9645,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9667,10 +9667,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -9687,18 +9687,18 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "swarm-id": {
                     "type": "string",
                     "description": "the swarm coordination record's id",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -9754,7 +9754,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9776,10 +9776,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -9796,16 +9796,16 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "job-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   },
                   "provider-name": {
                     "type": "string",
                     "description": "the ring-3 provider network a bridge leg routes to (golem/mysterium/storj…)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -9862,7 +9862,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9884,10 +9884,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -9904,11 +9904,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "job-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -9964,7 +9964,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -9986,10 +9986,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10051,7 +10051,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10073,10 +10073,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10093,13 +10093,13 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -10154,7 +10154,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10176,10 +10176,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10196,12 +10196,12 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "row-id": {
                     "type": "string",
                     "description": "on record-flow the plan's own id for the schedule row being confirmed, as the schedule carries it; absent, the row is found by its coordinates",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -10257,7 +10257,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10279,10 +10279,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10299,28 +10299,28 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "key-hash": {
                     "type": "string",
                     "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "delta": {
                     "type": "number",
                     "description": "the signed credit a demand book gains (positive tops up, negative claws back)",
-                    "x-playnet-shape": "number"
+                    "x-localchimera-shape": "number"
                   },
                   "asset": {
                     "type": "string",
                     "description": "the denomination a demand book or row is priced in (\"sat\", \"usd\"…)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -10378,7 +10378,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10400,10 +10400,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10420,12 +10420,12 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "key-hash": {
                     "type": "string",
                     "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -10481,7 +10481,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10503,10 +10503,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10523,51 +10523,51 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "key-hash": {
                     "type": "string",
                     "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "payer-name": {
                     "type": "string",
                     "description": "the paying network a funded job is booked under (nostr-dvm, openrouter-style api payers…)",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "ref": {
                     "type": "string",
                     "description": "on the signing legs a caller nonce folded into the SAID (\"\" = none); on slots-watch a CapTP watcher reference",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "debit": {
                     "type": "number",
                     "description": "the prepaid units a funded intake draws from the customer's book",
-                    "x-playnet-shape": "number"
+                    "x-localchimera-shape": "number"
                   },
                   "task-class": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "lane": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "repro": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "input-hash": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -10630,7 +10630,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10652,10 +10652,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10671,7 +10671,7 @@
                   "key-hash": {
                     "type": "string",
                     "description": "the demand customer's credential hash — the bearer key a demand-API caller presents",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   }
                 },
                 "required": [
@@ -10726,7 +10726,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10748,10 +10748,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10768,11 +10768,11 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "job-id": {
                     "type": "string",
-                    "x-playnet-shape": "id"
+                    "x-localchimera-shape": "id"
                   }
                 },
                 "required": [
@@ -10828,7 +10828,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10850,10 +10850,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10870,7 +10870,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -10925,7 +10925,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -10947,10 +10947,10 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
         "security": [
           {
             "deviceSignature": []
@@ -10967,37 +10967,37 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "result-dest": {
                     "type": "string",
                     "pattern": "^[0-9a-f]*$",
                     "description": "the mesh requester's mailbox destination, a 64-char lowercase-hex Reticulum hash",
-                    "x-playnet-shape": "hex"
+                    "x-localchimera-shape": "hex"
                   },
                   "task-class": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "lane": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "repro": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   },
                   "input-hash": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "opts": {
                     "type": "object",
                     "additionalProperties": true,
                     "description": "a solve's options alist (movable/storable/whole/tau/willing-only/horizon/reproduce/plan-id/displacement-of as the door names); absent runs with every default",
-                    "x-playnet-shape": "alist"
+                    "x-localchimera-shape": "alist"
                   }
                 },
                 "required": [
@@ -11057,7 +11057,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -11079,11 +11079,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineBind",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineBind",
         "security": [
           {
             "deviceSignature": []
@@ -11100,13 +11100,13 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "w": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -11162,7 +11162,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -11184,11 +11184,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineUnbind",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineUnbind",
         "security": [
           {
             "deviceSignature": []
@@ -11205,16 +11205,16 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "key": {
                     "type": "string",
-                    "x-playnet-shape": "string"
+                    "x-localchimera-shape": "string"
                   },
                   "side": {
                     "type": "string",
                     "description": "a symbol, sent as its name",
-                    "x-playnet-shape": "symbol"
+                    "x-localchimera-shape": "symbol"
                   }
                 },
                 "required": [
@@ -11271,7 +11271,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -11293,11 +11293,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "read",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machineBindings",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "read",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machineBindings",
         "security": [
           {
             "deviceSignature": []
@@ -11314,7 +11314,7 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   }
                 },
                 "required": [
@@ -11369,7 +11369,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -11391,11 +11391,11 @@
         "tags": [
           "stock"
         ],
-        "x-playnet-auth": "device",
-        "x-playnet-kind": "performative",
-        "x-playnet-to": "governance",
-        "x-playnet-object": "session",
-        "x-playnet-seam": "machinePayout",
+        "x-localchimera-auth": "device",
+        "x-localchimera-kind": "performative",
+        "x-localchimera-to": "governance",
+        "x-localchimera-object": "session",
+        "x-localchimera-seam": "machinePayout",
         "security": [
           {
             "deviceSignature": []
@@ -11412,13 +11412,13 @@
                     "type": "string",
                     "pattern": "^[A-Z][A-Za-z0-9_-]{43}$",
                     "description": "a KERI AID prefix",
-                    "x-playnet-shape": "aid"
+                    "x-localchimera-shape": "aid"
                   },
                   "w": {
                     "type": "string",
                     "contentMediaType": "application/json",
                     "description": "a JSON document, as a string",
-                    "x-playnet-shape": "json"
+                    "x-localchimera-shape": "json"
                   }
                 },
                 "required": [
@@ -11474,7 +11474,7 @@
                       "description": "((error . \"reason\"))"
                     }
                   ],
-                  "x-playnet-reply": "promise:ok-or-error"
+                  "x-localchimera-reply": "promise:ok-or-error"
                 }
               }
             }
@@ -11489,13 +11489,13 @@
       }
     }
   },
-  "x-playnet-doors": [
+  "x-localchimera-doors": [
     {
       "object": "lobby",
       "name": "announce",
       "auth": "anonymous",
       "topic": "chat",
-      "x-playnet-transport": "captp",
+      "x-localchimera-transport": "captp",
       "summary": "Announces a display name as online with its inbox capability, binds the notification sink to that inbox, broadcasts presence, and replies the list of online names."
     },
     {
@@ -11503,7 +11503,7 @@
       "name": "introduce",
       "auth": "anonymous",
       "topic": "chat",
-      "x-playnet-transport": "captp",
+      "x-localchimera-transport": "captp",
       "summary": "Replies the inbox capability of the named online user, or #f when nobody by that name is announced, so a peer can open a WebRTC exchange directly."
     },
     {
@@ -11511,7 +11511,7 @@
       "name": "announce",
       "auth": "device",
       "topic": "chat",
-      "x-playnet-transport": "captp",
+      "x-localchimera-transport": "captp",
       "summary": "Binds a `browser` channel for this AID in the recipient registry and announces NAME with USER-INBOX to presence; replies presence's answer."
     },
     {
@@ -11519,7 +11519,7 @@
       "name": "watch-credentials",
       "auth": "device",
       "topic": "identity",
-      "x-playnet-transport": "captp",
+      "x-localchimera-transport": "captp",
       "summary": "Registers WATCHER-REF to receive on-credential pushes whenever the poller admits a new credential for this AID, replacing polling after the first list-credentials; replies ok."
     },
     {
@@ -11527,7 +11527,7 @@
       "name": "unwatch-credentials",
       "auth": "device",
       "topic": "identity",
-      "x-playnet-transport": "captp",
+      "x-localchimera-transport": "captp",
       "summary": "Deregisters WATCHER-REF from this AID's credential pushes; replies ok."
     },
     {
@@ -11535,7 +11535,7 @@
       "name": "enroll-device",
       "auth": "root",
       "topic": "identity",
-      "x-playnet-transport": "captp",
+      "x-localchimera-transport": "captp",
       "summary": "Records a device authorization WIRE-JSON signed by this AID's root key after verifying it against the current KEL key; replies ok or an error, and refuses a device-tier session."
     },
     {
@@ -11543,7 +11543,7 @@
       "name": "forget-me",
       "auth": "root",
       "topic": "identity",
-      "x-playnet-transport": "captp",
+      "x-localchimera-transport": "captp",
       "summary": "Erases every record of this gateway's own keyed by this AID — bindings, push subscriptions, contact points, devices, cards, user files, mailboxes, spooled mail — and last the member record and AID-to-handle index, leaving the key log as data about a pseudonym; replies the receipt (what went, by kind and count, and what stays), refuses a device-tier session, and this session cap refuses everything from then on."
     },
     {
@@ -11551,7 +11551,7 @@
       "name": "rotate-aid",
       "auth": "root",
       "topic": "identity",
-      "x-playnet-transport": "captp",
+      "x-localchimera-transport": "captp",
       "summary": "Verifies rotation event ROT-ALIST-RAW with SIGS against this AID's key state and appends it to the oobi-host KEL; replies ok or an error, and refuses a device-tier session."
     }
   ]

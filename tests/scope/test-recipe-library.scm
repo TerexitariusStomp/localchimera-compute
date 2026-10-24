@@ -6,12 +6,12 @@
 ;;; into the planner (the intended sim/test use), and that the catalogue/seed API
 ;;; works.
 
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness)
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness)
              (srfi srfi-1)
-             (playnet scope live)
-             (playnet knowledge dsl recipe-library)
-             (playnet test planner bread)   ; bread-defs · bread-plain-resources · bread-plain-agents · bread-spatials
+             (localchimera scope live)
+             (localchimera knowledge dsl recipe-library)
+             (localchimera test planner bread)   ; bread-defs · bread-plain-resources · bread-plain-agents · bread-spatials
              (goblins) (goblins vat) (goblins utils hashmap)
              (srfi srfi-1))
 

@@ -4,7 +4,7 @@
 # as a plain top-level ref, reproducibly.
 #
 # `guix pull`/`guix time-machine` need a plain `refs/heads/keyring` on the
-# playnet channel to authenticate at all (it carries the operator's pubkey
+# localchimera channel to authenticate at all (it carries the operator's pubkey
 # as a .key file). Radicle only auto-materialises a plain top-level ref for
 # the repo's CONFIGURED DEFAULT BRANCH (main here) — every other branch,
 # keyring included, exists only under
@@ -18,22 +18,22 @@
 # live peer (Radicle's own sync does not prune or contest a ref it didn't
 # create), and it does not touch, rename, or delete anything.
 #
-# This is a MANUAL, one-time fix (deploy/channels.scm's own %playnet-git-
+# This is a MANUAL, one-time fix (deploy/channels.scm's own %localchimera-git-
 # mirror-locations comment carries the historical record for why it exists).
 # This script exists so redoing it — after a storage rebuild, disaster
 # recovery, or a fresh box — is one command instead of re-deriving the whole
 # investigation from scratch.
 #
-# Usage (on the box, as a user that can sudo to playnet):
+# Usage (on the box, as a user that can sudo to localchimera):
 #   sudo bash deploy/scripts/canonicalize-keyring-ref.sh
 #
 # Idempotent: if the ref already points at the right commit, does nothing.
 set -euo pipefail
 
-RID="${PLAYNET_RID_BARE:-z27dFkN28LQAsSsG3DVHcfBqYAArQ}"
-STORAGE="${PLAYNET_RADICLE_STORAGE:-/var/lib/playnet/radicle/.radicle/storage}"
+RID="${LOCALCHIMERA_RID_BARE:-z27dFkN28LQAsSsG3DVHcfBqYAArQ}"
+STORAGE="${LOCALCHIMERA_RADICLE_STORAGE:-/var/lib/localchimera/radicle/.radicle/storage}"
 REPO="$STORAGE/$RID"
-STORAGE_USER="${PLAYNET_STORAGE_USER:-playnet}"
+STORAGE_USER="${LOCALCHIMERA_STORAGE_USER:-localchimera}"
 
 [ -d "$REPO" ] || { echo "[keyring] no repo storage at $REPO — nothing to do"; exit 0; }
 

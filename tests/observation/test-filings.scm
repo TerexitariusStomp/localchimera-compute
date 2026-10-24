@@ -9,13 +9,13 @@
 ;;;
 ;;; Run: guile -L module tests/observation/test-filings.scm
 
-(use-modules (playnet test harness) (playnet observation observer) (playnet vf schemas) (playnet vf beyond lot)
+(use-modules (localchimera test harness) (localchimera observation observer) (localchimera vf schemas) (localchimera vf beyond lot)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
 (define here (dirname (current-filename)))
-(use-modules (playnet legal crossings))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal compliance)) (use-modules (playnet legal filings))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal compliance)) (use-modules (localchimera legal filings))
 
 (define tmpl
   (filing-template "Food Establishment Permit Application"

@@ -4,24 +4,24 @@
 ;;; POST /v1/data/<policy> {input}. Invariant leg pins the request wire;
 ;;; live leg reads a real decision.
 
-(use-modules (playnet test harness)
-             (playnet test parity)
-             (playnet delegates)
+(use-modules (localchimera test harness)
+             (localchimera test parity)
+             (localchimera delegates)
              (srfi srfi-1))
 
 (define fixture-input
   '(("citizen" . "did:key:z6MkAlice") ("door" . "machine-offer")
     ("commune" . "did:keri:EHome") ("action" . "create")))
 
-(let ((w (opa-decision "playnet/doors/machine" fixture-input)))
+(let ((w (opa-decision "localchimera/doors/machine" fixture-input)))
   (check "opa wire posts /v1/data/<policy> with input wrapped"
-         (and (equal? (cdr (assoc "path" w)) "/v1/data/playnet/doors/machine")
+         (and (equal? (cdr (assoc "path" w)) "/v1/data/localchimera/doors/machine")
               (equal? (cdr (assoc "body" w)) `(("input" . ,fixture-input)))) #t))
 
-(parity-live-delegate "PLAYNET_OPA_URL"
+(parity-live-delegate "LOCALCHIMERA_OPA_URL"
   "opa answers a door decision"
   (lambda (t) (make-opa-delegate t))
-  (lambda (d) (d "playnet/doors/machine" fixture-input))
+  (lambda (d) (d "localchimera/doors/machine" fixture-input))
   (lambda (a) (and (pair? a) (< (car a) 300))))
 
 (test-summary!)

@@ -5,7 +5,7 @@
 #
 # Why this exists: a Radicle RID change (a new core project, or a satellite
 # re-published under a new id) cannot be made fully env-variable. deploy/os.scm
-# and most deploy/ scripts already read PLAYNET_RID[_BARE] from the
+# and most deploy/ scripts already read LOCALCHIMERA_RID[_BARE] from the
 # environment with today's value as a fallback default — that part of the
 # system needs no edit. But a Guix channel url or package home-page
 # (guix.scm, deploy/channels.scm, deploy/guix/*.scm) is read by Guix itself at

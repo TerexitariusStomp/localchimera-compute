@@ -350,12 +350,12 @@ EXIT_CODE=$BRIDGE_EXIT
 if [ $BRIDGE_EXIT -eq 0 ]; then
   SCHEMA_PORT="${SCHEMA_PORT:-7723}"
   python3 "$ROOT_DIR/tests/keri/integration/schema-server.py" \
-    "$ROOT_DIR/module/playnet/keri/schemas" "$SCHEMA_PORT" \
+    "$ROOT_DIR/module/localchimera/keri/schemas" "$SCHEMA_PORT" \
     >"$WORK_DIR/schema-server.log" 2>&1 &
   SCHEMA_PID=$!
   sleep 1
   say "schema-server on :$SCHEMA_PORT"
-  export PLAYNET_SCHEMA_SERVER="http://127.0.0.1:$SCHEMA_PORT"
+  export LOCALCHIMERA_SCHEMA_SERVER="http://127.0.0.1:$SCHEMA_PORT"
   if ! $RUN_GUILE "$SCRIPT_DIR/test-keria-issuance.scm"; then EXIT_CODE=1; fi
   kill "$SCHEMA_PID" 2>/dev/null || true
 fi

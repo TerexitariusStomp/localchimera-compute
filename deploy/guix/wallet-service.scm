@@ -4,11 +4,11 @@
 ;;; Runs server/wallet-service.scm as a separate process from the gateway.
 ;;; The wallet process exposes only the ^wallet-policy actor via OCapN
 ;;; WebSocket on localhost:9092. The gateway resolves the sturdyref at
-;;; /var/lib/playnet/wallet-sref.txt to get a capability-attenuated
+;;; /var/lib/localchimera/wallet-sref.txt to get a capability-attenuated
 ;;; reference — no raw wallet methods reachable.
 ;;;
 ;;; Must start AFTER monero-wallet-rpc (which provides the local JSON-RPC)
-;;; and BEFORE the playnet-gateway (which needs the sturdyref file).
+;;; and BEFORE the localchimera-gateway (which needs the sturdyref file).
 ;;;
 ;;; Usage:
 ;;;   (use-modules (wallet-service))
@@ -32,28 +32,28 @@
   wallet-configuration make-wallet-configuration
   wallet-configuration?
   (user        wallet-configuration-user
-               (default "playnet-wallet"))
+               (default "localchimera-wallet"))
   ;; 9092: the gateway's HTTP API door holds loopback :9091.
   (port        wallet-configuration-port
                (default 9092))
   (script      wallet-configuration-script
-               (default "/home/playnet/playnet-repo/server/wallet-service.scm"))
+               (default "/home/localchimera/localchimera-repo/server/wallet-service.scm"))
   (module-path wallet-configuration-module-path
-               (default "/home/playnet/playnet-repo/module"))
+               (default "/home/localchimera/localchimera-repo/module"))
   (data-dir    wallet-configuration-data-dir
-               (default "/var/lib/playnet"))
+               (default "/var/lib/localchimera"))
   ;; Primary group of the wallet process. rpc-login.txt is group-readable
   ;; to it (monero-configuration's rpc-login-group) and the gateway holds
   ;; it as a supplementary group to read the sturdyref.
   (group       wallet-configuration-group
-               (default "playnet-svc"))
+               (default "localchimera-svc"))
   ;; The wallet's own run directory: wallet-sref.txt (0640) and
   ;; wallet-repl.sock (0600). <data-dir>/wallet-sref.txt is a symlink
   ;; into it, so the gateway's path stays what it always was.
   (run-dir     wallet-configuration-run-dir
-               (default "/var/run/playnet-wallet"))
+               (default "/var/run/localchimera-wallet"))
   ;; Spend policy as a Scheme datum in the format produced by
-  ;; `serialize-policy` from (playnet monero policy):
+  ;; `serialize-policy` from (localchimera monero policy):
   ;;   (policy <monthly-xmr> <default-cap-xmr>
   ;;           ((payee <name> <addr> <max> <note>) ...)
   ;;           <note>)
@@ -73,7 +73,7 @@
         (policy?     (and (wallet-configuration-spend-policy config) #t)))
     (list
      (shepherd-service
-      (provision '(playnet-wallet))
+      (provision '(localchimera-wallet))
       (documentation
        "Isolated Monero wallet + spend policy process. Exposes the
 policy actor via OCapN WebSocket on localhost. The gateway resolves
@@ -114,7 +114,7 @@ the sturdyref to get a capability-attenuated reference.")
                                ;; The wallet's own run directory (read-write):
                                ;; the sturdyref handoff and the REPL socket.
                                ;; Its own, so the jail holds no path to the
-                               ;; gateway's sockets in /var/run/playnet.
+                               ;; gateway's sockets in /var/run/localchimera.
                                (file-system-mapping
                                 (source run-dir)
                                 (target run-dir)
@@ -156,8 +156,8 @@ the sturdyref to get a capability-attenuated reference.")
                          #:preserved-environment-variables
                          (append '("GUILE_LOAD_PATH"
                                    "GUILE_LOAD_COMPILED_PATH"
-                                   "PLAYNET_DATA_DIR"
-                                   "PLAYNET_WALLET_RUN_DIR")
+                                   "LOCALCHIMERA_DATA_DIR"
+                                   "LOCALCHIMERA_WALLET_RUN_DIR")
                                  %default-preserved-environment-variables)
                          ;; Keep network namespace (wallet needs localhost)
                          #:namespaces (delq 'net %namespaces))
@@ -169,16 +169,16 @@ the sturdyref to get a capability-attenuated reference.")
                 ;; The service group is how the gateway reads the
                 ;; sturdyref and how this process reads rpc-login.txt.
                 #:group #$group
-                #:log-file "/var/log/playnet/wallet-service.log"
+                #:log-file "/var/log/localchimera/wallet-service.log"
                 #:environment-variables
                 (list (string-append "GUILE_LOAD_PATH="
                                      "/run/current-system/profile/share/guile/site/3.0:"
                                      #$module-path)
                       (string-append "GUILE_LOAD_COMPILED_PATH="
                                      "/run/current-system/profile/lib/guile/3.0/site-ccache")
-                      (string-append "PLAYNET_DATA_DIR=" #$data-dir)
-                      (string-append "PLAYNET_WALLET_RUN_DIR=" #$run-dir)
-                      "HOME=/home/playnet")))
+                      (string-append "LOCALCHIMERA_DATA_DIR=" #$data-dir)
+                      (string-append "LOCALCHIMERA_WALLET_RUN_DIR=" #$run-dir)
+                      "HOME=/home/localchimera")))
       (stop #~(make-kill-destructor))
       (respawn? #t)))))
 
@@ -229,14 +229,14 @@ runs zero-budget."
 
 (define wallet-service-type
   (service-type
-   (name 'playnet-wallet)
+   (name 'localchimera-wallet)
    (description
     "Isolated Monero wallet process. Exposes ^wallet-policy via OCapN
 WebSocket on localhost:9092. The gateway resolves the sturdyref at
-/var/lib/playnet/wallet-sref.txt for capability-attenuated access.
+/var/lib/localchimera/wallet-sref.txt for capability-attenuated access.
 Raw wallet methods (sweep-all, unguarded transfer) are reachable only
 from the wallet process's own REPL socket at
-/var/run/playnet-wallet/wallet-repl.sock (0600).
+/var/run/localchimera-wallet/wallet-repl.sock (0600).
 
 The spend-policy field declares the Monero budget envelope (monthly
 cap, per-tx cap, allowlist) in machines.scm. Written to

@@ -12,11 +12,11 @@
              (goblins vat)
              (goblins actor-lib methods)
              (goblins persistence-store memory)
-             (playnet test harness)
+             (localchimera test harness)
              (srfi srfi-1)
              (ice-9 format)
-             (playnet monero wallet)
-             (playnet monero policy))
+             (localchimera monero wallet)
+             (localchimera monero policy))
 
 ;;; ── Stub wallet ──────────────────────────────────────────────────────────
 ;;;
@@ -270,7 +270,7 @@
 ;; serialize the full reachable graph from the policy.
 (define policy+stub-env
   (make-persistence-env
-    `((((playnet monero) ^wallet-policy) ,^wallet-policy)
+    `((((localchimera monero) ^wallet-policy) ,^wallet-policy)
       (((test stub) ^stub-wallet-p) ,^stub-wallet-p))))
 
 (define-values (pvat pwallet ppolicy)

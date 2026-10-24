@@ -15,11 +15,11 @@
 ;;;
 ;;; Run: guile -L module tests/legal/test-retention-disclosure.scm
 
-(use-modules (playnet test harness) (playnet vf schemas) (srfi srfi-1) (ice-9 format))
+(use-modules (localchimera test harness) (localchimera vf schemas) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet legal crossings))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal compliance)) (use-modules (playnet legal filings))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal compliance)) (use-modules (localchimera legal filings))
 
 ;;; ─── (1) disclosure minimization + the pseudonymity floor ─────────────────
 ;; canonical data the federation holds about the scope — including things that

@@ -5,13 +5,13 @@
 ;;;   guile -L module deploy/scripts/cdn.scm rules
 ;;;   guile -L module deploy/scripts/cdn.scm ensure NAME ORIGIN-URL
 ;;;
-;;; Which CDN, which zone and which origin come from /etc/playnet/cdn.conf
+;;; Which CDN, which zone and which origin come from /etc/localchimera/cdn.conf
 ;;; (os.scm writes it from the provider config's `cdn` entry); the key comes
 ;;; from the file that config names. A box with no CDN config has nothing to
 ;;; do, and says so with exit 0 — the deploy hook calls `purge` on every box.
 ;;;
 ;;; On a Tor-only box run it under torsocks:
-;;;   sudo -u playnet torsocks guile -L module deploy/scripts/cdn.scm rules
+;;;   sudo -u localchimera torsocks guile -L module deploy/scripts/cdn.scm rules
 ;;;
 ;;; `purge`  — after a deploy puts new browser assets on the origin, the edge
 ;;;            drops its copies. The heavy assets (wasm, app/*) are cached
@@ -21,7 +21,7 @@
 ;;;            newly uncached paths clear at once. Idempotent.
 ;;; `ensure` — a zone named NAME pulling from ORIGIN-URL exists; prints it.
 
-(use-modules (playnet fleet cdn)
+(use-modules (localchimera fleet cdn)
              (ice-9 format)
              (ice-9 match)
              (srfi srfi-1))
@@ -56,7 +56,7 @@
    "/.well-known/keri/*"       ; KERI witness/endpoint discovery
    "/.well-known/did/*"        ; did:keri resolution
    "/universal-commune.json"   ; live governance doc
-   "/playnet-identity.json"    ; live identity doc
+   "/localchimera-identity.json"    ; live identity doc
    "/feedback"                 ; anonymous feedback POST
    ;; The pool itself: a token-gated GET whose body is every visitor's
    ;; feedback. The token rides a header, and headers are outside the cache
@@ -68,7 +68,7 @@
    ;; after every push, and a request that reached the edge before the route
    ;; existed leaves the site's HTML cached under that URL for a month. Every
    ;; RID the box mirrors — the core and each satellite — is kept out.
-   ,(string-append "/" (or (getenv "PLAYNET_RID_BARE")
+   ,(string-append "/" (or (getenv "LOCALCHIMERA_RID_BARE")
                            "z27dFkN28LQAsSsG3DVHcfBqYAArQ")
                    ".git/*")
    ;; and one entry per satellite (deploy/satellites.scm)

@@ -11,8 +11,8 @@
 ;;; Run:  cd planner && guile --no-auto-compile -q -L ../module \
 ;;;         -l load-all.scm -l tests/test-execution-reactive.scm
 
-(use-modules (playnet test harness))
-(use-modules (playnet ddmrp buffers) (playnet federation remote-transport) (playnet scope root) (playnet vf schemas) (playnet ddmrp records))
+(use-modules (localchimera test harness))
+(use-modules (localchimera ddmrp buffers) (localchimera federation remote-transport) (localchimera scope root) (localchimera vf schemas) (localchimera ddmrp records))
 (use-modules (goblins)
              (goblins persistence-store memory)
              (goblins utils hashmap)

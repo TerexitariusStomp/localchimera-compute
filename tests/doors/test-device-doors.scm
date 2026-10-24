@@ -10,15 +10,15 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/doors/test-device-doors.scm
 
-(use-modules (playnet test harness)
-             (playnet doors lobby)
-             (playnet identity devices)
-             ((playnet keri signify-portable)
+(use-modules (localchimera test harness)
+             (localchimera doors lobby)
+             (localchimera identity devices)
+             ((localchimera keri signify-portable)
               #:select (bran->signing-keypair public-key->aid-prefix seed->ed25519-keypair))
-             ((playnet keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
-             ((playnet keri cesr) #:select (cesr-bytes->qb64))
+             ((localchimera keri crypto-primitives) #:select (keri-crypto-random-bytes ed25519-keypair-public))
+             ((localchimera keri cesr) #:select (cesr-bytes->qb64))
              
-             ((playnet keri first-person credentials) #:select (make-device-authorization-credential))
+             ((localchimera keri first-person credentials) #:select (make-device-authorization-credential))
              (goblins) (goblins vat))
 
 (define vat (spawn-vat))
@@ -45,7 +45,7 @@
 
 (display "\n── 2. the allowlist comes from the credential ──\n")
 
-(define tmp (let ((d (string-append "/tmp/playnet-device-doors-" (number->string (getpid)))))
+(define tmp (let ((d (string-append "/tmp/localchimera-device-doors-" (number->string (getpid)))))
               (mkdir d) d))
 (device-registry-dir tmp)
 (define kp0 (bran->signing-keypair "device-doors-passcode-21ch"))

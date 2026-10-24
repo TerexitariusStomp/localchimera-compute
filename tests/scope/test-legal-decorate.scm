@@ -14,16 +14,16 @@
 ;;;
 ;;; Run: guile -L module tests/scope/test-legal-decorate.scm
 
-(use-modules ((playnet utils units) #:select (%effort-unit)))
+(use-modules ((localchimera utils units) #:select (%effort-unit)))
 (use-modules (goblins utils hashmap))
-(use-modules (playnet test scope)) ; mock-scope-root
-(use-modules (playnet test harness) (playnet knowledge recipes store) (playnet scope spatial-things) (playnet vf schemas) (playnet scope live)
+(use-modules (localchimera test scope)) ; mock-scope-root
+(use-modules (localchimera test harness) (localchimera knowledge recipes store) (localchimera scope spatial-things) (localchimera vf schemas) (localchimera scope live)
              (goblins) (goblins vat) (srfi srfi-1) (ice-9 format))
 
-(use-modules (playnet legal crossings))
-(use-modules (playnet legal registry))
-(use-modules (playnet legal registry-actor)) (use-modules (playnet legal gate))
-(use-modules ((playnet solve engine) #:select (set-period-length!)))
+(use-modules (localchimera legal crossings))
+(use-modules (localchimera legal registry))
+(use-modules (localchimera legal registry-actor)) (use-modules (localchimera legal gate))
+(use-modules ((localchimera solve engine) #:select (set-period-length!)))
 ;; A period here is a WEEK: the roster's Monday–Friday window is a working week of hours, on any date.
 (set-period-length! 1.0 "week")
 

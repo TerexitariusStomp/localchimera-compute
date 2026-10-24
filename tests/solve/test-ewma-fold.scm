@@ -9,7 +9,7 @@
 ;;; Run:  tools/test/run-suite.sh tests/solve/test-ewma-fold.scm
 
 (use-modules (srfi srfi-1) (ice-9 format))
-(use-modules (playnet solve routing))
+(use-modules (localchimera solve routing))
 
 (define (~= a b) (< (abs (- a b)) 1e-9))
 

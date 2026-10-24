@@ -11,10 +11,10 @@
 ;;;
 ;;; Run: guile --no-auto-compile -q -L module tests/solve/test-key-terms-shapes.scm
 
-(use-modules (playnet solve report))
-(use-modules (playnet test harness)
-             (playnet vf facts located)
-             (playnet solve engine) (playnet solve world) (playnet solve compile)
+(use-modules (localchimera solve report))
+(use-modules (localchimera test harness)
+             (localchimera vf facts located)
+             (localchimera solve engine) (localchimera solve world) (localchimera solve compile)
              (srfi srfi-1) (ice-9 format))
 
 (display "\n── the two shapes that went unread ──\n")

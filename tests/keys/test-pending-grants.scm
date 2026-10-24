@@ -11,8 +11,8 @@
 ;;;
 ;;; Run: guile -L module -L tests tests/keys/test-pending-grants.scm
 
-(use-modules (playnet test harness)
-             (playnet keys pending-grants)
+(use-modules (localchimera test harness)
+             (localchimera keys pending-grants)
              (srfi srfi-1)
              (goblins))
 

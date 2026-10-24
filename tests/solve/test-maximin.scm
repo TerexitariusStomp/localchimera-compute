@@ -16,8 +16,8 @@
 ;;; Run: guile --no-auto-compile -L module tests/solve/test-maximin.scm
 
 (use-modules (srfi srfi-1) (ice-9 format)
-             (playnet solve engine) (playnet solve plan) (playnet vf schemas) (playnet vf beyond scenario)
-             (playnet knowledge dsl shorthand))
+             (localchimera solve engine) (localchimera solve plan) (localchimera vf schemas) (localchimera vf beyond scenario)
+             (localchimera knowledge dsl shorthand))
 
 (define *pass* 0) (define *fail* 0)
 (define (check name ok)
@@ -39,7 +39,7 @@
         (make-planning-scenario "drought" #f 0.1 '(("growA" . 0.0) ("growB" . 1.2)) #f)))
 (define want '(("food#farm@0" . 5.0)))
 
-(when (getenv "BACKEND") ((@ (playnet solve solver) set-backend!) (string->symbol (getenv "BACKEND"))))
+(when (getenv "BACKEND") ((@ (localchimera solve solver) set-backend!) (string->symbol (getenv "BACKEND"))))
 (define (plan maximin?)
   (call-with-values
     (lambda () (plan-from-records resources '() spatials procs flows
