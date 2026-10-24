@@ -81,6 +81,18 @@
       <input id="lenderDid" placeholder="did:key:z… (blank = this AID)">
     </section>
     <section>
+      <h2>Nostr DVM — paid demand (NIP-90)</h2>
+      <label style="flex:0 0 auto; margin-top:12px"><input type="checkbox" id="dvmOn" class="check" style="width:auto"> serve dvm: mint signed job requests into postpaid commune jobs</label>
+      <label>relays — one ws(s):// per line</label>
+      <textarea id="dvmRelays" rows="2" placeholder="wss://relay.damus.io&#10;wss://nos.lol"></textarea>
+      <label>dvm secret — nsec or 64-hex (never leaves this tab)</label>
+      <input id="dvmKey" type="password" autocomplete="off" placeholder="nsec1…">
+      <div class="row">
+        <div><label>price per job (sats — 0 = open service)</label><input id="dvmSats" type="number" value="0" min="0"></div>
+        <div><label>max concurrent</label><input id="dvmMax" type="number" value="4" min="1"></div>
+      </div>
+    </section>
+    <section>
       <h2>Lend — offer a lane</h2>
       <label>lane</label>
       <input id="offerLane" value="exec" placeholder="exec | infer | store | relay">
@@ -313,6 +325,34 @@ $("lendLoopOn").addEventListener("change", async (e) => {
     });
     log("lend loop on");
   } else { stopLoop?.(); stopLoop = null; log("lend loop off"); }
+});
+
+// ── nostr dvm: NIP-90 paid demand (app/machine-dvm.js) ─────────────────
+// the tab is the demand edge — signed requests mint postpaid commune
+// jobs any lender can claim; results publish back to the relays; the
+// receivable sits in the payer ledger until the operator's rail marks it
+let dvm = null;
+$("dvmOn").addEventListener("change", async (e) => {
+  if (e.target.checked) {
+    if (!commune()) return log("set the commune AID first", "err"), e.target.checked = false;
+    const relays = $("dvmRelays").value.split("\n").map(s => s.trim()).filter(Boolean);
+    const key = $("dvmKey").value.trim();
+    if (!relays.length) return log("dvm needs at least one relay", "err"), e.target.checked = false;
+    if (!key) return log("dvm needs its nsec/hex secret", "err"), e.target.checked = false;
+    const { serveDvm } = await import("./app/machine-dvm.js");
+    try {
+      dvm = serveDvm(H, commune(), {
+        relays, seckey: key,
+        priceSats: Number($("dvmSats").value) || 0,
+        maxJobs: Number($("dvmMax").value) || 4,
+      });
+      await dvm.start();
+      log(`dvm live — ${dvm.pubkey.slice(0, 16)}… serving ${relays.length} relay(s)`, "ok");
+    } catch (err) {
+      dvm = null; e.target.checked = false;
+      log(`dvm failed to start: ${err.message}`, "err");
+    }
+  } else { dvm?.stop(); dvm = null; log("dvm off"); }
 });
 
 // ── borrow ────────────────────────────────────────────────────────────────

@@ -397,6 +397,15 @@ export const runClaim = async (seam, commune, claimId, lenderDid, input, opts = 
         usage,
         signer: opts.signer,
     });
+    // a payer-stamped job's borrower paid for the output, not only the
+    // receipt — the claim's signal log is the delivery channel, and the
+    // lender is a party to it. Best-effort: the receipt is the record
+    // even when delivery fails.
+    if (env.params?.payer)
+        try {
+            await seam.machineSignal?.(commune, claimId,
+                JSON.stringify({ type: "demand-result", output: result }));
+        } catch { /* the receipt still lands — delivery is best-effort */ }
     return seam.machineReceipt(commune, JSON.stringify(receipt));
 };
 // ── when this tab should lend at all ────────────────────────────────────

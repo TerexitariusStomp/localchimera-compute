@@ -1229,6 +1229,8 @@ function boot() {
       new Promise(res => schemeHandlers.machineDemandBalance ? schemeHandlers.machineDemandBalance(commune || "", keyHash || "", res) : res("err:offline"));
     HANDLERS.machineDemandIntake = (commune, keyHash, payer, ref, debit, taskClass, lane, repro, inputHash, opts) =>
       new Promise(res => schemeHandlers.machineDemandIntake ? schemeHandlers.machineDemandIntake(commune || "", keyHash || "", payer || "", ref || "", debit ?? 0, taskClass || "", lane || "", repro || "", inputHash || "", JSON.stringify(opts ?? null), res) : res("err:offline"));
+    HANDLERS.machineDemandJob = (commune, jobId) =>
+      new Promise(res => schemeHandlers.machineDemandJob ? schemeHandlers.machineDemandJob(commune || "", jobId || "", res) : res("err:offline"));
     HANDLERS.machinePayerSettle = (commune, rowId) =>
       new Promise(res => schemeHandlers.machinePayerSettle ? schemeHandlers.machinePayerSettle(commune || "", rowId || "", res) : res("err:offline"));
     HANDLERS.machineBind = (commune, wireJson) =>

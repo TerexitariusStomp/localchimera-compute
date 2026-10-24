@@ -185,4 +185,40 @@
   (check "a stranger settles no row"
          (car ($ gov 'machine-payer-settle CAROL HOME
                  (assoc-ref intake "rowId")))
-         'error))
+         'error)
+
+  (scenario "postpaid — the stranger's book appears on first sight")
+  ;; nostr-dvm demand arrives from buyers with no prepaid balance: the
+  ;; 'postpaid opt creates the receivable book (balance 0, owner the
+  ;; intake caller), skips the debit, and books the row at the price —
+  ;; the receivable, not fake money
+  (define postpaid
+    (door-call gov ALICE 'machine-demand-intake HOME "nostr:buyer-pk"
+               "nostr-dvm" "nostr:evt-1" 21 "swarm-infer" "member"
+               "deterministic" "in:nostr"
+               'envelope (exec-envelope "bj-nostr") 'postpaid #t))
+  (check "the job minted on an unseen key"
+         (string? (assoc-ref postpaid "jobId")) #t)
+  (check "no balance moved — nothing was prepaid"
+         (assoc-ref postpaid "balance") 0)
+  (check "the receivable book reads back"
+         (let ((b (door-call gov ALICE 'machine-demand-balance HOME
+                             "nostr:buyer-pk")))
+           (list (assoc-ref b "balance") (assoc-ref b "asset")
+                 (assoc-ref b "name")))
+         '(0 "sat" "nostr-dvm"))
+  (check "the row books the price as the receivable"
+         (let ((row (car (door-call gov ALICE 'machine-payer-events HOME
+                                    'jobId (assoc-ref postpaid "jobId")))))
+           (list (list-ref row 2) (list-ref row 4) (list-ref row 5)))
+         '("nostr-dvm" 21 "sat"))
+  (check "postpaid can't open a book on an unwired payer"
+         (car ($ gov 'machine-demand-intake ALICE HOME "nostr:x"
+                 "golem" "nostr:e" 1 "swarm-infer" "member" "deterministic"
+                 "in:z" 'envelope (exec-envelope "bj-z") 'postpaid #t))
+         'error)
+  (check "a postpaid settle marks the rail's landing"
+         (assoc-ref (door-call gov ALICE 'machine-payer-settle HOME
+                               (assoc-ref postpaid "rowId"))
+                    "state")
+         "paid"))

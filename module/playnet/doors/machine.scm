@@ -1177,7 +1177,7 @@
            (lambda ()
              (ensure-citizen identity-key)
              (let* ((desk (desk-for commune-aid))
-                    (c    ($ desk 'of key-hash))
+                    (postpaid? (opt-ref opts 'postpaid #f))
                     (env  (opt-ref opts 'envelope #f))
                     (wire (and env (wire-normalize env)))
                     ;; stamp params.payer onto the envelope before it
@@ -1199,7 +1199,29 @@
                                                wire)))))
                     (parsed (and wire (alist->job-envelope wire)))
                     (kind (if parsed (job-envelope-kind parsed) 'exec))
-                    (spec (payer-for payer-name)))
+                    (spec (payer-for payer-name))
+                    ;; postpaid books (nostr-dvm): a stranger's key has no
+                    ;; prepaid balance — the customer record appears on
+                    ;; first sight for a wireable payer that serves the
+                    ;; kind, owned by the intake caller (the operator the
+                    ;; rail pays). Nothing is debited — the row's amount
+                    ;; is the receivable, and 'unpaid stays the book's
+                    ;; truth until payer-settle marks the rail's landing.
+                    (c    (let ((hit ($ desk 'of key-hash)))
+                            (or hit
+                                (and postpaid? spec
+                                     (memq (assq-ref (cdr spec) 'class)
+                                           %wireable-classes)
+                                     (memq kind (assq-ref (cdr spec) 'kinds))
+                                     (begin
+                                      ($ desk 'put!
+                                         (make-demand-customer
+                                          #:key-hash key-hash
+                                          #:name payer-name
+                                          #:owner-did identity-key
+                                          #:balance 0 #:asset "sat"
+                                          #:active? #t))
+                                      ($ desk 'of key-hash)))))))
                (cond
                 ((not spec) (list 'error "machine-demand-intake: unknown payer"))
                 ((not (memq (assq-ref (cdr spec) 'class) %wireable-classes))
@@ -1219,7 +1241,9 @@
                 ((not (demand-customer-active? c))
                  (list 'error "machine-demand-intake: customer inactive"))
                 (else
-                 (let ((balance ($ desk 'debit! key-hash debit)))
+                 (let ((balance (if postpaid?
+                                    (demand-customer-balance c)
+                                    ($ desk 'debit! key-hash debit))))
                    (if (eq? balance 'insufficient)
                        (list 'error "machine-demand-intake: insufficient balance")
                        (let* ((job-id ($ (registry-for commune-aid) 'submit

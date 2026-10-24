@@ -3406,6 +3406,11 @@
       (planner-call cb (<- *session* 'machine-payer-settle commune row-id)
         (lambda (v) (reply! cb (scm->json-canonical v))))))
 
+(define (handle-machine-demand-job commune job-id cb)
+  (if (not *session*) (reply! cb "err:sign in first")
+      (planner-call cb (<- *session* 'machine-demand-job commune job-id)
+        (lambda (v) (reply! cb (scm->json-canonical v))))))
+
 ;;; ── governance: the decision inbox (governance-surface.md §Inbox) ─────────
 ;; list-proposals → [{id, status}]; the dial renders the open decisions.
 (define (handle-list-proposals cb)
@@ -4200,6 +4205,7 @@
             ("machineDemandCredit"     . ,handle-machine-demand-credit)
             ("machineDemandBalance"    . ,handle-machine-demand-balance)
             ("machineDemandIntake"     . ,handle-machine-demand-intake)
+            ("machineDemandJob"        . ,handle-machine-demand-job)
             ("machinePayerSettle"      . ,handle-machine-payer-settle)
             ("machineBind"          . ,handle-machine-bind)
             ("machineUnbind"        . ,handle-machine-unbind)
