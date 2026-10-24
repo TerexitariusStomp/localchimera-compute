@@ -42,3 +42,13 @@ Verify status before acting — this snapshot is Oct 24 2026.
   moving frontier (NLnet went restrictive Oct 20; others may follow).
 - Re-check deadlines quarterly: add a calendar entry for NLnet rolling
   deadlines (Jan 3, Mar 3, …) in case the eligibility question resolves.
+
+## Investor-side lanes (added Oct 23)
+
+| Lane | Status |
+|---|---|
+| **OCV Catalyst v2** | Form still accepting on Greenhouse despite stated June deadline — **filled and parked at Submit** (reCAPTCHA needs one human click). $10k + mentorship, 8 projects. `greenhouse.io/opencoreventures/jobs/5410671004` |
+| **OCV Author/CTO track** | Live posting — the open-core company formation path ($2M SAFE incubation). If Catalyst bites, this is the follow-on. `jobs/5356134004` |
+| **OSS Capital** | Equity VC for commercial OSS — needs an entity + commercial product story (demand-edge company). Post-revenue lane. |
+| **DePIN VCs** (Borderless, Escape Velocity) | Thesis matches browser supply but they underwrite token value accrual — misfit unless a token exists, which the design rejects. |
+| **OSV** | Grants/fellowship window closed Apr 30 2026; next opens ~Jan 2027. Infinite Adventures = their VC arm if a company forms. |
