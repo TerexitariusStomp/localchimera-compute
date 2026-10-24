@@ -10,7 +10,7 @@ prose where a funder bans AI-written applications).
 |---|---|
 | Name | localchimera — a commons for machine resources |
 | License | AGPL-3.0-or-later (all first-party code) |
-| Repository | `rad:z2xjyuu4adoo1x88is8xtRz2tYwhu` on Radicle — public at <https://app.radicle.xyz/> (search the RID) |
+| Repository | <https://github.com/TerexitariusStomp/localchimera-compute> — public at <https://github.com/TerexitariusStomp/localchimera-compute> |
 | Commits | 489 |
 | Tests | ~450 checks across 19 Scheme suites + 272 checks across 16 browser suites, all green at HEAD |
 | Protocol surface | 139 declared capability doors, all covered by tests (`tools/lint/check-e2e-coverage.py`) |

@@ -26,7 +26,7 @@ Verify status before acting — this snapshot is Oct 24 2026.
 |---|---|---|
 | **Radicle Drips** | low | Repo is already on Radicle — register the project for dependency-based donations. |
 | **Giveth** | low | List localchimera as a project; crypto donations. |
-| **GitHub Sponsors** | low | Requires a GitHub mirror of the repo (user decision — it's a push). |
+| **GitHub Sponsors** | low | Repo is public at <https://github.com/TerexitariusStomp/localchimera-compute> — enable Sponsors on the account, done. |
 | **OpenCollective / fiscal host** | medium | Only if grants require an org (see ARIN). Open Source Collective or Hack Club are the usual hosts. |
 
 ## Ecosystem bounties / hackathons

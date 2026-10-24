@@ -41,7 +41,7 @@ Where FFDW's mission and the roadmap intersect:
 
 489 commits, ~720 green test checks, spec'd in the open
 (`spec/localchimera.md`), Radicle-hosted
-(`rad:z2xjyuu4adoo1x88is8xtRz2tYwhu`). The next work — a public
+(<https://github.com/TerexitariusStomp/localchimera-compute>). The next work — a public
 gateway, the demand-API launch, and mesh GA — is what a development
 partnership would fund.
 

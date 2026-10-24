@@ -32,7 +32,7 @@ trust or banks they cannot use.
 **What do you propose?**
 
 localchimera (AGPL-3.0, in active development, publicly versioned
-at `rad:z2xjyuu4adoo1x88is8xtRz2tYwhu`) is an open machine-resource
+at <https://github.com/TerexitariusStomp/localchimera-compute>) is an open machine-resource
 commons designed around exactly this constraint:
 
 - **Browser-native supply:** a browser tab is a full resource node —

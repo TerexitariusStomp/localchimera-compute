@@ -24,7 +24,7 @@ receipt; settlement is mutual credit by default with optional sats
 payout at the treasury edge.
 
 What's shipped and test-covered (~720 checks, 489 commits,
-`rad:z2xjyuu4adoo1x88is8xtRz2tYwhu` on Radicle):
+<https://github.com/TerexitariusStomp/localchimera-compute>):
 
 - The commons core: lane offers → dispatch claims → signed receipts,
   KERI identity, ValueFlows accounting, federation.
@@ -63,8 +63,8 @@ direction; commits carry provenance.)
 - Fellows: confirm 3-month Austin residency feasibility before
   mentioning it as more than "if there's interest."
 - Repo is Radicle — include the explorer link in the email so they can
-  browse: <https://app.radicle.xyz/> + RID
-  `rad:z2xjyuu4adoo1x88is8xtRz2tYwhu`.
+  browse: <https://github.com/TerexitariusStomp/localchimera-compute>
+  <https://github.com/TerexitariusStomp/localchimera-compute>.
 
 ## Sources
 

@@ -7,9 +7,12 @@
 > reports for the first three months).
 > **Required:** a ≤2-minute video with a *human* voice-over
 > (fully-AI-generated videos get the application discarded).
-> FOSS work must be "produced in the open" — frequent public commits
-> (Radicle counts as a public forge; consider a GitHub mirror for
-> reviewer convenience).
+> **Required:** **two written reference letters** — evaluation does not
+> start until both arrive (form field or email to
+> references@opensats.org, subject "Reference Letter for
+> localchimera-dvm by [your name]").
+> FOSS work must be "produced in the open" — public GitHub repo at
+> <https://github.com/TerexitariusStomp/localchimera-compute>.
 
 ## The scoped ask: production NIP-90 DVM infrastructure
 
@@ -25,7 +28,7 @@ commons. Scope the application to what nostr users get.
 localchimera is an open commons for machine resources where a
 browser tab is an accountable node — KERI identity, signed replayable
 receipts, mutual-credit settlement (AGPL-3.0, 489 commits, ~720 test
-checks, `rad:z2xjyuu4adoo1x88is8xtRz2tYwhu` on Radicle). Its
+checks, <https://github.com/TerexitariusStomp/localchimera-compute>). Its
 `browser/app/machine-dvm.js` runner already speaks NIP-90: it watches
 kind-5xxx job requests, executes them in-browser over vendored
 noble-secp256k1 (pure WebCrypto — no native install for anyone), and
@@ -77,12 +80,18 @@ three months, then 90-day.
 
 ### Submission checklist for the human
 
+- [ ] **Line up two references first** — ask two people who know your
+      work to write short letters (how they know you, what they've seen
+      you accomplish) and either paste them in the form or have them
+      email references@opensats.org with subject "Reference Letter for
+      localchimera-dvm by [your name]". Nothing gets evaluated until both
+      arrive.
 - [ ] Record the ≤2-min video: show `node.html` → DVM section → a
       kind-5xxx request arriving → a 6xxx result. Human voice-over.
 - [ ] Host the video somewhere link-stable (nostr.build, own site,
       YouTube unlisted).
 - [ ] Paste application text into <https://opensats.org/apply> —
-      select nostr fund relevance in the form.
+      select nostr fund relevance in the form. **Deadline Nov 30.**
 - [ ] Have a BTC on-chain address ready for the agreement stage.
 
 ## Sources

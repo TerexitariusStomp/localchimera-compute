@@ -31,7 +31,7 @@ income — are excluded on every axis: no install rights, no cloud
 accounts, no payout access.
 
 **What exists.** localchimera (AGPL-3.0, 489 commits, ~720 green
-test checks, `rad:z2xjyuu4adoo1x88is8xtRz2tYwhu`) makes a browser tab
+test checks, <https://github.com/TerexitariusStomp/localchimera-compute>) makes a browser tab
 an accountable compute node. Paid demand enters over NIP-90 (nostr):
 kind-5xxx requests execute in-browser and return kind-6xxx results
 priced in sats — a pure nostr↔Bitcoin earning loop needing only a tab
