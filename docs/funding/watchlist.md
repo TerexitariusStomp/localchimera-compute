@@ -8,6 +8,12 @@ Verify status before acting — this snapshot is Oct 24 2026.
 | Program | Next window | Size | Trigger |
 |---|---|---|---|
 | **ARIN Community Grant** | Opens ~spring 2027 (2026 closed Sep 22) | $1–20k | Needs an **organization** (nonprofit/open-source group) not an individual — only if a fiscal host exists by then. ARIN region fit is real (internet technical improvements). |
+| **NSF PESOSE** (POSE successor, NSF 26-506) | Next deadline **Mar 2, 2027** (annual, first Tue Sep + Mar) | **$300k Phase I / $1.5M Phase II** | Requires IHE, nonprofit, or for-profit applicant — the fiscal host (or a future entity) is the gate. Largest single check on the board; frame as "open-source ecosystem scoping for browser-native resource commons." |
+| **OSV grants/fellowship** | Window ~Jan 1 2027 (closed Apr 30 2026) | $10k+ | Individual-friendly; calendar for January. |
+| **Octant epochs** | Rolling community epochs | varies | Ethereum public-goods allocation — watch octant.app for matching windows; the mutual-credit/safe-treasury story is the angle. |
+| **Optimism Retro Funding** | Continuous missions | varies | Current missions are Superchain-scoped (dev tooling, onchain builders) — file only if a mission matches the Safe/CAIP treasury leg. |
+| **OpenSSF Alpha-Omega** | Rolling | varies | Funds security of *depended-on* OSS — revisit when the codebase has real downstream adopters. |
+| **GSoC / LFX Mentorship** | Annual org applications | contributor time, not cash | Growth lever: host contributors under the fiscal host once it exists. |
 | **Gitcoin d/acc Funding Initiative** | Monthly curated campaigns through 2026+ | varies | Legacy Gitcoin Grants sunset; watch for a d/acc subdomain matching distributed-compute/public-goods — localchimera is literally d/acc-shaped. <https://gov.gitcoin.co> |
 | **Filecoin ProPGF Batch 4** | Watch <https://filpgf.io> | $2M-class rounds | Batch 3 allocated through Dec 2026; a verifiable-compute or retrieval RFP could fit the store/receipt legs. |
 
@@ -28,6 +34,17 @@ Verify status before acting — this snapshot is Oct 24 2026.
 | **Giveth** | low | List localchimera as a project; crypto donations. |
 | **GitHub Sponsors** | low | Repo is public at <https://github.com/TerexitariusStomp/localchimera-compute> — enable Sponsors on the account, done. |
 | **OpenCollective / fiscal host** | medium | Only if grants require an org (see ARIN). Open Source Collective or Hack Club are the usual hosts. |
+
+## Verified exclusions (checked Oct 23–24, rejected — not wished in)
+
+| Program | Why out |
+|---|---|
+| Numun Fund SGS 3.0 | Closed Sep 6; feminist-tech + Larger Majority World eligibility — we don't qualify |
+| Prototype Fund (Germany) | EU/CH residence required |
+| Open Source for Science Fund (EOSS successor, Renaissance Philanthropy) | Needs demonstrated *life-sciences* adoption — not our surface |
+| Brink | Bitcoin Core only |
+| DePIN VCs (Borderless, Escape Velocity, Multicoin) | Thesis matches browser supply but they underwrite token buyback/burn — no token by design |
+| Internews | No open funding window found matching our profile |
 
 ## Ecosystem bounties / hackathons
 

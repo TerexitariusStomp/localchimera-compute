@@ -8,8 +8,20 @@
   doesn't start without them.
 - ✅ **NLnet — eligibility question SENT** via their PGP contact form (asks whether disclosed
   agent-assisted development is eligible under GenAI v2.0; decision before the Nov 3 deadline)
+- ✅ **Cloudflare Project Alexandria — SUBMITTED** (recurring OSS credits:
+  Workers/Pages/R2/WAF for the public gateway; "Thank You" confirmation).
+  Applied under the localchimera CF account `6c0140469651854b2e358517371a03d3`.
+- 📝 **Spiral + Maelstrom drafts written** — `spiral.md`, `maelstrom.md`;
+  prefilled Gmail compose tabs are open in the automation Brave
+  (grants@spiral.xyz / grants@maelstrom.fund). Send once Gmail is signed in.
 
 **Parked in the automation Brave (profile: `~/.cache/brave-devin`):**
+- ⏸ **Open Source Collective (fiscal host)** — application FULLY filled
+  (nym, collective `localchimera`, AGPL-3.0-or-later, repo URL,
+  project pitch, admin listed). Blocked at: "You need to be logged in
+  to create a collective" — sign into Open Collective with
+  terexmaps@gmail.com in the automation Brave (they email a login
+  link), then one click on Submit. See `fiscal-host.md`.
 - ⏸ **OTF** — magic-link sent to terexmaps@gmail.com; once Gmail is open in the
   automation Brave, the link can be opened there → lands on the IFF concept-note
   form → paste `otf-iff-concept.md`.
@@ -19,6 +31,12 @@
   consents). `Tell us about your proposal` + the tweet-idea field left EMPTY — they must
   be your own words (EV tests for and rejects AI-written applications). Prep:
   `emergent-ventures-prep.md`.
+- ⏸ **Cloudflare for Startups ($10k credits)** — filled through step 2
+  (company `localchimera`, founded 2026, contact + GitHub filled).
+  Two hard blockers only you can clear: (a) **business email required —
+  gmail.com rejected** — needs an address on a domain you own;
+  (b) **"Connect Cloudflare Account"** OAuth — authorize the account in
+  the open tab. Fill is parked mid-form.
 
 The only things a machine cannot do
 for you are: appear on camera, sign up for accounts,
@@ -113,9 +131,27 @@ Repo (paste this everywhere a project URL is asked):
 ## Also filed free rails (no application, just listing)
 
 - [ ] GitHub Sponsors — repo is public now; enable on your account.
+      Setup runbook: `rails.md`.
+- [ ] thanks.dev + polar.sh — register the repo (GitHub OAuth;
+      ~10 min). Runbook: `rails.md`.
 - [ ] Giveth listing — list `localchimera` as a project.
 - [ ] Radicle Drips — re-seed the repo (local radicle storage is gone —
       `rad init` or `rad clone` the RID, then register for drips).
+
+## Fiscal host + structural unlocks
+
+- [ ] **OSC application parked at login wall** (see top) — the biggest
+      single unlock: tax-deductible donations + NSF PESOSE/ARIN
+      eligibility. Decision memo: `fiscal-host.md`.
+- [ ] **SFC inquiry** — send the draft email in `fiscal-host.md` to
+      apply@sfconservancy.org (can go in the same Gmail session as
+      Spiral/Maelstrom).
+- [ ] **NSF PESOSE** — deadline Mar 2, 2027; $300k Phase I. Requires
+      org applicant — viable only after OSC/SFC acceptance. Largest
+      check on the board.
+- [ ] **Entity decision** — open-core demand-edge company gates OCV
+      Author/CTO ($2M SAFE), OSS Capital, a16z CSX. Memo only; no
+      filings made.
 
 ## After submission
 
